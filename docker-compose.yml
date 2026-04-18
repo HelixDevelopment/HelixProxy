@@ -133,7 +133,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     volumes:
-      - ./config/dante/sockd.conf:/etc/sockd.conf:ro
+      - ./config/dante/sockd.conf:/etc/dante/sockd.conf:ro
       - ${LOG_DIR:-./logs}:/var/log
     restart: unless-stopped
     healthcheck:
@@ -156,7 +156,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     volumes:
-      - ./config/dante/sockd.conf:/etc/sockd.conf:ro
+      - ./config/dante/sockd.conf:/etc/dante/sockd.conf:ro
       - ${LOG_DIR:-./logs}:/var/log
     network_mode: host
     restart: unless-stopped
@@ -176,7 +176,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     volumes:
-      - ./config/dante/sockd.conf:/etc/sockd.conf:ro
+      - ./config/dante/sockd.conf:/etc/dante/sockd.conf:ro
       - ${LOG_DIR:-./logs}:/var/log
     ports:
       - "${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-51080}:${SOCKS_PROXY_PORT:-51080}"

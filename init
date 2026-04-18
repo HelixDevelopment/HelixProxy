@@ -295,6 +295,7 @@ create_dante_config() {
     
     local bind_addr="${BIND_ADDRESS:-0.0.0.0}"
     local socks_port="${SOCKS_PROXY_PORT:-51080}"
+    local allowed_networks="${ALLOWED_NETWORKS:-192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,127.0.0.0/8}"
     
     cat > "$dante_conf" << EOF
 # Dante SOCKS Proxy Configuration
@@ -310,66 +311,16 @@ internal: ${bind_addr} port = ${socks_port}
 external: eth0
 
 # Authentication methods (none for simplicity)
-method: username none
+method: none
 
-# Access Rules
-clientblock {
+# Access Rules - allow all local and private network clients
+client pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
-    log: error
-}
-
-# Allow connections from local networks
-client pass {
-    from: 10.0.0.0/8 to: 0.0.0.0/0
-    log: error
-}
-
-client pass {
-    from: 172.16.0.0/12 to: 0.0.0.0/0
-    log: error
-}
-
-client pass {
-    from: 192.168.0.0/16 to: 0.0.0.0/0
-    log: error
-}
-
-client pass {
-    from: 127.0.0.0/8 to: 0.0.0.0/0
-    log: error
-}
-
-# Block everything else
-client block {
-    from: 0.0.0.0/0 to: 0.0.0.0/0
-    log: connect error
 }
 
 # Allow outgoing connections to any destination
 pass {
-    from: 10.0.0.0/8 to: 0.0.0.0/0
-    log: error
-}
-
-pass {
-    from: 172.16.0.0/12 to: 0.0.0.0/0
-    log: error
-}
-
-pass {
-    from: 192.168.0.0/16 to: 0.0.0.0/0
-    log: error
-}
-
-pass {
-    from: 127.0.0.0/8 to: 0.0.0.0/0
-    log: error
-}
-
-# Block all other outgoing
-block {
     from: 0.0.0.0/0 to: 0.0.0.0/0
-    log: connect error
 }
 EOF
 

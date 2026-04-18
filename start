@@ -143,7 +143,7 @@ init_cache() {
     mkdir -p "$CACHE_DIR/streaming"
     
     if [[ -d "$CACHE_DIR/squid" ]]; then
-        chmod 755 "$CACHE_DIR/squid"
+        chmod 777 "$CACHE_DIR/squid"
     fi
 }
 
