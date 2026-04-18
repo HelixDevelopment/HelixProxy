@@ -8,11 +8,19 @@ Complete guide for setting up, configuring, and using the Proxy Service.
 2. [Configuration](#configuration)
 3. [Starting and Stopping](#starting-and-stopping)
 4. [Client Setup](#client-setup)
-5. [VPN Setup](#vpn-setup)
-6. [Cache Management](#cache-management)
-7. [Monitoring](#monitoring)
-8. [Advanced Configuration](#advanced-configuration)
-9. [FAQ](#faq)
+5. [Android TV](#android-tv)
+6. [VPN Setup](#vpn-setup)
+7. [Cache Management](#cache-management)
+8. [Monitoring](#monitoring)
+9. [Advanced Configuration](#advanced-configuration)
+10. [FAQ](#faq)
+
+## Quick Reference
+
+- HTTP Proxy: `http://<HOST_IP>:53128`
+- HTTPS Proxy: `http://<HOST_IP>:53128`
+- SOCKS5 Proxy: `socks5://<HOST_IP>:51080`
+- Admin Panel: `http://<HOST_IP>:58080`
 
 ---
 
@@ -65,9 +73,9 @@ Edit `.env` file:
 
 ```bash
 # Network ports
-HTTP_PROXY_PORT=3128      # HTTP/HTTPS proxy
-SOCKS_PROXY_PORT=1080     # SOCKS5 proxy
-PROXY_ADMIN_PORT=8080     # Admin web interface
+HTTP_PROXY_PORT=53128      # HTTP/HTTPS proxy
+SOCKS_PROXY_PORT=51080     # SOCKS5 proxy
+PROXY_ADMIN_PORT=58080     # Admin web interface
 
 # Cache settings
 CACHE_DIR=/path/to/cache
@@ -180,9 +188,9 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 #### Temporary (Current Shell)
 
 ```bash
-export HTTP_PROXY="http://192.168.1.100:3128"
-export HTTPS_PROXY="http://192.168.1.100:3128"
-export ALL_PROXY="socks5://192.168.1.100:1080"
+export HTTP_PROXY="http://192.168.1.100:53128"
+export HTTPS_PROXY="http://192.168.1.100:53128"
+export ALL_PROXY="socks5://192.168.1.100:51080"
 ```
 
 #### Permanent (All Users)
@@ -190,8 +198,8 @@ export ALL_PROXY="socks5://192.168.1.100:1080"
 Add to `/etc/environment`:
 
 ```
-HTTP_PROXY="http://192.168.1.100:3128"
-HTTPS_PROXY="http://192.168.1.100:3128"
+HTTP_PROXY="http://192.168.1.100:53128"
+HTTPS_PROXY="http://192.168.1.100:53128"
 NO_PROXY="localhost,127.0.0.1,.local"
 ```
 
@@ -200,8 +208,8 @@ NO_PROXY="localhost,127.0.0.1,.local"
 Create `/etc/apt/apt.conf.d/proxy.conf`:
 
 ```
-Acquire::http::Proxy "http://192.168.1.100:3128";
-Acquire::https::Proxy "http://192.168.1.100:3128";
+Acquire::http::Proxy "http://192.168.1.100:53128";
+Acquire::https::Proxy "http://192.168.1.100:53128";
 ```
 
 #### YUM/DNF (RHEL/CentOS/Fedora)
@@ -209,7 +217,7 @@ Acquire::https::Proxy "http://192.168.1.100:3128";
 Add to `/etc/dnf/dnf.conf` or `/etc/yum.conf`:
 
 ```
-proxy=http://192.168.1.100:3128
+proxy=http://192.168.1.100:53128
 ```
 
 ### macOS Clients
@@ -219,15 +227,15 @@ proxy=http://192.168.1.100:3128
 1. System Preferences → Network
 2. Select network → Advanced → Proxies
 3. Enable HTTP/HTTPS proxy
-4. Web Proxy Server: `192.168.1.100:3128`
+4. Web Proxy Server: `192.168.1.100:53128`
 
 #### Terminal (zsh)
 
 Add to `~/.zshrc`:
 
 ```bash
-export HTTP_PROXY="http://192.168.1.100:3128"
-export HTTPS_PROXY="http://192.168.1.100:3128"
+export HTTP_PROXY="http://192.168.1.100:53128"
+export HTTPS_PROXY="http://192.168.1.100:53128"
 ```
 
 ### Windows Clients
@@ -236,20 +244,20 @@ export HTTPS_PROXY="http://192.168.1.100:3128"
 
 1. Settings → Network & Internet → Proxy
 2. Enable "Use a proxy server"
-3. Address: `192.168.1.100`, Port: `3128`
+3. Address: `192.168.1.100`, Port: `53128`
 
 #### PowerShell
 
 ```powershell
-$env:HTTP_PROXY = "http://192.168.1.100:3128"
-$env:HTTPS_PROXY = "http://192.168.1.100:3128"
+$env:HTTP_PROXY = "http://192.168.1.100:53128"
+$env:HTTPS_PROXY = "http://192.168.1.100:53128"
 ```
 
 #### Command Prompt
 
 ```cmd
-set HTTP_PROXY=http://192.168.1.100:3128
-set HTTPS_PROXY=http://192.168.1.100:3128
+set HTTP_PROXY=http://192.168.1.100:53128
+set HTTPS_PROXY=http://192.168.1.100:53128
 ```
 
 ### Mobile Devices
@@ -258,22 +266,26 @@ set HTTPS_PROXY=http://192.168.1.100:3128
 
 1. Settings → Wi-Fi → (network) → Configure Proxy
 2. Select "Manual"
-3. Server: `192.168.1.100`, Port: `3128`
+3. Server: `192.168.1.100`, Port: `53128`
 
 #### Android
 
 1. Settings → Wi-Fi → (network) → Modify
 2. Advanced options → Proxy → Manual
-3. Hostname: `192.168.1.100`, Port: `3128`
+3. Hostname: `192.168.1.100`, Port: `53128`
 
 ### Browser Configuration
+
+See [docs/BROWSERS.md](docs/BROWSERS.md) for detailed browser setup.
+
+Quick configuration:
 
 #### Firefox
 
 1. Settings → General → Network Settings → Settings
 2. Select "Manual proxy configuration"
-3. HTTP Proxy: `192.168.1.100`, Port: `3128`
-4. SOCKS Host: `192.168.1.100`, Port: `1080`, Type: SOCKS v5
+3. HTTP Proxy: `192.168.1.100`, Port: `53128`
+4. SOCKS Host: `192.168.1.100`, Port: `51080`, Type: SOCKS v5
 5. Check "Proxy DNS when using SOCKS v5"
 
 #### Chrome/Edge/Brave
@@ -282,8 +294,27 @@ Use system proxy settings or install SwitchyOmega extension:
 
 1. Install SwitchyOmega from Chrome Web Store
 2. Create new profile → Proxy Profile
-3. HTTP: `192.168.1.100:3128`
-4. SOCKS5: `192.168.1.100:1080`
+3. HTTP: `192.168.1.100:53128`
+4. SOCKS5: `192.168.1.100:51080`
+
+---
+
+## Android TV
+
+Android TV is one of the most popular use cases for this proxy service. See the dedicated guide for complete setup instructions:
+
+**[→ Android TV Setup Guide](docs/ANDROID_TV.md)**
+
+Quick setup:
+
+1. **Settings → Network & Internet → Wi-Fi**
+2. Select your network → **Modify network**
+3. **Advanced options** → Proxy: **Manual**
+4. Proxy hostname: `<HOST_IP>`
+5. Proxy port: `53128`
+6. **Save**
+
+> If you see "Connected, no internet", the Squid proxy must be in standard forward proxy mode (not reverse/accel mode). Run `./init && ./restart` to regenerate the correct configuration.
 
 ---
 
@@ -324,7 +355,7 @@ VPN_OVPN_PATH=/absolute/path/to/vpn-config.ovpn
 ./status -v
 
 # Verify IP is masked
-curl --proxy http://localhost:3128 https://ifconfig.me
+curl --proxy http://localhost:53128 https://ifconfig.me
 ```
 
 ### VPN Troubleshooting
@@ -428,7 +459,7 @@ STREAMING_CACHE_MAX_SIZE_GB=20
 
 ### Admin Panel
 
-Access at: `http://HOST_IP:8080`
+Access at: `http://HOST_IP:58080`
 
 Features:
 - Real-time service status
@@ -456,13 +487,13 @@ podman logs -f proxy-vpn
 
 ```bash
 # HTTP proxy health
-curl --proxy http://localhost:3128 http://connectivitycheck.gstatic.com/generate_204
+curl --proxy http://localhost:53128 http://connectivitycheck.gstatic.com/generate_204
 
 # SOCKS proxy health
-curl --proxy socks5://localhost:1080 http://connectivitycheck.gstatic.com/generate_204
+curl --proxy socks5://localhost:51080 http://connectivitycheck.gstatic.com/generate_204
 
 # Admin health
-curl http://localhost:8080/health
+curl http://localhost:58080/health
 ```
 
 ---
@@ -518,13 +549,13 @@ http_access allow mynetwork
 
 ### Q: Can I use both HTTP and SOCKS proxies?
 
-**A:** Yes, both run simultaneously on different ports. HTTP proxy on 3128, SOCKS on 1080.
+**A:** Yes, both run simultaneously on different ports. HTTP proxy on 53128, SOCKS on 51080.
 
 ### Q: How do I know if VPN is working?
 
 **A:** Check your external IP:
 ```bash
-curl --proxy http://localhost:3128 https://ifconfig.me
+curl --proxy http://localhost:53128 https://ifconfig.me
 ```
 
 ### Q: Why is caching not working for HTTPS?
@@ -568,6 +599,17 @@ tail -f logs/proxy.log
 ```
 
 ---
+
+## Additional Documentation
+
+- [Client Setup Guide](docs/CLIENT_SETUP.md) — All devices (consoles, smart TVs, NAS, etc.)
+- [Android TV Guide](docs/ANDROID_TV.md) — Android TV / Google TV
+- [Browser Guide](docs/BROWSERS.md) — Firefox, Chrome, Edge, Safari
+- [Mobile Devices](docs/MOBILE_DEVICES.md) — iOS and Android phones/tablets
+- [Network Modes](docs/NETWORK_MODES.md) — VPN vs no-VPN explained
+- [Architecture](docs/ARCHITECTURE.md) — System design
+- [Caching](docs/CACHE.md) — Cache management
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues
 
 ## Support
 

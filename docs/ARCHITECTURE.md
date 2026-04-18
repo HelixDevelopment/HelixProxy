@@ -26,7 +26,7 @@ The Proxy Service is a containerized network proxy solution providing HTTP/HTTPS
 │  │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────────────┘ │  │
 │  │                 │  │                 │  │                         │  │
 │  │ Profile: vpn    │  │ Profile: *      │  │ Profile: *              │  │
-│  │ Port: -         │  │ Port: 3128      │  │ Port: 1080              │  │
+│  │ Port: -         │  │ Port: 53128      │  │ Port: 51080              │  │
 │  └────────┬────────┘  └────────┬────────┘  └────────────┬────────────┘  │
 │           │                    │                        │               │
 │           │    ┌───────────────┴────────────────────────┘               │
@@ -44,7 +44,7 @@ The Proxy Service is a containerized network proxy solution providing HTTP/HTTPS
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐  │
 │  │  PROXY-ADMIN    │  │ CACHE-INVALID.  │  │     VPN-MONITOR         │  │
 │  │  (Caddy)        │  │  (Scheduler)    │  │     (Watcher)           │  │
-│  │  Port: 8080     │  │  Periodic       │  │     Health Checks       │  │
+│  │  Port: 58080     │  │  Periodic       │  │     Health Checks       │  │
 │  └─────────────────┘  └─────────────────┘  └─────────────────────────┘  │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -151,9 +151,9 @@ Network: proxy-net (172.28.0.0/16)
 
 | Host Port | Container Port | Service | Protocol |
 |-----------|---------------|---------|----------|
-| 3128 | 3128 | proxy-squid | HTTP/HTTPS |
-| 1080 | 1080 | proxy-dante | SOCKS5 |
-| 8080 | 80 | proxy-admin | HTTP |
+| 53128 | 53128 | proxy-squid | HTTP/HTTPS |
+| 51080 | 51080 | proxy-dante | SOCKS5 |
+| 58080 | 80 | proxy-admin | HTTP |
 
 ## Cache Architecture
 

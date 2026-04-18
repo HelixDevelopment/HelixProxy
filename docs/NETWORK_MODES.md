@@ -27,7 +27,7 @@ The Proxy Service supports three network modes to handle different VPN and netwo
 │  │                                                             │  │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │  │
 │  │  │   SQUID     │  │   DANTE     │  │      ADMIN          │ │  │
-│  │  │  Port 3128  │  │  Port 1080  │  │     Port 8080       │ │  │
+│  │  │  Port 53128  │  │  Port 51080  │  │     Port 58080       │ │  │
 │  │  │             │  │             │  │                     │ │  │
 │  │  │ Shares host │  │ Shares host │  │    (optional)       │ │  │
 │  │  │ network     │  │ network     │  │                     │ │  │
@@ -70,7 +70,7 @@ The Proxy Service supports three network modes to handle different VPN and netwo
 curl https://ifconfig.me
 
 # Check proxy IP (should match)
-curl --proxy http://localhost:3128 https://ifconfig.me
+curl --proxy http://localhost:53128 https://ifconfig.me
 ```
 
 ---
@@ -102,7 +102,7 @@ curl --proxy http://localhost:3128 https://ifconfig.me
 │  │           ▼                                       │        │  │
 │  │  ┌─────────────────┐  ┌─────────────────┐        │        │  │
 │  │  │   SQUID         │  │   DANTE         │        │        │  │
-│  │  │   Port 3128     │  │   Port 1080     │        │        │  │
+│  │  │   Port 53128     │  │   Port 51080     │        │        │  │
 │  │  │                 │  │                 │        │        │  │
 │  │  │ Routes through  │  │ Routes through  │        │        │  │
 │  │  │ VPN container   │  │ VPN container   │        │        │  │
@@ -154,7 +154,7 @@ VPN_OVPN_PATH=/path/to/config.ovpn
 ./status
 
 # Check proxy IP (should be VPN IP)
-curl --proxy http://localhost:3128 https://ifconfig.me
+curl --proxy http://localhost:53128 https://ifconfig.me
 ```
 
 ---
@@ -172,7 +172,7 @@ curl --proxy http://localhost:3128 https://ifconfig.me
 │  │                                                            │  │
 │  │  ┌─────────────────┐  ┌─────────────────┐                 │  │
 │  │  │   SQUID         │  │   DANTE         │                 │  │
-│  │  │   Port 3128     │  │   Port 1080     │                 │  │
+│  │  │   Port 53128     │  │   Port 51080     │                 │  │
 │  │  │                 │  │                 │                 │  │
 │  │  │  Bridge         │  │  Bridge         │                 │  │
 │  │  │  Network        │  │  Network        │                 │  │
@@ -300,7 +300,7 @@ Host mode means containers bind directly to host ports. If ports are in use:
 
 ```bash
 # Check what's using port
-ss -tuln | grep 3128
+ss -tuln | grep 53128
 
 # Change port in .env
 HTTP_PROXY_PORT=3129

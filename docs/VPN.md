@@ -94,7 +94,7 @@ VPN_HEALTH_INTERVAL=30
 ./status
 
 # Verify IP is masked
-curl --proxy http://localhost:3128 https://ifconfig.me
+curl --proxy http://localhost:53128 https://ifconfig.me
 ```
 
 ## VPN Container Details
@@ -204,7 +204,7 @@ Most .ovpn files include DNS settings. If not:
 
 ```bash
 # Check DNS
-curl --proxy http://localhost:3128 https://dnsleaktest.com
+curl --proxy http://localhost:53128 https://dnsleaktest.com
 ```
 
 ## Multiple VPN Servers
@@ -337,7 +337,7 @@ Currently, only OpenVPN is supported. WireGuard support may be added in future v
 ## Verification Checklist
 
 - [ ] VPN container running: `./status`
-- [ ] IP is masked: `curl --proxy http://localhost:3128 https://ifconfig.me`
+- [ ] IP is masked: `curl --proxy http://localhost:53128 https://ifconfig.me`
 - [ ] DNS not leaking: Use online DNS leak test
 - [ ] No WebRTC leaks: Test in browser
 - [ ] Kill switch working: Stop VPN, verify no traffic

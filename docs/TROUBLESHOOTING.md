@@ -25,7 +25,7 @@ podman logs proxy-squid
 1. **Port already in use**
    ```bash
    # Find process using port
-   ss -tuln | grep 3128
+   ss -tuln | grep 53128
    # Kill process or change port in .env
    ```
 
@@ -173,10 +173,10 @@ ls -la $CACHE_DIR/squid
 ./status
 
 # Check port binding
-ss -tuln | grep -E '3128|1080'
+ss -tuln | grep -E '53128|51080'
 
 # Test local connection
-curl --proxy http://localhost:3128 http://example.com
+curl --proxy http://localhost:53128 http://example.com
 ```
 
 #### Solutions
@@ -195,8 +195,8 @@ curl --proxy http://localhost:3128 http://example.com
 3. **Firewall blocking**
    ```bash
    # Allow ports
-   sudo ufw allow 3128/tcp
-   sudo ufw allow 1080/tcp
+   sudo ufw allow 53128/tcp
+   sudo ufw allow 51080/tcp
    ```
 
 4. **Bind address wrong**
@@ -224,7 +224,7 @@ nslookup google.com
 cat /etc/resolv.conf
 
 # Test via proxy
-curl --proxy http://localhost:3128 http://google.com
+curl --proxy http://localhost:53128 http://google.com
 ```
 
 #### Solutions
@@ -474,7 +474,7 @@ podman logs --tail 100 proxy-vpn
 ./cache stats
 
 # Network test
-curl --proxy http://localhost:3128 https://ifconfig.me
+curl --proxy http://localhost:53128 https://ifconfig.me
 ```
 
 ### Log Collection
@@ -495,7 +495,7 @@ tar -czvf proxy-logs.tar.gz -C /tmp proxy-logs
 
 ```bash
 # Check ports
-ss -tuln | grep -E '3128|1080|8080'
+ss -tuln | grep -E '53128|51080|58080'
 
 # Test connectivity
 ping -c 5 8.8.8.8
@@ -506,7 +506,7 @@ dig google.com
 nslookup google.com
 
 # Proxy test
-curl -v --proxy http://localhost:3128 http://example.com
+curl -v --proxy http://localhost:53128 http://example.com
 ```
 
 ## Getting Help

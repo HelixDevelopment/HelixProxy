@@ -49,18 +49,18 @@ cp .env.example .env
 │          ▼                      │                                │
 │  ┌────────────────┐             │                                │
 │  │  HTTP PROXY    │◄────────────┤                                │
-│  │  (Squid:3128)  │             │                                │
+│  │  (Squid:53128)  │             │                                │
 │  │  + Cache       │             │                                │
 │  └───────┬────────┘             │                                │
 │          │                      │                                │
 │  ┌───────▼────────┐             │                                │
 │  │  SOCKS PROXY   │◄────────────┘                                │
-│  │  (Dante:1080)  │                                              │
+│  │  (Dante:51080)  │                                              │
 │  └────────────────┘                                              │
 │                                                                  │
 │  ┌────────────────┐     ┌────────────────┐                      │
 │  │ ADMIN PANEL    │     │ CACHE MGMT     │                      │
-│  │ (Caddy:8080)   │     │ (Automated)    │                      │
+│  │ (Caddy:58080)   │     │ (Automated)    │                      │
 │  └────────────────┘     └────────────────┘                      │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -103,7 +103,12 @@ Proxy/
 │   ├── ARCHITECTURE.md         # System architecture
 │   ├── CACHE.md                # Caching documentation
 │   ├── VPN.md                  # VPN configuration guide
-│   └── TROUBLESHOOTING.md      # Common issues and solutions
+│   ├── NETWORK_MODES.md        # Network mode comparison
+│   ├── TROUBLESHOOTING.md      # Common issues and solutions
+│   ├── CLIENT_SETUP.md         # Client setup for all devices
+│   ├── ANDROID_TV.md           # Android TV setup guide
+│   ├── BROWSERS.md             # Browser configuration
+│   └── MOBILE_DEVICES.md       # iOS/Android setup
 ├── tests/
 │   └── run-tests.sh            # Test runner
 ├── logs/                       # Log files (git-ignored)
@@ -118,9 +123,9 @@ Proxy/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CONTAINER_RUNTIME` | Runtime to use (podman/docker/auto) | auto |
-| `HTTP_PROXY_PORT` | HTTP/HTTPS proxy port | 3128 |
-| `SOCKS_PROXY_PORT` | SOCKS5 proxy port | 1080 |
-| `PROXY_ADMIN_PORT` | Admin panel port | 8080 |
+| `HTTP_PROXY_PORT` | HTTP/HTTPS proxy port | 53128 |
+| `SOCKS_PROXY_PORT` | SOCKS5 proxy port | 51080 |
+| `PROXY_ADMIN_PORT` | Admin panel port | 58080 |
 | `USE_VPN` | Enable VPN routing | false |
 | `VPN_USERNAME` | VPN provider username | - |
 | `VPN_PASSWORD` | VPN provider password | - |
@@ -206,9 +211,9 @@ See `.env.example` for complete configuration options.
 
 ```bash
 # Set environment variables
-export HTTP_PROXY="http://HOST_IP:3128"
-export HTTPS_PROXY="http://HOST_IP:3128"
-export ALL_PROXY="socks5://HOST_IP:1080"
+export HTTP_PROXY="http://HOST_IP:53128"
+export HTTPS_PROXY="http://HOST_IP:53128"
+export ALL_PROXY="socks5://HOST_IP:51080"
 export NO_PROXY="localhost,127.0.0.1"
 
 # Or add to ~/.bashrc or ~/.zshrc for persistence
@@ -218,8 +223,8 @@ export NO_PROXY="localhost,127.0.0.1"
 
 ```bash
 # Add to /etc/environment
-HTTP_PROXY="http://HOST_IP:3128"
-HTTPS_PROXY="http://HOST_IP:3128"
+HTTP_PROXY="http://HOST_IP:53128"
+HTTPS_PROXY="http://HOST_IP:53128"
 NO_PROXY="localhost,127.0.0.1"
 ```
 
@@ -227,12 +232,12 @@ NO_PROXY="localhost,127.0.0.1"
 
 ```powershell
 # PowerShell
-$env:HTTP_PROXY = "http://HOST_IP:3128"
-$env:HTTPS_PROXY = "http://HOST_IP:3128"
+$env:HTTP_PROXY = "http://HOST_IP:53128"
+$env:HTTPS_PROXY = "http://HOST_IP:53128"
 
 # Command Prompt
-set HTTP_PROXY=http://HOST_IP:3128
-set HTTPS_PROXY=http://HOST_IP:3128
+set HTTP_PROXY=http://HOST_IP:53128
+set HTTPS_PROXY=http://HOST_IP:53128
 ```
 
 ### Browser Configuration
@@ -240,8 +245,8 @@ set HTTPS_PROXY=http://HOST_IP:3128
 #### Firefox
 1. Settings → General → Network Settings
 2. Select "Manual proxy configuration"
-3. HTTP Proxy: `HOST_IP`, Port: `3128`
-4. SOCKS Host: `HOST_IP`, Port: `1080`, SOCKS v5
+3. HTTP Proxy: `HOST_IP`, Port: `53128`
+4. SOCKS Host: `HOST_IP`, Port: `51080`, SOCKS v5
 
 #### Chrome/Edge
 Use system proxy settings or extensions like SwitchyOmega.
@@ -307,8 +312,8 @@ Manual invalidation:
 
 ```bash
 # Allow from specific network only
-sudo ufw allow from 192.168.1.0/24 to any port 3128
-sudo ufw allow from 192.168.1.0/24 to any port 1080
+sudo ufw allow from 192.168.1.0/24 to any port 53128
+sudo ufw allow from 192.168.1.0/24 to any port 51080
 ```
 
 ## Troubleshooting
@@ -316,7 +321,7 @@ sudo ufw allow from 192.168.1.0/24 to any port 1080
 ### Service Won't Start
 
 1. Check logs: `./logs/proxy.log`
-2. Verify ports are not in use: `ss -tuln | grep -E '3128|1080'`
+2. Verify ports are not in use: `ss -tuln | grep -E '53128|51080'`
 3. Check container runtime: `./init --check`
 
 ### VPN Not Connecting
@@ -363,6 +368,15 @@ See [LICENSE](LICENSE) for license information.
 
 - **Issues**: [GitHub Issues](https://github.com/vasic-digital/Proxy/issues)
 - **Documentation**: See `docs/` directory for detailed documentation
+  - [Client Setup Guide](docs/CLIENT_SETUP.md) — Configure any device
+  - [Android TV Guide](docs/ANDROID_TV.md) — Android TV / Google TV setup
+  - [Browser Guide](docs/BROWSERS.md) — Firefox, Chrome, Edge, Safari
+  - [Mobile Devices](docs/MOBILE_DEVICES.md) — iOS and Android
+  - [Network Modes](docs/NETWORK_MODES.md) — VPN vs no-VPN explained
+  - [VPN Setup](docs/VPN.md) — VPN configuration
+  - [Architecture](docs/ARCHITECTURE.md) — System design
+  - [Caching](docs/CACHE.md) — Cache management
+  - [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues
 
 ## Network Modes Explained
 
