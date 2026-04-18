@@ -217,9 +217,9 @@ test_ports() {
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     
-    local http_port="${HTTP_PROXY_PORT:-3128}"
-    local socks_port="${SOCKS_PROXY_PORT:-1080}"
-    local admin_port="${PROXY_ADMIN_PORT:-8080}"
+    local http_port="${HTTP_PROXY_PORT:-53128}"
+    local socks_port="${SOCKS_PROXY_PORT:-51080}"
+    local admin_port="${PROXY_ADMIN_PORT:-58080}"
     
     # Check if ports are available
     for port in "$http_port" "$socks_port" "$admin_port"; do

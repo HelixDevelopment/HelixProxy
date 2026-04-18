@@ -24,6 +24,14 @@ services:
       - FIREWALL=on
       - ROUTE_DELAY=5
       - PING=${VPN_HEALTH_INTERVAL:-30}
+      - VPNPORT=${HTTP_PROXY_PORT:-53128}
+      - VPNPORT_1=${SOCKS_PROXY_PORT:-51080}
+      - ROUTE=192.168.0.0/16
+      - ROUTE_1=10.0.0.0/8
+      - ROUTE_2=172.16.0.0/12
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}:${HTTP_PROXY_PORT:-53128}"
+      - "${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-51080}:${SOCKS_PROXY_PORT:-51080}"
     volumes:
       - ${VPN_OVPN_PATH}:/vpn/config.ovpn:ro
       - ./vpn-auth.txt:/vpn/vpn.auth:ro
@@ -103,7 +111,7 @@ services:
       - ${CACHE_DIR:-./cache}/squid:/var/spool/squid
       - ${LOG_DIR:-./logs}:/var/log/squid
     ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-3128}:3128"
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}:${HTTP_PROXY_PORT:-53128}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "squid", "-k", "check"]
@@ -171,7 +179,7 @@ services:
       - ./config/dante/sockd.conf:/etc/sockd.conf:ro
       - ${LOG_DIR:-./logs}:/var/log
     ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-1080}:1080"
+      - "${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-51080}:${SOCKS_PROXY_PORT:-51080}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "pgrep", "sockd"]
@@ -192,7 +200,7 @@ services:
     environment:
       - TZ=${TZ:-UTC}
     ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${PROXY_ADMIN_PORT:-8080}:80"
+      - "${BIND_ADDRESS:-0.0.0.0}:${PROXY_ADMIN_PORT:-58080}:80"
     restart: unless-stopped
 
   #############################################

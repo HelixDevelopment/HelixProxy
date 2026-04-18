@@ -90,11 +90,11 @@ validate_environment() {
     local errors=0
     
     if [[ -z "${HTTP_PROXY_PORT:-}" ]]; then
-        log "warn" "HTTP_PROXY_PORT not set, using default: 3128"
+        log "warn" "HTTP_PROXY_PORT not set, using default: 53128"
     fi
     
     if [[ -z "${SOCKS_PROXY_PORT:-}" ]]; then
-        log "warn" "SOCKS_PROXY_PORT not set, using default: 1080"
+        log "warn" "SOCKS_PROXY_PORT not set, using default: 51080"
     fi
     
     if [[ "${USE_VPN:-false}" == "true" ]]; then
@@ -192,8 +192,8 @@ create_squid_config() {
 # Do not edit directly - use environment variables
 
 # Network Settings
-http_port ${HTTP_PROXY_PORT:-3128} accel vhost allow-direct
-http_port ${HTTP_PROXY_PORT:-3128} intercept
+http_port ${HTTP_PROXY_PORT:-53128} accel vhost allow-direct
+http_port ${HTTP_PROXY_PORT:-53128} intercept
 
 # Cache Directory Configuration
 cache_dir aufs ${CACHE_DIR}/squid ${cache_size_mb} 16 256
@@ -294,7 +294,7 @@ create_dante_config() {
     log "info" "Creating Dante SOCKS configuration..."
     
     local bind_addr="${BIND_ADDRESS:-0.0.0.0}"
-    local socks_port="${SOCKS_PROXY_PORT:-1080}"
+    local socks_port="${SOCKS_PROXY_PORT:-51080}"
     
     cat > "$dante_conf" << EOF
 # Dante SOCKS Proxy Configuration
@@ -589,9 +589,9 @@ main() {
     log "info" "=========================================="
     log "info" "Initialization Complete"
     log "info" "=========================================="
-    log "info" "HTTP Proxy Port: ${HTTP_PROXY_PORT:-3128}"
-    log "info" "SOCKS Proxy Port: ${SOCKS_PROXY_PORT:-1080}"
-    log "info" "Admin Port: ${PROXY_ADMIN_PORT:-8080}"
+    log "info" "HTTP Proxy Port: ${HTTP_PROXY_PORT:-53128}"
+    log "info" "SOCKS Proxy Port: ${SOCKS_PROXY_PORT:-51080}"
+    log "info" "Admin Port: ${PROXY_ADMIN_PORT:-58080}"
     log "info" "VPN Enabled: ${USE_VPN:-false}"
     log "info" "Cache Directory: ${CACHE_DIR}"
 }

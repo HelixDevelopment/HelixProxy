@@ -118,7 +118,7 @@ get_external_ip() {
 #######################################
 get_proxy_ip() {
     local proxy_host="${1:-localhost}"
-    local proxy_port="${2:-3128}"
+    local proxy_port="${2:-53128}"
     
     curl -s --max-time 15 \
         --proxy "http://${proxy_host}:${proxy_port}" \
@@ -134,7 +134,7 @@ get_proxy_ip() {
 #######################################
 get_socks_proxy_ip() {
     local proxy_host="${1:-localhost}"
-    local proxy_port="${2:-1080}"
+    local proxy_port="${2:-51080}"
     
     curl -s --max-time 15 \
         --proxy "socks5://${proxy_host}:${proxy_port}" \
@@ -259,9 +259,9 @@ test_ports() {
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     
-    local http_port="${HTTP_PROXY_PORT:-3128}"
-    local socks_port="${SOCKS_PROXY_PORT:-1080}"
-    local admin_port="${PROXY_ADMIN_PORT:-8080}"
+    local http_port="${HTTP_PROXY_PORT:-53128}"
+    local socks_port="${SOCKS_PROXY_PORT:-51080}"
+    local admin_port="${PROXY_ADMIN_PORT:-58080}"
     
     # Test HTTP proxy port
     if ss -tuln | grep -q ":${http_port} "; then
@@ -292,7 +292,7 @@ test_http_proxy() {
     test_header "HTTP PROXY TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-3128}"
+    local port="${HTTP_PROXY_PORT:-53128}"
     
     # Test basic connectivity
     local response
@@ -342,7 +342,7 @@ test_socks_proxy() {
     test_header "SOCKS5 PROXY TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${SOCKS_PROXY_PORT:-1080}"
+    local port="${SOCKS_PROXY_PORT:-51080}"
     
     # Test basic connectivity
     local response
@@ -377,8 +377,8 @@ test_vpn_routing() {
     test_header "VPN ROUTING TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local http_port="${HTTP_PROXY_PORT:-3128}"
-    local socks_port="${SOCKS_PROXY_PORT:-1080}"
+    local http_port="${HTTP_PROXY_PORT:-53128}"
+    local socks_port="${SOCKS_PROXY_PORT:-51080}"
     
     # Get host IP (direct)
     local host_ip
@@ -423,7 +423,7 @@ test_caching() {
     test_header "CACHING TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-3128}"
+    local port="${HTTP_PROXY_PORT:-53128}"
     local cache_dir="${CACHE_DIR:-$PROJECT_ROOT/cache}"
     
     # Check cache directory exists
@@ -474,7 +474,7 @@ test_admin() {
     test_header "ADMIN INTERFACE TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${PROXY_ADMIN_PORT:-8080}"
+    local port="${PROXY_ADMIN_PORT:-58080}"
     
     # Test health endpoint
     local response
@@ -567,7 +567,7 @@ test_dns() {
     test_header "DNS RESOLUTION TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-3128}"
+    local port="${HTTP_PROXY_PORT:-53128}"
     
     # Test DNS through proxy
     local response
@@ -589,7 +589,7 @@ test_large_file() {
     test_header "LARGE FILE DOWNLOAD TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-3128}"
+    local port="${HTTP_PROXY_PORT:-53128}"
     
     # Download 1MB file
     local size
@@ -612,7 +612,7 @@ test_concurrent() {
     test_header "CONCURRENT CONNECTION TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-3128}"
+    local port="${HTTP_PROXY_PORT:-53128}"
     
     echo -e "  ${BLUE}Making 10 concurrent requests...${NC}"
     
@@ -653,8 +653,8 @@ test_network_client() {
     test_header "NETWORK CLIENT SIMULATION TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local http_port="${HTTP_PROXY_PORT:-3128}"
-    local socks_port="${SOCKS_PROXY_PORT:-1080}"
+    local http_port="${HTTP_PROXY_PORT:-53128}"
+    local socks_port="${SOCKS_PROXY_PORT:-51080}"
     
     # Get host IP for network testing
     local host_ip

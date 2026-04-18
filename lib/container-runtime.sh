@@ -173,9 +173,9 @@ load_environment() {
     
     export CACHE_DIR="${CACHE_DIR:-$PROJECT_ROOT/cache}"
     export LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs}"
-    export HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-3128}"
-    export SOCKS_PROXY_PORT="${SOCKS_PROXY_PORT:-1080}"
-    export PROXY_ADMIN_PORT="${PROXY_ADMIN_PORT:-8080}"
+    export HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-53128}"
+    export SOCKS_PROXY_PORT="${SOCKS_PROXY_PORT:-51080}"
+    export PROXY_ADMIN_PORT="${PROXY_ADMIN_PORT:-58080}"
     export USE_VPN="${USE_VPN:-false}"
     export TZ="${TZ:-UTC}"
     export PUID="${PUID:-1000}"

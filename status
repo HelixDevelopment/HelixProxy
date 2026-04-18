@@ -89,11 +89,48 @@ check_port() {
 }
 
 #######################################
+# Get primary local IP address
+#######################################
+get_local_ip() {
+    hostname -I 2>/dev/null | awk '{print $1}' || echo "127.0.0.1"
+}
+
+#######################################
+# Show local network access configuration
+#######################################
+show_network_access() {
+    local bind_addr="${BIND_ADDRESS:-0.0.0.0}"
+    local host_ip
+    host_ip=$(get_local_ip)
+    local http_port="${HTTP_PROXY_PORT:-53128}"
+    local socks_port="${SOCKS_PROXY_PORT:-51080}"
+    local admin_port="${PROXY_ADMIN_PORT:-58080}"
+    local allowed_networks="${ALLOWED_NETWORKS:-192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}"
+    
+    echo ""
+    echo "Local Network Access:"
+    echo "─────────────────────"
+    echo "  Host IP:          $host_ip"
+    echo "  Bind Address:     $bind_addr"
+    echo "  Allowed Networks: $allowed_networks"
+    echo ""
+    echo "  HTTP Proxy:       http://${host_ip}:${http_port}"
+    echo "  HTTPS Proxy:      http://${host_ip}:${http_port}"
+    echo "  SOCKS5 Proxy:     socks5://${host_ip}:${socks_port}"
+    echo "  Admin Panel:      http://${host_ip}:${admin_port}"
+    echo ""
+    echo "  Shell Export:"
+    echo "    export HTTP_PROXY=\"http://${host_ip}:${http_port}\""
+    echo "    export HTTPS_PROXY=\"http://${host_ip}:${http_port}\""
+    echo "    export ALL_PROXY=\"socks5://${host_ip}:${socks_port}\""
+}
+
+#######################################
 # Test HTTP proxy connection
 #######################################
 test_http_proxy() {
     local host="${BIND_ADDRESS:-127.0.0.1}"
-    local port="${HTTP_PROXY_PORT:-3128}"
+    local port="${HTTP_PROXY_PORT:-53128}"
     
     if timeout 5 curl -x "http://${host}:${port}" -s -o /dev/null -w "%{http_code}" "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null | grep -q "204\|200"; then
         echo "WORKING"
@@ -107,7 +144,7 @@ test_http_proxy() {
 #######################################
 test_socks_proxy() {
     local host="${BIND_ADDRESS:-127.0.0.1}"
-    local port="${SOCKS_PROXY_PORT:-1080}"
+    local port="${SOCKS_PROXY_PORT:-51080}"
     
     if timeout 5 curl -x "socks5://${host}:${port}" -s -o /dev/null -w "%{http_code}" "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null | grep -q "204\|200"; then
         echo "WORKING"
@@ -182,9 +219,9 @@ show_basic_status() {
     # Port status
     echo "Port Status:"
     echo "────────────"
-    echo "  HTTP Proxy  (${HTTP_PROXY_PORT:-3128}): $(check_port ${HTTP_PROXY_PORT:-3128})"
-    echo "  SOCKS Proxy (${SOCKS_PROXY_PORT:-1080}): $(check_port ${SOCKS_PROXY_PORT:-1080})"
-    echo "  Admin Panel (${PROXY_ADMIN_PORT:-8080}): $(check_port ${PROXY_ADMIN_PORT:-8080})"
+    echo "  HTTP Proxy  (${HTTP_PROXY_PORT:-53128}): $(check_port ${HTTP_PROXY_PORT:-53128})"
+    echo "  SOCKS Proxy (${SOCKS_PROXY_PORT:-51080}): $(check_port ${SOCKS_PROXY_PORT:-51080})"
+    echo "  Admin Panel (${PROXY_ADMIN_PORT:-58080}): $(check_port ${PROXY_ADMIN_PORT:-58080})"
     
     echo ""
     
@@ -204,6 +241,8 @@ show_basic_status() {
     echo "Cache Statistics:"
     echo "─────────────────"
     get_cache_stats
+    
+    show_network_access
     
     echo ""
     echo "════════════════════════════════════════════════════════════"
@@ -245,6 +284,8 @@ show_verbose_status() {
     echo "  Log Directory: ${LOG_DIR:-not set}"
     echo "  Log Level: ${LOG_LEVEL:-info}"
     echo "  Timezone: ${TZ:-UTC}"
+    
+    show_network_access
 }
 
 #######################################
@@ -267,21 +308,21 @@ show_json_status() {
         "http_proxy": {
             "container": "proxy-squid",
             "running": $squid_running,
-            "port": ${HTTP_PROXY_PORT:-3128},
-            "port_status": "$(check_port ${HTTP_PROXY_PORT:-3128})",
+            "port": ${HTTP_PROXY_PORT:-53128},
+            "port_status": "$(check_port ${HTTP_PROXY_PORT:-53128})",
             "connection_test": "$(test_http_proxy)"
         },
         "socks_proxy": {
             "container": "proxy-dante",
             "running": $dante_running,
-            "port": ${SOCKS_PROXY_PORT:-1080},
-            "port_status": "$(check_port ${SOCKS_PROXY_PORT:-1080})",
+            "port": ${SOCKS_PROXY_PORT:-51080},
+            "port_status": "$(check_port ${SOCKS_PROXY_PORT:-51080})",
             "connection_test": "$(test_socks_proxy)"
         },
         "admin": {
             "container": "proxy-admin",
             "running": $admin_running,
-            "port": ${PROXY_ADMIN_PORT:-8080}
+            "port": ${PROXY_ADMIN_PORT:-58080}
         },
         "vpn": {
             "container": "proxy-vpn",
@@ -294,6 +335,15 @@ show_json_status() {
         "vpn_enabled": ${USE_VPN:-false},
         "cache_dir": "${CACHE_DIR:-not set}",
         "log_level": "${LOG_LEVEL:-info}"
+    },
+    "network_access": {
+        "host_ip": "$(get_local_ip)",
+        "bind_address": "${BIND_ADDRESS:-0.0.0.0}",
+        "allowed_networks": "${ALLOWED_NETWORKS:-192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}",
+        "http_proxy": "http://$(get_local_ip):${HTTP_PROXY_PORT:-53128}",
+        "https_proxy": "http://$(get_local_ip):${HTTP_PROXY_PORT:-53128}",
+        "socks_proxy": "socks5://$(get_local_ip):${SOCKS_PROXY_PORT:-51080}",
+        "admin_panel": "http://$(get_local_ip):${PROXY_ADMIN_PORT:-58080}"
     }
 }
 EOF
