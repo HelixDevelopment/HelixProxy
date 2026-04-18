@@ -192,8 +192,7 @@ create_squid_config() {
 # Do not edit directly - use environment variables
 
 # Network Settings
-http_port ${HTTP_PROXY_PORT:-53128} accel vhost allow-direct
-http_port ${HTTP_PROXY_PORT:-53128} intercept
+http_port ${HTTP_PROXY_PORT:-53128}
 
 # Cache Directory Configuration
 cache_dir aufs /var/spool/squid ${cache_size_mb} 16 256
