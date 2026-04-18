@@ -197,6 +197,7 @@ services:
     profiles:
       - vpn
       - host-vpn
+      - no-vpn
     environment:
       - TZ=${TZ:-UTC}
     ports:

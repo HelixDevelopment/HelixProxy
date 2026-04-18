@@ -196,7 +196,7 @@ http_port ${HTTP_PROXY_PORT:-53128} accel vhost allow-direct
 http_port ${HTTP_PROXY_PORT:-53128} intercept
 
 # Cache Directory Configuration
-cache_dir aufs ${CACHE_DIR}/squid ${cache_size_mb} 16 256
+cache_dir aufs /var/spool/squid ${cache_size_mb} 16 256
 cache_mem ${cache_mem_mb} MB
 
 # Object Size Limits
