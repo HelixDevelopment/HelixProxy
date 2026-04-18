@@ -97,7 +97,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Squid standalone (no VPN, bridge network)
+  # Squid standalone (no VPN, host network)
   proxy-squid-standalone:
     image: docker.io/ubuntu/squid:latest
     container_name: proxy-squid
@@ -110,8 +110,7 @@ services:
       - ./config/squid/squid.conf:/etc/squid/squid.conf:ro
       - ${CACHE_DIR:-./cache}/squid:/var/spool/squid
       - ${LOG_DIR:-./logs}:/var/log/squid
-    ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}:${HTTP_PROXY_PORT:-53128}"
+    network_mode: host
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "squid", "-k", "check"]
@@ -134,10 +133,12 @@ services:
       - TZ=${TZ:-UTC}
     volumes:
       - ./config/dante/sockd.conf:/etc/dante/sockd.conf:ro
+      - ./scripts/dante-entrypoint.sh:/entrypoint.sh:ro
       - ${LOG_DIR:-./logs}:/var/log
+    entrypoint: ["/entrypoint.sh"]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pgrep", "sockd"]
+      test: ["CMD", "pidof", "sockd"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -157,11 +158,13 @@ services:
       - TZ=${TZ:-UTC}
     volumes:
       - ./config/dante/sockd.conf:/etc/dante/sockd.conf:ro
+      - ./scripts/dante-entrypoint.sh:/entrypoint.sh:ro
       - ${LOG_DIR:-./logs}:/var/log
+    entrypoint: ["/entrypoint.sh"]
     network_mode: host
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pgrep", "sockd"]
+      test: ["CMD", "pidof", "sockd"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -177,12 +180,14 @@ services:
       - TZ=${TZ:-UTC}
     volumes:
       - ./config/dante/sockd.conf:/etc/dante/sockd.conf:ro
+      - ./scripts/dante-entrypoint.sh:/entrypoint.sh:ro
       - ${LOG_DIR:-./logs}:/var/log
+    entrypoint: ["/entrypoint.sh"]
     ports:
       - "${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-51080}:${SOCKS_PROXY_PORT:-51080}"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pgrep", "sockd"]
+      test: ["CMD", "pidof", "sockd"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -200,8 +205,8 @@ services:
       - no-vpn
     environment:
       - TZ=${TZ:-UTC}
-    ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${PROXY_ADMIN_PORT:-58080}:80"
+    command: ["-port", "58080"]
+    network_mode: host
     restart: unless-stopped
 
   #############################################

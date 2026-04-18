@@ -307,10 +307,12 @@ logoutput: /var/log/sockd.log
 internal: ${bind_addr} port = ${socks_port}
 
 # External interface (outgoing connections)
-external: eth0
+# Use container name instead of interface name - resolves via internal DNS
+# in bridge networks where interface names are not resolvable
+external: proxy-dante
 
 # Authentication methods (none for simplicity)
-method: none
+socksmethod: none
 
 # Access Rules - allow all local and private network clients
 client pass {
@@ -318,7 +320,7 @@ client pass {
 }
 
 # Allow outgoing connections to any destination
-pass {
+socks pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
 }
 EOF
