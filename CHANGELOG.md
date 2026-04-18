@@ -5,6 +5,49 @@ All notable changes to the Proxy Service project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Planned
+- HTTPS inspection (MITM) for HTTPS caching
+- WireGuard VPN support
+- Web-based configuration UI
+- Metrics and monitoring (Prometheus)
+- Load balancing support
+- Multiple VPN server support
+- Custom DNS blocklists
+- Ad blocking integration
+
+## [1.1.0] - 2026-04-18
+
+### Added
+- Comprehensive device setup documentation
+  - `docs/CLIENT_SETUP.md` - Complete guide for desktops, browsers, mobiles, gaming consoles, smart TVs, NAS, IoT, and per-app proxy
+  - `docs/ANDROID_TV.md` - Detailed Android TV / Google TV setup with Wi-Fi proxy, per-app SOCKS5, ADB global proxy, and troubleshooting
+  - `docs/BROWSERS.md` - Browser-specific proxy configuration (Firefox, Chrome, Edge, Brave, Safari, Opera, Vivaldi, Tor)
+  - `docs/MOBILE_DEVICES.md` - iOS and Android setup with per-app proxy and third-party proxy apps
+- Dynamic Dante entrypoint script (`scripts/dante-entrypoint.sh`) for automatic external IP detection across all network modes
+
+### Fixed
+- Dante SOCKS5 proxy failing in rootless Podman bridge networking
+  - Changed `external: eth0` to dynamic hostname/IP resolution
+  - Switched `proxy-dante-standalone` from host networking to bridge with published ports
+  - Updated deprecated Dante config keywords (`method` → `socksmethod`, `pass` → `socks pass`)
+- Squid HTTP proxy returning 403/invalid responses for HTTPS CONNECT requests
+  - Changed from reverse proxy (`accel vhost`) to standard forward proxy mode
+  - Restores Android TV "connected, no internet" fix
+- Dante healthcheck using `pgrep` which is not available in the `vimagick/dante` image
+  - Changed to `pidof` which is available
+- Admin panel HTML showing incorrect ports (`553128` instead of `53128`, `551080` instead of `51080`)
+- All documentation updated to use correct 5xxxx port range consistently
+
+### Changed
+- `proxy-dante-standalone` now uses bridge networking with port publishing instead of `network_mode: host`
+- All three Dante services (`proxy-dante`, `proxy-dante-host`, `proxy-dante-standalone`) now mount the dynamic entrypoint
+- Port numbers standardized across all configs and documentation:
+  - HTTP Proxy: 53128
+  - SOCKS5 Proxy: 51080
+  - Admin Panel: 58080
+
 ## [1.0.0] - 2024-03-26
 
 ### Added
@@ -77,15 +120,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Port availability checks
 - Cache functionality tests
 - VPN configuration tests
-
-## [Unreleased]
-
-### Planned
-- HTTPS inspection (MITM) for HTTPS caching
-- WireGuard VPN support
-- Web-based configuration UI
-- Metrics and monitoring (Prometheus)
-- Load balancing support
-- Multiple VPN server support
-- Custom DNS blocklists
-- Ad blocking integration
