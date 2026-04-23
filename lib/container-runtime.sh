@@ -12,8 +12,14 @@ if [[ -z "${SCRIPT_DIR:-}" ]]; then
 fi
 
 # Only set PROJECT_ROOT if not already set
+# When SCRIPT_DIR is pre-set by a calling script (start/init), it IS the project root.
+# When auto-set by this file, SCRIPT_DIR is the lib/ directory and PROJECT_ROOT is one level up.
 if [[ -z "${PROJECT_ROOT:-}" ]]; then
-    readonly PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    if [[ "$(basename "$SCRIPT_DIR")" == "lib" ]]; then
+        readonly PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    else
+        readonly PROJECT_ROOT="$SCRIPT_DIR"
+    fi
 fi
 
 #######################################
@@ -173,6 +179,14 @@ load_environment() {
     
     export CACHE_DIR="${CACHE_DIR:-$PROJECT_ROOT/cache}"
     export LOG_DIR="${LOG_DIR:-$PROJECT_ROOT/logs}"
+
+    # Resolve relative paths to absolute against PROJECT_ROOT
+    if [[ "${CACHE_DIR}" != /* ]]; then
+        CACHE_DIR="$PROJECT_ROOT/$CACHE_DIR"
+    fi
+    if [[ "${LOG_DIR}" != /* ]]; then
+        LOG_DIR="$PROJECT_ROOT/$LOG_DIR"
+    fi
     export HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-53128}"
     export SOCKS_PROXY_PORT="${SOCKS_PROXY_PORT:-51080}"
     export PROXY_ADMIN_PORT="${PROXY_ADMIN_PORT:-58080}"
