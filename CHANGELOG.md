@@ -17,6 +17,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Custom DNS blocklists
 - Ad blocking integration
 
+## [1.2.0] - 2026-04-23
+
+### Added
+- Explicit IPv4 binding for Squid HTTP proxy (`http_port 0.0.0.0:53128`)
+  - Forces Squid to listen on IPv4 instead of default IPv6-only
+  - Enables rootlessport to forward IPv4 traffic from host to container
+  - Restores LAN accessibility for the HTTP proxy
+- Published port mapping for `proxy-squid-standalone` in docker-compose.yml
+  - Switched from `network_mode: host` to bridge networking with explicit ports
+  - Uses `${HTTP_PROXY_PORT}` environment variable for configurable port
+  - Consistent with existing `proxy-dante-standalone` networking pattern
+
+### Fixed
+- Squid HTTP proxy unreachable from LAN in rootless Podman
+  - Rootlessport could not forward IPv4 traffic to Squid's IPv6-only socket
+  - Changed `http_port 53128` to `http_port 0.0.0.0:53128` for IPv4 binding
+- `PROJECT_ROOT` computation failing when `SCRIPT_DIR` is pre-set by caller
+  - Unconditional `cd ..` went one level too high after scripts pre-set SCRIPT_DIR
+  - Caused `LOG_DIR`/`CACHE_DIR` to resolve to incorrect paths
+  - Added relative-to-absolute path resolution in `load_environment` for robustness
+
+### Changed
+- `proxy-squid-standalone` now uses bridge networking with port publishing instead of `network_mode: host`
+  - Consistent with `proxy-dante-standalone` networking model
+  - Enables proper port mapping for rootless Podman environments
+
 ## [1.1.0] - 2026-04-18
 
 ### Added
