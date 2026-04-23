@@ -110,7 +110,8 @@ services:
       - ./config/squid/squid.conf:/etc/squid/squid.conf:ro
       - ${CACHE_DIR:-./cache}/squid:/var/spool/squid
       - ${LOG_DIR:-./logs}:/var/log/squid
-    network_mode: host
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}:${HTTP_PROXY_PORT:-53128}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "squid", "-k", "check"]
