@@ -2,3 +2,15 @@
 	path = constitution
 	url = git@github.com:HelixDevelopment/HelixConstitution.git
 	branch = main
+[submodule "submodules/docs_chain"]
+	path = submodules/docs_chain
+	url = git@github.com:vasic-digital/docs_chain.git
+[submodule "submodules/challenges"]
+	path = submodules/challenges
+	url = git@github.com:vasic-digital/Challenges.git
+[submodule "submodules/helix_qa"]
+	path = submodules/helix_qa
+	url = git@github.com:HelixDevelopment/HelixQA.git
+[submodule "submodules/containers"]
+	path = submodules/containers
+	url = git@github.com:vasic-digital/containers.git
