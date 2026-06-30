@@ -1,0 +1,11 @@
+# Go build outputs / artifacts (regenerable — §11.4.30 / §11.4.77).
+/out/
+/dist/
+/bin/
+*.exe
+*.test
+*.out
+
+# Go workspace + local caches.
+go.work
+go.work.sum

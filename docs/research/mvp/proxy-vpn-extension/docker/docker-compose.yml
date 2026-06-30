@@ -1,0 +1,38 @@
+# ⚠️ REFERENCE ONLY — research scaffold, NOT production.
+# Superseded by the production design: see
+#   docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md (§5, §6, §12, §17).
+# This file uses plaintext creds (proxy:proxy), `privileged: true` and host
+# networking for illustration; production MUST use rootless Podman (§11.4.161),
+# Podman-secret refs (§11.4.10), and the vasic-digital/containers submodule
+# orchestration (§11.4.76). Do NOT deploy this compose as-is.
+version: '3.9'
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: proxy
+      POSTGRES_USER: proxy
+      POSTGRES_PASSWORD: proxy
+    ports: ["5432:5432"]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  proxy:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.proxy
+    network_mode: host
+    depends_on: [postgres, redis]
+    environment:
+      DB_DSN: "postgres://proxy:proxy@localhost:5432/proxy?sslmode=disable"
+      REDIS_ADDR: "localhost:6379"
+  vpn-manager:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.vpn-manager
+    network_mode: host
+    privileged: true
+    cap_add: [NET_ADMIN, SYS_MODULE]
+    environment:
+      DB_DSN: "postgres://proxy:proxy@localhost:5432/proxy?sslmode=disable"
+      REDIS_ADDR: "localhost:6379"

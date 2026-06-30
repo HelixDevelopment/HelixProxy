@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vpn-client
+spec:
+  selector:
+    matchLabels:
+      app: vpn-client
+  template:
+    metadata:
+      labels:
+        app: vpn-client
+    spec:
+      hostNetwork: true
+      containers:
+      - name: wireguard
+        image: your-registry/vpn-manager:latest
+        securityContext:
+          privileged: true
+          capabilities:
+            add: ["NET_ADMIN", "SYS_MODULE"]
+        env:
+        - name: DB_DSN
+          valueFrom:
+            secretKeyRef:
+              name: proxy-secret
+              key: db-dsn
+        - name: REDIS_ADDR
+          value: "redis-service:6379"

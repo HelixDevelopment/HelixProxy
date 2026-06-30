@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant C as Consumer
+    participant P as Proxy
+    participant R as Redis
+    participant V as VPN Manager
+    participant T as Target Host
+
+    Note over V,T: Initially VPN tunnel UP
+    C->>P: GET /service-a
+    P->>R: GET vpn:status:profile-1
+    R-->>P: "up"
+    P->>T: Forward request
+    T-->>P: Response
+    P-->>C: 200 OK
+
+    Note over V: VPN goes down
+    V->>R: SET vpn:status:profile-1 "down"
+    V->>R: PUBLISH vpn:events {"status":"down"}
+
+    C->>P: GET /service-a
+    P->>R: GET vpn:status:profile-1
+    R-->>P: "down"
+    P-->>C: 503 VPN Unavailable
+
+    Note over V: VPN reconnects
+    V->>R: SET vpn:status:profile-1 "up"
+    V->>R: PUBLISH vpn:events {"status":"up"}
+
+    C->>P: GET /service-a
+    P->>R: GET vpn:status:profile-1
+    R-->>P: "up"
+    P->>T: Forward request
+    T-->>P: Response
+    P-->>C: 200 OK

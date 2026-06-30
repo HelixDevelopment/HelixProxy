@@ -1,0 +1,9 @@
+FROM golang:1.21-alpine AS builder
+WORKDIR /app
+COPY . .
+RUN CGO_ENABLED=0 go build -o /vpn-manager ./cmd/vpn-manager
+
+FROM alpine:3.19
+RUN apk add --no-cache wireguard-tools
+COPY --from=builder /vpn-manager /usr/local/bin/vpn-manager
+ENTRYPOINT ["/usr/local/bin/vpn-manager"]

@@ -1,0 +1,65 @@
+erDiagram
+    vpn_profiles ||--o{ target_hosts : "default tunnel (SET NULL)"
+    vpn_profiles ||--o{ target_tunnel_tiers : "tier member (CASCADE)"
+    target_hosts ||--o{ target_tunnel_tiers : "failover chain (CASCADE)"
+    target_hosts ||--o{ proxy_rules : "selected by (CASCADE)"
+
+    vpn_profiles {
+        UUID id PK "uuid_generate_v4()"
+        VARCHAR name UK "NOT NULL; Redis key + cache_peer name"
+        VARCHAR type "NOT NULL; CHECK wireguard|openvpn|legacy"
+        JSONB config "NOT NULL; non-secret params only"
+        VARCHAR secret_ref "Podman secret name (NEVER plaintext)"
+        BOOLEAN enabled "NOT NULL DEFAULT true"
+        TIMESTAMPTZ created_at "NOT NULL DEFAULT now()"
+        TIMESTAMPTZ updated_at "NOT NULL; set_updated_at trigger"
+    }
+
+    target_hosts {
+        UUID id PK "uuid_generate_v4()"
+        VARCHAR public_alias UK "NOT NULL; client-facing hostname"
+        INET private_ip "NOT NULL; dest inside VPN (v4/v6)"
+        INTEGER port "NOT NULL DEFAULT 80; CHECK 1-65535"
+        VARCHAR protocol "NOT NULL; CHECK http|https|tcp|socks5"
+        UUID vpn_profile_id FK "ON DELETE SET NULL"
+        VARCHAR health_check "data-plane probe spec"
+        BOOLEAN enabled "NOT NULL DEFAULT true"
+        TIMESTAMPTZ created_at "NOT NULL DEFAULT now()"
+        TIMESTAMPTZ updated_at "NOT NULL; set_updated_at trigger"
+    }
+
+    target_tunnel_tiers {
+        UUID target_host_id PK,FK "ON DELETE CASCADE"
+        INTEGER tier PK "CHECK >= 0; 0 = primary"
+        UUID vpn_profile_id FK "ON DELETE CASCADE; UNIQUE per target"
+        TIMESTAMPTZ created_at "NOT NULL DEFAULT now()"
+    }
+
+    proxy_rules {
+        UUID id PK "uuid_generate_v4()"
+        INTEGER priority "NOT NULL DEFAULT 0; eval DESC"
+        VARCHAR match_host "Host predicate (NULL = any)"
+        VARCHAR match_path "Path predicate (NULL = any)"
+        UUID target_host_id FK "ON DELETE CASCADE"
+        BOOLEAN enabled "NOT NULL DEFAULT true"
+        TIMESTAMPTZ created_at "NOT NULL DEFAULT now()"
+        TIMESTAMPTZ updated_at "NOT NULL; set_updated_at trigger"
+    }
+
+    proxy_users {
+        UUID id PK "uuid_generate_v4()"
+        VARCHAR username UK "NOT NULL"
+        VARCHAR secret_ref "NOT NULL; Podman secret name (NEVER plaintext)"
+        VARCHAR role "NOT NULL; CHECK admin|user"
+        BOOLEAN enabled "NOT NULL DEFAULT true"
+        TIMESTAMPTZ created_at "NOT NULL DEFAULT now()"
+        TIMESTAMPTZ updated_at "NOT NULL; set_updated_at trigger"
+    }
+
+    audit_log {
+        BIGINT id PK "GENERATED ALWAYS AS IDENTITY"
+        TIMESTAMPTZ ts "NOT NULL DEFAULT now()"
+        VARCHAR actor "NOT NULL"
+        VARCHAR action "NOT NULL"
+        JSONB detail "NOT NULL; no secrets"
+    }

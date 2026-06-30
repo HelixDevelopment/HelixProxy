@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      hostNetwork: true
+      containers:
+      - name: proxy
+        image: your-registry/proxy:latest
+        env:
+        - name: DB_DSN
+          valueFrom:
+            secretKeyRef:
+              name: proxy-secret
+              key: db-dsn
+        - name: REDIS_ADDR
+          value: "redis-service:6379"
+        ports:
+        - containerPort: 8080
+          hostPort: 8080

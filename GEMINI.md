@@ -1,21 +1,24 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working
-with code in this repository (Proxy).
+This file provides guidance to Gemini CLI (and Gemini-family CLI
+agents) when working with code in this repository (Proxy).
 
-## INHERITED FROM constitution/CLAUDE.md
+## INHERITED FROM constitution/GEMINI.md
 
-All rules in `constitution/CLAUDE.md` (and the
+All rules in `constitution/GEMINI.md` (and the
 `constitution/Constitution.md` it references) apply unconditionally.
 Project-specific rules below extend them — they do NOT weaken any
 universal clause. When this file disagrees with the constitution
-submodule, the constitution wins. The constitution submodule's three
-files (`constitution/Constitution.md`, `constitution/CLAUDE.md`,
-`constitution/AGENTS.md`) are the canonical root (Helix Constitution
-§11.4.35). Locate it from any nested depth via
-`constitution/find_constitution.sh`.
+submodule, the constitution wins. The constitution submodule's
+governance files (`constitution/Constitution.md`,
+`constitution/CLAUDE.md`, `constitution/AGENTS.md`,
+`constitution/QWEN.md`, `constitution/GEMINI.md`) are the canonical
+root (Helix Constitution §11.4.35). Per §11.4.157, `GEMINI.md` is a
+first-class governance carrier maintained in lockstep with `CLAUDE.md`
+/ `AGENTS.md` / `QWEN.md`. Locate the submodule from any nested depth
+via `constitution/find_constitution.sh`.
 
-@constitution/CLAUDE.md
+@constitution/GEMINI.md
 
 ---
 
@@ -57,10 +60,10 @@ files (`constitution/Constitution.md`, `constitution/CLAUDE.md`,
 4. **Health & Observability.** Every service MUST expose health
    endpoints. Circuit breakers for all external dependencies.
    Prometheus / OpenTelemetry integration where applicable.
-5. **Documentation & Quality.** Update `CLAUDE.md`, `AGENTS.md`, and
-   relevant docs alongside code changes. Pass language-appropriate
-   format/lint/security gates. Conventional Commits:
-   `<type>(<scope>): <description>`.
+5. **Documentation & Quality.** Update `CLAUDE.md`, `AGENTS.md`,
+   `QWEN.md`, `GEMINI.md`, and relevant docs alongside code changes.
+   Pass language-appropriate format/lint/security gates. Conventional
+   Commits: `<type>(<scope>): <description>`.
 6. **Validation Before Release.** Pass the project's full validation
    suite (`make ci-validate-all`-equivalent) plus all challenges
    (`./challenges/scripts/run_all_challenges.sh`).
@@ -210,4 +213,3 @@ bash challenges/scripts/host_no_auto_suspend_challenge.sh   # host hardened
 Both must PASS.
 
 <!-- END host-power-management addendum (CONST-033) -->
-

@@ -415,6 +415,57 @@ session as the change.
 - **Evidence in the PR.** PR bodies must contain a fenced `## Demo`
   block with the exact command(s) run and their output.
 
+## MANDATORY ANTI-BLUFF COVENANT — END-USER QUALITY GUARANTEE
+
+**Forensic anchor — verbatim user mandate (2026-04-28):**
+
+> "We had been in position that all tests do execute with success and
+> all Challenges as well, but in reality the most of the features does
+> not work and can't be used! This MUST NOT be the case and execution
+> of tests and Challenges MUST guarantee the quality, the completion
+> and full usability by end users of the product!"
+
+This is the historical origin of the project's anti-bluff covenant.
+Every test, every Challenge, every gate, every mutation pair exists to
+make the failure mode (PASS on a broken-for-end-user feature)
+mechanically impossible.
+
+**Operative rule:** the bar for shipping is **not** "tests pass" but
+**"users can use the feature."** Every PASS MUST carry positive
+evidence captured during execution that the feature works for the end
+user. Metadata-only PASS, configuration-only PASS, "absence-of-error"
+PASS, and grep-based PASS without runtime evidence are all critical
+defects regardless of how green the summary line looks.
+
+Tests AND Challenges (HelixQA, integration suites, smoke tests,
+acceptance suites) are bound equally — a Challenge that scores PASS on
+a non-functional feature is the same class of defect as a unit test
+that does.
+
+**Canonical authority:** `constitution/Constitution.md` §11.4 and its
+sub-sections §11.4.1 through §11.4.16 (and the full §11.4.x covenant
+family). Non-compliance is a release blocker regardless of context.
+
+## MANDATORY FULL-DOCUMENTATION SYNC
+
+All project documentation — main docs under `docs/`, user manuals,
+guides, schemes, diagrams, graphs, SQL definitions, and every other
+definition or specification — MUST be kept in sync at all times and
+exported into the constitution-mandated formats (`.md` + `.html` +
+`.pdf`, plus `.docx` where the doc class requires it). No document may
+drift behind the working tree: a stale export is a §11.4.60 violation
+of the same severity class as a §11.4 PASS-bluff at the documentation
+layer.
+
+This sync is bound by the **docs_chain** submodule, the canonical
+mechanical enforcer (§11.4.106) — ad-hoc per-project sync scripts are
+superseded. The composite always-sync covenant (§11.4.60) and the
+universal Markdown export mandate (§11.4.65) govern which documents
+are in scope and the formats they ship in.
+
+**Canonical authority:** `constitution/Constitution.md` §11.4.106 /
+§11.4.60 / §11.4.65. Non-compliance is a release blocker.
+
 <!-- BEGIN host-power-management addendum (CONST-033) -->
 
 ## Host Power Management — Hard Ban (CONST-033)

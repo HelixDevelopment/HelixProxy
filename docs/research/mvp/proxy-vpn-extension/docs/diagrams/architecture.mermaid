@@ -1,0 +1,9 @@
+graph TD
+    Client(External Client) -->|HTTP| Proxy[Proxy Pod/Container<br/>Gin + Host Network]
+    Proxy -->|1. Lookup Route| DB[(PostgreSQL)]
+    Proxy -->|2. Check VPN Status| R[(Redis)]
+    Proxy -->|3a. Direct Dial (VPN up)| Target[Private Host<br/>via VPN Tunnel]
+    Proxy -->|3b. Return 503 (VPN down)| Client
+    VPNMgr[VPN Manager Pod/DaemonSet] -->|Manages Tunnels| Kernel{Routing Table}
+    VPNMgr -->|Publishes State| R
+    Kernel -.->|Routes traffic| Target
