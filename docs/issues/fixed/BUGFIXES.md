@@ -384,3 +384,73 @@ pre-existing guards still PASS.
 > the control-API there.
 
 Evidence: `qa-results/p8/`, `qa-results/regression/portstopology/`.
+
+---
+
+## BUGFIX-0005 — `final-verify.sh` + `verify-proxy.sh` greened a NO-VPN config (false-VPN-routing §15 bluff) + aborted under `set -e`
+
+- **Type:** Bug (anti-bluff — false-VPN-routing §15 + §11.4.1 script-abort)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `tests/final-verify.sh` (audit B5), `tests/verify-proxy.sh`
+  (audit B6)
+- **Bluff audit:** `docs/research/existing_test_bluffs_audit/README.md` (B5, B6)
+- **Future guard:** the standing `assert_egress_ip` invocation (live RED/GREEN
+  at P10, §11.4.135) — SKIPs honestly until a real tunnel + `VPN_EXIT_IP` exists.
+- **Workable item:** #49 (P8b)
+
+### Symptom & root cause (FACT — §11.4.6)
+
+Both scripts declared `VPN routing verified` **PASS** when the egress IP seen
+THROUGH the proxy EQUALS the host's real direct IP (`host_ip == proxy_ip`). That
+equality is PROOF traffic was **NOT** routed through any VPN — both paths exit
+the same address — so the test greened the exact no-VPN configuration it claimed
+to forbid (the §15 bluff; `verify-proxy.sh:46`'s comment literally encoded the
+wrong invariant "proxy uses same IP as host"). Neither compared against an
+EXPECTED tunnel-exit IP. Additionally both `test_pass`/`test_fail` used
+`((PASS++))`/`((FAIL++))`, which returns exit 1 when the counter is 0 and aborts
+the script under `set -euo pipefail` (the §11.4.1 class of BUGFIX-0001/B4) — so
+the VPN block was unreachable until that was fixed too.
+
+### Fix (at source)
+
+Remove the egress==host PASS entirely; assert the real data-plane contract via
+`evidence.sh`: egress through the proxy must equal the EXPECTED tunnel exit AND
+differ from the host IP; absent a configured `VPN_EXIT_IP` (no tunnel yet) emit
+an honest §11.4.3 SKIP (`operator_attended`) — never a fabricated PASS.
+`((PASS++))`/`((FAIL++))` → assignment form (`PASS=$((PASS + 1))`), matching the
+run-tests.sh §11.4.1 fix.
+
+```diff
+- [[ "$host_ip" == "$proxy_ip" && "$host_ip" != "unknown" ]] && test_pass "VPN routing verified"
++ . "$SCRIPT_DIR/lib/evidence.sh"
++ if [[ -n "${VPN_EXIT_IP:-}" ]]; then
++     assert_egress_ip "http://localhost:${HTTP_PROXY_PORT}" "$VPN_EXIT_IP" "$host_ip" \
++         && test_pass "VPN routing (egress=$VPN_EXIT_IP, != host)" || test_fail "..."
++ else
++     ab_skip_with_reason "VPN routing (egress == expected tunnel exit, != host)" "operator_attended"
++ fi
+```
+
+### Verification (captured, run in-session after the fix)
+
+```
+# Both run to completion vs the running proxy — connectivity PASS, VPN SKIP:
+$ bash tests/final-verify.sh   -> Passed: 4 Failed: 0, exit 0
+  SKIP: VPN routing (egress == expected tunnel exit, != host) [reason: operator_attended]
+$ bash tests/verify-proxy.sh   -> Passed: 4 Failed: 0, exit 0
+
+# Inverse anti-bluff proof (the §15 condition the OLD code GREENed): set
+# VPN_EXIT_IP to the host's real IP (no tunnel => egress == host) — new code REDs:
+$ VPN_EXIT_IP=<host real ip> bash tests/final-verify.sh
+  FAIL: assert_egress_ip [reason: egress IP <host> == host real IP — traffic NOT routed via VPN (§15 bluff)]
+  Failed: 1, exit 1
+```
+
+The live VPN-routing GREEN (egress == real tunnel exit, != host) requires a real
+tunnel + `VPN_EXIT_IP` and is deferred to P10; until then the corrected
+assertion SKIPs honestly. `bash -n` clean both files. Reviewed independently by
+the conductor (§11.4.142): diffs, both runs, the inverse proof, parse — all
+verified against the real tree before commit.
+
+Evidence: `qa-results/p8b/`.

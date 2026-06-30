@@ -22,8 +22,12 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 
-test_pass() { echo -e "${GREEN}✓${NC} $1"; ((PASS++)); }
-test_fail() { echo -e "${RED}✗${NC} $1"; ((FAIL++)); }
+# §11.4.1 enabler: assignment form, NOT (( PASS++ )) / (( FAIL++ )). Under
+# `set -e` a post-increment whose prior value is 0 evaluates the (( )) to 0,
+# which returns exit status 1 and aborts the whole script before the VPN check
+# is ever reached. (Same fix the sibling run-tests.sh already adopted.)
+test_pass() { echo -e "${GREEN}✓${NC} $1"; PASS=$((PASS + 1)); }
+test_fail() { echo -e "${RED}✗${NC} $1"; FAIL=$((FAIL + 1)); }
 
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -67,14 +71,27 @@ else
     test_fail "HTTPS through SOCKS5 (code: $code)"
 fi
 
-# 5. VPN Routing
+# 5. VPN Routing — §11.4.69 data-plane egress proof (anti-bluff audit B5).
+#    OLD BLUFF (removed): host_ip == proxy_ip => test_pass "VPN routing verified".
+#    That equality PROVES traffic was NOT routed via any VPN — the host's direct
+#    egress and the proxy's egress exit the SAME uplink address. The decisive
+#    proof (evidence.sh assert_egress_ip / design §15) requires the egress IP
+#    seen THROUGH the proxy to EQUAL the expected tunnel exit AND DIFFER from the
+#    host's real IP. Absent a live tunnel (VPN_EXIT_IP unset) we SKIP honestly
+#    (§11.4.3) — we do NOT fabricate a VPN PASS; the live RED/GREEN proof is
+#    deferred to P10 (needs a real tunnel + VPN_EXIT_IP).
 echo "Verifying VPN routing..."
-host_ip=$(curl -s -4 --max-time 15 https://ifconfig.me 2>/dev/null || echo "unknown")
-proxy_ip=$(curl -s -4 --max-time 15 --proxy http://localhost:${HTTP_PROXY_PORT} https://ifconfig.me 2>/dev/null || echo "unknown")
-if [[ "$host_ip" == "$proxy_ip" && "$host_ip" != "unknown" ]]; then
-    test_pass "VPN routing verified (IP: $host_ip)"
+. "$SCRIPT_DIR/lib/evidence.sh"
+EXPECTED_EXIT_IP="${VPN_EXIT_IP:-}"
+if [[ -n "$EXPECTED_EXIT_IP" ]]; then
+    host_ip=$(curl -s -4 --max-time 15 https://ifconfig.me 2>/dev/null || echo "unknown")
+    if assert_egress_ip "http://localhost:${HTTP_PROXY_PORT}" "$EXPECTED_EXIT_IP" "$host_ip"; then
+        test_pass "VPN routing (egress=$EXPECTED_EXIT_IP, != host $host_ip)"
+    else
+        test_fail "VPN routing (egress not expected exit $EXPECTED_EXIT_IP, or == host)"
+    fi
 else
-    test_fail "VPN routing (host: $host_ip, proxy: $proxy_ip)"
+    ab_skip_with_reason "VPN routing (egress == expected tunnel exit, != host)" "operator_attended"
 fi
 
 # Summary
