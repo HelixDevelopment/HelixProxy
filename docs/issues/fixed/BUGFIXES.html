@@ -420,5 +420,94 @@ Via: 1.1 proxy-squid (squid/6.13)
 1782858066.886  189 10.89.1.249 TCP_MISS/200 951 GET http://example.com/ - HIER_DIRECT/104.20.23.154 text/html
 $ podman ps  -&gt;  proxy-squid  Up (healthy)</code></pre>
 <p>Evidence: <code>qa-results/regression/bugfix38/</code>.</p>
+<hr />
+<h2
+id="bugfix-0003-testsrun-tests.sh-aborts-mid-suite-on-a-no-message-fail-set--e-29-of-39-tests-silently-never-ran">BUGFIX-0003
+— <code>tests/run-tests.sh</code> aborts mid-suite on a no-message FAIL
+(<code>set -e</code>); ~29 of 39 tests silently never ran</h2>
+<ul>
+<li><strong>Type:</strong> Bug (script-internal failure — §11.4.1;
+sibling of BUGFIX-0001)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected file:</strong> <code>tests/run-tests.sh</code>
+(<code>test_result()</code>)</li>
+<li><strong>Regression guard:</strong>
+<code>tests/regression/test_result_returns_zero_test.sh</code>
+(§11.4.135, §11.4.115 <code>RED_MODE</code> polarity)</li>
+</ul>
+<h3 id="symptom-2">Symptom</h3>
+<p><code>bash tests/run-tests.sh</code> printed only ~10 results then
+stopped — no <code>TEST SUMMARY</code>, exit 1. The Directory / Config /
+Compose / Runtime / Port / Cache / VPN / Service-startup groups after
+the first FAIL never ran, so the suite <em>appeared</em> to run while
+actually exercising under a third of its tests and hiding real
+failures.</p>
+<h3
+id="reproduction-captured-run-in-session-before-the-fix-11.4.115-red-1">Reproduction
+(captured, run in-session before the fix — §11.4.115 RED)</h3>
+<pre><code># Extract the pre-fix test_result and call it with a no-message FAIL under set -e:
+$ bash -c &#39;set -euo pipefail; &lt;test_result&gt;; test_result &quot;x&quot; &quot;FAIL&quot;; echo SURVIVED&#39;
+✗ FAIL: x
+# exit=1 — &quot;SURVIVED&quot; never printed (the function returned 1 and aborted)
+
+$ RED_MODE=1 tests/regression/test_result_returns_zero_test.sh
+[PASS] RED reproduced: pre-fix test_result aborts under set -e on a no-message FAIL</code></pre>
+<h3 id="root-cause-fact-not-a-guess-11.4.6-1">Root cause (FACT — not a
+guess, §11.4.6)</h3>
+<p><code>test_result()</code>’s FAIL branch ended on
+<code>[[ -n "$message" ]] &amp;&amp; echo -e "  → $message"</code>. When
+<code>message</code> is empty (every
+<code>test_result "..." "FAIL"</code> call with no third argument), the
+<code>[[ -n "$message" ]]</code> test is false, the
+<code>&amp;&amp;</code> list short-circuits, and the list — the
+<strong>last command of the function</strong> — returns exit status
+<strong>1</strong>. When such a <code>test_result</code> is the last
+command executed in a test function (e.g. the final
+<code>"Upstreams"</code> iteration of <code>test_directories</code>’s
+<code>for</code> loop, where the dir is absent → FAIL), that function
+returns 1, and under <code>set -euo pipefail</code> <code>main()</code>
+aborts immediately — every later test group and the summary never run.
+This is the same §11.4.1 class as BUGFIX-0001 (a reporting helper
+leaking a non-zero status into control flow), a <em>different</em> site
+(<code>test_result</code>’s tail, not the <code>(( ++ ))</code>
+counter), so BUGFIX-0001’s fix did not cover it.</p>
+<h3 id="fix-at-source-11.4.1">Fix (at source, §11.4.1)</h3>
+<p><code>test_result</code> is a reporting helper; its exit status must
+never gate control flow. Append an explicit <code>return 0</code>:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>         [[ -n &quot;$message&quot; ]] &amp;&amp; echo -e &quot;  ${YELLOW}→ $message${NC}&quot;</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>     fi</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">+    return 0</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a> }</span></code></pre></div>
+<h3
+id="verification-captured-run-in-session-after-the-fix-2">Verification
+(captured, run in-session after the fix)</h3>
+<pre><code># §11.4.115 GREEN (real fixed test_result survives a no-message FAIL):
+$ tests/regression/test_result_returns_zero_test.sh
+[PASS] GREEN: real test_result returns 0 on a no-message FAIL
+
+# Full suite now runs to completion (was 32 lines, aborted):
+$ bash tests/run-tests.sh   # 82 lines, reaches TEST SUMMARY
+Tests Run:    41
+Tests Passed: 34
+Tests Failed: 7</code></pre>
+<p><strong>§1.1 paired mutation (guard is not a tautology):</strong>
+deleting the <code>return 0</code> re-introduced the abort → the GREEN
+guard <strong>FAILed</strong>
+(<code>REGRESSION: test_result aborts the suite …</code>, exit 1);
+<code>tests/run-tests.sh</code> was restored byte-identical (md5
+<code>7c2bab18c4566d081b1c8aa7a9a412e0</code> before == after) and the
+guard PASSed again.</p>
+<blockquote>
+<p><strong>Follow-up (separate, tracked):</strong> with the abort fixed,
+the suite now honestly reports <strong>7 pre-existing FAILs</strong>
+(e.g. <code>Directory Upstreams</code>) that the abort had been masking.
+These are real existing-system findings to triage — not regressions from
+this fix, but newly <em>visible</em> because the suite finally runs to
+completion.</p>
+</blockquote>
+<p>Evidence: <code>qa-results/regression/bugfix0003/</code>.</p>
 </body>
 </html>

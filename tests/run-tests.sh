@@ -44,6 +44,16 @@ test_result() {
         echo -e "${RED}✗ FAIL${NC}: $name"
         [[ -n "$message" ]] && echo -e "  ${YELLOW}→ $message${NC}"
     fi
+
+    # BUGFIX-0003 (§11.4.1, sibling of BUGFIX-0001): test_result is a REPORTING
+    # helper — its exit status must never gate control flow. Without this, a
+    # FAIL with no message ends on the `[[ -n "$message" ]] &&` short-circuit,
+    # which returns 1; when that test_result is the LAST command of a test
+    # function (e.g. the final dir in test_directories' loop), the function
+    # returns 1 and `set -e` aborts the whole suite mid-run — most tests never
+    # execute and no summary prints. Always return 0. Guard:
+    # tests/regression/test_result_returns_zero_test.sh.
+    return 0
 }
 
 #######################################
@@ -370,6 +380,22 @@ test_regression_guards() {
         test_result "BUGFIX-0002 squid log-dir RED reproduces" "PASS"
     else
         test_result "BUGFIX-0002 squid log-dir RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # BUGFIX-0003 — GREEN guard: test_result must return 0 (no set -e suite abort).
+    if bash "$SCRIPT_DIR/regression/test_result_returns_zero_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0003 test_result returns 0 (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0003 test_result returns 0 (GREEN)" "FAIL" \
+            "run: bash tests/regression/test_result_returns_zero_test.sh"
+    fi
+
+    # BUGFIX-0003 — RED self-check: pre-fix replica must abort under set -e.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/test_result_returns_zero_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0003 test_result RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0003 test_result RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
 }

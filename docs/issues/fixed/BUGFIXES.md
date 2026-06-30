@@ -187,3 +187,91 @@ $ podman ps  ->  proxy-squid  Up (healthy)
 ```
 
 Evidence: `qa-results/regression/bugfix38/`.
+
+---
+
+## BUGFIX-0003 — `tests/run-tests.sh` aborts mid-suite on a no-message FAIL (`set -e`); ~29 of 39 tests silently never ran
+
+- **Type:** Bug (script-internal failure — §11.4.1; sibling of BUGFIX-0001)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected file:** `tests/run-tests.sh` (`test_result()`)
+- **Regression guard:** `tests/regression/test_result_returns_zero_test.sh`
+  (§11.4.135, §11.4.115 `RED_MODE` polarity)
+
+### Symptom
+
+`bash tests/run-tests.sh` printed only ~10 results then stopped — no
+`TEST SUMMARY`, exit 1. The Directory / Config / Compose / Runtime / Port
+/ Cache / VPN / Service-startup groups after the first FAIL never ran, so
+the suite *appeared* to run while actually exercising under a third of
+its tests and hiding real failures.
+
+### Reproduction (captured, run in-session before the fix — §11.4.115 RED)
+
+```
+# Extract the pre-fix test_result and call it with a no-message FAIL under set -e:
+$ bash -c 'set -euo pipefail; <test_result>; test_result "x" "FAIL"; echo SURVIVED'
+✗ FAIL: x
+# exit=1 — "SURVIVED" never printed (the function returned 1 and aborted)
+
+$ RED_MODE=1 tests/regression/test_result_returns_zero_test.sh
+[PASS] RED reproduced: pre-fix test_result aborts under set -e on a no-message FAIL
+```
+
+### Root cause (FACT — not a guess, §11.4.6)
+
+`test_result()`'s FAIL branch ended on
+`[[ -n "$message" ]] && echo -e "  → $message"`. When `message` is empty
+(every `test_result "..." "FAIL"` call with no third argument), the
+`[[ -n "$message" ]]` test is false, the `&&` list short-circuits, and
+the list — the **last command of the function** — returns exit status
+**1**. When such a `test_result` is the last command executed in a test
+function (e.g. the final `"Upstreams"` iteration of `test_directories`'s
+`for` loop, where the dir is absent → FAIL), that function returns 1, and
+under `set -euo pipefail` `main()` aborts immediately — every later test
+group and the summary never run. This is the same §11.4.1 class as
+BUGFIX-0001 (a reporting helper leaking a non-zero status into control
+flow), a *different* site (`test_result`'s tail, not the `(( ++ ))`
+counter), so BUGFIX-0001's fix did not cover it.
+
+### Fix (at source, §11.4.1)
+
+`test_result` is a reporting helper; its exit status must never gate
+control flow. Append an explicit `return 0`:
+
+```diff
+         [[ -n "$message" ]] && echo -e "  ${YELLOW}→ $message${NC}"
+     fi
++
++    return 0
+ }
+```
+
+### Verification (captured, run in-session after the fix)
+
+```
+# §11.4.115 GREEN (real fixed test_result survives a no-message FAIL):
+$ tests/regression/test_result_returns_zero_test.sh
+[PASS] GREEN: real test_result returns 0 on a no-message FAIL
+
+# Full suite now runs to completion (was 32 lines, aborted):
+$ bash tests/run-tests.sh   # 82 lines, reaches TEST SUMMARY
+Tests Run:    41
+Tests Passed: 34
+Tests Failed: 7
+```
+
+**§1.1 paired mutation (guard is not a tautology):** deleting the
+`return 0` re-introduced the abort → the GREEN guard **FAILed**
+(`REGRESSION: test_result aborts the suite …`, exit 1); `tests/run-tests.sh`
+was restored byte-identical (md5 `7c2bab18c4566d081b1c8aa7a9a412e0` before
+== after) and the guard PASSed again.
+
+> **Follow-up (separate, tracked):** with the abort fixed, the suite now
+> honestly reports **7 pre-existing FAILs** (e.g. `Directory Upstreams`)
+> that the abort had been masking. These are real existing-system findings
+> to triage — not regressions from this fix, but newly *visible* because
+> the suite finally runs to completion.
+
+Evidence: `qa-results/regression/bugfix0003/`.
