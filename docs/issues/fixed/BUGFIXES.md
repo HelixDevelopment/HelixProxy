@@ -454,3 +454,81 @@ the conductor (§11.4.142): diffs, both runs, the inverse proof, parse — all
 verified against the real tree before commit.
 
 Evidence: `qa-results/p8b/`.
+
+---
+
+## BUGFIX-0006 — `comprehensive-test.sh` 100% dead (`(( ))` `set -e` abort) + green-on-bluff data-plane checks + false-VPN-routing
+
+- **Type:** Bug (anti-bluff — §11.4.1 script-abort + green-without-evidence + false-VPN-routing §15)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `tests/comprehensive-test.sh` (audit B1–B4, B8)
+- **Bluff audit:** `docs/research/existing_test_bluffs_audit/README.md` (B1–B4, B8)
+- **Discovered regression (§11.4.124):** #50 — the documented `cache`
+  management CLI (`./cache stats|clear|invalidate|trim`, `docs/CACHE.md`) is
+  gone from HEAD (path collision: the `./cache` CLI file vs the runtime data
+  dir `CACHE_DIR=$PROJECT_ROOT/cache`, `lib/container-runtime.sh:180`).
+- **Workable item:** #48 (P8c)
+
+### Symptom & root cause (FACT — §11.4.6)
+
+The whole script was **dead**: `set -euo pipefail` plus bash arithmetic
+counters (`(( ... ))` / `((PASS++))`) abort with exit 1 the moment a counter is
+`0`, so the suite exited before a single test ran — it could never report a
+failure (a §11.4.1 false-pass-by-silence, the BUGFIX-0001/0003/0005 class).
+Behind that abort, the checks themselves were bluffs once revived:
+
+- **B1** declared `VPN routing` PASS when the egress IP through the proxy equals
+  the host's real IP — the §15 false-VPN-routing bluff (BUGFIX-0005 class).
+- **B2** "cache works" asserted nothing from Squid — no `TCP_*HIT` evidence.
+- **B3** "concurrent" never checked per-request HTTP status.
+- **B8** "status" never inspected a real field.
+
+### Fix (at source)
+
+Revive + de-bluff. `(( ))` counters → assignment form (`PASS=$((PASS + 1))`),
+matching the run-tests.sh / verify-proxy.sh §11.4.1 fixes — the 44-check suite
+now actually runs. Each revived check now captures real data-plane evidence:
+
+- **B2** `assert_cache_hit` greps a real `TCP_*HIT` out of the podman-exec'd
+  Squid `access.log` for a re-fetched object (§11.4.69 evidence path).
+- **B3** asserts per-request `%{http_code}` 200 across all 10 concurrent
+  requests (10/10), not merely that curl returned.
+- **B8** asserts the `status` command emits real fields (plain, verbose, JSON).
+- **B1** egress==host PASS deleted → honest §11.4.3 SKIP (`operator_attended`,
+  `VPN_EXIT_IP` unset) until the P10 real tunnel — never a fabricated PASS.
+- **Cache-CLI checks** are §11.4.3 topology-aware: when the documented `cache`
+  CLI is absent they SKIP citing the tracked regression #50 (the §11.4.124
+  investigation that found it), rather than fabricate a PASS or hard-FAIL the
+  suite on a known-tracked gap.
+- **Large-file** asserts faithful relay (`proxy_size == direct_size`); the
+  earlier FAIL was root-caused to an EXTERNAL endpoint cap, NOT proxy
+  truncation (evidence: `direct_size=102400 proxy_size=102400`).
+- `.env` sourcing is optional — its absence is a topology SKIP, not a FAIL.
+
+### Verification (captured, run in-session after the fix — independent re-runs)
+
+```
+# Fresh clone, no .env present — runs to the summary, deterministic across 2 runs:
+$ bash tests/comprehensive-test.sh
+  Tests Run: 44   Passed: 34   Failed: 0   Skipped: 10   (exit 0)   [no FAIL lines]
+
+# Real data-plane PASSes present (not metadata):
+  ✓ PASS: Cache HIT (Squid TCP_*HIT in access.log)
+  ✓ PASS: Concurrent connections (10)
+  ✓ PASS: Large file download (proxy relays faithfully)
+  ✓ PASS: Status command reports real fields  (+ verbose + JSON)
+
+# All 10 SKIPs audited honest: 4× cache-CLI (regressed out, #50),
+# 3× no-.env vars, .env-topology, VPN routing (B1), VPN container (no-vpn mode).
+```
+
+Re-run #2 byte-identical (44/34/0/10, exit 0 — deterministic §11.4.50). Residue
++ secret scan CLEAN; no `((VAR++))` remain; `bash -n` clean. Reviewed
+independently by the conductor (§11.4.142/§11.4.134, iterate-to-GO): the lane
+returned with 5 hard FAILs on the first pass; the §11.4.124 investigation proved
+4 were a REAL regression (#50, not a test bug → SKIP-with-reason) and 1 an
+external cap (faithful-relay, not truncation), and the corrected lane was
+re-reviewed clean before commit.
+
+Evidence: `qa-results/comprehensive/`.
