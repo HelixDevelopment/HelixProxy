@@ -1,0 +1,291 @@
+#############################################
+# Proxy Service — `dynamic` profile OVERLAY (VPN-aware control-plane)
+#############################################
+# STATUS: DESIGN/config-plan — structurally validated (podman-compose config
+#   parses+interpolates the merged docker-compose.yml + this overlay); LIVE boot
+#   is owed to P10 and is additionally gated on (a) the Go control-plane lane
+#   clearing (control-plane/go.mod is being rewritten by a sibling stream — do
+#   NOT build now) and (b) operator-provisioned gluetun WireGuard credentials
+#   (§11.4.21 operator dependency). NOTHING here is claimed to run yet.
+#
+# This is a SEPARATE overlay file (the main docker-compose.yml stays pristine —
+# §11.4.122: the existing vpn / host-vpn / no-vpn modes keep working untouched).
+# Merge + bring up with:
+#   $COMPOSE_CMD -f docker-compose.yml -f docker-compose.dynamic.yml \
+#       --profile dynamic up -d
+# (the `./start --dynamic` flag wraps exactly this — see the start script).
+#
+# Multi-tunnel routing model (design spec §4 / docs/DYNAMIC_ROUTING.md):
+#   * each gluetun container runs its BUILT-IN HTTP forward proxy (HTTPPROXY=on,
+#     default :8888) inside the tunnel netns (kill-switch FIREWALL=on);
+#   * squid reaches each tunnel as `cache_peer proxy-gluetun parent 8888 ...
+#     name=tun_<profile>` (rendered by the compiler into the conf.d include);
+#   * the external_acl helper (baked INTO the squid image) picks the tunnel per
+#     request from Redis, fail-closed (ERR ⇒ branded 503 ERR_TUNNEL_DOWN).
+#
+# Services resolve each other BY NAME (§11.4.111) over the private
+# `proxy-dynamic` network — no enumerated IPs, no host-index binding.
+# Rootless podman only (§11.4.161). NEW service/container names only — must NOT
+# collide with any operator workload (wg0-mullvad / lava-postgres-thinker /
+# lava-api-go-thinker are NEVER referenced here).
+#############################################
+
+version: "3.8"
+
+#############################################
+# Secrets (operator-provisioned Podman secrets — NAMES ONLY, never values; §11.4.10)
+#############################################
+secrets:
+  # `podman secret create helixproxy_pg_password -` (operator step, P10).
+  helixproxy_pg_password:
+    external: true
+
+#############################################
+# Named volumes (regenerable state — §11.4.30 / §11.4.77)
+#############################################
+volumes:
+  # Postgres data dir (control-plane source of truth; re-seeded from ./sql).
+  proxy-pgdata:
+  # Compiler-rendered config artifacts shared compiler → squid-dynamic:
+  #   /generated/dynamic-routing.conf         (squid include — *.conf)
+  #   /generated/dynamic-routing.sockd.conf   (dante routes — NOT *.conf)
+  #   /generated/proxy.pac                    (PAC file)
+  proxy-generated:
+
+#############################################
+# Private network — name-resolution between control-plane services (§11.4.111)
+#############################################
+networks:
+  proxy-dynamic:
+    name: proxy-dynamic
+
+services:
+  #############################################
+  # Redis — live tunnel state + event bus (route:<target>, vpn:status:<profile>)
+  #############################################
+  proxy-redis:
+    image: ${REDIS_IMAGE:-docker.io/library/redis:7-alpine}
+    container_name: proxy-redis
+    hostname: proxy-redis
+    profiles:
+      - dynamic
+    environment:
+      - TZ=${TZ:-UTC}
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - proxy-dynamic
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  #############################################
+  # Postgres — control-plane source of truth (profiles / targets / rules / users)
+  #############################################
+  proxy-postgres:
+    image: ${POSTGRES_IMAGE:-docker.io/library/postgres:16-alpine}
+    container_name: proxy-postgres
+    hostname: proxy-postgres
+    profiles:
+      - dynamic
+    environment:
+      - TZ=${TZ:-UTC}
+      - POSTGRES_DB=${PG_DB:-proxy}
+      - POSTGRES_USER=${PG_USER:-proxy}
+      # Password is read from the mounted Podman secret file (§11.4.10) — never
+      # a plaintext env value.
+      - POSTGRES_PASSWORD_FILE=/run/secrets/helixproxy_pg_password
+    secrets:
+      - helixproxy_pg_password
+    volumes:
+      - proxy-pgdata:/var/lib/postgresql/data
+      # First-init DDL + seed: postgres runs top-level *.sql here alphabetically
+      # (schema.sql before seed_example.sql); the migrations/ subdir is ignored
+      # by initdb (applied by the compiler/migrator path, not here).
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    networks:
+      - proxy-dynamic
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-proxy} -d ${PG_DB:-proxy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  #############################################
+  # gluetun — VPN tunnel + BUILT-IN HTTP forward proxy (one per vpn_profile)
+  #############################################
+  # P10 scales this to one gluetun per profile; the MVP overlay ships ONE
+  # representative tunnel (`proxy-gluetun`). WireGuard credentials are
+  # OPERATOR-PROVISIONED at P10 (§11.4.21) — the WIREGUARD_* vars below are EMPTY
+  # placeholders (no secret values in git, §11.4.10); the operator supplies them
+  # via .env / Podman secrets (gluetun auto-reads /run/secrets/wireguard_*).
+  proxy-gluetun:
+    image: ${GLUETUN_IMAGE:-docker.io/qmcgaw/gluetun:latest}
+    container_name: proxy-gluetun
+    hostname: proxy-gluetun
+    profiles:
+      - dynamic
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TZ=${TZ:-UTC}
+      # Kill-switch ON — no traffic escapes if the tunnel drops (§11.4.74 / fail-closed).
+      - FIREWALL=on
+      # Built-in HTTP forward proxy squid cache_peers to.
+      - HTTPPROXY=on
+      - HTTPPROXY_LISTENING_ADDRESS=:${GLUETUN_HTTPPROXY_PORT:-8888}
+      # Control server (healthd polls /v1/vpn/status, /v1/publicip/ip).
+      - HTTP_CONTROL_SERVER_ADDRESS=:${GLUETUN_CONTROL_PORT:-8000}
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:-custom}
+      - VPN_TYPE=${VPN_DEFAULT_TYPE:-wireguard}
+      # --- OPERATOR-PROVISIONED at P10 (§11.4.21) — empty placeholders only ---
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY:-}
+      - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY:-}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES:-}
+      - WIREGUARD_ENDPOINT_IP=${WIREGUARD_ENDPOINT_IP:-}
+      - WIREGUARD_ENDPOINT_PORT=${WIREGUARD_ENDPOINT_PORT:-}
+      # Allow the compose subnet to reach the built-in HTTP proxy through the
+      # kill-switch (operator may narrow this at P10).
+      - FIREWALL_OUTBOUND_SUBNETS=${GLUETUN_OUTBOUND_SUBNETS:-}
+    networks:
+      - proxy-dynamic
+    restart: unless-stopped
+    healthcheck:
+      # gluetun ships its own healthcheck binary; this control-server probe is
+      # explicit + name-resolved (§11.4.111).
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:${GLUETUN_CONTROL_PORT:-8000}/v1/openvpn/status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  #############################################
+  # Config compiler — renders squid include + dante routes + PAC; seeds Redis
+  #############################################
+  # ONE-SHOT (restart: "no"): reads Postgres, renders the artifacts into the
+  # shared `proxy-generated` volume, seeds route:<target> into Redis, then exits.
+  # squid-dynamic depends on its successful completion so the include exists
+  # before squid starts.
+  proxy-compiler:
+    build:
+      context: ./control-plane
+      dockerfile: Containerfile
+    image: ${CONTROL_PLANE_IMAGE:-localhost/helixproxy-control-plane:dev}
+    container_name: proxy-compiler
+    hostname: proxy-compiler
+    profiles:
+      - dynamic
+    environment:
+      - TZ=${TZ:-UTC}
+      - PG_USER=${PG_USER:-proxy}
+      - PG_DB=${PG_DB:-proxy}
+    secrets:
+      - helixproxy_pg_password
+    # `$$` keeps PG_USER/PG_DB + $(cat secret) as RUNTIME shell refs (compose
+    # leaves them un-interpolated). DSN password is read from the secret file,
+    # never embedded (§11.4.10).
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        PGPW="$$(cat /run/secrets/helixproxy_pg_password)"
+        exec compiler \
+          --dsn "postgres://$${PG_USER}:$${PGPW}@proxy-postgres:5432/$${PG_DB}?sslmode=disable" \
+          --redis-addr proxy-redis:6379 \
+          --helper-path /usr/lib/helix-proxy/acl-helper \
+          --squid-out /generated/dynamic-routing.conf \
+          --dante-out /generated/dynamic-routing.sockd.conf \
+          --pac-out /generated/proxy.pac
+    volumes:
+      - proxy-generated:/generated
+    networks:
+      - proxy-dynamic
+    depends_on:
+      proxy-postgres:
+        condition: service_healthy
+      proxy-redis:
+        condition: service_healthy
+    restart: "no"
+
+  #############################################
+  # healthd — polls gluetun control API, publishes vpn:status:<profile> to Redis
+  #############################################
+  proxy-healthd:
+    build:
+      context: ./control-plane
+      dockerfile: Containerfile
+    image: ${CONTROL_PLANE_IMAGE:-localhost/helixproxy-control-plane:dev}
+    container_name: proxy-healthd
+    hostname: proxy-healthd
+    profiles:
+      - dynamic
+    environment:
+      - TZ=${TZ:-UTC}
+      - REDIS_ADDR=proxy-redis:6379
+      - GLUETUN_CONTROL_PORT=${GLUETUN_CONTROL_PORT:-8000}
+      - HEALTHD_PROFILES=${HEALTHD_PROFILES:-demo}
+      - HEALTHD_GLUETUN_BASE=http://proxy-gluetun:${GLUETUN_CONTROL_PORT:-8000}
+      - HEALTHD_POLL_INTERVAL=${HEALTHD_POLL_INTERVAL:-5s}
+    command: ["healthd"]
+    networks:
+      - proxy-dynamic
+    depends_on:
+      proxy-redis:
+        condition: service_healthy
+      proxy-gluetun:
+        condition: service_started
+    restart: unless-stopped
+
+  #############################################
+  # Squid (dynamic) — base squid.conf + rendered include + baked acl-helper
+  #############################################
+  # container_name proxy-squid matches the existing single-squid model (only ONE
+  # profile is ever up at a time, so there is no collision with the vpn /
+  # host-vpn / no-vpn proxy-squid containers).
+  proxy-squid-dynamic:
+    build:
+      context: ./config/squid
+      dockerfile: Containerfile.dynamic
+      args:
+        CONTROL_PLANE_IMAGE: ${CONTROL_PLANE_IMAGE:-localhost/helixproxy-control-plane:dev}
+    image: ${SQUID_DYNAMIC_IMAGE:-localhost/helixproxy-squid-dynamic:dev}
+    container_name: proxy-squid
+    hostname: proxy-squid
+    profiles:
+      - dynamic
+    environment:
+      - TZ=${TZ:-UTC}
+      # The baked external_acl helper reads tunnel state from Redis (fail-closed).
+      - REDIS_ADDR=proxy-redis:6379
+    volumes:
+      # Compiler-rendered squid include lands here as *.conf; the baked
+      # squid.conf does `include /etc/squid/conf.d/*.conf`. Read-only mount.
+      - proxy-generated:/etc/squid/conf.d:ro
+      - ${CACHE_DIR:-./cache}/squid:/var/spool/squid
+      - ${LOG_DIR:-./logs}:/var/log/squid
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}:${HTTP_PROXY_PORT:-53128}"
+    networks:
+      - proxy-dynamic
+    depends_on:
+      proxy-redis:
+        condition: service_healthy
+      proxy-gluetun:
+        condition: service_started
+      # The rendered include must exist before squid starts.
+      proxy-compiler:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "squid", "-k", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

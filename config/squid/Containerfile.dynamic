@@ -1,0 +1,42 @@
+# =============================================================================
+# Helix Proxy — Squid (dynamic-routing) image
+# =============================================================================
+# STATUS: DESIGN/config-plan — structurally validated only (authored, NOT built;
+#   the control-plane Go lane is mid-rewrite by a sibling stream — a build here
+#   would race it). LIVE image build + boot is owed to P10 and is additionally
+#   gated on (a) the Go control-plane lane clearing and (b) operator-provisioned
+#   gluetun WireGuard credentials (§11.4.21). No image build is run here.
+#
+# Bakes the SHIPPED base config/squid/squid.conf (verbatim) plus:
+#   * the static external_acl helper COPIED from the control-plane image
+#     (multi-stage) — installed at the compiler's default helper path
+#     /usr/lib/helix-proxy/acl-helper (the path the rendered include references,
+#     §11.4.111 resolve-by-name), with a /usr/local/bin/acl-helper convenience copy;
+#   * a single `include /etc/squid/conf.d/*.conf` line APPENDED to the IMAGE copy
+#     of squid.conf — the on-disk tracked squid.conf is NOT modified (§11.4.122);
+#     the compiler-rendered include is mounted into /etc/squid/conf.d at runtime.
+#
+# The cache_peer → gluetun wiring + the fail-closed never_direct/deny block live
+# in that rendered include (config/squid/templates/dynamic-routing.conf.tmpl).
+#
+# Build context: ./config/squid (so `COPY squid.conf` resolves).
+# CONTROL_PLANE_IMAGE is passed by compose (build.args) so the acl-helper comes
+# from the exact image proxy-compiler/proxy-healthd build.
+# =============================================================================
+
+ARG CONTROL_PLANE_IMAGE=localhost/helixproxy-control-plane:dev
+
+# ---- control-plane stage: source of the baked acl-helper binary -------------
+FROM ${CONTROL_PLANE_IMAGE} AS controlplane
+
+# ---- squid image ------------------------------------------------------------
+FROM docker.io/ubuntu/squid:latest
+
+# Static external_acl helper (no runtime deps — CGO_ENABLED=0 build).
+COPY --from=controlplane /usr/local/bin/acl-helper /usr/lib/helix-proxy/acl-helper
+COPY --from=controlplane /usr/local/bin/acl-helper /usr/local/bin/acl-helper
+
+# Base config baked verbatim; conf.d include APPENDED to the image copy only.
+COPY squid.conf /etc/squid/squid.conf
+RUN mkdir -p /etc/squid/conf.d \
+ && printf '\n# Dynamic-routing include (compiler-rendered at runtime; §11.4.122 additive).\ninclude /etc/squid/conf.d/*.conf\n' >> /etc/squid/squid.conf

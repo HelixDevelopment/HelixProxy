@@ -1,0 +1,56 @@
+# =============================================================================
+# Helix Proxy control-plane — multi-stage build image
+# =============================================================================
+# STATUS: DESIGN/config-plan — structurally validated only (authored, NOT built;
+#   the Go lane / go.mod is being rewritten by a sibling stream — a build here
+#   would race it). LIVE image build + boot is owed to P10 and is additionally
+#   gated on (a) the Go control-plane lane clearing and (b) operator-provisioned
+#   gluetun WireGuard credentials (§11.4.21). No `go build` / image build is run
+#   from this stream.
+#
+# §11.4.173 — the PRODUCTION build MUST run inside a build container provisioned
+#   via the `vasic-digital/containers` submodule on the remote build host, with
+#   the produced image brought back. This Containerfile is the build recipe that
+#   wiring drives; a bare-host `podman build` of it is dev-convenience only.
+#
+# Builds STATIC (CGO_ENABLED=0) binaries for every control-plane command and
+# installs them under /usr/local/bin in a minimal alpine final stage (alpine —
+# not distroless — because proxy-compiler needs /bin/sh to assemble its DSN from
+# the mounted Podman secret file at runtime). The acl-helper produced here is the
+# SAME binary config/squid/Containerfile.dynamic copies into the squid image.
+#
+# Build context: ./control-plane (go.mod lives at the context root).
+# Module: digital.vasic.helixproxy/controlplane (go 1.25).
+# =============================================================================
+
+# ---- builder ---------------------------------------------------------------
+FROM docker.io/library/golang:1.25 AS builder
+WORKDIR /src
+
+# Dependency layer (cached unless go.mod/go.sum change).
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Source + static build of all commands.
+COPY . .
+ARG GOFLAGS="-trimpath"
+ENV CGO_ENABLED=0 GOOS=linux GOFLAGS=${GOFLAGS}
+RUN go build -ldflags="-s -w" -o /out/acl-helper ./cmd/acl-helper \
+ && go build -ldflags="-s -w" -o /out/healthd    ./cmd/healthd \
+ && go build -ldflags="-s -w" -o /out/compiler   ./cmd/compiler \
+ && go build -ldflags="-s -w" -o /out/api        ./cmd/api
+
+# ---- final ------------------------------------------------------------------
+FROM docker.io/library/alpine:3.20
+# ca-certificates for any TLS egress (gluetun control API / DoT); tzdata for TZ.
+RUN apk add --no-cache ca-certificates tzdata \
+ && adduser -D -u 65532 helix
+COPY --from=builder /out/acl-helper /usr/local/bin/acl-helper
+COPY --from=builder /out/healthd    /usr/local/bin/healthd
+COPY --from=builder /out/compiler   /usr/local/bin/compiler
+COPY --from=builder /out/api        /usr/local/bin/api
+USER helix
+# Default entrypoint is the compiler; compose overrides `command:` per service
+# (proxy-compiler → compiler, proxy-healthd → healthd).
+ENTRYPOINT ["compiler"]
+CMD ["--version"]

@@ -24,6 +24,8 @@ Options:
     -p, --pull          Pull latest images before starting
     -n, --no-vpn        Start without VPN (standalone mode)
     --host-vpn          Use host network mode (routes through host's VPN)
+    --dynamic           Start the VPN-aware dynamic-routing control-plane
+                        (Postgres + Redis + gluetun + Go control-plane + Squid)
     -s, --status        Show status after starting
     -d, --dry-run       Show what would be done without executing
 
@@ -32,11 +34,15 @@ Modes:
     Default (USE_VPN=false)         - Bridge network, no VPN
     --host-vpn                      - Uses host network (host VPN passes through)
     --no-vpn                        - Forces no VPN mode
+    --dynamic (or DYNAMIC_ROUTING_ENABLED=true)
+                                    - Per-target VPN-profile routing control-plane
+                                      (docker-compose.yml + docker-compose.dynamic.yml)
 
 Examples:
     $(basename "$0")              Start with config from .env
     $(basename "$0") --host-vpn   Start with host network (use host's VPN)
     $(basename "$0") --no-vpn     Start without VPN
+    $(basename "$0") --dynamic    Start the dynamic-routing control-plane
     $(basename "$0") -pvs         Pull, start verbose, show status
 EOF
 }
@@ -101,14 +107,21 @@ check_running() {
 #######################################
 # Start services with profile
 # Arguments:
-#   $1 - Profile name (vpn, host-vpn, no-vpn)
+#   $1 - Profile name (vpn, host-vpn, no-vpn, dynamic)
 #######################################
 start_with_profile() {
     local profile="$1"
-    
+
     log "info" "Starting services with profile: $profile"
-    
+
     case "$profile" in
+        dynamic)
+            # VPN-aware dynamic-routing control-plane. The `dynamic` profile
+            # services live in the separate docker-compose.dynamic.yml OVERLAY
+            # (the base docker-compose.yml stays pristine — §11.4.122), so this
+            # branch passes BOTH files explicitly. Rootless podman (§11.4.161).
+            $COMPOSE_CMD -f docker-compose.yml -f docker-compose.dynamic.yml --profile dynamic up -d
+            ;;
         vpn)
             if [[ "$CONTAINER_RUNTIME" == "docker" ]]; then
                 $COMPOSE_CMD --profile vpn --profile docker up -d
@@ -203,6 +216,7 @@ main() {
     local PULL="false"
     local FORCE_NO_VPN="false"
     local FORCE_HOST_VPN="false"
+    local FORCE_DYNAMIC="false"
     local SHOW_STATUS="false"
     local DRY_RUN="false"
     local VERBOSE="false"
@@ -228,6 +242,10 @@ main() {
                 ;;
             --host-vpn)
                 FORCE_HOST_VPN="true"
+                shift
+                ;;
+            --dynamic)
+                FORCE_DYNAMIC="true"
                 shift
                 ;;
             -s|--status)
@@ -264,8 +282,11 @@ main() {
     
     # Determine profile
     local profile="no-vpn"
-    
-    if [[ "$FORCE_HOST_VPN" == "true" ]]; then
+
+    if [[ "$FORCE_DYNAMIC" == "true" || "${DYNAMIC_ROUTING_ENABLED:-false}" == "true" ]]; then
+        profile="dynamic"
+        log "info" "Mode: VPN-aware dynamic-routing control-plane"
+    elif [[ "$FORCE_HOST_VPN" == "true" ]]; then
         profile="host-vpn"
         log "info" "Mode: Host network (uses host's VPN if active)"
     elif [[ "$FORCE_NO_VPN" == "true" ]]; then
