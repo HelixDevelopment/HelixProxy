@@ -237,6 +237,9 @@
   </style>
 </head>
 <body>
+<header id="title-block-header">
+<h1 class="title">BUGFIXES</h1>
+</header>
 <h1 id="bugfixes">BUGFIXES</h1>
 <p>Root-cause-analysed bug fixes for this project, per the Universal
 Mandatory Constraints (CLAUDE.md mandate #10). Each entry records the
@@ -509,5 +512,138 @@ this fix, but newly <em>visible</em> because the suite finally runs to
 completion.</p>
 </blockquote>
 <p>Evidence: <code>qa-results/regression/bugfix0003/</code>.</p>
+<hr />
+<h2
+id="bugfix-0004-run-tests.sh-reports-failure-on-a-healthy-serving-proxy-11.4.1-false-fail-skips-recorded-as-pass">BUGFIX-0004
+— <code>run-tests.sh</code> reports FAILURE on a HEALTHY serving proxy
+(§11.4.1 false-FAIL); skips recorded as PASS</h2>
+<ul>
+<li><strong>Type:</strong> Bug (anti-bluff — §11.4.1 false-FAIL +
+§11.4.3 PASS-by-default-for-skip)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected file:</strong> <code>tests/run-tests.sh</code>
+(<code>test_result</code>, <code>test_environment</code>,
+<code>test_directories</code>, <code>test_container_runtime</code>,
+<code>test_ports</code> + new
+<code>port_verdict</code>/<code>_ports_check_one</code>,
+<code>test_vpn</code>, <code>test_service_startup</code>,
+<code>print_summary</code>)</li>
+<li><strong>Regression guard:</strong>
+<code>tests/regression/port_topology_aware_test.sh</code> (§11.4.135,
+§11.4.115 <code>RED_MODE</code> polarity)</li>
+<li><strong>Bluff audit:</strong>
+<code>docs/research/existing_test_bluffs_audit/README.md</code>
+(B7)</li>
+<li><strong>Workable item:</strong> #47 (P8)</li>
+</ul>
+<h3 id="symptom-3">Symptom</h3>
+<p>Once BUGFIX-0003 let the suite run to completion,
+<code>bash tests/run-tests.sh</code> reported
+<code>Tests Run: 41, Passed: 34, Failed: 7</code> and exited <strong>1
+against a perfectly healthy, serving proxy</strong> (proxy-squid +
+proxy-dante <code>Up (healthy)</code>). A suite that declares FAILURE on
+a working System is a §11.4.1 false-FAIL — as misleading as a
+false-PASS.</p>
+<h3
+id="reproduction-captured-run-in-session-before-the-fix-11.4.115-red-2">Reproduction
+(captured, run in-session before the fix — §11.4.115 RED)</h3>
+<pre><code># Against the running, healthy proxy:
+$ bash tests/run-tests.sh | tail -4
+Tests Run:    41
+Tests Passed: 34
+Tests Failed: 7         # exit 1
+# The 7 FAILs: .env file exists, HTTP_PROXY_PORT set, Directory Upstreams,
+# Docker installed, Port 53128 available, Port 51080 available, Port 58080 available
+
+$ RED_MODE=1 tests/regression/port_topology_aware_test.sh
+[PASS] RED reproduced: pre-fix logic classifies a healthy serving proxy port
+       (owner up + listening) as FAIL</code></pre>
+<h3 id="root-cause-fact-not-a-guess-11.4.6-2">Root cause (FACT — not a
+guess, §11.4.6)</h3>
+<p>Three independent bluff classes, all FACT-confirmed against the live
+host:</p>
+<ol type="1">
+<li><strong>Port-semantics inversion (§11.4.1).</strong>
+<code>test_ports</code> reported any port that was IN USE as
+<code>FAIL</code> (“Port in use”). The running proxy’s own listening
+ports (squid <code>53128</code>, dante <code>51080</code>) are <em>in
+use by their own healthy service</em> — the serving state — so the suite
+FAILed on health.</li>
+<li><strong>Inverted runtime check (§11.4.161).</strong>
+<code>test_container_runtime</code> asserted
+<code>Docker installed</code> and FAILed on its absence. The project
+MANDATES rootless Podman and FORBIDS Docker as a workflow — the check
+tested for the forbidden runtime and failed on the compliant state.</li>
+<li><strong>Config-absent-as-FAIL (§11.4.3).</strong> <code>.env</code>
+(gitignored, §11.4.10/§11.4.30) and <code>Upstreams/</code> absence
+FAILed, though their absence is the <em>expected</em> fresh-checkout
+topology. And (B7) <code>test_result</code> had no SKIP state, so
+<code>test_vpn</code>/<code>test_service_startup</code> skipped paths
+were recorded as PASS, inflating <code>TESTS_PASSED</code> (§11.4.3
+PASS-by-default).</li>
+</ol>
+<h3 id="fix-at-source-11.4.1-11.4.3-11.4.161">Fix (at source, §11.4.1 /
+§11.4.3 / §11.4.161)</h3>
+<ul>
+<li><strong>3-state <code>test_result</code></strong> — add a
+<code>SKIP</code> branch + <code>TESTS_SKIPPED</code> counter +
+<code>Tests Skipped:</code> summary line; the suite exit gates on
+<code>TESTS_FAILED -eq 0</code> only (skips are neither pass nor fail).
+BUGFIX-0001 assignment-form counters + BUGFIX-0003 <code>return 0</code>
+preserved.</li>
+<li><strong>§11.4.3 topology-aware ports</strong> — a <em>pure</em>
+<code>port_verdict(owner_serving, listening)</code> truth-table
+(serving→PASS, owner-up-but-not-listening→FAIL, pre-start-free→PASS,
+foreign-process-holds-it→SKIP); <code>_ports_check_one</code> resolves
+<code>owner_serving</code> from real
+<code>podman ps</code>/<code>podman port</code> and
+<code>listening</code> from real <code>ss</code> (no data-plane
+probe).</li>
+<li><strong>§11.4.161</strong> — assert the mandated
+<code>podman</code>; Docker informational only, absence is
+<code>SKIP</code> not FAIL.</li>
+<li><strong>§11.4.3 SKIP</strong> for absent gitignored
+<code>.env</code>/<code>HTTP_PROXY_PORT</code> (validate the tracked
+<code>.env.example</code> template instead) and absent
+<code>upstreams/</code>/<code>Upstreams/</code>.</li>
+<li><strong>B7</strong> —
+<code>test_vpn</code>/<code>test_service_startup</code> disabled paths
+emit <code>SKIP</code>.</li>
+</ul>
+<h3
+id="verification-captured-run-in-session-after-the-fix-3">Verification
+(captured, run in-session after the fix)</h3>
+<pre><code># Full suite vs the healthy running proxy — zero failures, honest skips:
+$ bash tests/run-tests.sh | tail -5
+Tests Run:     43
+Tests Passed:  37
+Tests Skipped: 6
+Tests Failed:  0          # exit 0 — &quot;All tests passed (6 skipped …)&quot;
+
+# §11.4.115 polarity guard (tests the REAL pure port_verdict, not a copy):
+$ RED_MODE=1 tests/regression/port_topology_aware_test.sh   # reproduces
+[PASS] RED reproduced: healthy serving port classified FAIL
+$ tests/regression/port_topology_aware_test.sh              # GREEN
+[PASS] GREEN: HEALTHY=PASS NOTSERVING=FAIL PRESTART_FREE=PASS PRESTART_BUSY=SKIP</code></pre>
+<p><strong>§1.1 paired mutation (guard is not a tautology):</strong>
+flipping <code>port_verdict</code>’s PASS/FAIL branch made the GREEN
+guard <strong>FAIL</strong> (<code>REGRESSION: … HEALTHY=FAIL …</code>,
+exit 1) with <code>bash -n</code> still clean (assertion, not parse
+error); <code>tests/run-tests.sh</code> restored byte-identical (md5
+<code>2f4d3e4bf33cd391036cee595839d439</code>) and the guard PASSed
+again. The guard is wired into <code>test_regression_guards()</code>
+(GREEN + RED self-check); the 5 pre-existing guards still PASS.</p>
+<blockquote>
+<p><strong>Honest note (§11.4.6 / §11.4.174):</strong> port
+<code>58080</code> (the control-API port) is currently held by a
+<strong>non-project</strong> host process — no proxy container publishes
+it — so the suite classifies it <code>SKIP</code> (readiness not
+assertable), never a false-FAIL blaming the proxy. The foreign process
+was <strong>not</strong> touched (shared-host ownership). This is a real
+condition to free before P10 deploys the control-API there.</p>
+</blockquote>
+<p>Evidence: <code>qa-results/p8/</code>,
+<code>qa-results/regression/portstopology/</code>.</p>
 </body>
 </html>

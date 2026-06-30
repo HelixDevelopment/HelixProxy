@@ -20,6 +20,10 @@ NC='\033[0m' # No Color
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
+# §11.4.3 — a third state: SKIP (topology-appropriate "not applicable here").
+# A skipped path is NEITHER a pass NOR a fail; counting it as PASS is a §11.4.3
+# PASS-by-default bluff (see docs/research/existing_test_bluffs_audit B7).
+TESTS_SKIPPED=0
 
 #######################################
 # Print test result
@@ -39,6 +43,12 @@ test_result() {
     if [[ "$result" == "PASS" ]]; then
         TESTS_PASSED=$((TESTS_PASSED + 1))
         echo -e "${GREEN}✓ PASS${NC}: $name"
+    elif [[ "$result" == "SKIP" ]]; then
+        # §11.4.3 SKIP-with-reason — topology-appropriate "not applicable here".
+        # Does NOT count as pass or fail; never gates the suite exit status.
+        TESTS_SKIPPED=$((TESTS_SKIPPED + 1))
+        echo -e "${YELLOW}⊘ SKIP${NC}: $name"
+        [[ -n "$message" ]] && echo -e "  ${YELLOW}→ $message${NC}"
     else
         TESTS_FAILED=$((TESTS_FAILED + 1))
         echo -e "${RED}✗ FAIL${NC}: $name"
@@ -62,27 +72,36 @@ test_result() {
 test_environment() {
     echo -e "\n${BLUE}=== Environment Tests ===${NC}"
     
-    # Test .env exists
+    # .env is gitignored (§11.4.10 / §11.4.30); its ABSENCE is the expected
+    # fresh-checkout topology, not a defect. When absent → §11.4.3 SKIP and
+    # validate the tracked .env.example template instead. When present →
+    # validate it as before.
     if [[ -f "$PROJECT_ROOT/.env" ]]; then
         test_result ".env file exists" "PASS"
     else
-        test_result ".env file exists" "FAIL" "Run 'cp .env.example .env'"
+        test_result ".env present (config topology)" "SKIP" \
+            ".env is gitignored (§11.4.10/§11.4.30) — absent in a fresh checkout; validating .env.example template instead"
     fi
-    
-    # Test .env.example exists
+
+    # Test .env.example exists (the tracked template that regenerates .env)
     if [[ -f "$PROJECT_ROOT/.env.example" ]]; then
-        test_result ".env.example exists" "PASS"
+        test_result ".env.example template exists" "PASS"
     else
-        test_result ".env.example exists" "FAIL"
+        test_result ".env.example template exists" "FAIL"
     fi
-    
-    # Test required variables
+
+    # Test required variables — only assertable when a .env was actually sourced.
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    
-    if [[ -n "${HTTP_PROXY_PORT:-}" ]]; then
-        test_result "HTTP_PROXY_PORT set" "PASS"
+
+    if [[ -f "$PROJECT_ROOT/.env" ]]; then
+        if [[ -n "${HTTP_PROXY_PORT:-}" ]]; then
+            test_result "HTTP_PROXY_PORT set" "PASS"
+        else
+            test_result "HTTP_PROXY_PORT set" "FAIL" ".env present but HTTP_PROXY_PORT unset"
+        fi
     else
-        test_result "HTTP_PROXY_PORT set" "FAIL" "Using default"
+        test_result "HTTP_PROXY_PORT set" "SKIP" \
+            "no .env sourced in this topology (§11.4.3) — value defaults at runtime"
     fi
 }
 
@@ -103,9 +122,8 @@ test_directories() {
         "lib"
         "tests"
         "docs"
-        "Upstreams"
     )
-    
+
     for dir in "${dirs[@]}"; do
         if [[ -d "$PROJECT_ROOT/$dir" ]]; then
             test_result "Directory $dir" "PASS"
@@ -113,6 +131,18 @@ test_directories() {
             test_result "Directory $dir" "FAIL"
         fi
     done
+
+    # install_upstreams topology (§11.4.36). §11.4.29 mandates lowercase
+    # snake_case and "lowercase wins" during the Upstreams/->upstreams/
+    # migration, so accept EITHER form. Present → PASS (topology available);
+    # absent → §11.4.3 SKIP (install_upstreams recipes not present in this
+    # checkout), never a hard FAIL.
+    if [[ -d "$PROJECT_ROOT/upstreams" || -d "$PROJECT_ROOT/Upstreams" ]]; then
+        test_result "Directory upstreams (install_upstreams topology)" "PASS"
+    else
+        test_result "Directory upstreams (install_upstreams topology)" "SKIP" \
+            "no upstreams/ — install_upstreams topology not present (§11.4.36)"
+    fi
 }
 
 #######################################
@@ -196,54 +226,128 @@ test_docker_compose() {
 #######################################
 test_container_runtime() {
     echo -e "\n${BLUE}=== Container Runtime Tests ===${NC}"
-    
-    # Check for Docker
-    if command -v docker &>/dev/null; then
-        test_result "Docker installed" "PASS"
-        
-        if docker info &>/dev/null; then
-            test_result "Docker daemon running" "PASS"
-        else
-            test_result "Docker daemon running" "FAIL"
-        fi
-    else
-        test_result "Docker installed" "FAIL"
-    fi
-    
-    # Check for Podman
+
+    # §11.4.161 — rootless Podman is the MANDATED runtime; Docker (rootful)
+    # is a FORBIDDEN workflow. The pre-fix check asserted "Docker installed"
+    # and FAILed on its absence — exactly backwards. Assert the mandated
+    # runtime; note Docker only as an optional, non-mandated presence and
+    # NEVER FAIL when it is absent (absence is the expected, compliant state).
     if command -v podman &>/dev/null; then
-        test_result "Podman installed" "PASS"
-        
+        test_result "Podman installed (mandated runtime §11.4.161)" "PASS"
+
         if podman info &>/dev/null; then
             test_result "Podman working" "PASS"
         else
             test_result "Podman working" "FAIL"
         fi
     else
-        test_result "Podman installed" "FAIL" "Optional"
+        test_result "Podman installed (mandated runtime §11.4.161)" "FAIL" \
+            "rootless Podman is required (§11.4.161)"
+    fi
+
+    # Docker: optional, and a forbidden workflow — informational only.
+    if command -v docker &>/dev/null; then
+        test_result "Docker present (optional, not the mandated runtime)" "PASS" \
+            "note: Docker (rootful) workflows are forbidden (§11.4.161)"
+    else
+        test_result "Docker absent (expected — §11.4.161 mandates Podman)" "SKIP" \
+            "Docker is not the mandated runtime; its absence is the compliant state"
     fi
 }
 
 #######################################
-# Test: Network ports
+# §11.4.3 topology-aware port classification (PURE — no I/O).
+#
+# Pre-fix BLUFF: test_ports reported any port that was IN USE as FAIL —
+# so the running, healthy proxy's own listening ports (squid 53128,
+# dante 51080) were reported as FAILURES. A port in use BY ITS OWN
+# RUNNING SERVICE is the HEALTHY state, not a failure (§11.4.1 false-FAIL).
+#
+# port_verdict resolves the truth-table from two topology booleans:
+#   owner_serving — the project proxy container that owns this port is
+#                   running AND publishing this host port.
+#   listening     — something is listening on the port (real ss probe).
+#
+#   owner_serving=yes, listening=yes -> PASS  (service up and serving)
+#   owner_serving=yes, listening=no  -> FAIL  (owner up but not serving!)
+#   owner_serving=no,  listening=no  -> PASS  (pre-start: free, ready to start)
+#   owner_serving=no,  listening=yes -> SKIP  (pre-start, but a NON-project
+#                                              process holds the port —
+#                                              readiness not assertable; not
+#                                              attributable to the proxy)
+#
+# Guarded by tests/regression/port_topology_aware_test.sh (§11.4.135 +
+# §11.4.115 RED_MODE polarity).
+#######################################
+port_verdict() {
+    local owner_serving="$1" listening="$2"
+    if [ "$owner_serving" = "yes" ]; then
+        if [ "$listening" = "yes" ]; then echo "PASS"; else echo "FAIL"; fi
+    else
+        if [ "$listening" = "yes" ]; then echo "SKIP"; else echo "PASS"; fi
+    fi
+}
+
+#######################################
+# Test: Network ports (§11.4.3 topology-aware)
 #######################################
 test_ports() {
     echo -e "\n${BLUE}=== Port Tests ===${NC}"
-    
+
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    
+
     local http_port="${HTTP_PROXY_PORT:-53128}"
     local socks_port="${SOCKS_PROXY_PORT:-51080}"
     local admin_port="${PROXY_ADMIN_PORT:-58080}"
-    
-    # Check if ports are available
-    for port in "$http_port" "$socks_port" "$admin_port"; do
-        if ss -tuln | grep -q ":${port} "; then
-            test_result "Port $port available" "FAIL" "Port in use"
-        else
-            test_result "Port $port available" "PASS"
-        fi
-    done
+
+    _ports_check_one "$http_port"  "proxy-squid" "HTTP proxy (squid)"
+    _ports_check_one "$socks_port" "proxy-dante" "SOCKS proxy (dante)"
+    _ports_check_one "$admin_port" "proxy-admin" "control API (admin)"
+}
+
+#######################################
+# Classify one port against its owning project proxy container.
+# Real evidence only (§11.4.6 — no guessing): podman ps for run state,
+# `podman port` for the published host mapping, `ss -tuln` for the live
+# listener. No probe touches the data plane.
+#######################################
+_ports_check_one() {
+    local port="$1" owner="$2" label="$3"
+    local owner_serving="no" listening="no" verdict
+
+    # owner_serving := the named project container is running AND publishes
+    # this host port (so the port being in use is the HEALTHY serving state).
+    if command -v podman >/dev/null 2>&1 \
+        && podman ps --format '{{.Names}}' 2>/dev/null | grep -qx "$owner" \
+        && podman port "$owner" 2>/dev/null | grep -q ":${port}$"; then
+        owner_serving="yes"
+    fi
+
+    if ss -tuln 2>/dev/null | grep -q ":${port} "; then
+        listening="yes"
+    fi
+
+    verdict="$(port_verdict "$owner_serving" "$listening")"
+
+    case "$verdict" in
+        PASS)
+            if [[ "$owner_serving" == "yes" ]]; then
+                test_result "Port $port $label serving" "PASS" \
+                    "$owner up and serving on $port"
+            else
+                test_result "Port $port $label free (pre-start)" "PASS" \
+                    "free, ready for ./start to bind"
+            fi
+            ;;
+        FAIL)
+            test_result "Port $port $label serving" "FAIL" \
+                "$owner up and publishing $port but nothing is listening"
+            ;;
+        SKIP)
+            test_result "Port $port $label (pre-start)" "SKIP" \
+                "$port held by a non-project process — readiness not assertable (§11.4.3)"
+            ;;
+    esac
 }
 
 #######################################
@@ -280,7 +384,9 @@ test_vpn() {
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     
     if [[ "${USE_VPN:-false}" != "true" ]]; then
-        test_result "VPN disabled" "PASS" "Skipped"
+        # B7 (§11.4.3): a skipped path is SKIP, never PASS — recording it as
+        # PASS inflates TESTS_PASSED (PASS-by-default bluff).
+        test_result "VPN configuration" "SKIP" "VPN not enabled (USE_VPN!=true) — §11.4.3 topology"
         return 0
     fi
     
@@ -318,7 +424,8 @@ test_service_startup() {
     echo -e "\n${BLUE}=== Service Startup Tests ===${NC}"
     
     if [[ "${RUN_STARTUP_TESTS:-false}" != "true" ]]; then
-        test_result "Startup tests" "PASS" "Skipped (set RUN_STARTUP_TESTS=true)"
+        # B7 (§11.4.3): SKIP-with-reason, not a PASS-by-default.
+        test_result "Startup tests" "SKIP" "RUN_STARTUP_TESTS!=true — §11.4.3 topology (set RUN_STARTUP_TESTS=true to enable)"
         return 0
     fi
     
@@ -398,6 +505,25 @@ test_regression_guards() {
         test_result "BUGFIX-0003 test_result RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # BUGFIX-PORTS — GREEN guard: §11.4.3 topology-aware port_verdict must treat
+    # a healthy serving port (owner up + listening) as PASS, NOT FAIL.
+    if bash "$SCRIPT_DIR/regression/port_topology_aware_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-PORTS topology-aware port check (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-PORTS topology-aware port check (GREEN)" "FAIL" \
+            "run: bash tests/regression/port_topology_aware_test.sh"
+    fi
+
+    # BUGFIX-PORTS — RED self-check: the pre-fix replica must reproduce the bluff
+    # (classify a healthy serving port as FAIL). A RED that cannot reproduce is a
+    # §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/port_topology_aware_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-PORTS topology-aware RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-PORTS topology-aware RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################
@@ -407,13 +533,17 @@ print_summary() {
     echo -e "\n${BLUE}================================${NC}"
     echo -e "${BLUE}         TEST SUMMARY           ${NC}"
     echo -e "${BLUE}================================${NC}"
-    echo -e "Tests Run:    $TESTS_RUN"
-    echo -e "Tests Passed: ${GREEN}$TESTS_PASSED${NC}"
-    echo -e "Tests Failed: ${RED}$TESTS_FAILED${NC}"
+    echo -e "Tests Run:     $TESTS_RUN"
+    echo -e "Tests Passed:  ${GREEN}$TESTS_PASSED${NC}"
+    echo -e "Tests Skipped: ${YELLOW}$TESTS_SKIPPED${NC}"
+    echo -e "Tests Failed:  ${RED}$TESTS_FAILED${NC}"
     echo -e "${BLUE}================================${NC}"
-    
+
+    # §11.4.3 — skips count as neither pass nor fail; only real FAILs gate the
+    # suite. A healthy running proxy whose ports are correctly LISTENING must
+    # NOT make the suite exit non-zero (that was the §11.4.1 false-FAIL).
     if [[ $TESTS_FAILED -eq 0 ]]; then
-        echo -e "${GREEN}All tests passed!${NC}"
+        echo -e "${GREEN}All tests passed (${TESTS_SKIPPED} skipped — neither pass nor fail).${NC}"
         return 0
     else
         echo -e "${RED}Some tests failed.${NC}"
