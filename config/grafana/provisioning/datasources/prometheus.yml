@@ -1,0 +1,17 @@
+# Grafana Prometheus datasource (P7 observability — config PLAN, not yet live).
+# The Prometheus URL is a FORWARD REFERENCE to the future compose service; the
+# actual Grafana<->Prometheus wiring is owned by P10. §11.4.6 — this does not
+# assert a live, reachable Prometheus.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    # Forward reference to the Prometheus service brought up at P10.
+    url: http://proxy-prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s

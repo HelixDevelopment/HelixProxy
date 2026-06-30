@@ -1,0 +1,201 @@
+{
+  "__plan_note": "P7 observability config PLAN — NOT yet live. Built endpoints come up in P6 (control-plane /metrics) and P7/P10 (squid-exporter). JSON has no comment syntax, so every speculative/planned metric is flagged in its panel 'description' field and in the top text panel. The 'dashboard renders real metrics' proof is owed to P10 (Constitution §11.4.6 — no false 'metrics are flowing' claim).",
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Helix Proxy VPN-aware dynamic routing — observability dashboard (P7 config PLAN, not yet live; targets built P6/P7, live proof owed P10).",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "About this dashboard (P7 config PLAN — read first)",
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "**NOT YET LIVE.** This is a P7 observability *plan*. Scrape targets are built in **P6** (control-plane `/metrics`, port 59090) and **P7/P10** (`boynux/squid-exporter`, :9301). The live scrape + 'renders real data' proof is owed to **P10** (Constitution §11.4.6).\n\n**Metric provenance / confidence:**\n- `squid_client_http_*` — from `boynux/squid-exporter` (spec §11③). Exact names depend on exporter version + Squid 6.13 `mgr:counters`; **confirmed live in P10**.\n- `helix_proxy_vpn_up{profile}` — **PLANNED custom** control-plane gauge derived from Redis `vpn:status:<profile>` (health-publisher, P3/P6). Speculative name.\n- `helix_proxy_tunnel_down_responses_total` — **PLANNED custom** control-plane counter for `ERR_TUNNEL_DOWN`→`deny_info 503` (acl-helper, P5/P6). Speculative name.\n\nUntil P6/P10, panels below render **No data** — expected."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Squid cache hit ratio",
+      "description": "squid_client_http_hits_total / squid_client_http_requests_total (boynux/squid-exporter, spec §11③). Exact metric names confirmed against live Squid 6.13 mgr report in P10 (§11.4.6). Not yet live.",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "green", "value": 0.6 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "editorMode": "code",
+          "expr": "sum(rate(squid_client_http_hits_total[5m])) / clamp_min(sum(rate(squid_client_http_requests_total[5m])), 1)",
+          "legendFormat": "hit ratio"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Request rate (req/s through Squid)",
+      "description": "rate(squid_client_http_requests_total) from boynux/squid-exporter (spec §11③). Metric name confirmed live in P10 (§11.4.6). Not yet live.",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "editorMode": "code",
+          "expr": "sum(rate(squid_client_http_requests_total[5m]))",
+          "legendFormat": "requests/s"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "503 / ERR_TUNNEL_DOWN rate",
+      "description": "SPECULATIVE / PLANNED custom metric. helix_proxy_tunnel_down_responses_total is a control-plane counter (acl-helper -> deny_info 503 ERR_TUNNEL_DOWN) built in P5/P6 on METRICS_PORT 59090. Name confirmed/renamed against live /metrics in P10 (§11.4.6). Not yet live.",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 10, "showPoints": "never" },
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "editorMode": "code",
+          "expr": "sum(rate(helix_proxy_tunnel_down_responses_total[5m]))",
+          "legendFormat": "503 ERR_TUNNEL_DOWN/s"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "state-timeline",
+      "title": "Per-tunnel VPN up / down",
+      "description": "SPECULATIVE / PLANNED custom metric. helix_proxy_vpn_up{profile} is a control-plane gauge (1=up, 0=down) derived from Redis vpn:status:<profile> by the health-publisher (P3/P6); a stale Redis key is treated as down (fail-closed, spec §7). Could alternatively be exposed by a future vpn-status exporter. Name confirmed/renamed live in P10 (§11.4.6). Not yet live.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 80, "lineWidth": 0 },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green", "index": 1 } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "auto",
+        "alignValue": "left",
+        "rowHeight": 0.9,
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "editorMode": "code",
+          "expr": "helix_proxy_vpn_up",
+          "legendFormat": "{{profile}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["helix_proxy", "vpn-aware-dynamic-routing", "p7-plan", "not-yet-live"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Prometheus data source",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "refresh": 1,
+        "regex": "",
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Helix Proxy — VPN-Aware Dynamic Routing (P7 PLAN)",
+  "uid": "helix-proxy-dynamic-routing",
+  "version": 1,
+  "weekStart": ""
+}

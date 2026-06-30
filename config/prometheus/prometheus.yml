@@ -1,0 +1,83 @@
+# =============================================================================
+# Helix Proxy — Prometheus scrape configuration (P7 observability — config PLAN)
+# =============================================================================
+# STATUS: NOT-YET-LIVE PLAN. The scrape TARGETS referenced below do not exist
+# yet. This file defines the *intended* scrape topology so that when the
+# control-plane (/metrics) and squid-exporter come up, observability is wired
+# without re-design. Per Constitution §11.4.6 (no-guessing): this file is
+# validated for STRUCTURE only (`promtool check config`). promtool does NOT and
+# CANNOT prove any target is reachable or scrapable — those endpoints are built
+# in P6 (control-API /metrics) and P7/P10 (squid-exporter). The live scrape +
+# "dashboard renders real metrics" proof is owed to P10 integration validation.
+#
+# Source of truth for ports/components:
+#   - docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md §11③, §7
+#   - docs/DYNAMIC_ROUTING.md
+#   - .env.example  (METRICS_PORT=59090, CONTROL_API_PORT=58081, REDIS_ADDR, gluetun :8000)
+#
+# Compose service hostnames below (proxy-*) are FORWARD REFERENCES. The actual
+# integration wiring (compose service names, network, exporter container) is
+# owned by P10 — NOT this config-plan deliverable. If a name changes at P10,
+# only the `targets:` lines here change.
+# =============================================================================
+
+global:
+  scrape_interval: 15s          # default sampling cadence
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    project: helix_proxy
+    component: vpn-aware-dynamic-routing
+
+# No alerting / recording rules shipped at P7 (planned for a later phase).
+# rule_files: []
+
+scrape_configs:
+
+  # ---------------------------------------------------------------------------
+  # Job 1 — Prometheus self-monitoring.
+  # This is the ONLY job that has a real, live target the moment Prometheus
+  # runs standalone (it scrapes its own /metrics). Useful as a smoke target.
+  # ---------------------------------------------------------------------------
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ---------------------------------------------------------------------------
+  # Job 2 — Helix Proxy control-plane (Go module) Prometheus /metrics.
+  # FORWARD REFERENCE — built in P6 (control-API + admin UI). Per spec §4
+  # component 4 the control-plane exposes Prometheus metrics; .env.example
+  # dedicates METRICS_PORT=59090 with METRICS_ENABLED=true to this endpoint.
+  # This is where the PLANNED custom metrics live:
+  #   - helix_proxy_vpn_up{profile="..."}                 (health-publisher; from Redis vpn:status:<profile>)
+  #   - helix_proxy_tunnel_down_responses_total           (acl-helper / ERR_TUNNEL_DOWN -> deny_info 503)
+  #   - helix_proxy_acl_decisions_total{decision="OK|ERR"}
+  # Metric NAMES above are PLANNED/SPECULATIVE until the control-plane is built
+  # (P6); confirm-or-rename against the live /metrics output in P10.
+  # NOTE: not yet live -> this target will be DOWN until P6/P10. Expected.
+  # ---------------------------------------------------------------------------
+  - job_name: helix-control-plane
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['proxy-control-plane:59090']   # CONTROL: METRICS_PORT (.env.example)
+        labels:
+          service: control-plane
+
+  # ---------------------------------------------------------------------------
+  # Job 3 — Squid cache metrics via boynux/squid-exporter.
+  # FORWARD REFERENCE — exporter container wired in P7/P10. The exporter
+  # connects to Squid (:53128, HTTP_PROXY_PORT) over the cache-manager (mgr:)
+  # interface and republishes squid_* metrics on its own HTTP port.
+  # See squid-exporter.md in this directory for image + scrape detail.
+  # squid_* metric names (e.g. squid_client_http_requests_total,
+  # squid_client_http_hits_total) are the boynux/squid-exporter counter mapping;
+  # exact names depend on the exporter version + Squid 6.13 mgr report and are
+  # CONFIRMED live in P10 (§11.4.6 — not asserted as flowing here).
+  # Slightly slower cadence — cachemgr scrape is heavier than a /metrics page.
+  # ---------------------------------------------------------------------------
+  - job_name: squid-exporter
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['proxy-squid-exporter:9301']   # boynux/squid-exporter default listen port
+        labels:
+          service: squid

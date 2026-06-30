@@ -1,0 +1,18 @@
+# Grafana dashboard provider (P7 observability — config PLAN, not yet live).
+# Tells Grafana to load dashboard JSON from disk. The actual Grafana container +
+# volume mounts are wired at P10 (integration); this provider file is the
+# forward-reference plan. §11.4.6 — no claim that Grafana is running here.
+apiVersion: 1
+
+providers:
+  - name: helix-proxy
+    orgId: 1
+    folder: Helix Proxy
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      # Path INSIDE the future Grafana container (mount point decided at P10).
+      path: /etc/grafana/provisioning/dashboards/helix
+      foldersFromFilesStructure: false
