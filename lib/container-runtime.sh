@@ -307,11 +307,21 @@ create_directories() {
     mkdir -p "$LOG_DIR"
     mkdir -p "$PROJECT_ROOT/config/squid"
     mkdir -p "$PROJECT_ROOT/config/dante"
-    
+
     if [[ "$USE_VPN" == "true" ]]; then
         mkdir -p "$PROJECT_ROOT/vpn"
     fi
-    
+
+    # Rootless-Podman bind-mount writability (BUGFIX #38 — proxy crash-loop).
+    # Under rootless Podman the host uid (you) maps to the container's root, but
+    # squid drops privileges to its non-root `proxy` user, which is remapped to a
+    # high subuid that owns NONE of these host-created dirs. Without world-write
+    # the squid container FATALs on "Cannot open '/var/log/squid/access.log' for
+    # writing" and crash-loops, so the proxy never serves a single request. This
+    # mirrors the existing chmod 777 of the cache bind-mount in `init_cache`.
+    # Regression guard: tests/regression/log_dir_writable_test.sh.
+    chmod 777 "$LOG_DIR"
+
     log "info" "Directories created"
 }
 

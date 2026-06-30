@@ -151,13 +151,23 @@ start_with_profile() {
 #######################################
 init_cache() {
     log "info" "Initializing cache directories..."
-    
+
     mkdir -p "$CACHE_DIR/squid"
     mkdir -p "$CACHE_DIR/streaming"
-    
+
     if [[ -d "$CACHE_DIR/squid" ]]; then
         chmod 777 "$CACHE_DIR/squid"
     fi
+
+    # Rootless-Podman bind-mount writability (BUGFIX #38 — proxy crash-loop).
+    # The squid container drops to its non-root `proxy` user, remapped to a high
+    # subuid that cannot write the host-created log dir unless it is world-
+    # writable. Without this, squid FATALs on "Cannot open access.log" and
+    # crash-loops, so the proxy never serves. Self-sufficient (mkdir -p here too)
+    # so it holds regardless of create_directories() call order.
+    # Regression guard: tests/regression/log_dir_writable_test.sh.
+    mkdir -p "$LOG_DIR"
+    chmod 777 "$LOG_DIR"
 }
 
 #######################################

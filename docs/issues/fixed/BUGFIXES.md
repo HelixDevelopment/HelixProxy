@@ -82,3 +82,108 @@ services — those are real-infrastructure tests that correctly FAIL/skip
 when the live System is absent, Helix Constitution §11.4.11 — that is a
 separate, pre-existing, infrastructure-dependent condition, not this
 defect.)
+
+> **Cross-reference (§11.4.138):** the "proxy services not running" condition
+> noted above was treated as merely environmental. It was not — BUGFIX-0002
+> below is the *reason* the proxy would not stay up under rootless Podman.
+> Driving the real data path (not just "tests pass") surfaced it.
+
+---
+
+## BUGFIX-0002 — squid crash-loops under rootless Podman (log dir not writable) → proxy never serves
+
+- **Type:** Bug (product defect — end-user-visible: the proxy does not work)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `lib/container-runtime.sh` (`create_directories()`),
+  `start` (`init_cache()`)
+- **Regression guard:** `tests/regression/log_dir_writable_test.sh`
+  (§11.4.135, §11.4.115 `RED_MODE` polarity)
+- **Workable item:** #38 (the live-usability proof stream)
+
+### Symptom
+
+A freshly-booted proxy (`./start --no-vpn`, rootless Podman) returned
+`http_code=000` for every request through it. `proxy-squid` was not
+`(healthy)` — it was restarting in a loop, never accepting a connection,
+so **no feature of the proxy worked for the end user** — the exact
+"tests pass but the feature can't be used" failure mode §11.4 forbids.
+
+### Reproduction (captured, run in-session before the fix — §11.4.115 RED)
+
+```
+# Live boot of the real orchestrator, then curl through the proxy:
+$ curl -s -o /dev/null -w '%{http_code}' -x http://127.0.0.1:53128 http://example.com/
+000
+
+# squid's own log (read from inside the container) showed the FATAL:
+$ podman logs proxy-squid | tail
+FATAL: Cannot open '/var/log/squid/access.log' for writing.
+       The parent directory must be writeable by the user 'proxy',
+       which is the cache_effective_user set in squid.conf.
+
+# Unit reproduction of the orchestrator code path (pre-fix replica):
+$ RED_MODE=1 tests/regression/log_dir_writable_test.sh
+[PASS] BUGFIX#38 log-dir-writable (RED_MODE=1): RED reproduced:
+       pre-fix LOG_DIR mode=755 is NOT world-writable
+```
+
+### Root cause (FACT — not a guess, §11.4.6)
+
+Under **rootless** Podman the invoking host uid (1000) maps to the
+container's `root`, but every other container uid is remapped through
+`/etc/subuid` into a high host range. `squid.conf` sets
+`cache_effective_user proxy`, so squid drops privileges to its non-root
+`proxy` user — which, on the host, is a high subuid that owns **none** of
+the host-created bind-mount dirs. The host `./logs` directory was created
+mode `0755` (owner-write only), so the container `proxy` user had only
+world `r-x` — no write — and squid `FATAL`ed opening `access.log`, then
+crash-looped. The orchestrator already `chmod 777`-ed the **cache**
+bind-mount (`init_cache`) for this exact reason, but the **log**
+bind-mount was missed — a single missing site of an already-known remedy.
+
+### Fix (at source, §11.4.1 / §11.4.108 SOURCE layer)
+
+Make the squid log bind-mount world-writable in the orchestrator's
+dir-init, mirroring the existing cache `chmod 777`. Applied at **both**
+self-sufficient sites so it holds regardless of call order:
+
+```diff
+# lib/container-runtime.sh  create_directories()
+  mkdir -p "$LOG_DIR"
++ chmod 777 "$LOG_DIR"
+
+# start  init_cache()
++ mkdir -p "$LOG_DIR"
++ chmod 777 "$LOG_DIR"
+```
+
+### Verification (captured, run in-session after the fix)
+
+**Unit — regression guard, §11.4.115 polarity (RED reproduces, GREEN proves):**
+
+```
+$ RED_MODE=1 tests/regression/log_dir_writable_test.sh   # pre-fix replica
+[PASS] RED reproduced: LOG_DIR mode=755 NOT world-writable
+$ tests/regression/log_dir_writable_test.sh              # real fixed code
+[PASS] GREEN: create_directories() made LOG_DIR mode=777 world-writable
+```
+
+**§1.1 paired mutation (guard is not a tautology):** stripping the
+`chmod 777 "$LOG_DIR"` from `create_directories()` made the GREEN guard
+**FAIL** (`REGRESSION: … mode=755 NOT world-writable`, exit 1); the lib
+was restored byte-identical (md5 `0128a96b6d467c2da5b7cef8a808e563`
+before == after) and the guard PASSed again.
+
+**Live data-plane (§11.4.108 RUNTIME + USER-VISIBLE):** after the fix the
+booted proxy serves real HTTP through it:
+
+```
+$ curl -x http://127.0.0.1:53128 http://example.com/ -> http_code=200
+Via: 1.1 proxy-squid (squid/6.13)
+# squid access.log (the file that FATAL'd pre-fix) — real request logged:
+1782858066.886  189 10.89.1.249 TCP_MISS/200 951 GET http://example.com/ - HIER_DIRECT/104.20.23.154 text/html
+$ podman ps  ->  proxy-squid  Up (healthy)
+```
+
+Evidence: `qa-results/regression/bugfix38/`.

@@ -347,6 +347,34 @@ test_constitution_inheritance() {
 }
 
 #######################################
+# Test: standing regression guards (Helix Constitution §11.4.135). Each
+# guards a closed defect with a §11.4.115 RED_MODE polarity test. New
+# guards register here so they run on every suite execution.
+#   - BUGFIX-0002: rootless-Podman squid log-dir writability
+#     (docs/issues/fixed/BUGFIXES.md). RED reproduces, GREEN proves the fix.
+#######################################
+test_regression_guards() {
+    echo -e "\n${BLUE}=== Regression guards (§11.4.135) ===${NC}"
+
+    # BUGFIX-0002 — GREEN guard: the real orchestrator must make LOG_DIR writable.
+    if bash "$SCRIPT_DIR/regression/log_dir_writable_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0002 squid log-dir writable (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0002 squid log-dir writable (GREEN)" "FAIL" \
+            "run: bash tests/regression/log_dir_writable_test.sh"
+    fi
+
+    # BUGFIX-0002 — RED self-check: the guard must genuinely reproduce the defect
+    # on the pre-fix replica (a guard that cannot reproduce is a §11.4.7 finding).
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/log_dir_writable_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0002 squid log-dir RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0002 squid log-dir RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+}
+
+#######################################
 # Print summary
 #######################################
 print_summary() {
@@ -380,6 +408,7 @@ main() {
     cd "$PROJECT_ROOT"
 
     test_constitution_inheritance
+    test_regression_guards
     test_environment
     test_directories
     test_scripts
