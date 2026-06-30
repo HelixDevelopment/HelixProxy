@@ -1,0 +1,28 @@
+# =============================================================================
+# Helix Proxy — Dante (sockd) dynamic-routing routes   (GENERATED — DO NOT EDIT)
+# =============================================================================
+# APPENDED (by cmd/compiler) after the shipped config/dante/sockd.conf verbatim —
+# Dante v1.4.4 has NO `include` directive, so dynamism = concat + SIGHUP (§9).
+# One route block per target/tunnel; base lines are never modified (§11.4.122).
+# -----------------------------------------------------------------------------
+
+# tun_eu-wg-primary: send traffic destined for 10.10.5.20 out via this tunnel.
+route {
+    from: 0.0.0.0/0   to: 10.10.5.20   via: gluetun-eu-wg-primary port = 8888
+    proxyprotocol: socks_v5
+    method: none
+}
+
+# tun_eu-wg-primary: send traffic destined for 10.10.5.30 out via this tunnel.
+route {
+    from: 0.0.0.0/0   to: 10.10.5.30   via: gluetun-eu-wg-primary port = 8888
+    proxyprotocol: socks_v5
+    method: none
+}
+
+# tun_us-wg-failover: send traffic destined for 10.20.7.10 out via this tunnel.
+route {
+    from: 0.0.0.0/0   to: 10.20.7.10   via: gluetun-us-wg-failover port = 8888
+    proxyprotocol: socks_v5
+    method: none
+}
