@@ -82,6 +82,32 @@ func (s *server) routes() *http.ServeMux {
 
 	// live + observability + PAC
 	mux.HandleFunc("GET /events", s.events)
+	// WARNING-5 (P6 review — design note, deferred to operator/P10, NOT a code
+	// change here): /metrics is on THIS mux, which Start() serves ONLY over the
+	// fail-closed mTLS listener (tls.go, RequireAndVerifyClientCert). So Prometheus
+	// can scrape /metrics ONLY with a valid client cert. The committed scrape config
+	// (config/prometheus/prometheus.yml, job helix-control-plane) instead expects a
+	// PLAINTEXT scrape of proxy-control-plane:59090 (METRICS_PORT) with no tls_config
+	// — i.e. the intended topology is a SEPARATE plaintext metrics listener on
+	// METRICS_PORT, distinct from the mTLS control-API port (CONTROL_API_*, :58080/1).
+	// Trade-off: (a) mTLS-only (current) — no plaintext surface, but Prometheus must
+	// be provisioned with a client cert and it diverges from prometheus.yml; (b) a
+	// separate plaintext metrics listener — matches prometheus.yml + standard
+	// practice, but its bind address is security-load-bearing: loopback-only
+	// (127.0.0.1:59090) is safe yet UNREACHABLE for a Prometheus in another
+	// container/pod (the prometheus.yml target is the service hostname
+	// proxy-control-plane:59090, needing a pod-network/0.0.0.0 bind), while a
+	// 0.0.0.0 bind exposes unauthenticated metrics to the whole compose/pod network
+	// (acceptable ONLY if that network is the trust boundary). RECOMMENDATION
+	// (§11.4.6/§11.4.101 — operator/P10 owns the compose networking): add a separate
+	// plaintext listener on a configurable CONTROL_API_METRICS_ADDR (default
+	// 127.0.0.1:59090) serving ONLY this /metrics handler (never CRUD/SSE/PAC), bound
+	// to the pod-internal interface. NOT implemented here: it adds a second socket +
+	// lifecycle + config field whose correct bind depends on the (P10-owned)
+	// deployment topology — forcing loopback-only now would break the committed
+	// cross-container scrape, and forcing 0.0.0.0 now would be a security-exposure
+	// decision only the operator can make. Until then /metrics stays mTLS-only and a
+	// cert-bearing scraper can read it (fail-closed, never a silent plaintext leak).
 	mux.Handle("GET /metrics", s.metrics.handler())
 	mux.HandleFunc("GET /proxy.pac", s.proxyPAC)
 

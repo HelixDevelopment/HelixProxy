@@ -122,6 +122,21 @@ func decodeJSON(r *http.Request, dst any) error {
 
 // audit records a control-plane mutation; a failed audit write fails the request
 // (the audit trail is not optional — spec §12).
+//
+// WARNING-4 (P6 review — investigated, §11.4.6): every mutating handler does
+// `mutate (Upsert*/Delete*) → audit (AppendAudit)`, NOT `read state → mutate on
+// it`, so there is NO read-then-mutate TOCTOU here, and concurrent callers cause
+// neither a lost update nor partial ENTITY state (each store call is individually
+// atomic; proven by TestConcurrency_MutationAndAuditConsistent under -race). The
+// ONE residual non-atomicity is cross-step: if the mutation commits but THIS
+// AppendAudit then fails, the handler returns 500 yet the mutation already
+// persisted — an un-audited mutation. Closing that needs the mutation + its audit
+// row to share a single STORE transaction (e.g. a store.Queries `Tx`/`*WithAudit`
+// seam), which is a store-layer change spanning the real Postgres impl + every
+// caller — out of the API package's scope and deferred to the store owner rather
+// than worked around in-handler (auditing BEFORE the mutation would record an
+// action that might not happen, which is worse). No in-API change is made: there
+// is no atomicity gap the API layer can correctly close on its own.
 func (s *server) audit(r *http.Request, action string, detail any) error {
 	db, _ := json.Marshal(detail)
 	return s.q.AppendAudit(r.Context(), store.AuditLogEntry{
