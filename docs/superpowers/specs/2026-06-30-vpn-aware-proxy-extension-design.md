@@ -1,8 +1,8 @@
 # Design Spec — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 1
-**Last modified:** 2026-06-30T00:00:00Z
-**Status:** Draft (brainstorming output — pending user review per superpowers:brainstorming)
+**Revision:** 2
+**Last modified:** 2026-07-01T00:00:00Z
+**Status:** Active — P1 spike gaps (G1–G4) resolved with captured evidence; implementation in progress (companion plan P2–P12)
 **Authority:** Inherits the Helix Constitution submodule (`constitution/Constitution.md`) per §11.4.35.
 **Sources (research, captured this session):**
 `docs/research/mvp/findings/A_vpn_multitunnel_orchestration.md`,
@@ -285,13 +285,37 @@ docs/{ARCHITECTURE,CACHE,VPN,DYNAMIC_ROUTING}.md + diagrams/ + qa/
 - HTTP/3 forward-proxy, Squid range-caching, eBPF — §11 deferred list (honest
   §11.4.112). K8s DaemonSet — design stays portable, compose ships first.
 
-## 20. Open questions / honest gaps to validate (`UNCONFIRMED:` — §11.4.6)
-- **G1:** rootless kernel-WireGuard feasibility (else gluetun userspace).
-- **G2:** Squid major version on `ubuntu/squid:latest` (v8 removed
-  `tcp_outgoing_address` dstdomain) — verify against running container.
-- **G3:** Dante `SIGHUP` live-session preservation — live captured-evidence test.
-- **G4:** gluetun control-API availability per pinned tag (issue #3060) — pin +
-  smoke-test. Each gap → a spike task in the plan, resolved with captured evidence.
+## 20. Open questions / honest gaps — RESOLVED by P1 spikes (captured evidence)
+
+All four gaps are resolved as FACT with captured evidence (§11.4.123); full detail
++ evidence paths in `docs/research/mvp/findings/F_spikes_G1-G4.md`.
+
+- **G1 — RESOLVED (nuanced):** kernel-WireGuard *interface creation* succeeds
+  rootless inside a container with `--cap-add NET_ADMIN` + `--device /dev/net/tun`;
+  gluetun auto-selects kernelspace, with userspace `wireguard-go` as the portability
+  fallback. **Decision:** keep gluetun auto-select; required container grants are
+  `--cap-add NET_ADMIN` + `--device /dev/net/tun`. Full rootless kernel-WG
+  *operation* (handshake+traffic) stays `UNCONFIRMED:` → proven live in P10.
+- **G2 — RESOLVED:** `ubuntu/squid:latest` = **Squid 6.13** (NOT v8); the full §8
+  directive set (`cache_peer` / `external_acl_type` / `cache_peer_access` /
+  `never_direct` / `deny_info`) parses clean (`squid -k parse` exit 0).
+  **Decision:** pin **`ubuntu/squid:6.13`**; the config-compiler emits
+  **`%>ha{Host}`** (6.13 deprecates `%>{Host}`); the v8 `tcp_outgoing_address`-dstdomain
+  concern is moot (design routes via `cache_peer` + `external_acl`, not
+  `tcp_outgoing_address`).
+- **G3 — RESOLVED (spike PASS):** Dante `SIGHUP` reloads config and **preserves an
+  active SOCKS session** (20/20 chunks, curl exit 0; `/proc/net/tcp` ESTABLISHED
+  proof). **Decision:** §9 config-rewrite + SIGHUP dynamism is safe for live
+  sessions. P9 still owes a broader live test (concurrent / repeated SIGHUP +
+  route-change-mid-session → `UNCONFIRMED:` whether an in-flight session keeps its
+  old path).
+- **G4 — RESOLVED:** gluetun pinned **`v3.40` (=v3.40.4)**; control API `:8000`
+  (`/v1/vpn/status`, `/v1/publicip/ip`) answers 200 (publicip empty without real
+  egress — the live `vpn_real_egress` evidence source, §13); internal healthcheck on
+  `127.0.0.1:9999`. **Issue #3060 confirmed live** (routes open-by-default on
+  v3.40.x). **Decision:** pin v3.40; **any upgrade past v3.40 MUST add control-server
+  auth** (apikey/role) — a pinned-version constraint + upgrade-checklist item
+  aligning §11 ④ zero-trust.
 
 ## 21. Phasing (full detail in the companion plan)
 P0 governance+submodules+scaffold → P1 spikes (G1–G4) → P2 data model+stores →
