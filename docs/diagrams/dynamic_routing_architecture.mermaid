@@ -1,0 +1,45 @@
+graph TD
+    Client["Client browser or device"]
+
+    subgraph BytePath["Data plane - byte path, unchanged proxying and caching"]
+        Squid["Squid :53128<br/>HTTP and HTTPS cache"]
+        Dante["Dante :51080<br/>SOCKS5"]
+        ACL["external_acl helper<br/>Go, out of byte path"]
+    end
+
+    subgraph ControlPlane["Control plane - Go module, NOT in byte path"]
+        Compiler["config-compiler<br/>Postgres to Squid and Dante config plus PAC"]
+        Health["health-publisher<br/>per-tunnel data-plane probe"]
+        API["control-API and admin UI<br/>REST plus SSE"]
+    end
+
+    subgraph State["State"]
+        PG[("PostgreSQL<br/>source of truth")]
+        Redis[("Redis<br/>vpn:status keys and vpn:events")]
+    end
+
+    subgraph Tunnels["VPN tunnels - one container is one netns is one status key"]
+        G1["gluetun 1<br/>profile A"]
+        G2["gluetun 2<br/>profile B"]
+    end
+
+    Client -->|HTTP and HTTPS| Squid
+    Client -->|SOCKS5| Dante
+    Squid -->|per request| ACL
+    ACL -->|read route and status| Redis
+    ACL -->|OK tag tunnel or ERR| Squid
+    Squid -->|cache_peer egress when up| G1
+    Squid -->|cache_peer egress| G2
+    Squid -.->|deny_info 503 when down| Client
+    Dante -->|generated route| G1
+
+    Compiler -->|read profiles| PG
+    Compiler -->|write routes| Redis
+    Health -->|write status and events| Redis
+    Health -->|probe| G1
+    Health -->|probe| G2
+    API -->|CRUD| PG
+    API -->|subscribe events| Redis
+
+    G1 -->|encrypted tunnel| TA["Private target A"]
+    G2 -->|encrypted tunnel| TB["Private target B"]

@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant C as Client
+    participant S as Squid (byte path)
+    participant A as external_acl helper
+    participant R as Redis
+    participant H as health-publisher
+    participant G as gluetun tunnel
+    participant T as Private target
+
+    Note over H,G: health-publisher continuously probes the tunnel (data-plane signal)
+
+    rect rgb(230, 245, 230)
+    Note over C,T: Case 1 - tunnel UP
+    C->>S: GET https://target-a
+    S->>A: external_acl lookup by Host
+    A->>R: GET route and vpn:status
+    R-->>A: target to tunnel, state=up
+    A-->>S: OK tag=tunnel_a
+    S->>G: cache_peer egress
+    G->>T: forward over tunnel
+    T-->>G: response
+    G-->>S: response
+    S-->>C: 200 OK (served or cached)
+    end
+
+    rect rgb(250, 230, 230)
+    Note over C,T: Case 2 - tunnel DOWN
+    H->>R: SET vpn:status down and PUBLISH vpn:events
+    C->>S: GET https://target-a
+    S->>A: external_acl lookup by Host
+    A->>R: GET vpn:status
+    R-->>A: state=down or stale TTL
+    A-->>S: ERR
+    S-->>C: 503 ERR_TUNNEL_DOWN (Squid PID unchanged)
+    end
+
+    rect rgb(230, 245, 230)
+    Note over C,T: Case 3 - tunnel RECOVERS, zero reconfigure
+    H->>R: SET vpn:status up and PUBLISH vpn:events
+    C->>S: GET https://target-a
+    S->>A: external_acl lookup by Host
+    A->>R: GET vpn:status
+    R-->>A: state=up
+    A-->>S: OK tag=tunnel_a
+    S->>G: cache_peer egress
+    G->>T: forward over tunnel
+    T-->>G: response
+    G-->>S: response
+    S-->>C: 200 OK
+    end
