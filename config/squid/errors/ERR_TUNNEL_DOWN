@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!-- =========================================================================
+  Helix Proxy — branded Squid error page for deny_info 503:ERR_TUNNEL_DOWN
+  Served when the external_acl helper returns ERR (tunnel down / Redis stale /
+  no route). This is the FAIL-CLOSED user-facing signal: the request was NOT
+  sent out directly (no VPN leak) and Squid stays alive (PID unchanged).
+  Deployment: copy this file into Squid's active error directory (the dir
+  referenced by `error_directory`, or the per-language default e.g.
+  /usr/share/squid/errors/en/) so `deny_info 503:ERR_TUNNEL_DOWN` resolves it.
+  Squid macros used: %U (request URL), %T (local time). DESIGN / template.
+============================================================================ -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>503 — VPN tunnel unavailable</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: #0f1115; color: #e6e8ec; display: flex; min-height: 100vh;
+           align-items: center; justify-content: center; }
+    .card { max-width: 32rem; padding: 2.5rem; margin: 1rem; border-radius: 14px;
+            background: #171a21; box-shadow: 0 8px 30px rgba(0,0,0,.35);
+            border: 1px solid #232733; }
+    .badge { display: inline-block; font-size: .72rem; letter-spacing: .12em;
+             text-transform: uppercase; color: #ffb454; border: 1px solid #ffb454;
+             border-radius: 999px; padding: .2rem .6rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.45rem; margin: 0 0 .6rem; }
+    p  { line-height: 1.55; margin: .5rem 0; color: #b9bec9; }
+    .spin { display: inline-block; width: .9rem; height: .9rem; margin-right: .45rem;
+            border: 2px solid #ffb454; border-top-color: transparent; border-radius: 50%;
+            vertical-align: -1px; animation: r .9s linear infinite; }
+    @keyframes r { to { transform: rotate(360deg); } }
+    .meta { margin-top: 1.5rem; font-size: .8rem; color: #6b7280;
+            border-top: 1px solid #232733; padding-top: 1rem; word-break: break-all; }
+    code { color: #9ecbff; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge">Helix Proxy · 503</span>
+    <h1>The VPN tunnel for this request is unavailable</h1>
+    <p><span class="spin" aria-hidden="true"></span><strong>Retrying automatically.</strong>
+       Your request was <strong>not</strong> sent over an unprotected connection — the
+       proxy fails closed to keep your traffic private.</p>
+    <p>This is temporary. As soon as the tunnel's health check reports it back up,
+       the next request will go through with no action needed on your side. You may
+       simply reload in a few seconds.</p>
+    <div class="meta">
+      Requested resource: <code>%U</code><br>
+      Time: %T<br>
+      Reference: <code>ERR_TUNNEL_DOWN</code>
+    </div>
+  </main>
+</body>
+</html>

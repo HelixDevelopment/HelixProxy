@@ -1,8 +1,8 @@
 # Design Spec — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 2
+**Revision:** 3
 **Last modified:** 2026-07-01T00:00:00Z
-**Status:** Active — P1 spike gaps (G1–G4) resolved with captured evidence; implementation in progress (companion plan P2–P12)
+**Status:** Active — P1 spike gaps (G1–G4) resolved with captured evidence; P4 Squid/Dante templates parse-verified; implementation in progress (companion plan P2–P12)
 **Authority:** Inherits the Helix Constitution submodule (`constitution/Constitution.md`) per §11.4.35.
 **Sources (research, captured this session):**
 `docs/research/mvp/findings/A_vpn_multitunnel_orchestration.md`,
@@ -299,10 +299,15 @@ All four gaps are resolved as FACT with captured evidence (§11.4.123); full det
 - **G2 — RESOLVED:** `ubuntu/squid:latest` = **Squid 6.13** (NOT v8); the full §8
   directive set (`cache_peer` / `external_acl_type` / `cache_peer_access` /
   `never_direct` / `deny_info`) parses clean (`squid -k parse` exit 0).
-  **Decision:** pin **`ubuntu/squid:6.13`**; the config-compiler emits
-  **`%>ha{Host}`** (6.13 deprecates `%>{Host}`); the v8 `tcp_outgoing_address`-dstdomain
-  concern is moot (design routes via `cache_peer` + `external_acl`, not
-  `tcp_outgoing_address`).
+  **Decision:** pin the Squid base by **digest** or a specific
+  `6.13-<ubuntu>_<channel>` tag — docker.io/ubuntu/squid has **NO bare `6.13` tag**
+  (P4-templates finding; published tags are `6.13-25.04_*` / `latest` / `edge`, and
+  `:latest` is verified = 6.13); the config-compiler emits **`%>ha{Host}`** (6.13
+  deprecates `%>{Host}`); the v8 `tcp_outgoing_address`-dstdomain concern is moot
+  (design routes via `cache_peer` + `external_acl`, not `tcp_outgoing_address`).
+  Squid template `squid -k parse` exit 0 on real 6.13 (P4-templates). Dante config
+  is assembled by **concatenation** (Dante has no `include` directive — P4-templates
+  finding), base preserved + per-tunnel `route{}` blocks appended.
 - **G3 — RESOLVED (spike PASS):** Dante `SIGHUP` reloads config and **preserves an
   active SOCKS session** (20/20 chunks, curl exit 0; `/proc/net/tcp` ESTABLISHED
   proof). **Decision:** §9 config-rewrite + SIGHUP dynamism is safe for live
