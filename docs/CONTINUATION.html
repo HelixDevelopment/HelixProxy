@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>CONTINUATION</title>
+  <title>CONTINUATION — Helix Proxy</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -173,13 +173,13 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">CONTINUATION</h1>
+<h1 class="title">CONTINUATION — Helix Proxy</h1>
 </header>
 <h1
-id="continuation-helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
+id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T02:30:00Z <strong>Status:</strong> Active — control-plane +
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T02:43:32Z <strong>Status:</strong> Active — control-plane +
 config-plane + control-API (P6) landed and
 unit/integration/parse-proven; the existing forward-proxy/SOCKS5/cache
 features are now PROVEN-WORKING-LIVE after BUGFIX-0002 (squid no longer
@@ -199,9 +199,9 @@ resume exactly where the last session left off from this single
 file.</p>
 </blockquote>
 <hr />
-<h2 id="current-phase">1. Current PHASE</h2>
+<h2 id="1-current-phase">1. Current PHASE</h2>
 <p><strong>Construction phase — landed: P0–P7 (control-plane +
-config-plane + control-API).</strong> 23 commits on
+config-plane + control-API).</strong> 28 commits on
 <code>feature/vpn-aware-dynamic-routing</code> ahead of
 <code>main</code>. The Go control-plane (stores, health-publisher,
 acl-helper, config-compiler, P5b breaker/failover, P6
@@ -217,45 +217,63 @@ live dynamic-VPN data-plane proof is the entire job of
 <p><strong>MAJOR live finding this session (BUGFIX-0002):</strong> the
 existing proxy genuinely did NOT serve under rootless Podman — squid
 crash-looped because the host-created <code>./logs</code> bind-mount was
-mode 0755 and the container’s remapped non-root <code>proxy</code> user
+mode 0755 and the container's remapped non-root <code>proxy</code> user
 could not write <code>access.log</code> (FATAL). Fixed
 (<code>chmod 777</code> the log dir, mirroring the existing cache-dir
 remedy). After the fix the <strong>3 existing features are
 PROVEN-WORKING-LIVE</strong>: HTTP forward proxy (200 +
 <code>Via: proxy-squid</code>), Dante SOCKS5 (200), squid caching
 (<code>TCP_MEM_HIT</code>, no origin contact). This directly answers the
-operator’s “most features don’t work / can’t be used” concern at the
+operator's "most features don't work / can't be used" concern at the
 existing-proxy layer.</p>
-<p><strong>BUGFIX-0003:</strong> <code>run-tests.sh</code>’s
+<p><strong>BUGFIX-0003:</strong> <code>run-tests.sh</code>'s
 <code>test_result</code> leaked a non-zero status on a no-message FAIL,
 aborting the suite after ~10 of 41 tests under <code>set -e</code>.
 Fixed (<code>return 0</code>); the suite now runs to completion and
 honestly reports 7 pre-existing FAILs (the §11.4.1 false-FAILs P8 is
 fixing now).</p>
-<p><strong>In flight (2 parallel background subagents,
-§11.4.103):</strong> <strong>P8</strong> — fix the 7 existing-test
-false-FAILs in <code>tests/run-tests.sh</code> (§11.4.3 topology-aware
-port dispatch + 3-state SKIP; §11.4.161 podman-not-docker; SKIP absent
-gitignored config) and the data-plane bluffs in
-<code>tests/comprehensive-test.sh</code> (B4 <code>(( ))</code> abort
-that left the script 100% dead; B2 cache-HIT-via-access.log; B3
-concurrent per-request http_code; B8 stats-output capture; B1
-false-VPN-routing → honest SKIP until P10). <strong>Remaining:</strong>
-<strong>P10</strong> (live dynamic boot — the usability proof;
-real-VPN-egress half is operator-gated on gluetun WireGuard creds, the
-fail-closed half is doable now) and <strong>P12</strong> (whole-branch
-review + full retest + merge no-force + prefixed tag).</p>
+<p><strong>P8 anti-bluff existing-test sweep — COMMITTED</strong> as
+four bugfix lanes: BUGFIX-0004 (<code>cd11494</code>,
+<code>run-tests.sh</code> §11.4.3 topology-aware ports + 3-state SKIP +
+§11.4.161 podman), BUGFIX-0005 (<code>4394643</code>,
+<code>final-verify.sh</code> + <code>verify-proxy.sh</code>
+false-VPN-routing §15 + <code>set -e</code> abort), BUGFIX-0006
+(<code>2bc03de</code>, <code>comprehensive-test.sh</code> revived from a
+100%-dead <code>(( ))</code> abort + real data-plane evidence for
+B2/B3/B8 + B1 honest VPN SKIP). <strong>P6 follow-ups —
+COMMITTED</strong> (<code>8d95f8a</code>, WARNING-3 real bidirectional
+metric-name drift guard, independently §1.1-mutation-proven; WARNING-4
+concurrency consistency test + documented cross-step audit gap → #52;
+WARNING-5 plaintext-metrics-listener design note → #53).</p>
+<p><strong>MAJOR finding from the BUGFIX-0006 revival (#50, in
+flight):</strong> reviving the dead <code>comprehensive-test.sh</code>
+immediately surfaced a <strong>real regressed feature</strong> — the
+documented 368-line <code>cache</code> management CLI
+(<code>./cache stats|clear|invalidate| trim</code>,
+README/USER_GUIDE/CACHE/TROUBLESHOOTING) is <strong>gone from
+HEAD</strong>. §11.4.124 git-history investigation (FACT): commit
+<code>6ec58ef</code> accidentally deleted it — the tracked
+<code>cache</code> FILE collided with the runtime <code>cache/</code>
+DATA dir at the same path (<code>CACHE_DIR=$PROJECT_ROOT/cache</code>,
+<code>.gitignore:16</code> <code>cache/</code>). A background subagent
+is restoring it as non-colliding <code>./cachectl</code> (§11.4.101
+safe/reversible), live-testing it on the running proxy, adding a
+§11.4.135 guard + §11.4.18 companion, doc-syncing the 4 docs, and
+flipping the 4 <code>comprehensive-test.sh</code> cache-CLI SKIPs → real
+PASS — conductor reviews + commits on return (§11.4.142).</p>
+<p><strong>Remaining:</strong> <strong>#50</strong> (cachectl restore,
+in flight) → <strong>P10</strong> (live dynamic boot — the usability
+proof; fail-closed half is data-plane-only + autonomous via a
+self-generated throwaway <code>helixproxy_pg_password</code> secret,
+real-VPN-egress half operator-gated on gluetun WireGuard creds) →
+<strong>P12</strong> (whole-branch review + full retest + merge no-force
++ prefixed tag). Follow-ups: #52 (store-tx audit atomicity), #53
+(plaintext metrics listener, operator-gated).</p>
 <h2
-id="the-23-landed-commits-git-log---oneline-main..head-newest-first-this-session-wave-newest-6">2.
-The 23 landed commits (<code>git log --oneline main..HEAD</code>, newest
-first; this-session wave = newest 6)</h2>
+id="2-the-28-landed-commits-git-log---oneline-mainhead-newest-first-this-session-wave--newest-11">2.
+The 28 landed commits (<code>git log --oneline main..HEAD</code>, newest
+first; this-session wave = newest 11)</h2>
 <table>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-</colgroup>
 <thead>
 <tr>
 <th>#</th>
@@ -265,6 +283,43 @@ first; this-session wave = newest 6)</h2>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>28</td>
+<td><code>8d95f8a</code></td>
+<td>P6</td>
+<td>real bidirectional metric-name drift guard (§1.1-mutation-proven) +
+concurrency consistency test; WARNING-3/4/5</td>
+</tr>
+<tr>
+<td>27</td>
+<td><code>2bc03de</code></td>
+<td>BUGFIX-0006</td>
+<td>revive + de-bluff <code>comprehensive-test.sh</code>
+(<code>(( ))</code> abort = 100% dead) + real B2/B3/B8 evidence;
+surfaced regression #50</td>
+</tr>
+<tr>
+<td>26</td>
+<td><code>4394643</code></td>
+<td>BUGFIX-0005</td>
+<td><code>final-verify.sh</code> + <code>verify-proxy.sh</code> no
+longer green a NO-VPN config (false-VPN-routing §15) +
+<code>set -e</code> abort</td>
+</tr>
+<tr>
+<td>25</td>
+<td><code>cd11494</code></td>
+<td>BUGFIX-0004</td>
+<td><code>run-tests.sh</code> no longer FAILs a healthy proxy — §11.4.3
+topology-aware ports + 3-state SKIP</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>6a8f886</code></td>
+<td>P11</td>
+<td>refresh CONTINUATION to live state (Rev 2) — 23 commits,
+P5b/P6/BUGFIX-0002/0003 landed, P8 in flight</td>
+</tr>
 <tr>
 <td>23</td>
 <td><code>61b4215</code></td>
@@ -426,10 +481,10 @@ carriers</td>
 </tr>
 </tbody>
 </table>
-<h2 id="proven-now-vs-owed-to-p10-honest-11.4.6">3. PROVEN-NOW vs
+<h2 id="3-proven-now-vs-owed-to-p10-honest-1146">3. PROVEN-NOW vs
 OWED-TO-P10 (honest §11.4.6)</h2>
 <h3
-id="proven-now-control-plane-config-plane-spike-facts-captured">PROVEN-NOW
+id="proven-now-control-plane--config-plane--spike-facts--captured">PROVEN-NOW
 (control-plane / config-plane / spike facts — captured)</h3>
 <ul>
 <li><strong>Existing proxy serves LIVE (BUGFIX-0002)</strong> — after
@@ -485,35 +540,35 @@ kill-switch). Design + parse layer.</li>
 across 4 scripts catalogued (§11.4.138), guards owed to P8.</li>
 </ul>
 <h3
-id="owed-to-p10-the-live-dynamic-stack-data-plane-proof-not-yet-captured">OWED-TO-P10
+id="owed-to-p10-the-live-dynamic-stack-data-plane-proof--not-yet-captured">OWED-TO-P10
 (the LIVE dynamic-stack data-plane proof — NOT yet captured)</h3>
 <p>The <code>dynamic</code> compose profile (postgres + redis +
 control-plane + gluetun(s) + squid+helper + dante) has <strong>never
 been booted</strong>; <code>docs/DYNAMIC_ROUTING.md</code> is explicitly
 DESIGN-only. The following remain <strong>unproven live</strong> and are
-the usability proof: - <code>vpn_real_egress</code> — egress IP via
-proxy <code>== tunnel exit &amp;&amp; != host IP</code> <strong>+
-<code>wg   transfer</code> Δ</strong> (200 OK is not routing). -
-<code>graceful_503</code> — tunnel down → branded 503 with <strong>Squid
-PID unchanged</strong> → up → 200, live. -
-<code>no_leak / killswitch</code> — drop tunnel → <strong>zero</strong>
-target packets on the real uplink (<code>tcpdump</code>) + DNS only via
-the intended resolver. - per-user <strong>407 auth challenge</strong>
-live; <strong>secret injection leak-free</strong> at runtime. -
-<strong>G1 residual</strong> — full rootless kernel-WG
+the usability proof:</p>
+<ul>
+<li><code>vpn_real_egress</code> — egress IP via proxy
+<code>== tunnel exit &amp;&amp; != host IP</code> <strong>+
+<code>wg transfer</code> Δ</strong> (200 OK is not routing).</li>
+<li><code>graceful_503</code> — tunnel down → branded 503 with
+<strong>Squid PID unchanged</strong> → up → 200, live.</li>
+<li><code>no_leak / killswitch</code> — drop tunnel →
+<strong>zero</strong> target packets on the real uplink
+(<code>tcpdump</code>) + DNS only via the intended resolver.</li>
+<li>per-user <strong>407 auth challenge</strong> live; <strong>secret
+injection leak-free</strong> at runtime.</li>
+<li><strong>G1 residual</strong> — full rootless kernel-WG
 <em>operation</em> (handshake + routing + throughput), only interface
-<em>creation</em> was spiked (§20 G1). - <strong>G3 residual /
-P9</strong> — concurrent / repeated SIGHUP +
-<strong>route-change-mid-session</strong> SOCKS path behaviour (§20 G3).
-- circuit-breaker open → failover to next up tier (P5b not yet
-landed).</p>
-<h2 id="remaining-phases">4. Remaining phases</h2>
+<em>creation</em> was spiked (§20 G1).</li>
+<li><strong>G3 residual / P9</strong> — concurrent / repeated SIGHUP +
+<strong>route-change-mid-session</strong> SOCKS path behaviour (§20
+G3).</li>
+<li>circuit-breaker open → failover to next up tier (P5b not yet
+landed).</li>
+</ul>
+<h2 id="4-remaining-phases">4. Remaining phases</h2>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th>Phase</th>
@@ -569,7 +624,7 @@ CONTINUATION + .remember are part of it)</td>
 </tr>
 </tbody>
 </table>
-<h2 id="binding-constraints-non-negotiable">5. Binding constraints
+<h2 id="5-binding-constraints-non-negotiable">5. Binding constraints
 (non-negotiable)</h2>
 <ul>
 <li><strong>Anti-bluff §11.4</strong> — every PASS carries positive
@@ -588,54 +643,59 @@ proxy-auth / mTLS keys via Podman secrets / file refs;
 <strong>never</strong> plaintext in git; <code>.env.example</code>
 documents refs only.</li>
 <li><strong>Operator-safe §11.4.174</strong> — do <strong>NOT</strong>
-touch the operator’s pre-existing resources: the host
+touch the operator's pre-existing resources: the host
 <code>wg0-mullvad</code> (UP kernel-WG) interface and any
-<code>lava-*</code> containers (e.g. <code>lava-postgres-thinker</code>)
+<code>lava-*</code> containers (e.g. <code>lava-postgres-thinker</code>)
 are off-limits; verify process/resource ownership before acting;
-block-don’t-break on shared-host contention.</li>
+block-don't-break on shared-host contention.</li>
 <li><strong>Host safety §12</strong> — ≤60% memory (§12.6); no host
 power-state commands (CONST-033); pull images sequentially;
 <code>--rm</code> diagnostics; <code>df</code> first.</li>
 </ul>
-<h2 id="resume-now-next-actionable">6. Resume now (next actionable)</h2>
+<h2 id="6-resume-now-next-actionable">6. Resume now (next
+actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <code>feature/vpn-aware-dynamic-routing</code>; confirm HEAD
-<code>61b4215</code> (23 ahead of <code>main</code>; or integrate any
-newer foreign commit per §11.4.71, no force). Working tree was clean at
-handoff.</li>
-<li><strong>P8 (in flight, 2 background subagents):</strong> review each
-subagent’s proposed <code>tests/run-tests.sh</code> and
-<code>tests/comprehensive-test.sh</code> changes independently
-(§11.4.142, conductor = reviewer), verify the captured before/after
-evidence
-<ul>
-<li>§1.1 mutation + guards, then commit each lane explicit-path (no
-<code>git add -A</code>, §11.4.84), no-force. Expected result:
-<code>run-tests.sh</code> reports 0 failures (skips allowed) against the
-healthy running proxy; <code>comprehensive-test.sh</code> runs to
-completion (was 100% dead at its <code>(( ))</code> abort) with real
-data-plane evidence.</li>
-</ul></li>
+<code>8d95f8a</code> (28 ahead of <code>main</code>; or integrate any
+newer foreign commit per §11.4.71, no force).</li>
+<li><strong>#50 cachectl restore (in flight, background
+subagent):</strong> on its return, review independently (§11.4.142) —
+verify the live <code>./cachectl stats/size/list</code> data-plane
+evidence, the CONTAINER_RUNTIME wiring fix, the §11.4.135 guard
+RED/GREEN + §1.1 mutation (byte-identical restore md5), the doc-sync
+(<code>./cache</code>→<code>./cachectl</code> in
+README/USER_GUIDE/CACHE/TROUBLESHOOTING + exports, zero raw-markup leak
+§11.4.168), and the 4 flipped <code>comprehensive-test.sh</code>
+cache-CLI checks now PASS — then commit explicit-path (§11.4.84),
+no-force.</li>
 <li><strong>P10 fail-closed half (doable now, NO operator
-dependency):</strong> boot the <code>dynamic</code> stack with the
-tunnel forced down → assert branded 503 with squid PID unchanged + zero
-target packets on the real uplink (<code>tcpdump</code> no-leak). The
-<strong>real-VPN-egress half</strong> (egress IP == tunnel exit != host
-+ <code>wg transfer</code> Δ) is <strong>operator-gated on gluetun
-WireGuard credentials</strong> — surface that via §11.4.66 ONLY when
-reaching that boundary (don’t block the loop; §11.4.21/§11.4.101). Also
-needs the <code>docker-compose.dynamic.yml</code> api-service entry
-(build <code>cmd/api</code>, mount the 3 secrets, expose
-<code>:58080</code>).</li>
+dependency):</strong> boot the <code>dynamic</code> stack (data-plane
+only: redis+postgres+gluetun+compiler+healthd+ squid-dynamic; a
+<strong>self-generated throwaway</strong>
+<code>helixproxy_pg_password</code> Podman secret — internal test-DB
+password, not an operator credential) with the tunnel forced down (empty
+<code>WIREGUARD_*</code> + <code>FIREWALL=on</code>) → assert branded
+503 with squid PID unchanged + zero target packets on the real uplink
+(<code>tcpdump</code> no-leak). NB: booting reclaims <code>:53128</code>
+from the running proxy — single-owner the data plane (§11.4.119), so run
+AFTER #50's live cache testing frees it. The <strong>real-VPN-egress
+half</strong> (egress IP == tunnel exit != host +
+<code>wg transfer</code> Δ) is <strong>operator-gated on gluetun
+WireGuard credentials</strong> — surface via §11.4.66 ONLY at that
+boundary (don't block the loop; §11.4.21/§11.4.101). The
+<code>api-service</code> control-plane entry is NOT required for the
+data-plane fail-closed proof; only for the full control surface (resolve
+at execution).</li>
 <li><strong>P12 (last):</strong> whole-branch review iterate-to-GO +
 full retest (§11.4.40) + merge onto latest <code>main</code>
 fast-forward-only (§11.4.113) + project-prefixed release tag
 (§11.4.151).</li>
-<li>Pre-existing follow-ups: P6 WARNING-3/4/5 (metric-name pin reads
-real config; audit+mutation atomicity; /metrics-over-mTLS vs plaintext
-scrape). P6.2 admin-UI + §11.4.170 host-rendered pixel proof
-deferred.</li>
+<li>Tracked follow-ups: <strong>#52</strong> (store-tx spanning
+mutation+audit — the WARNING-4 cross-step un-audited-mutation window),
+<strong>#53</strong> (separate plaintext <code>/metrics</code> listener
+vs the mTLS port — WARNING-5, operator-gated at P10 topology). P6.2
+admin-UI + §11.4.170 host-rendered pixel proof deferred.</li>
 <li>Every change: TDD reproduce-first (§11.4.43/§11.4.115), all
 warranted test types (§11.4.169), paired §1.1 mutation, independent
 review → iterate-to-GO (§11.4.142/§11.4.125/§11.4.134), docs in sync

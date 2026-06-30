@@ -1,7 +1,7 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 2
-**Last modified:** 2026-07-01T02:30:00Z
+**Revision:** 3
+**Last modified:** 2026-07-01T02:43:32Z
 **Status:** Active — control-plane + config-plane + control-API (P6) landed and unit/integration/parse-proven; the existing forward-proxy/SOCKS5/cache features are now PROVEN-WORKING-LIVE after BUGFIX-0002 (squid no longer crash-loops under rootless Podman); the LIVE *dynamic-VPN* data-plane proof is still owed to P10.
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
@@ -17,7 +17,7 @@
 ## 1. Current PHASE
 
 **Construction phase — landed: P0–P7 (control-plane + config-plane + control-API).**
-23 commits on `feature/vpn-aware-dynamic-routing` ahead of `main`. The Go
+28 commits on `feature/vpn-aware-dynamic-routing` ahead of `main`. The Go
 control-plane (stores, health-publisher, acl-helper, config-compiler, P5b
 breaker/failover, P6 control-API/SSE/metrics/PAC/mTLS) builds clean (4 binaries:
 `acl-helper`, `api`, `compiler`, `healthd`; `go build`/`go vet`/`gofmt -l` all
@@ -41,21 +41,45 @@ no-message FAIL, aborting the suite after ~10 of 41 tests under `set -e`. Fixed
 (`return 0`); the suite now runs to completion and honestly reports 7
 pre-existing FAILs (the §11.4.1 false-FAILs P8 is fixing now).
 
-**In flight (2 parallel background subagents, §11.4.103):** **P8** — fix the 7
-existing-test false-FAILs in `tests/run-tests.sh` (§11.4.3 topology-aware port
-dispatch + 3-state SKIP; §11.4.161 podman-not-docker; SKIP absent gitignored
-config) and the data-plane bluffs in `tests/comprehensive-test.sh` (B4 `(( ))`
-abort that left the script 100% dead; B2 cache-HIT-via-access.log; B3 concurrent
-per-request http_code; B8 stats-output capture; B1 false-VPN-routing → honest
-SKIP until P10). **Remaining:** **P10** (live dynamic boot — the usability
-proof; real-VPN-egress half is operator-gated on gluetun WireGuard creds, the
-fail-closed half is doable now) and **P12** (whole-branch review + full retest +
-merge no-force + prefixed tag).
+**P8 anti-bluff existing-test sweep — COMMITTED** as four bugfix lanes:
+BUGFIX-0004 (`cd11494`, `run-tests.sh` §11.4.3 topology-aware ports + 3-state
+SKIP + §11.4.161 podman), BUGFIX-0005 (`4394643`, `final-verify.sh` +
+`verify-proxy.sh` false-VPN-routing §15 + `set -e` abort), BUGFIX-0006
+(`2bc03de`, `comprehensive-test.sh` revived from a 100%-dead `(( ))` abort + real
+data-plane evidence for B2/B3/B8 + B1 honest VPN SKIP). **P6 follow-ups —
+COMMITTED** (`8d95f8a`, WARNING-3 real bidirectional metric-name drift guard,
+independently §1.1-mutation-proven; WARNING-4 concurrency consistency test +
+documented cross-step audit gap → #52; WARNING-5 plaintext-metrics-listener
+design note → #53).
 
-## 2. The 23 landed commits (`git log --oneline main..HEAD`, newest first; this-session wave = newest 6)
+**MAJOR finding from the BUGFIX-0006 revival (#50, in flight):** reviving the
+dead `comprehensive-test.sh` immediately surfaced a **real regressed feature** —
+the documented 368-line `cache` management CLI (`./cache stats|clear|invalidate|
+trim`, README/USER_GUIDE/CACHE/TROUBLESHOOTING) is **gone from HEAD**. §11.4.124
+git-history investigation (FACT): commit `6ec58ef` accidentally deleted it — the
+tracked `cache` FILE collided with the runtime `cache/` DATA dir at the same path
+(`CACHE_DIR=$PROJECT_ROOT/cache`, `.gitignore:16` `cache/`). A background subagent
+is restoring it as non-colliding `./cachectl` (§11.4.101 safe/reversible),
+live-testing it on the running proxy, adding a §11.4.135 guard + §11.4.18
+companion, doc-syncing the 4 docs, and flipping the 4 `comprehensive-test.sh`
+cache-CLI SKIPs → real PASS — conductor reviews + commits on return (§11.4.142).
+
+**Remaining:** **#50** (cachectl restore, in flight) → **P10** (live dynamic
+boot — the usability proof; fail-closed half is data-plane-only + autonomous via
+a self-generated throwaway `helixproxy_pg_password` secret, real-VPN-egress half
+operator-gated on gluetun WireGuard creds) → **P12** (whole-branch review + full
+retest + merge no-force + prefixed tag). Follow-ups: #52 (store-tx audit
+atomicity), #53 (plaintext metrics listener, operator-gated).
+
+## 2. The 28 landed commits (`git log --oneline main..HEAD`, newest first; this-session wave = newest 11)
 
 | # | Commit | Phase | Summary |
 |---|---|---|---|
+| 28 | `8d95f8a` | P6   | real bidirectional metric-name drift guard (§1.1-mutation-proven) + concurrency consistency test; WARNING-3/4/5 |
+| 27 | `2bc03de` | BUGFIX-0006 | revive + de-bluff `comprehensive-test.sh` (`(( ))` abort = 100% dead) + real B2/B3/B8 evidence; surfaced regression #50 |
+| 26 | `4394643` | BUGFIX-0005 | `final-verify.sh` + `verify-proxy.sh` no longer green a NO-VPN config (false-VPN-routing §15) + `set -e` abort |
+| 25 | `cd11494` | BUGFIX-0004 | `run-tests.sh` no longer FAILs a healthy proxy — §11.4.3 topology-aware ports + 3-state SKIP |
+| 24 | `6a8f886` | P11  | refresh CONTINUATION to live state (Rev 2) — 23 commits, P5b/P6/BUGFIX-0002/0003 landed, P8 in flight |
 | 23 | `61b4215` | chore | gofmt-format 6 pre-existing files (formatters-clean mandate; semantics-null verified) |
 | 22 | `62b22fe` | P6   | control-API server (REST/SSE/metrics/PAC, fail-closed mTLS) + coherent operator-wiring contract |
 | 21 | `1045dfd` | BUGFIX-0003 | `test_result` must `return 0` — suite no longer aborts mid-run under `set -e` |
@@ -174,29 +198,34 @@ usability proof:
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `61b4215` (23 ahead of `main`; or integrate any newer foreign commit per
-   §11.4.71, no force). Working tree was clean at handoff.
-2. **P8 (in flight, 2 background subagents):** review each subagent's proposed
-   `tests/run-tests.sh` and `tests/comprehensive-test.sh` changes independently
-   (§11.4.142, conductor = reviewer), verify the captured before/after evidence
-   + §1.1 mutation + guards, then commit each lane explicit-path (no `git add -A`,
-   §11.4.84), no-force. Expected result: `run-tests.sh` reports 0 failures
-   (skips allowed) against the healthy running proxy; `comprehensive-test.sh`
-   runs to completion (was 100% dead at its `(( ))` abort) with real
-   data-plane evidence.
+   `8d95f8a` (28 ahead of `main`; or integrate any newer foreign commit per
+   §11.4.71, no force).
+2. **#50 cachectl restore (in flight, background subagent):** on its return,
+   review independently (§11.4.142) — verify the live `./cachectl stats/size/list`
+   data-plane evidence, the CONTAINER_RUNTIME wiring fix, the §11.4.135 guard
+   RED/GREEN + §1.1 mutation (byte-identical restore md5), the doc-sync
+   (`./cache`→`./cachectl` in README/USER_GUIDE/CACHE/TROUBLESHOOTING + exports,
+   zero raw-markup leak §11.4.168), and the 4 flipped `comprehensive-test.sh`
+   cache-CLI checks now PASS — then commit explicit-path (§11.4.84), no-force.
 3. **P10 fail-closed half (doable now, NO operator dependency):** boot the
-   `dynamic` stack with the tunnel forced down → assert branded 503 with squid
-   PID unchanged + zero target packets on the real uplink (`tcpdump` no-leak).
-   The **real-VPN-egress half** (egress IP == tunnel exit != host + `wg
-   transfer` Δ) is **operator-gated on gluetun WireGuard credentials** — surface
-   that via §11.4.66 ONLY when reaching that boundary (don't block the loop;
-   §11.4.21/§11.4.101). Also needs the `docker-compose.dynamic.yml` api-service
-   entry (build `cmd/api`, mount the 3 secrets, expose `:58080`).
+   `dynamic` stack (data-plane only: redis+postgres+gluetun+compiler+healthd+
+   squid-dynamic; a **self-generated throwaway** `helixproxy_pg_password` Podman
+   secret — internal test-DB password, not an operator credential) with the
+   tunnel forced down (empty `WIREGUARD_*` + `FIREWALL=on`) → assert branded 503
+   with squid PID unchanged + zero target packets on the real uplink (`tcpdump`
+   no-leak). NB: booting reclaims `:53128` from the running proxy — single-owner
+   the data plane (§11.4.119), so run AFTER #50's live cache testing frees it.
+   The **real-VPN-egress half** (egress IP == tunnel exit != host + `wg transfer`
+   Δ) is **operator-gated on gluetun WireGuard credentials** — surface via
+   §11.4.66 ONLY at that boundary (don't block the loop; §11.4.21/§11.4.101). The
+   `api-service` control-plane entry is NOT required for the data-plane
+   fail-closed proof; only for the full control surface (resolve at execution).
 4. **P12 (last):** whole-branch review iterate-to-GO + full retest (§11.4.40) +
    merge onto latest `main` fast-forward-only (§11.4.113) + project-prefixed
    release tag (§11.4.151).
-5. Pre-existing follow-ups: P6 WARNING-3/4/5 (metric-name pin reads real config;
-   audit+mutation atomicity; /metrics-over-mTLS vs plaintext scrape). P6.2
+5. Tracked follow-ups: **#52** (store-tx spanning mutation+audit — the WARNING-4
+   cross-step un-audited-mutation window), **#53** (separate plaintext `/metrics`
+   listener vs the mTLS port — WARNING-5, operator-gated at P10 topology). P6.2
    admin-UI + §11.4.170 host-rendered pixel proof deferred.
 6. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
    types (§11.4.169), paired §1.1 mutation, independent review → iterate-to-GO
