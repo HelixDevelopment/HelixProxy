@@ -1,0 +1,112 @@
+# =============================================================================
+# helix_proxy — per-tunnel DNS-privacy forwarder (AdguardTeam/dnsproxy)
+# =============================================================================
+# Spec: docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md
+#       §11 ② "DoH/DoT per-tunnel DNS + leak prevention (AdguardTeam/dnsproxy
+#       sidecar)" + §12 "Security & secrets" (fail-closed, never leak).
+# Plan: docs/superpowers/plans/...-plan.md  T7.1 (Phase 7) — the live-tunnel
+#       DNS-leak proof step (the parent's "P10" deployment-wiring).
+#
+# STATUS — NOT-YET-LIVE (§11.4.6 no-guessing): this file is a CONFIG PLAN. As
+# of writing, only its STRUCTURE / PARSE has been validated (see README.md +
+# qa-results/p7-dnsproxy/dnsproxy_check.txt). DNS privacy and the
+# zero-plaintext-:53 no-leak guarantee are NOT proven here — they are owed to
+# the live-tunnel wiring phase (T7.1 / "P10"), which needs a running gluetun
+# netns. Do NOT read this file as evidence that DNS privacy works yet.
+#
+# DEPLOYMENT MODEL (one instance PER gluetun netns):
+#   The dynamic-routing design is "one gluetun container = one network
+#   namespace = one Redis status key" (docs/DYNAMIC_ROUTING.md §3.2). ONE
+#   dnsproxy instance runs INSIDE each gluetun netns (via the existing
+#   `network_mode: service:<gluetun>` pattern). It listens on loopback only;
+#   the Squid/Dante that share that netns set their resolver to 127.0.0.1.
+#   Because dnsproxy lives inside the tunnel's netns, its encrypted DoT/DoH
+#   queries to the upstream EGRESS THROUGH THE WIREGUARD TUNNEL — never on the
+#   host uplink — so DNS is both encrypted (DoT/DoH) and tunnel-routed. This
+#   is the data-plane basis for the §11.4.69 network-leak proof in
+#   DNS_LEAK_TEST.md (owed to T7.1 / "P10").
+#
+# ENV PROVENANCE (.env.example — config-injected per §11.4.28, never secrets):
+#   DNS_OVER_TLS_ENABLED=true        -> upstream uses tls:// (DoT)
+#   DOT_UPSTREAM=tls://1.1.1.1       -> the `upstream` value below
+#   DNS_SERVERS=8.8.8.8,8.8.4.4,1.1.1.1 -> `bootstrap` (hostname-form upstreams)
+#   DNS_CACHING_ENABLED=true         -> `cache: true`
+#   DNS_CACHE_TTL=3600               -> `cache-max-ttl`
+#   (A compose/control-plane renderer is expected to substitute these at deploy
+#    time per netns; the static values below mirror .env.example defaults.)
+# =============================================================================
+
+---
+
+# --- Listen surface (loopback-only = leak-safe) -----------------------------
+# Listen ONLY on loopback inside the gluetun netns. Same-netns Squid/Dante
+# reach it at 127.0.0.1:53; nothing outside the netns can query it. Binding a
+# routable address here would widen the surface and is intentionally avoided.
+listen-addrs:
+  - "127.0.0.1"
+listen-ports:
+  - 53
+
+# --- Upstream: encrypted DNS (DoT, from DOT_UPSTREAM) -----------------------
+# DoT to Cloudflare by IP. IP-form upstream needs NO bootstrap lookup, so there
+# is no plaintext :53 query for upstream resolution at all (the leak-safest
+# form). To switch to DoH instead, replace with the documented alternative
+# below and ensure `bootstrap` is set (DoH-by-hostname needs one bootstrap
+# lookup). DO NOT mix a plain `udp://`/`tcp://` upstream here — that would
+# defeat DNS privacy (§12).
+upstream:
+  - "tls://1.1.1.1"        # DOT_UPSTREAM (DoT, Cloudflare primary)
+  - "tls://1.0.0.1"        # DoT, Cloudflare secondary (redundancy)
+
+# DoH alternative (documented — uncomment to use DoH instead of DoT; keep
+# `bootstrap` populated so the hostname resolves once over the tunnel):
+#   upstream:
+#     - "https://dns.cloudflare.com/dns-query"   # DoH (RFC 8484)
+#     - "https://1.1.1.1/dns-query"              # DoH by IP (no bootstrap)
+
+# How multiple upstreams are used. load_balance spreads queries with EDNS0
+# weighting; "parallel" (query all, take fastest) and "fastest_addr" are the
+# other documented modes. load_balance keeps both DoT endpoints warm.
+upstream-mode: load_balance
+
+# --- Bootstrap (resolve HOSTNAME-form upstreams only) -----------------------
+# Used ONLY when an upstream is given by hostname (e.g. the DoH alternative
+# above). For the IP-form DoT upstream in use this is never consulted, so no
+# plaintext bootstrap query is emitted in the default DoT config. Values are
+# the DNS_SERVERS IPs from .env.example. Any bootstrap query that does occur
+# still egresses inside the tunnel (encrypted-by-WireGuard), not on the host
+# uplink — but the DNS_LEAK_TEST.md design treats ANY plaintext :53 as a
+# finding, so prefer the IP-form DoT upstream to keep bootstrap unused.
+bootstrap:
+  - "1.1.1.1:53"
+  - "8.8.8.8:53"
+
+# --- Upstream TLS verification (MUST stay strict) ---------------------------
+# `insecure: false` => verify the upstream's TLS certificate. Setting this true
+# would allow a MITM of the "encrypted" DNS and is a §12 security defect. Keep
+# false.
+insecure: false
+
+# --- Cache (DNS_CACHING_ENABLED / DNS_CACHE_TTL) ----------------------------
+cache: true
+cache-size: 4194304        # response cache, bytes (4 MiB)
+cache-min-ttl: 60          # floor (seconds) — avoid hammering upstream
+cache-max-ttl: 3600        # DNS_CACHE_TTL ceiling (seconds)
+# Optimistic caching: serve stale while refreshing in the background. Off by
+# default to avoid serving stale answers across a tunnel flip; enable only if a
+# latency vs freshness trade-off is desired and re-validated.
+cache-optimistic: false
+
+# --- Hardening --------------------------------------------------------------
+# Refuse ANY queries (a common amplification/abuse vector). Rate-limit is set
+# to 0 (unlimited) because the only clients are same-netns Squid/Dante on
+# loopback; raise it if the listen surface ever widens (it should not).
+refuse-any: true
+ratelimit: 0
+
+# --- Logging ----------------------------------------------------------------
+# Verbose off for production noise; flip to true during the T7.1 leak-proof run
+# so the captured log shows which upstream served each query. dnsproxy logs to
+# stderr by default (no `output` file set) so logs stay in the container's log
+# stream and are NOT written into the git tree.
+verbose: false
