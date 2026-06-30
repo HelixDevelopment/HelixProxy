@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>analyzer_common</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="testsdynamiclibanalyzer_common.sh-operator-guide"><code>tests/dynamic/lib/analyzer_common.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Active sourceable base
+library for the dynamic data-plane anti-bluff harness (P9). Live-stack
+consumers honest-SKIP (<code>topology_unsupported</code>) until the
+<code>dynamic</code> compose profile lands (P10, §11.4.69).</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script. Shared base for every analyzer under
+<code>tests/dynamic/analyzers/</code> and every suite under
+<code>tests/dynamic/suites/</code>.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>A <strong>sourceable</strong> (never executed) base library for the
+dynamic-mode data-plane analyzers and suites. It does three things:</p>
+<ol type="1">
+<li><strong>Sources the committed canonical oracle read-only</strong> —
+pulls in <code>tests/lib/evidence.sh</code>
+(<code>assert_egress_ip</code>, <code>assert_graceful_503</code>,
+<code>assert_cache_hit</code>, <code>assert_no_leak</code>,
+<code>wg_transfer_delta</code>, <code>ab_pass_with_evidence</code>,
+<code>ab_skip_with_reason</code>). The analyzers
+<strong>delegate</strong> to these self-tested helpers — reuse, never
+reimplement (§11.4.74) — and the library NEVER modifies the committed
+lib (§11.4.58 file-lane).</li>
+<li><strong>Provides verdict-emit + self-test TAP helpers</strong> so
+each analyzer can prove it PASSes its golden-good fixture AND FAILs its
+golden-bad fixture (§11.4.107(10) self-validated analyzer; an analyzer
+that passes its own negation is a bluff gate).</li>
+<li><strong>Provides the live-stack availability probe + honest
+SKIP</strong> the P10 suites use, so an absent dynamic stack is a
+§11.4.69 SKIP-with-reason, never a fake PASS.</li>
+</ol>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>POSIX <code>sh</code>, <code>awk</code>, <code>grep</code>,
+<code>tr</code> on <code>PATH</code>.</li>
+<li><code>curl</code> — <strong>only</strong> for the live-stack
+reachability probe (the P10 path).</li>
+<li>The committed <code>tests/lib/evidence.sh</code> present at the repo
+root. When it is absent, <code>AC_EVIDENCE_AVAILABLE=0</code> and
+delegating analyzers FAIL honestly rather than bluff a PASS.</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Source it from an analyzer or suite (do NOT exec it):</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> tests/dynamic/lib/analyzer_common.sh</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Typical consumer patterns:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ac_pass</span> <span class="st">&quot;my_signal&quot;</span> <span class="st">&quot;[evidence: </span><span class="va">$artefact</span><span class="st">]&quot;</span>          <span class="co"># emit a PASS line, rc 0</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">ac_fail</span> <span class="st">&quot;my_signal&quot;</span> <span class="st">&quot;[reason: &lt;why&gt;]&quot;</span>                <span class="co"># emit a FAIL line, rc 1</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">dyn_skip_if_no_stack</span> <span class="st">&quot;stress&quot;</span> <span class="kw">&amp;&amp;</span> <span class="cf">return</span> <span class="dv">0</span>            <span class="co"># honest SKIP when no stack</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">dyn_run_analyzer</span> graceful_503_analyzer.sh <span class="st">&quot;</span><span class="va">$manifest</span><span class="st">&quot;</span> <span class="co"># run an analyzer as subproc</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">dyn_red_mode</span> <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">&quot;RED baseline&quot;</span>                  <span class="co"># §11.4.115 polarity test</span></span></code></pre></div>
+<p>Environment knobs read by the library:</p>
+<ul>
+<li><code>HELIX_DYNAMIC_STACK</code> — <code>1</code> declares the live
+<code>dynamic</code> stack is up (P10).</li>
+<li><code>HELIX_PROXY_URL</code> — proxy URL the suites drive (default
+<code>http://127.0.0.1:53128</code>).</li>
+<li><code>HELIX_PROBE_TIMEOUT</code> — reachability-probe timeout in
+seconds (default <code>5</code>).</li>
+<li><code>RED_MODE</code> — <code>1</code> selects the §11.4.115
+RED-baseline polarity.</li>
+</ul>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Sourced, not exec’d</strong> — <code>$0</code> is the
+caller, so the library resolves its own directory by a fallback search
+(<code>lib/</code>, <code>../lib/</code>,
+<code>../../tests/dynamic/lib/</code>); a path it cannot resolve
+degrades gracefully.</li>
+<li><strong><code>evidence.sh</code> missing</strong> →
+<code>AC_EVIDENCE_AVAILABLE=0</code>; consumers that delegate report
+<code>committed tests/lib/evidence.sh not found — cannot delegate</code>
+and FAIL, never silently pass.</li>
+<li><strong>Stack declared but proxy unreachable</strong> →
+<code>dyn_live_stack_available</code> returns non-zero and
+<code>dyn_skip_if_no_stack</code> emits a
+<code>network_unreachable_external</code> SKIP (distinct from the
+<code>topology_unsupported</code> SKIP used when the stack is simply not
+declared).</li>
+<li><strong>Counters</strong> use <code>VAR=$((VAR+1))</code> (always
+≥1) so the increment never trips the <code>set -e</code> arithmetic-zero
+abort.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><code>#!/usr/bin/env bash</code> shebang but
+<strong>POSIX-clean</strong> — parses under both <code>sh -n</code> and
+<code>bash -n</code> (§11.4.67); no bash-only constructs
+(<code>[[ ]]</code>, <code>&lt;&lt;&lt;</code>, arrays,
+<code>&gt;( )</code>, <code>${v^^}</code>).</li>
+<li><strong>Verdict emitters</strong>: <code>ac_pass</code> (rc 0),
+<code>ac_fail</code> (rc 1) mirror the <code>evidence.sh</code>
+structured-line contract (<code>PASS:</code> / <code>FAIL:</code> /
+<code>SKIP:</code>).</li>
+<li><strong>Self-test TAP harness</strong>:
+<code>ac_selftest_reset</code>,
+<code>ac_expect &lt;rc&gt; &lt;desc&gt; -- cmd…</code> (captures rc,
+prints TAP <code>ok</code>/<code>not ok</code>, surfaces the verdict on
+failure), <code>ac_selftest_summary &lt;name&gt;</code> (emits the
+<code>1..N</code> plan + RESULT line; rc 0 iff every assertion
+passed).</li>
+<li><strong>Live-stack helpers</strong>:
+<code>dyn_stack_proxy_url</code>, <code>dyn_live_stack_available</code>
+(issues one short <code>curl -x</code> reachability probe only when
+<code>HELIX_DYNAMIC_STACK=1</code>),
+<code>dyn_skip_if_no_stack &lt;desc&gt;</code>.</li>
+<li><strong>Plumbing</strong>: <code>ac_qa_dir &lt;sub&gt;</code>
+(gitignored <code>qa-results/</code> evidence dir),
+<code>dyn_analyzers_dir</code>,
+<code>dyn_run_analyzer &lt;basename&gt; &lt;args…&gt;</code> (invokes an
+analyzer as a fully decoupled subprocess),
+<code>dyn_red_mode</code>.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — the committed canonical
+data-plane oracle this library sources read-only.</li>
+<li>The six analyzers under <code>tests/dynamic/analyzers/*.sh</code>
+and the six suites under <code>tests/dynamic/suites/*.sh</code> — every
+one sources this base.</li>
+<li><code>tests/dynamic/analyzers/run_analyzer_selftests.sh</code> —
+drives the self-test harness across all analyzers.</li>
+<li>Design spec §13/§14:
+<code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>.</li>
+<li>Constitution §11.4 / §11.4.69 / §11.4.107 / §11.4.115 / §1.1.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — <code>sh -n</code> + <code>bash -n</code> parse-clean.
+Exercised today (no live stack, no network) via the bundled fixtures
+through <code>run_analyzer_selftests.sh</code>; the live-stack probe
+path is exercised in <strong>P10</strong>.</p>
+</body>
+</html>
