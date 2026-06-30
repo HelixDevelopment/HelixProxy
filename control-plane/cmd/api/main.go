@@ -1,11 +1,15 @@
-// Command api is the control-plane REST API + admin UI server (design spec §4
-// component 4, §11 ⑥, plan Phase 6): CRUD over profiles/targets/rules/users,
-// live status via SSE, a Prometheus /metrics endpoint, the FindProxyForURL PAC
-// endpoint, and mTLS. It replaces the traefik/whoami placeholder.
+// Command api is the control-plane REST API server (design spec §4 component 4,
+// §11 ③⑤⑥, plan Phase 6): CRUD over profiles/targets/rules/tiers/users, live
+// status via SSE, a Prometheus /metrics endpoint, the FindProxyForURL PAC
+// endpoint, all over mTLS. It replaces the traefik/whoami placeholder.
 //
-// SCAFFOLD (Phase 6): the real handlers + the templ/htmx admin UI (OpenDesign
-// tokens §11.4.162, host-rendered pixel proof §11.4.170) land here in plan
-// T6.1/T6.2. main() today only wires the contracts + prints a version/usage line.
+// Wiring: a real Postgres store (HELIX_PG_DSN) + the fail-closed Redis status bus
+// (REDIS_ADDR) + the PAC generator back an api.Server served over mTLS. The
+// cert/key/client-CA come from FILE PATHS (the Podman-secret mount points named by
+// CONTROL_API_TLS_CERT / CONTROL_API_TLS_KEY / CONTROL_API_TLS_CLIENT_CA) — never
+// embedded key material (§11.4.10). The listen address is CONTROL_API_ADDR
+// (default :58080). The server fails closed: it refuses to start without its
+// backends and without a verified-client-cert TLS config.
 package main
 
 import (
@@ -13,37 +17,73 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"digital.vasic.helixproxy/controlplane/internal/api"
 	"digital.vasic.helixproxy/controlplane/internal/otel"
 	"digital.vasic.helixproxy/controlplane/internal/pac"
+	"digital.vasic.helixproxy/controlplane/internal/redis"
 	"digital.vasic.helixproxy/controlplane/internal/store"
 )
 
-const version = "0.0.0-scaffold"
+const version = "0.1.0"
+
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
 
 func main() {
 	showVersion := flag.Bool("version", false, "print version and exit")
-	addr := flag.String("addr", ":58080", "control-API listen address")
+	addr := flag.String("addr", getenv("CONTROL_API_ADDR", ":58080"), "control-API listen address")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println("api", version)
 		return
 	}
+	if err := run(*addr); err != nil {
+		fmt.Fprintln(os.Stderr, "api:", err)
+		os.Exit(1)
+	}
+}
 
-	shutdown, _ := otel.Init(context.Background(), "api")
+func run(addr string) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	shutdown, _ := otel.Init(ctx, "api")
 	defer func() { _ = shutdown(context.Background()) }()
 
-	// SCAFFOLD (Phase 6): construct an api.Server (backed by store.Queries +
-	// pac.Generator) and call Start(ctx) (plan T6.1/T6.2). The config + contract
-	// declarations below pin the wiring.
-	_ = api.Config{Addr: *addr}
-	var (
-		_ api.Server
-		_ store.Queries
-		_ pac.Generator
-	)
+	dsn := os.Getenv("HELIX_PG_DSN")
+	if dsn == "" {
+		return fmt.Errorf("$HELIX_PG_DSN is required")
+	}
+	openCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	pg, err := store.Open(openCtx, dsn)
+	if err != nil {
+		return fmt.Errorf("open postgres: %w", err)
+	}
+	defer func() { _ = pg.Close() }()
 
-	fmt.Fprintln(os.Stderr, "api "+version+": SCAFFOLD — control-API + admin UI not yet implemented (plan Phase 6)")
-	fmt.Fprintf(os.Stderr, "usage: api [--version] [--addr %s]\n", *addr)
+	bus, err := redis.Open(openCtx, getenv("REDIS_ADDR", "127.0.0.1:6379"), 60*time.Second)
+	if err != nil {
+		return fmt.Errorf("open redis: %w", err)
+	}
+	defer func() { _ = bus.Close() }()
+
+	cfg := api.Config{
+		Addr:     addr,
+		TLSCert:  os.Getenv("CONTROL_API_TLS_CERT"),
+		TLSKey:   os.Getenv("CONTROL_API_TLS_KEY"),
+		ClientCA: os.Getenv("CONTROL_API_TLS_CLIENT_CA"),
+	}
+	srv := api.NewServer(cfg, pg, bus, pac.NewGenerator())
+
+	fmt.Fprintf(os.Stderr, "api %s: serving mTLS control-API on %s\n", version, addr)
+	return srv.Start(ctx)
 }

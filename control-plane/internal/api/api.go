@@ -1,12 +1,13 @@
-// Package api is the control-plane REST API + admin UI server (design spec §4
-// component 4, §11 ⑥): CRUD over profiles/targets/rules/users, live status via
-// SSE, a Prometheus /metrics endpoint, the FindProxyForURL PAC endpoint, and
-// mTLS. It replaces the traefik/whoami placeholder. The admin UI uses
-// templ+htmx+SSE with OpenDesign tokens (§11.4.162), light+dark, proven by
-// host-rendered pixel proof (§11.4.170).
+// Package api is the control-plane REST API server (design spec §4 component 4,
+// §11 ③⑤⑥): CRUD over profiles/targets/rules/tiers/users, live status via SSE, a
+// Prometheus /metrics endpoint, the FindProxyForURL PAC endpoint, and mTLS. It
+// replaces the traefik/whoami placeholder.
 //
-// SCAFFOLD (Phase 6): real handlers + the templ/htmx UI land in internal/api
-// during plan T6.1/T6.2. This file defines only the server contract + config.
+// This file defines the server CONTRACT + config; the concrete implementation
+// lives in server.go (lifecycle + routing), handlers.go (REST/SSE/PAC), metrics.go
+// (Prometheus), and tls.go (fail-closed mTLS). The templ/htmx admin UI
+// (OpenDesign §11.4.162, host-rendered pixel proof §11.4.170) is a SEPARATE later
+// stream and is NOT part of this control-API server.
 package api
 
 import "context"

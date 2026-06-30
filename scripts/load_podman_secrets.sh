@@ -23,9 +23,10 @@
 #     SECRETS_DIR                 dir holding gitignored source files (./secrets)
 #     HTPASSWD_FILE               proxy htpasswd source        (./config/htpasswd)
 #     PG_PASSWORD_SECRET          secret name (helixproxy_pg_password)
-#     CONTROL_API_TLS_CERT_SECRET secret name (helixproxy_api_cert)
-#     CONTROL_API_TLS_KEY_SECRET  secret name (helixproxy_api_key)
-#     VPN_WG_KEY_SECRET           secret name (helixproxy_vpn_wg_key)
+#     CONTROL_API_TLS_CERT_SECRET  secret name (helixproxy_api_cert)
+#     CONTROL_API_TLS_KEY_SECRET   secret name (helixproxy_api_key)
+#     CONTROL_API_CLIENT_CA_SECRET secret name (helixproxy_api_client_ca)
+#     VPN_WG_KEY_SECRET            secret name (helixproxy_vpn_wg_key)
 #     PROXY_HTPASSWD_SECRET       secret name (helixproxy_proxy_htpasswd)
 #     CONTAINER_RUNTIME           podman|docker|auto (default podman; rootless)
 #
@@ -62,6 +63,7 @@ HTPASSWD_FILE="${HTPASSWD_FILE:-./config/htpasswd}"
 PG_PASSWORD_SECRET="${PG_PASSWORD_SECRET:-helixproxy_pg_password}"
 CONTROL_API_TLS_CERT_SECRET="${CONTROL_API_TLS_CERT_SECRET:-helixproxy_api_cert}"
 CONTROL_API_TLS_KEY_SECRET="${CONTROL_API_TLS_KEY_SECRET:-helixproxy_api_key}"
+CONTROL_API_CLIENT_CA_SECRET="${CONTROL_API_CLIENT_CA_SECRET:-helixproxy_api_client_ca}"
 VPN_WG_KEY_SECRET="${VPN_WG_KEY_SECRET:-helixproxy_vpn_wg_key}"
 PROXY_HTPASSWD_SECRET="${PROXY_HTPASSWD_SECRET:-helixproxy_proxy_htpasswd}"
 
@@ -161,9 +163,10 @@ MISSING=0
 log "runtime=$RUNTIME  rootless uid=$(id -u)  secrets_dir=$SECRETS_DIR  replace=$REPLACE  dry_run=$DRY_RUN"
 
 process_secret "$PG_PASSWORD_SECRET"          "$SECRETS_DIR/pg_password"   "Postgres control-plane password"
-process_secret "$CONTROL_API_TLS_CERT_SECRET" "$SECRETS_DIR/api_cert.pem"  "control-API mTLS certificate"
-process_secret "$CONTROL_API_TLS_KEY_SECRET"  "$SECRETS_DIR/api_key.pem"   "control-API mTLS private key"
-process_secret "$VPN_WG_KEY_SECRET"           "$SECRETS_DIR/vpn_wg_key"    "WireGuard tunnel private key"
+process_secret "$CONTROL_API_TLS_CERT_SECRET"  "$SECRETS_DIR/api_cert.pem" "control-API mTLS certificate"
+process_secret "$CONTROL_API_TLS_KEY_SECRET"   "$SECRETS_DIR/api_key.pem"  "control-API mTLS private key"
+process_secret "$CONTROL_API_CLIENT_CA_SECRET" "$SECRETS_DIR/api_ca.pem"   "control-API mTLS client CA (ClientCAs pool)"
+process_secret "$VPN_WG_KEY_SECRET"            "$SECRETS_DIR/vpn_wg_key"   "WireGuard tunnel private key"
 process_secret "$PROXY_HTPASSWD_SECRET"       "$HTPASSWD_FILE"             "Squid per-user htpasswd (hashes)"
 
 log "summary: created/replaced=$CREATED  kept=$KEPT  missing-source=$MISSING"
