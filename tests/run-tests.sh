@@ -29,13 +29,18 @@ test_result() {
     local result="$2"
     local message="${3:-}"
     
-    ((TESTS_RUN++))
-    
+    # NOTE: use assignment form, NOT (( VAR++ )). Under `set -e` a
+    # post-increment whose prior value is 0 returns exit status 1 and
+    # aborts the whole suite at the very first test (Helix Constitution
+    # §11.4.1 — script-internal failures fixed at source). See
+    # docs/issues/fixed/BUGFIXES.md.
+    TESTS_RUN=$((TESTS_RUN + 1))
+
     if [[ "$result" == "PASS" ]]; then
-        ((TESTS_PASSED++))
+        TESTS_PASSED=$((TESTS_PASSED + 1))
         echo -e "${GREEN}✓ PASS${NC}: $name"
     else
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
         echo -e "${RED}✗ FAIL${NC}: $name"
         [[ -n "$message" ]] && echo -e "  ${YELLOW}→ $message${NC}"
     fi
@@ -326,6 +331,22 @@ test_service_startup() {
 }
 
 #######################################
+# Test: Constitution inheritance pre-flight gate (Helix Constitution
+# §11.4.35). Runs FIRST. No CI/CD, no git hooks (CLAUDE.md Hard Stop
+# #1) — the gate is enforced here as a script target. Its paired §1.1
+# mutation lives at challenges/scripts/meta_test_constitution_inheritance.sh.
+#######################################
+test_constitution_inheritance() {
+    echo -e "\n${BLUE}=== Constitution Inheritance (pre-flight gate) ===${NC}"
+    if bash "$SCRIPT_DIR/constitution_inheritance_gate.sh" >/dev/null 2>&1; then
+        test_result "Constitution inheritance gate (§11.4.35)" "PASS"
+    else
+        test_result "Constitution inheritance gate (§11.4.35)" "FAIL" \
+            "run: bash tests/constitution_inheritance_gate.sh"
+    fi
+}
+
+#######################################
 # Print summary
 #######################################
 print_summary() {
@@ -357,7 +378,8 @@ main() {
     echo -e "${NC}"
     
     cd "$PROJECT_ROOT"
-    
+
+    test_constitution_inheritance
     test_environment
     test_directories
     test_scripts

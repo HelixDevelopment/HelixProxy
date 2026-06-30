@@ -3,6 +3,19 @@
 This file provides guidance to Claude Code (claude.ai/code) when working
 with code in this repository (Proxy).
 
+## INHERITED FROM constitution/CLAUDE.md
+
+All rules in `constitution/CLAUDE.md` (and the
+`constitution/Constitution.md` it references) apply unconditionally.
+Project-specific rules below extend them — they do NOT weaken any
+universal clause. When this file disagrees with the constitution
+submodule, the constitution wins. The constitution submodule's three
+files (`constitution/Constitution.md`, `constitution/CLAUDE.md`,
+`constitution/AGENTS.md`) are the canonical root (Helix Constitution
+§11.4.35). Locate it from any nested depth via
+`constitution/find_constitution.sh`.
+
+@constitution/CLAUDE.md
 
 ---
 

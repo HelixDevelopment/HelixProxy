@@ -5,6 +5,14 @@ rules that govern all changes to this repository. Project-specific
 articles MAY be appended below the universal block, but the universal
 block itself MUST NOT be weakened or removed.
 
+## INHERITED FROM the Helix Universal Constitution
+
+This constitution **extends** the Helix Universal Constitution at
+`constitution/Constitution.md`. All clauses there apply unless
+explicitly overridden below with an explicit `Override §X.Y` section.
+The constitution submodule is the canonical root (Helix Constitution
+§11.4.35) and wins on any disagreement. Locate it from any nested
+depth via `constitution/find_constitution.sh`.
 
 ---
 

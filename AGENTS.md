@@ -2,6 +2,18 @@
 
 Guidelines for AI coding agents working in this repository.
 
+> ## INHERITED FROM Helix Constitution
+>
+> Base agent rules: `constitution/AGENTS.md` — READ IT FIRST.
+> The base file is authoritative for any topic not covered here.
+> Project-specific rules below extend them; they never weaken them.
+> See also `constitution/CLAUDE.md` and `constitution/Constitution.md`
+> (the canonical root, Helix Constitution §11.4.35). When this file
+> disagrees with the constitution submodule, the constitution wins.
+> Locate the submodule from any nested depth via
+> `constitution/find_constitution.sh`.
+> Canonical reference: https://github.com/HelixDevelopment/HelixConstitution
+
 ## Project Overview
 
 This is a Bash/Docker/Podman-based project. Scripts manage containerized workloads and infrastructure automation.

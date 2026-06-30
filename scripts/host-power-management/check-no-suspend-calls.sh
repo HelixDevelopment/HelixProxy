@@ -27,6 +27,14 @@ fi
 EXCLUDE_DIRS=(
   ".git" ".svn" ".hg"
   "node_modules" "vendor" "third_party" "Upstreams" "upstreams"
+  # CONST-033 non-host context (justified): the Helix Constitution is a
+  # vendored/owned git submodule that DOCUMENTS the forbidden host-power
+  # commands (it is the SOURCE of CONST-033 itself) and ships its OWN
+  # CONST-033 guard at constitution/scripts/hooks/guard-forbidden-commands.sh.
+  # The parent scanner does not police a vendored submodule's internals —
+  # the submodule polices its own compliance. Added during constitution
+  # submodule init; same class as the vendor/third_party exclusions above.
+  "constitution"
   "cli_agents" "MCP" "MCP_Module/submodules"
   ".cache" ".gradle" ".idea" ".vscode" ".venv" "venv" "__pycache__"
   "build" "dist" "target" "out" "bin" "obj"
