@@ -1,0 +1,5 @@
+HTTP/1.1 200 OK
+Server: squid/6.13
+Content-Type: text/css
+X-Cache: MISS from proxy-squid
+X-Cache-Lookup: MISS from proxy-squid:53128

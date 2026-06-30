@@ -1,0 +1,7 @@
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+12:02:00.100001 IP 192.168.1.50.40123 > 1.1.1.1.53: 4242+ A? tracker.example.com. (37)
+12:02:00.180002 IP 1.1.1.1.53 > 192.168.1.50.40123: 4242 1/0/0 A 93.184.216.34 (53)
+2 packets captured
+2 packets received by filter
+0 packets dropped by kernel

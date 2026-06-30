@@ -1,0 +1,3 @@
+access_log=access_miss.log
+url=http://cdn.example.com/static/app.css
+headers_file=headers_miss.txt

@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: squid/6.13
+Content-Type: text/css
+Age: 42
+X-Cache: HIT from proxy-squid
+X-Cache-Lookup: HIT from proxy-squid:53128

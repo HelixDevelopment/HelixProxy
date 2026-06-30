@@ -1,0 +1,3 @@
+access_log=access_hit.log
+url=http://cdn.example.com/dynamic?x=1
+headers_file=headers_hit.txt

@@ -1,0 +1,12 @@
+=== BEFORE (tunnel-down window start; host quiesced) ===
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 1234567    8901    0    0    0     0          0         0  1234567    8901    0    0    0     0       0          0
+  eth0: 98765432  123456    0    0    0     0          0       100  45678901   87654    0    0    0     0       0          0
+   wg0: 2097152    1500    0    0    0     0          0         0  1048576     900    0    0    0     0       0          0
+=== AFTER (tunnel-down window end — LEAK: eth0 tx-packets advanced) ===
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 1240000    8950    0    0    0     0          0         0  1240000    8950    0    0    0     0       0          0
+  eth0: 98800000  123512    0    0    0     0          0       100  45700000   87702    0    0    0     0       0          0
+   wg0: 2097152    1500    0    0    0     0          0         0  1048576     900    0    0    0     0       0          0
