@@ -1,27 +1,24 @@
 // Package breaker defines the per-target circuit-breaker + tunnel tier-failover
-// decision (design spec §11 ①, §10). The real implementation wraps
-// sony/gobreaker/v2 and is embedded in the external-acl-helper's per-request
-// path (spec §4 component 3) so a failing tunnel trips the breaker and traffic
-// fails over to the next healthy tier — or returns a graceful 503.
+// decision (design spec §11 ①, §10). It wraps sony/gobreaker/v2: a failing tunnel
+// trips its breaker and SelectTunnel fails the route over to the next healthy
+// tier — or returns "" (a graceful 503, fail-closed, never a leak onto a known-
+// failing tunnel).
 //
-// SCAFFOLD (Phase 5): real impl lands in internal/breaker during plan T5.2.
+// The package is two halves:
+//   - selection.go     — SelectTunnel: the PURE, side-effect-free, fail-closed
+//     tier-failover verdict (the heart). Lowest-tier tunnel that is breaker-CLOSED
+//     AND health-UP, else "".
+//   - tunnelbreaker.go — Breaker + Registry: the gobreaker/v2 state machine that
+//     supplies the breaker half of SelectTunnel's state closure.
+//
+// §11.4.6 honest boundary: this package is the tier-failover LOGIC. Wiring it into
+// the external-acl-helper's per-request path (spec §4 component 3) — so a live
+// health/breaker flip re-selects the route — is a later integration step and the
+// package is intentionally not imported anywhere yet.
+//
+// History (§11.4.124): the P0 scaffold (commit 5f917a7) carried placeholder
+// Decision/Decider types here marked "real impl lands during plan T5.2". T5.2 is
+// this phase (P5b); the real implementation landed with a pure SelectTunnel +
+// Registry API, so those zero-consumer placeholders were retired (no importer of
+// internal/breaker existed; Decision/Decider had no callers).
 package breaker
-
-import "context"
-
-// Decision is the helper's per-request verdict: which tunnel to use, or deny.
-type Decision struct {
-	Tunnel string // chosen tunnel/profile name; empty when Allow is false
-	Tier   int    // failover tier that was selected
-	Allow  bool   // false => helper returns ERR => Squid emits a graceful 503
-}
-
-// Decider picks the highest-preference healthy tunnel for a target, honoring the
-// target's ordered failover tiers and per-target breaker state (spec §10 / §11 ①).
-// It MUST fail closed: when no tier is up, Allow is false (graceful 503, no leak).
-type Decider interface {
-	// Decide chooses a tunnel for the target (or denies, fail-closed).
-	Decide(ctx context.Context, target string) Decision
-	// Record feeds a per-request outcome back into the target/tunnel breaker.
-	Record(target, tunnel string, success bool)
-}
