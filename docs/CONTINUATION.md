@@ -1,8 +1,8 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 1
-**Last modified:** 2026-07-01T00:00:00Z
-**Status:** Active — control-plane + config-plane landed and unit/integration/parse-proven; the LIVE dynamic-stack data-plane proof is owed to P10.
+**Revision:** 2
+**Last modified:** 2026-07-01T02:30:00Z
+**Status:** Active — control-plane + config-plane + control-API (P6) landed and unit/integration/parse-proven; the existing forward-proxy/SOCKS5/cache features are now PROVEN-WORKING-LIVE after BUGFIX-0002 (squid no longer crash-loops under rootless Podman); the LIVE *dynamic-VPN* data-plane proof is still owed to P10.
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
 **Plan:** `docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md` (Rev 1)
@@ -16,20 +16,55 @@
 
 ## 1. Current PHASE
 
-**Control-plane / config-plane construction phase — landed: P0–P5a + P7.1/7.2/7.3.**
-14 commits on `feature/vpn-aware-dynamic-routing` ahead of `main`. The Go
-control-plane logic (stores, health-publisher, acl-helper, config-compiler) and
-the DNS/observability/security config-plans are written and proven at the
-unit / integration / config-parse layer. **No `dynamic`-mode container has been
-booted and no live data-plane evidence exists yet** — that is the entire job of
-P10 (the usability proof). In-flight next: **P5b** (breaker/failover), **P9**
-(full test matrix), **P11** (docs export — this file is part of it). **P10 is
-the critical unblocker** for any "it works for the end user" claim.
+**Construction phase — landed: P0–P7 (control-plane + config-plane + control-API).**
+23 commits on `feature/vpn-aware-dynamic-routing` ahead of `main`. The Go
+control-plane (stores, health-publisher, acl-helper, config-compiler, P5b
+breaker/failover, P6 control-API/SSE/metrics/PAC/mTLS) builds clean (4 binaries:
+`acl-helper`, `api`, `compiler`, `healthd`; `go build`/`go vet`/`gofmt -l` all
+clean) and is proven at the unit / integration / config-parse layer. The
+`dynamic` compose profile + Containerfiles + orchestrator wiring are authored
+(P10-prep) but **never booted** — the live dynamic-VPN data-plane proof is the
+entire job of **P10**.
 
-## 2. The 14 landed commits (`git log --oneline main..HEAD`, newest first)
+**MAJOR live finding this session (BUGFIX-0002):** the existing proxy genuinely
+did NOT serve under rootless Podman — squid crash-looped because the host-created
+`./logs` bind-mount was mode 0755 and the container's remapped non-root `proxy`
+user could not write `access.log` (FATAL). Fixed (`chmod 777` the log dir,
+mirroring the existing cache-dir remedy). After the fix the **3 existing
+features are PROVEN-WORKING-LIVE**: HTTP forward proxy (200 + `Via: proxy-squid`),
+Dante SOCKS5 (200), squid caching (`TCP_MEM_HIT`, no origin contact). This
+directly answers the operator's "most features don't work / can't be used"
+concern at the existing-proxy layer.
+
+**BUGFIX-0003:** `run-tests.sh`'s `test_result` leaked a non-zero status on a
+no-message FAIL, aborting the suite after ~10 of 41 tests under `set -e`. Fixed
+(`return 0`); the suite now runs to completion and honestly reports 7
+pre-existing FAILs (the §11.4.1 false-FAILs P8 is fixing now).
+
+**In flight (2 parallel background subagents, §11.4.103):** **P8** — fix the 7
+existing-test false-FAILs in `tests/run-tests.sh` (§11.4.3 topology-aware port
+dispatch + 3-state SKIP; §11.4.161 podman-not-docker; SKIP absent gitignored
+config) and the data-plane bluffs in `tests/comprehensive-test.sh` (B4 `(( ))`
+abort that left the script 100% dead; B2 cache-HIT-via-access.log; B3 concurrent
+per-request http_code; B8 stats-output capture; B1 false-VPN-routing → honest
+SKIP until P10). **Remaining:** **P10** (live dynamic boot — the usability
+proof; real-VPN-egress half is operator-gated on gluetun WireGuard creds, the
+fail-closed half is doable now) and **P12** (whole-branch review + full retest +
+merge no-force + prefixed tag).
+
+## 2. The 23 landed commits (`git log --oneline main..HEAD`, newest first; this-session wave = newest 6)
 
 | # | Commit | Phase | Summary |
 |---|---|---|---|
+| 23 | `61b4215` | chore | gofmt-format 6 pre-existing files (formatters-clean mandate; semantics-null verified) |
+| 22 | `62b22fe` | P6   | control-API server (REST/SSE/metrics/PAC, fail-closed mTLS) + coherent operator-wiring contract |
+| 21 | `1045dfd` | BUGFIX-0003 | `test_result` must `return 0` — suite no longer aborts mid-run under `set -e` |
+| 20 | `c6f2935` | P9   | §11.4.18 operator-guide companions for the 16 `tests/dynamic` scripts |
+| 19 | `b5573a9` | BUGFIX-0002 | squid log-dir writable under rootless Podman (proxy crash-loop) — existing features now serve live |
+| 18 | `0aca034` | P9   | anti-bluff dynamic-routing test/analyzer harness (`tests/dynamic`) |
+| 17 | `e6e93ec` | P10-prep | `dynamic` compose profile + control-plane/squid Containerfiles + orchestrator wiring |
+| 16 | `6bdeef9` | P5b  | circuit-breaker + tier-failover (`internal/breaker`, gobreaker/v2) |
+| 15 | `7d0d128` | P11  | CONTINUATION (§12.10) + spec §9 reconcile + §11.4.65 HTML/PDF export backfill |
 | 14 | `1833c8f` | P7.3 | per-user Squid auth + rootless Podman-secret loader + kill-switch design (no secrets) |
 | 13 | `603e039` | P5a  | acl-helper — Squid external_acl OK/ERR from Redis, fail-closed (stdlib) |
 | 12 | `e6e336f` | P7.1 | per-tunnel DoH/DoT (dnsproxy) config plan + DNS-leak test design |
@@ -37,7 +72,7 @@ the critical unblocker** for any "it works for the end user" claim.
 | 10 | `833fb9e` | P7.2 | Prometheus scrape + Grafana dashboard config plan (promtool-validated) |
 |  9 | `11106a4` | P3   | vpn-health-publisher (cmd/healthd + internal/vpn) — data-plane health, fail-closed, TDD |
 |  8 | `b66d172` | P4   | Squid 6.13 + Dante dynamic-mode templates (additive, parse-verified) + spec reconcile |
-|  7 | `fbfe9ed` | P1   | docs(spec): mark §20 gaps G1-G4 RESOLVED with spike decisions; bump to Revision 2 |
+|  7 | `fbfe9ed` | P1   | docs(spec): mark §20 gaps G1-G4 RESOLVED with spike decisions |
 |  6 | `e19e0ed` | P2   | store (pgx) + redis (go-redis) clients — fail-closed, TDD, real PG/Redis |
 |  5 | `6409cb9` | P1   | docs(research): resolve spec §20 gaps G1-G4 with captured-evidence spikes |
 |  4 | `6802798` | P1/E | docs(audit): §11.4.138 forensic bluff-audit of 4 existing test scripts (8 bluffs) |
@@ -48,6 +83,20 @@ the critical unblocker** for any "it works for the end user" claim.
 ## 3. PROVEN-NOW vs OWED-TO-P10 (honest §11.4.6)
 
 ### PROVEN-NOW (control-plane / config-plane / spike facts — captured)
+- **Existing proxy serves LIVE (BUGFIX-0002)** — after the rootless-Podman
+  log-dir fix, the booted `--no-vpn` stack proves all 3 existing features:
+  HTTP forward proxy `200` + `Via: 1.1 proxy-squid`, Dante SOCKS5 `200`, squid
+  cache `TCP_MEM_HIT` (no origin contact). Guard:
+  `tests/regression/log_dir_writable_test.sh` (§11.4.115 polarity, §1.1 mutation
+  byte-identical md5 `0128a96b6d467c2da5b7cef8a808e563`). Evidence:
+  `qa-results/regression/bugfix38/`.
+- **P5b breaker/failover** (`internal/breaker`, gobreaker/v2) — per-target
+  circuit breaker + tunnel tier-failover, TDD.
+- **P6 control-API** (`cmd/api` + `internal/api` + `internal/pac`) — REST CRUD +
+  SSE + Prometheus `/metrics` + PAC, **fail-closed mTLS**
+  (`RequireAndVerifyClientCert`), coherent operator-wiring contract
+  (`CONTROL_API_TLS_CERT/_KEY/_TLS_CLIENT_CA`, `:58080`); builds + vets clean,
+  §1.1 mutation md5 `67125c7a1ab9b00c98fb164f765b04af`.
 - **Spec §20 gaps G1–G4 resolved** with transient-spike captured evidence
   (`docs/research/mvp/findings/F_spikes_G1-G4.md`, run-id
   `qa-results/spikes/20260630_205029_g1g4/`): G2 `ubuntu/squid:latest` = Squid
@@ -94,13 +143,13 @@ usability proof:
 
 | Phase | Scope | State |
 |---|---|---|
-| **P5b** | per-target circuit breaker + tunnel tier-failover (`sony/gobreaker/v2`) | next, in flight |
-| **P6**  | control-API + admin UI (templ+htmx+SSE, OpenDesign §11.4.162, host-rendered pixel proof §11.4.170) | pending |
-| **P8**  | fix the existing-test bluffs (Stream E — the 8 audited bluffs → real probes / honest SKIP + §11.4.135 guards) | pending |
-| **P9**  | full test matrix + Challenges + HelixQA (all §11.4.169 types; G3 route-change-mid-session live test) | in flight |
-| **P10** | **live `dynamic`-mode boot + captured data-plane evidence = the usability proof** | **critical unblocker** |
-| **P11** | docs sync + HTML/PDF (+DOCX where mandated) exports (this CONTINUATION + .remember are part of it) | in flight |
-| **P12** | whole-branch review + full retest + merge to `main` + prefixed release tag | last |
+| **P5b** | per-target circuit breaker + tunnel tier-failover (`sony/gobreaker/v2`) | ✅ landed `6bdeef9` |
+| **P6**  | control-API + SSE + metrics + PAC + fail-closed mTLS | ✅ landed `62b22fe` (admin-UI templ/htmx + §11.4.170 host-rendered pixel proof = P6.2, deferred) |
+| **P8**  | fix existing-test bluffs → §11.4.3 topology dispatch / honest SKIP / §11.4.161 + §11.4.135 guards | **in flight** (2 subagents: `run-tests.sh` + `comprehensive-test.sh`) |
+| **P9**  | full test matrix + Challenges + HelixQA (all §11.4.169 types; G3 route-change-mid-session live test) | harness landed `0aca034`; live execution coupled to P10 |
+| **P10** | **live `dynamic`-mode boot + captured data-plane evidence = the usability proof** | **critical unblocker**; fail-closed half doable now, real-egress half operator-gated (gluetun WG creds) |
+| **P11** | docs sync + HTML/PDF (+DOCX where mandated) exports (this CONTINUATION + .remember are part of it) | ongoing |
+| **P12** | whole-branch review (iterate-to-GO) + full retest + merge to `main` no-force + prefixed release tag | last |
 
 ## 5. Binding constraints (non-negotiable)
 
@@ -125,12 +174,31 @@ usability proof:
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `1833c8f` (or integrate any newer foreign commit per §11.4.71, no force).
-2. In flight in parallel (§11.4.103): **P5b** breaker/failover, **P9** test
-   matrix, **P11** docs export. None of these is the usability proof.
-3. **Unblock P10** as the priority — it is the only phase that converts the
-   landed control-plane into captured end-user-usable evidence; until it lands,
-   no "works for users" claim may be made (§11.4 / §11.4.108).
-4. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
+   `61b4215` (23 ahead of `main`; or integrate any newer foreign commit per
+   §11.4.71, no force). Working tree was clean at handoff.
+2. **P8 (in flight, 2 background subagents):** review each subagent's proposed
+   `tests/run-tests.sh` and `tests/comprehensive-test.sh` changes independently
+   (§11.4.142, conductor = reviewer), verify the captured before/after evidence
+   + §1.1 mutation + guards, then commit each lane explicit-path (no `git add -A`,
+   §11.4.84), no-force. Expected result: `run-tests.sh` reports 0 failures
+   (skips allowed) against the healthy running proxy; `comprehensive-test.sh`
+   runs to completion (was 100% dead at its `(( ))` abort) with real
+   data-plane evidence.
+3. **P10 fail-closed half (doable now, NO operator dependency):** boot the
+   `dynamic` stack with the tunnel forced down → assert branded 503 with squid
+   PID unchanged + zero target packets on the real uplink (`tcpdump` no-leak).
+   The **real-VPN-egress half** (egress IP == tunnel exit != host + `wg
+   transfer` Δ) is **operator-gated on gluetun WireGuard credentials** — surface
+   that via §11.4.66 ONLY when reaching that boundary (don't block the loop;
+   §11.4.21/§11.4.101). Also needs the `docker-compose.dynamic.yml` api-service
+   entry (build `cmd/api`, mount the 3 secrets, expose `:58080`).
+4. **P12 (last):** whole-branch review iterate-to-GO + full retest (§11.4.40) +
+   merge onto latest `main` fast-forward-only (§11.4.113) + project-prefixed
+   release tag (§11.4.151).
+5. Pre-existing follow-ups: P6 WARNING-3/4/5 (metric-name pin reads real config;
+   audit+mutation atomicity; /metrics-over-mTLS vs plaintext scrape). P6.2
+   admin-UI + §11.4.170 host-rendered pixel proof deferred.
+6. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
    types (§11.4.169), paired §1.1 mutation, independent review → iterate-to-GO
-   (§11.4.142/§11.4.125/§11.4.134), docs in sync (§11.4.60/§11.4.65/§11.4.106).
+   (§11.4.142/§11.4.125/§11.4.134), docs in sync (§11.4.60/§11.4.65/§11.4.106),
+   operator resources untouched (§11.4.174: `wg0-mullvad`, `lava-*`).
