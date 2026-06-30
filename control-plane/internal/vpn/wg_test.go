@@ -31,9 +31,9 @@ func TestParseTransfer(t *testing.T) {
 
 func TestParseTransfer_Malformed(t *testing.T) {
 	for _, bad := range []string{
-		"onlytwo\t123\n",                 // 2 fields
-		"key\tnotanumber\t456\n",          // bad rx
-		"key\t123\tnotanumber\n",          // bad tx
+		"onlytwo\t123\n",         // 2 fields
+		"key\tnotanumber\t456\n", // bad rx
+		"key\t123\tnotanumber\n", // bad tx
 	} {
 		if _, err := ParseTransfer(bad); err == nil {
 			t.Errorf("ParseTransfer(%q) want error, got nil", bad)

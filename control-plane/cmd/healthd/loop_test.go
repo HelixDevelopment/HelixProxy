@@ -94,9 +94,9 @@ func TestRunProfile_TransitionPublishesOnce(t *testing.T) {
 	up2.CheckedAt = now.Add(50 * time.Millisecond)
 	up2.LastHandshake = now
 	s := &scriptSampler{steps: []scriptStep{
-		{snap: up},                              // unknown → up
-		{snap: up2},                             // up → up (no event)
-		{err: errors.New("tunnel dropped")},     // up → down (event)
+		{snap: up},                          // unknown → up
+		{snap: up2},                         // up → up (no event)
+		{err: errors.New("tunnel dropped")}, // up → down (event)
 	}}
 	pub := &recordingPub{}
 	eval := vpn.DataPlaneEvaluator{Freshness: 180 * time.Second}

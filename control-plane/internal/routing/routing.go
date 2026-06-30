@@ -78,10 +78,10 @@ type Tunnel struct {
 // DanteRoute is one resolved Dante egress route (a target chained through its
 // primary tunnel's gluetun upstream).
 type DanteRoute struct {
-	Name      string // tun_<profile> (comment label)
+	Name       string // tun_<profile> (comment label)
 	TargetCIDR string // destination host/CIDR routed through this tunnel
-	PeerHost  string
-	PeerPort  int
+	PeerHost   string
+	PeerPort   int
 }
 
 // Engine is the live Compiler implementation. HelperPath is the absolute path of

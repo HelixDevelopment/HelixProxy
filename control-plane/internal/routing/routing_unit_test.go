@@ -57,8 +57,10 @@ type fakeQueries struct {
 	tiers    map[string][]store.TargetTunnelTier
 }
 
-func (f *fakeQueries) ListProfiles(context.Context) ([]store.VPNProfile, error) { return f.profiles, nil }
-func (f *fakeQueries) ListTargets(context.Context) ([]store.TargetHost, error)  { return f.targets, nil }
+func (f *fakeQueries) ListProfiles(context.Context) ([]store.VPNProfile, error) {
+	return f.profiles, nil
+}
+func (f *fakeQueries) ListTargets(context.Context) ([]store.TargetHost, error) { return f.targets, nil }
 func (f *fakeQueries) ListTiers(_ context.Context, id string) ([]store.TargetTunnelTier, error) {
 	return f.tiers[id], nil
 }
@@ -67,8 +69,10 @@ func (f *fakeQueries) ListTiers(_ context.Context, id string) ([]store.TargetTun
 func (f *fakeQueries) GetProfile(context.Context, string) (store.VPNProfile, error) {
 	return store.VPNProfile{}, nil
 }
-func (f *fakeQueries) UpsertProfile(context.Context, store.VPNProfile) (string, error) { return "", nil }
-func (f *fakeQueries) DeleteProfile(context.Context, string) error                     { return nil }
+func (f *fakeQueries) UpsertProfile(context.Context, store.VPNProfile) (string, error) {
+	return "", nil
+}
+func (f *fakeQueries) DeleteProfile(context.Context, string) error { return nil }
 func (f *fakeQueries) GetTargetHost(context.Context, string) (store.TargetHost, error) {
 	return store.TargetHost{}, nil
 }

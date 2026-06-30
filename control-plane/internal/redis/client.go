@@ -4,11 +4,12 @@
 // "up", so a tunnel outage (or a Redis outage) can never fall through to a leak.
 //
 // Two independent staleness mechanisms back fail-closed:
-//   (1) Redis TTL — SetStatus writes with an expiry; an expired key is GONE, so
-//       GetStatus sees a miss → DOWN.
-//   (2) Freshness guard — even a present key whose CheckedAt is older than the
-//       configured maxAge is downgraded to DOWN (defence in depth against a
-//       publisher that stopped refreshing but left a key with a long TTL).
+//
+//	(1) Redis TTL — SetStatus writes with an expiry; an expired key is GONE, so
+//	    GetStatus sees a miss → DOWN.
+//	(2) Freshness guard — even a present key whose CheckedAt is older than the
+//	    configured maxAge is downgraded to DOWN (defence in depth against a
+//	    publisher that stopped refreshing but left a key with a long TTL).
 package redis
 
 import (

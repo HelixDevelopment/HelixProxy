@@ -51,8 +51,8 @@ func init() {
 
 func TestDecideHealth_TruthTable(t *testing.T) {
 	now := time.Date(2026, 6, 30, 12, 0, 0, 0, time.UTC)
-	fresh := now.Add(-30 * time.Second)  // 30s ago — within window
-	stale := now.Add(-10 * time.Minute)  // 10m ago — beyond 180s window
+	fresh := now.Add(-30 * time.Second) // 30s ago — within window
+	stale := now.Add(-10 * time.Minute) // 10m ago — beyond 180s window
 	goodEgress := "203.0.113.9"
 	host := "198.51.100.7"
 
