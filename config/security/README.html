@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">README</h1>
+</header>
+<h1 id="helix-proxy-security-zero-trust-model-design">Helix Proxy —
+Security &amp; Zero-Trust Model (DESIGN)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> DESIGN / config-plan — NOT
+yet live. Live enforcement (407 auth challenge, tunnel-drop no-leak) is
+PROVEN in P10, not here (§11.4.6). <strong>Authority:</strong>
+<code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>
+§12 (Security &amp; secrets) + §13 (anti-bluff test strategy). Composes
+the §11.4 anti-bluff covenant — every claim below is a <em>plan</em>,
+falsifiable by the P10 captured-evidence probes named at the end.</p>
+<p>This directory documents the security posture of the VPN-aware
+dynamic-routing extension. It owns DESIGN only — no live wiring, no
+credentials, no operator resources touched (§11.4.174).</p>
+<hr />
+<h2 id="secrets-the-podman-secrets-reference-model-11.4.10">1. Secrets:
+the Podman-secrets reference model (§11.4.10)</h2>
+<p><strong>Rule: secret NAMES live in git; secret VALUES never
+do.</strong></p>
+<ul>
+<li><code>.env.example</code> declares only <code>*_SECRET</code>
+variables whose VALUES are Podman <strong>secret names</strong>
+(e.g. <code>PG_PASSWORD_SECRET=helixproxy_pg_password</code>,
+<code>CONTROL_API_TLS_CERT_SECRET=helixproxy_api_cert</code>,
+<code>CONTROL_API_TLS_KEY_SECRET=helixproxy_api_key</code>) — never a
+password, key, or token.</li>
+<li>The real material lives in the gitignored <code>secrets/</code>
+directory and the gitignored <code>config/htpasswd</code> (both excluded
+by <code>.gitignore</code>). The operator drops the files there
+out-of-band.</li>
+<li><code>scripts/load_podman_secrets.sh</code> (the companion loader —
+see §2) reads those gitignored sources and creates the named
+<strong>rootless</strong> Podman secrets (§11.4.161). Containers
+reference secrets by name; the value is mounted into the container’s
+tmpfs at runtime and is never serialised into an image layer, a compose
+file, or git.</li>
+<li>Source files SHOULD be <code>chmod 600</code> under a
+<code>chmod 700</code> parent (§11.4.10); the loader warns (does not
+fail) on looser perms and never prints a value.</li>
+<li>On suspected leak: rotate the source, re-run the loader with
+<code>--replace</code>, and follow §11.4.10 rotation.</li>
+</ul>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Secret name (env)</th>
+<th>Default name</th>
+<th>Gitignored source</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PG_PASSWORD_SECRET</code></td>
+<td><code>helixproxy_pg_password</code></td>
+<td><code>secrets/pg_password</code></td>
+<td>Postgres control-plane password</td>
+</tr>
+<tr>
+<td><code>CONTROL_API_TLS_CERT_SECRET</code></td>
+<td><code>helixproxy_api_cert</code></td>
+<td><code>secrets/api_cert.pem</code></td>
+<td>control-API mTLS certificate</td>
+</tr>
+<tr>
+<td><code>CONTROL_API_TLS_KEY_SECRET</code></td>
+<td><code>helixproxy_api_key</code></td>
+<td><code>secrets/api_key.pem</code></td>
+<td>control-API mTLS private key</td>
+</tr>
+<tr>
+<td><code>VPN_WG_KEY_SECRET</code></td>
+<td><code>helixproxy_vpn_wg_key</code></td>
+<td><code>secrets/vpn_wg_key</code></td>
+<td>WireGuard tunnel private key</td>
+</tr>
+<tr>
+<td><code>PROXY_HTPASSWD_SECRET</code></td>
+<td><code>helixproxy_proxy_htpasswd</code></td>
+<td><code>config/htpasswd</code></td>
+<td>Squid per-user htpasswd (hashes)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="companion-loader-scriptsload_podman_secrets.sh">2. Companion
+loader — <code>scripts/load_podman_secrets.sh</code></h2>
+<p>Idempotent, rootless, operator-run. Maps each secret name above to
+its gitignored source path and creates the secret if absent (re-run is
+safe; <code>--replace</code> recreates, <code>--dry-run</code>
+previews). It contains NO secret values — only the name→path mapping. It
+refuses to run as root (§11.4.161) and touches ONLY
+<code>helixproxy_*</code> secrets — never the operator’s containers, the
+<code>wg0-mullvad</code> / <code>lava-*</code> interfaces, or unrelated
+secrets (§11.4.174).</p>
+<pre><code># operator workflow (out-of-band, real values never in git):
+mkdir -p secrets &amp;&amp; chmod 700 secrets
+printf &#39;%s&#39; &quot;&lt;pg-password&gt;&quot;   &gt; secrets/pg_password   &amp;&amp; chmod 600 secrets/pg_password
+htpasswd -B -c config/htpasswd &lt;user&gt;                 # bcrypt hashes only
+scripts/load_podman_secrets.sh            # create the named rootless secrets
+scripts/load_podman_secrets.sh --dry-run  # idempotent preview on re-run</code></pre>
+<hr />
+<h2 id="per-user-proxy-auth-audit-log">3. Per-user proxy auth + audit
+log</h2>
+<ul>
+<li><strong>Auth template:</strong>
+<code>config/squid/templates/auth.conf.tmpl</code> adds HTTP Basic
+per-user auth as an <strong>additive include</strong>
+(<code>auth_param basic</code> against the gitignored htpasswd →
+<code>acl authed proxy_auth REQUIRED</code> →
+<code>http_access deny !authed</code>), gated by
+<code>PROXY_AUTH_ENABLED</code> (§11.4.122 — the base
+<code>squid.conf</code> is never modified).</li>
+<li><strong>Composition:</strong> with the dynamic-routing include also
+active, the effective policy is “<strong>authenticated user AND tunnel
+up</strong>” — each include contributes its own fail-closed
+<code>deny</code> guard above the base allow rules.</li>
+<li><strong>Audit log:</strong> the control-plane already owns an
+<code>audit_log</code> table (Stream A schema). Per-user requests are
+attributable by the authenticated username (Squid <code>%un</code>
+access-log token feeding the control-plane), so each routed / denied
+request maps to a user + a chosen <code>vpn_profile</code> for the audit
+trail. (Live wiring of the access-log → <code>audit_log</code> pipe is a
+control-plane stream; out of this config-plan’s scope.)</li>
+</ul>
+<hr />
+<h2
+id="kill-switch-gluetuns-built-in-firewall-11.4.74-configure-dont-reimplement">4.
+Kill-switch: gluetun’s BUILT-IN firewall (§11.4.74 — configure, don’t
+reimplement)</h2>
+<p>The egress kill-switch is <strong>gluetun’s own</strong> firewall —
+we CONFIGURE it, we do not build our own. Set <code>FIREWALL=on</code>
+(gluetun default) on every tunnel container: gluetun installs
+nftables/iptables rules inside its own network namespace that permit
+egress ONLY through the active VPN interface, so if the tunnel drops
+there is no path for target traffic to leak onto the real uplink. Squid
+routes through the gluetun container as its <code>cache_peer</code>
+parent and is fail-closed at the application layer too
+(<code>never_direct allow all</code> +
+<code>http_access deny !tun_up</code> → branded 503 in
+<code>dynamic-routing.conf.tmpl</code>). The two layers are independent:
+gluetun’s firewall is the network-layer guarantee; Squid’s fail-closed
+routing is the application-layer guarantee.</p>
+<hr />
+<h2 id="mtls-on-the-control-api">5. mTLS on the control-API</h2>
+<p>The control-API is served with mTLS using the
+<code>helixproxy_api_cert</code> / <code>helixproxy_api_key</code>
+Podman secrets (cert + key by name, never in git). Clients (admin UI,
+CLI) present a client cert; the API verifies against the CA. Design only
+here — the API server lives in <code>control-plane/</code> (other
+streams).</p>
+<hr />
+<h2
+id="p10-no-leak-auth-enforced-test-design-anti-bluff-11.4-11.4.69-11.4.107-11.4.123">6.
+P10 no-leak / auth-enforced test DESIGN (anti-bluff — §11.4 / §11.4.69 /
+§11.4.107 / §11.4.123)</h2>
+<p>These are the captured-evidence probes that will PROVE the above LIVE
+in P10. Stated now as design; <strong>none is claimed proven
+yet</strong> (§11.4.6).</p>
+<ul>
+<li><strong>Unauthenticated → 407 (auth enforced).</strong> With
+<code>PROXY_AUTH_ENABLED=true</code>:
+<code>curl -x http://proxy:53128 http://example.com</code> with NO
+credentials → capture HTTP <strong>407 Proxy Authentication
+Required</strong> + the <code>Proxy-Authenticate: Basic realm=...</code>
+header; THEN with valid <code>-U user:pass</code> → 200 + real body.
+PASS requires BOTH the negative (407) and positive (200) captures — a
+200 alone does not prove the gate exists.</li>
+<li><strong>Tunnel-drop → zero egress (kill-switch no-leak).</strong>
+Bring a tunnel up, then drop it; run <code>tcpdump</code> <strong>inside
+the gluetun network namespace on the real uplink interface</strong> for
+the target host/IP while issuing requests → capture
+<strong>zero</strong> target packets on the real uplink + DNS only via
+the intended resolver, and Squid returns the branded 503. Per §13:
+<em>leak-testing while the tunnel is up proves nothing</em> — the drop
+is the test.</li>
+<li><strong>Self-validated analyzer (§11.4.107(10)):</strong> the
+leak/auth analyzers ship with a golden-good and a golden-bad fixture;
+the golden-bad (a captured leak / a missing 407) MUST FAIL, or the probe
+is a bluff gate.</li>
+<li><strong>Evidence path:</strong> captured under
+<code>qa-results/</code> (raw, gitignored) → curated to
+<code>docs/qa/&lt;run-id&gt;/</code> at P10 (§11.4.83).</li>
+</ul>
+<hr />
+<h2 id="what-is-proven-now-vs-owed-to-p10-11.4.6">7. What is proven NOW
+vs owed to P10 (§11.4.6)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Now</th>
+<th>P10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Auth directives + routing include PARSE &amp; compose
+(<code>squid -k parse</code> exit 0)</td>
+<td>✅ proven</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Loader script parses (<code>sh -n</code> + <code>bash -n</code>)
+&amp; leaks no value</td>
+<td>✅ proven</td>
+<td>—</td>
+</tr>
+<tr>
+<td>No secret value in any tracked file</td>
+<td>✅ proven (pre-store grep)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Unauthenticated request → 407, valid → 200</td>
+<td>⏳ design</td>
+<td>✅ live capture</td>
+</tr>
+<tr>
+<td>Tunnel drop → zero egress on real uplink (in-netns tcpdump)</td>
+<td>⏳ design</td>
+<td>✅ live capture</td>
+</tr>
+<tr>
+<td>mTLS handshake on control-API</td>
+<td>⏳ design</td>
+<td>✅ live capture</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

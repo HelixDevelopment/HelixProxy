@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CONTINUATION</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">CONTINUATION</h1>
+</header>
+<h1
+id="continuation-helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
+— Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Active — control-plane +
+config-plane landed and unit/integration/parse-proven; the LIVE
+dynamic-stack data-plane proof is owed to P10. <strong>Branch:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> <strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>
+(Rev 4) <strong>Plan:</strong>
+<code>docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md</code>
+(Rev 1) <strong>Authority:</strong> Inherits the Helix Constitution
+submodule (<code>constitution/Constitution.md</code>) per §11.4.35.</p>
+<blockquote>
+<p>§12.10 live-state resume file. Read this first, then
+<code>git fetch --all --prune</code> and re-read
+<code>git log --oneline main..HEAD</code>. Any agent must be able to
+resume exactly where the last session left off from this single
+file.</p>
+</blockquote>
+<hr />
+<h2 id="current-phase">1. Current PHASE</h2>
+<p><strong>Control-plane / config-plane construction phase — landed:
+P0–P5a + P7.1/7.2/7.3.</strong> 14 commits on
+<code>feature/vpn-aware-dynamic-routing</code> ahead of
+<code>main</code>. The Go control-plane logic (stores, health-publisher,
+acl-helper, config-compiler) and the DNS/observability/security
+config-plans are written and proven at the unit / integration /
+config-parse layer. <strong>No <code>dynamic</code>-mode container has
+been booted and no live data-plane evidence exists yet</strong> — that
+is the entire job of P10 (the usability proof). In-flight next:
+<strong>P5b</strong> (breaker/failover), <strong>P9</strong> (full test
+matrix), <strong>P11</strong> (docs export — this file is part of it).
+<strong>P10 is the critical unblocker</strong> for any “it works for the
+end user” claim.</p>
+<h2
+id="the-14-landed-commits-git-log---oneline-main..head-newest-first">2.
+The 14 landed commits (<code>git log --oneline main..HEAD</code>, newest
+first)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Commit</th>
+<th>Phase</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14</td>
+<td><code>1833c8f</code></td>
+<td>P7.3</td>
+<td>per-user Squid auth + rootless Podman-secret loader + kill-switch
+design (no secrets)</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>603e039</code></td>
+<td>P5a</td>
+<td>acl-helper — Squid external_acl OK/ERR from Redis, fail-closed
+(stdlib)</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>e6e336f</code></td>
+<td>P7.1</td>
+<td>per-tunnel DoH/DoT (dnsproxy) config plan + DNS-leak test
+design</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>04526dd</code></td>
+<td>P4</td>
+<td>config-compiler — render Squid/Dante/PAC from PG + seed route keys
+(parse-verified)</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>833fb9e</code></td>
+<td>P7.2</td>
+<td>Prometheus scrape + Grafana dashboard config plan
+(promtool-validated)</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>11106a4</code></td>
+<td>P3</td>
+<td>vpn-health-publisher (cmd/healthd + internal/vpn) — data-plane
+health, fail-closed, TDD</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>b66d172</code></td>
+<td>P4</td>
+<td>Squid 6.13 + Dante dynamic-mode templates (additive, parse-verified)
++ spec reconcile</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>fbfe9ed</code></td>
+<td>P1</td>
+<td>docs(spec): mark §20 gaps G1-G4 RESOLVED with spike decisions; bump
+to Revision 2</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>e19e0ed</code></td>
+<td>P2</td>
+<td>store (pgx) + redis (go-redis) clients — fail-closed, TDD, real
+PG/Redis</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>6409cb9</code></td>
+<td>P1</td>
+<td>docs(research): resolve spec §20 gaps G1-G4 with captured-evidence
+spikes</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>6802798</code></td>
+<td>P1/E</td>
+<td>docs(audit): §11.4.138 forensic bluff-audit of 4 existing test
+scripts (8 bluffs)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>9ac1b4a</code></td>
+<td>P0</td>
+<td>docs(dynamic-routing): DYNAMIC_ROUTING.md + 2 mermaid diagrams</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>6251007</code></td>
+<td>P0</td>
+<td>chore(submodules): incorporate containers, helix_qa, challenges,
+docs_chain (SSH, no-force)</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>5f917a7</code></td>
+<td>P0</td>
+<td>P0 scaffold — data model, evidence harness, Go skeleton, governance
+carriers</td>
+</tr>
+</tbody>
+</table>
+<h2 id="proven-now-vs-owed-to-p10-honest-11.4.6">3. PROVEN-NOW vs
+OWED-TO-P10 (honest §11.4.6)</h2>
+<h3
+id="proven-now-control-plane-config-plane-spike-facts-captured">PROVEN-NOW
+(control-plane / config-plane / spike facts — captured)</h3>
+<ul>
+<li><strong>Spec §20 gaps G1–G4 resolved</strong> with transient-spike
+captured evidence
+(<code>docs/research/mvp/findings/F_spikes_G1-G4.md</code>, run-id
+<code>qa-results/spikes/20260630_205029_g1g4/</code>): G2
+<code>ubuntu/squid:latest</code> = Squid <strong>6.13</strong> (not v8),
+§8 directive set <code>squid -k parse</code> exit 0; G4 gluetun
+<strong>v3.40 (=v3.40.4)</strong> control-API <code>:8000</code> answers
+200, issue #3060 confirmed; G1 kernel-WG interface <strong>creatable
+rootless</strong> with <code>--cap-add NET_ADMIN</code>; G3 Dante
+<strong>SIGHUP preserves an active SOCKS session</strong> (20/20 chunks,
+curl exit 0, <code>/proc/net/tcp</code> ESTABLISHED proof).</li>
+<li><strong>P2 stores</strong> (pgx + go-redis) — fail-closed, TDD,
+exercised against <strong>real PG / Redis</strong>.</li>
+<li><strong>P3 vpn-health-publisher</strong> (<code>cmd/healthd</code> +
+<code>internal/vpn</code>) — data-plane health poll → Redis state,
+fail-closed, TDD.</li>
+<li><strong>P4 config-compiler + templates</strong> — Squid 6.13
+(<code>%&gt;ha{Host}</code>) + Dante (concatenation, no
+<code>include</code>) render from PG;
+<strong><code>squid -k parse</code> exit 0</strong>; PAC + route-key
+seeding parse-verified.</li>
+<li><strong>P5a acl-helper</strong> — Squid <code>external_acl</code>
+OK/ERR from Redis, <strong>fail-closed</strong>, stdlib-only.</li>
+<li><strong>P7.2 observability</strong> config plan —
+<strong>promtool-validated</strong> Prometheus scrape + Grafana
+dashboard.</li>
+<li><strong>P7.1 DNS / P7.3 security</strong> — config plans only
+(DoH/DoT per-tunnel; per-user auth + Podman-secret loader + in-netns
+kill-switch). Design + parse layer.</li>
+<li><strong>Existing-test bluff audit</strong> (Stream E) — 8 bluffs
+across 4 scripts catalogued (§11.4.138), guards owed to P8.</li>
+</ul>
+<h3
+id="owed-to-p10-the-live-dynamic-stack-data-plane-proof-not-yet-captured">OWED-TO-P10
+(the LIVE dynamic-stack data-plane proof — NOT yet captured)</h3>
+<p>The <code>dynamic</code> compose profile (postgres + redis +
+control-plane + gluetun(s) + squid+helper + dante) has <strong>never
+been booted</strong>; <code>docs/DYNAMIC_ROUTING.md</code> is explicitly
+DESIGN-only. The following remain <strong>unproven live</strong> and are
+the usability proof: - <code>vpn_real_egress</code> — egress IP via
+proxy <code>== tunnel exit &amp;&amp; != host IP</code> <strong>+
+<code>wg   transfer</code> Δ</strong> (200 OK is not routing). -
+<code>graceful_503</code> — tunnel down → branded 503 with <strong>Squid
+PID unchanged</strong> → up → 200, live. -
+<code>no_leak / killswitch</code> — drop tunnel → <strong>zero</strong>
+target packets on the real uplink (<code>tcpdump</code>) + DNS only via
+the intended resolver. - per-user <strong>407 auth challenge</strong>
+live; <strong>secret injection leak-free</strong> at runtime. -
+<strong>G1 residual</strong> — full rootless kernel-WG
+<em>operation</em> (handshake + routing + throughput), only interface
+<em>creation</em> was spiked (§20 G1). - <strong>G3 residual /
+P9</strong> — concurrent / repeated SIGHUP +
+<strong>route-change-mid-session</strong> SOCKS path behaviour (§20 G3).
+- circuit-breaker open → failover to next up tier (P5b not yet
+landed).</p>
+<h2 id="remaining-phases">4. Remaining phases</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Scope</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P5b</strong></td>
+<td>per-target circuit breaker + tunnel tier-failover
+(<code>sony/gobreaker/v2</code>)</td>
+<td>next, in flight</td>
+</tr>
+<tr>
+<td><strong>P6</strong></td>
+<td>control-API + admin UI (templ+htmx+SSE, OpenDesign §11.4.162,
+host-rendered pixel proof §11.4.170)</td>
+<td>pending</td>
+</tr>
+<tr>
+<td><strong>P8</strong></td>
+<td>fix the existing-test bluffs (Stream E — the 8 audited bluffs → real
+probes / honest SKIP + §11.4.135 guards)</td>
+<td>pending</td>
+</tr>
+<tr>
+<td><strong>P9</strong></td>
+<td>full test matrix + Challenges + HelixQA (all §11.4.169 types; G3
+route-change-mid-session live test)</td>
+<td>in flight</td>
+</tr>
+<tr>
+<td><strong>P10</strong></td>
+<td><strong>live <code>dynamic</code>-mode boot + captured data-plane
+evidence = the usability proof</strong></td>
+<td><strong>critical unblocker</strong></td>
+</tr>
+<tr>
+<td><strong>P11</strong></td>
+<td>docs sync + HTML/PDF (+DOCX where mandated) exports (this
+CONTINUATION + .remember are part of it)</td>
+<td>in flight</td>
+</tr>
+<tr>
+<td><strong>P12</strong></td>
+<td>whole-branch review + full retest + merge to <code>main</code> +
+prefixed release tag</td>
+<td>last</td>
+</tr>
+</tbody>
+</table>
+<h2 id="binding-constraints-non-negotiable">5. Binding constraints
+(non-negotiable)</h2>
+<ul>
+<li><strong>Anti-bluff §11.4</strong> — every PASS carries positive
+captured <strong>data-plane</strong> evidence;
+control-plane/config-parse green is necessary, never sufficient; the
+end-user-usability bar is met only at P10.</li>
+<li><strong>No force-push §11.4.113</strong> — merge onto latest
+<code>main</code>, fast-forward only; force-push is forbidden with no
+exception.</li>
+<li><strong>Rootless Podman §11.4.161</strong> — all containers
+rootless; no Docker-rootful, no sudo, no root escalation; orchestrate
+via the containers submodule (§11.4.76), build on the remote host
+(§11.4.173).</li>
+<li><strong>Secrets-as-names-only §11.4.10</strong> — VPN creds /
+proxy-auth / mTLS keys via Podman secrets / file refs;
+<strong>never</strong> plaintext in git; <code>.env.example</code>
+documents refs only.</li>
+<li><strong>Operator-safe §11.4.174</strong> — do <strong>NOT</strong>
+touch the operator’s pre-existing resources: the host
+<code>wg0-mullvad</code> (UP kernel-WG) interface and any
+<code>lava-*</code> containers (e.g. <code>lava-postgres-thinker</code>)
+are off-limits; verify process/resource ownership before acting;
+block-don’t-break on shared-host contention.</li>
+<li><strong>Host safety §12</strong> — ≤60% memory (§12.6); no host
+power-state commands (CONST-033); pull images sequentially;
+<code>--rm</code> diagnostics; <code>df</code> first.</li>
+</ul>
+<h2 id="resume-now-next-actionable">6. Resume now (next actionable)</h2>
+<ol type="1">
+<li><code>git fetch --all --prune</code> on
+<code>feature/vpn-aware-dynamic-routing</code>; confirm HEAD
+<code>1833c8f</code> (or integrate any newer foreign commit per
+§11.4.71, no force).</li>
+<li>In flight in parallel (§11.4.103): <strong>P5b</strong>
+breaker/failover, <strong>P9</strong> test matrix, <strong>P11</strong>
+docs export. None of these is the usability proof.</li>
+<li><strong>Unblock P10</strong> as the priority — it is the only phase
+that converts the landed control-plane into captured end-user-usable
+evidence; until it lands, no “works for users” claim may be made (§11.4
+/ §11.4.108).</li>
+<li>Every change: TDD reproduce-first (§11.4.43/§11.4.115), all
+warranted test types (§11.4.169), paired §1.1 mutation, independent
+review → iterate-to-GO (§11.4.142/§11.4.125/§11.4.134), docs in sync
+(§11.4.60/§11.4.65/§11.4.106).</li>
+</ol>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # Design Spec — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 3
-**Last modified:** 2026-07-01T00:00:00Z
-**Status:** Active — P1 spike gaps (G1–G4) resolved with captured evidence; P4 Squid/Dante templates parse-verified; implementation in progress (companion plan P2–P12)
+**Revision:** 4
+**Last modified:** 2026-07-01T02:00:00Z
+**Status:** Active — P1 spike gaps (G1–G4) resolved with captured evidence; P4 Squid/Dante templates parse-verified; §9 stale Dante-SIGHUP marker reconciled to the G3 spike outcome (Rev 4); implementation in progress (companion plan P2–P12)
 **Authority:** Inherits the Helix Constitution submodule (`constitution/Constitution.md`) per §11.4.35.
 **Sources (research, captured this session):**
 `docs/research/mvp/findings/A_vpn_multitunnel_orchestration.md`,
@@ -154,8 +154,12 @@ on the Redis state — **no reconfigure**.
 
 Generated `route { ... via <per-tunnel upstream> }` / `external.rotation route`;
 reload via `SIGHUP`. **Dante has no external-helper hook**, so SOCKS dynamism =
-config rewrite + SIGHUP. **`UNCONFIRMED:` whether SIGHUP preserves live
-sessions** → live captured-evidence spike (§20).
+config rewrite + SIGHUP. **SIGHUP preserves an active SOCKS session — RESOLVED
+FACT** (G3 spike PASS: 20/20 chunks, `curl` exit 0, `/proc/net/tcp` ESTABLISHED
+proof across the reload; §20 G3 + `docs/research/mvp/findings/F_spikes_G1-G4.md`).
+The narrower **route-change-mid-session** behaviour (does an in-flight session
+keep its OLD path on a reload that changes its route?) stays `UNCONFIRMED:` and is
+owed to P9 (§20 G3).
 
 ## 10. Error handling & failure modes (fail-closed, no leak)
 

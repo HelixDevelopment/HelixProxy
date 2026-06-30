@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2026-06-30-vpn-aware-proxy-extension-design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">2026-06-30-vpn-aware-proxy-extension-design</h1>
+</header>
+<h1
+id="design-spec-helix-proxy-vpn-aware-dynamic-routing-extension">Design
+Spec — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-07-01T02:00:00Z <strong>Status:</strong> Active — P1 spike gaps
+(G1–G4) resolved with captured evidence; P4 Squid/Dante templates
+parse-verified; §9 stale Dante-SIGHUP marker reconciled to the G3 spike
+outcome (Rev 4); implementation in progress (companion plan P2–P12)
+<strong>Authority:</strong> Inherits the Helix Constitution submodule
+(<code>constitution/Constitution.md</code>) per §11.4.35.
+<strong>Sources (research, captured this session):</strong>
+<code>docs/research/mvp/findings/A_vpn_multitunnel_orchestration.md</code>,
+<code>…/B_squid_dante_dynamic_routing.md</code>,
+<code>…/C_antibluff_live_evidence.md</code>,
+<code>…/D_bleeding_edge_features.md</code>,
+<code>…/E_existing_tests_antibluff_audit.md</code>, plus the upstream
+research scaffold
+<code>docs/research/mvp/proxy-vpn-extension/</code>.</p>
+<hr />
+<h2 id="problem-goal">1. Problem &amp; Goal</h2>
+<p>The shipped research material (“VPN-Aware Proxy Extension”) proposes
+routing proxy traffic to hosts reachable <strong>only via VPN</strong>,
+with <strong>zero interruption</strong> when tunnels toggle, plus
+<strong>dynamic per-target routing</strong> and <strong>horizontal
+scale</strong>. The existing <code>helix_proxy</code> System already
+routes <strong>all</strong> traffic through <strong>one</strong> VPN (or
+none) via compose profiles, but it cannot:</p>
+<ul>
+<li>route <strong>specific targets</strong> through <strong>specific VPN
+profiles</strong>,</li>
+<li>run <strong>multiple concurrent tunnels</strong>,</li>
+<li>return an <strong>immediate graceful 503</strong> when a target’s
+tunnel is down (today a down tunnel = dropped/hung traffic, no clean
+signal),</li>
+<li>prove any of the above with <strong>captured evidence</strong> (the
+functional test suite is largely a §11.4 bluff — see §15).</li>
+</ul>
+<p><strong>Goal:</strong> Add a <strong>dynamic control-plane</strong>
+that delivers per-target VPN-profile routing, live tunnel state,
+graceful degradation, multi-tunnel resilience, observability, DNS
+privacy, zero-trust security, and a real admin/API — as an
+<strong>additive</strong> layer over the existing OpenVPN/Squid/Dante
+stack (no removal of existing capability without operator confirmation,
+§11.4.122) — and prove every capability with <strong>rock-solid
+data-plane evidence</strong> and <strong>no bluff</strong> (§11.4).</p>
+<h2 id="existing-system-ground-truth">2. Existing System (ground
+truth)</h2>
+<p>Rootless-Podman + compose orchestrated
+(<code>init</code>/<code>start</code>/<code>stop</code>/<code>restart</code>/<code>status</code>
+shell scripts sourcing <code>lib/container-runtime.sh</code>).
+Services:</p>
+<ul>
+<li><strong>proxy-vpn</strong> — <code>dperson/openvpn-client</code> VPN
+gateway (NET_ADMIN, /dev/net/tun, routes for 192.168/16, 10/8,
+172.16/12, kill-firewall on, ping healthcheck).</li>
+<li><strong>proxy-squid</strong> — <code>ubuntu/squid</code> HTTP/HTTPS
+caching proxy (:53128).</li>
+<li><strong>proxy-dante</strong> — <code>vimagick/dante</code> SOCKS5
+(:51080).</li>
+<li><strong>proxy-admin</strong> — <code>traefik/whoami</code>
+<strong>placeholder</strong> (:58080).</li>
+<li><strong>cache-invalidator</strong>, <strong>vpn-monitor</strong> —
+alpine sidecars.</li>
+</ul>
+<p>Three compose profiles: <code>vpn</code> (proxies share VPN netns via
+<code>network_mode: service:proxy-vpn</code>), <code>host-vpn</code>
+(<code>network_mode: host</code>), <code>no-vpn</code>. Configs
+(<code>config/squid/squid.conf</code>,
+<code>config/dante/sockd.conf</code>) are init-generated forward-proxy
+configs with <strong>no per-target upstream selection</strong>.
+<strong>No</strong> Postgres/Redis, <strong>no</strong> Go code,
+<strong>no</strong> dynamic routing.</p>
+<h2 id="research-doc-mapping-what-we-keep-what-we-change">3.
+Research-doc mapping (what we keep, what we change)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Research doc proposed</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gin <code>httputil.ReverseProxy</code>, Host→target lookup, proxy
+reimplemented in Go</td>
+<td><strong>Reject</strong> as the data path. Keep Squid/Dante as the
+proxy/cache; the Go control-plane is a <strong>config-compiler +
+health-publisher + ACL helper out of the byte path</strong> (Stream
+B).</td>
+</tr>
+<tr>
+<td>Postgres
+<code>vpn_profiles</code>/<code>target_hosts</code>/<code>proxy_rules</code></td>
+<td><strong>Keep + extend</strong> (tunnel failover tiers, auth, audit)
+— §6.</td>
+</tr>
+<tr>
+<td>Redis <code>vpn:status:&lt;profile&gt;</code> +
+<code>vpn:events</code></td>
+<td><strong>Keep</strong> as the live data-plane state bus — §7.</td>
+</tr>
+<tr>
+<td>VPN Manager applies WireGuard/OpenVPN, publishes up/down</td>
+<td><strong>Replace the stub</strong> with gluetun-per-profile + a real
+health-publisher that reads <strong>data-plane</strong> signals (Stream
+A/C).</td>
+</tr>
+<tr>
+<td>K8s DaemonSet + hostNetwork</td>
+<td><strong>Defer</strong> (no K8s in this System today); design stays
+K8s-portable but ships compose-first.</td>
+</tr>
+<tr>
+<td>Hardcoded creds in compose, <code>your-registry/</code></td>
+<td><strong>Reject</strong> — Podman secrets, §12.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architecture-control-plane-out-of-the-byte-path">4. Architecture
+— control-plane out of the byte path</h2>
+<pre><code>            ┌──────────────────────── Control-plane (Go module) ───────────────────────┐
+            │  config-compiler   health-publisher   external-acl-helper   control-API/UI │
+            │   (PG→Squid/Dante    (gluetun API +     (Squid ext_acl,       (REST+SSE,    │
+            │    config + PAC)      wg transfer Δ +    Redis lookup →        OpenDesign)   │
+            │                       egress probe →     OK/ERR per request)                │
+            │                       Redis status)      + circuit-breaker/failover         │
+            └───────┬───────────────────┬───────────────────┬───────────────────┬────────┘
+        Postgres ◄──┘                    │ writes            │ reads             │ CRUD
+        (profiles/targets/rules)    Redis (vpn:status:* , vpn:events)            │
+                                          ▲                                       │
+   client → Squid(:53128) ── ext_acl ─────┘   gluetun#1 (netns, WireGuard)  gluetun#2 …
+            │  cache_peer→tunnel egress  │     + dnsproxy(DoH/DoT) sidecar
+            └─ deny_info 503 if tunnel down (auto-recovers when Redis flips)
+   client → Dante(:51080) ── generated route → per-tunnel egress</code></pre>
+<p><strong>Principle (Stream B/C):</strong> the control-plane never sits
+in the request byte path. Squid keeps proxying + caching; a tiny Go
+<code>external_acl_type</code> helper consults Redis per request. This
+preserves Squid’s mature caching <strong>and</strong> gives dynamic
+per-target VPN selection + graceful 503 with <strong>zero
+reconfigure</strong>.</p>
+<h3
+id="components-each-one-clear-purpose-testable-in-isolation">Components
+(each one clear purpose, testable in isolation)</h3>
+<ol type="1">
+<li><strong>vpn-health-publisher</strong> — per tunnel: poll gluetun
+control API (<code>/v1/vpn/status</code>, <code>/v1/publicip/ip</code>)
+<strong>and</strong> <code>wg show &lt;if&gt; transfer</code> byte-delta
+<strong>and</strong> a live egress probe; write
+<code>vpn:status:&lt;profile&gt;</code> (up/down, handshake age, rx/tx,
+egress_ip, checked_at) + publish <code>vpn:events</code>. Health =
+<strong>data-plane</strong> fact, never “configured” (Stream A/C).</li>
+<li><strong>config-compiler</strong> — read Postgres → render: Squid
+generated include (per-tunnel <code>cache_peer</code>,
+<code>cache_peer_access</code>, <code>never_direct allow all</code>,
+<code>deny_info 503:ERR_TUNNEL_DOWN</code>), Dante route config, and a
+PAC file. Apply via Redis (per-request) for routing/up-down;
+<code>reconfigure</code>/<code>SIGHUP</code> only for
+<strong>structural</strong> changes (new tunnel/peer) — never for
+up/down (Stream B).</li>
+<li><strong>external-acl-helper</strong> — Squid
+<code>external_acl_type</code> Go binary: per request read Redis
+<code>{target→tunnel, up?}</code> → <code>OK tag=&lt;tunnel&gt;</code>
+(allow that peer) or <code>ERR</code> (→ <code>deny_info 503</code>).
+Embeds the <strong>circuit-breaker + tunnel tier-failover</strong>
+decision (gobreaker).</li>
+<li><strong>control-API + admin UI</strong> — REST CRUD
+(profiles/targets/rules), live status (SSE), Prometheus metrics,
+<code>FindProxyForURL</code> PAC endpoint.
+<code>templ</code>+<code>htmx</code>+SSE, <strong>OpenDesign tokens
+(§11.4.162)</strong>, light+dark, proven by <strong>host-rendered pixel
+proof (§11.4.170)</strong>. Replaces <code>traefik/whoami</code>.</li>
+</ol>
+<h2 id="vpn-layer-stream-a">5. VPN layer (Stream A)</h2>
+<ul>
+<li><strong>gluetun (<code>qmcgaw/gluetun</code>, MIT) — one container
+per <code>vpn_profile</code> = one netns = one
+<code>vpn:status:&lt;profile&gt;</code> key.</strong> Maps 1:1 onto the
+existing <code>network_mode: service:&lt;vpn&gt;</code> pattern
+(§11.4.74 reuse, not reinvent).</li>
+<li><strong>Kernel WireGuard preferred</strong>
+(throughput/CPU/audit-surface); OpenVPN as compatibility type.
+Rootless-WireGuard risk → fall back to gluetun <strong>userspace
+wireguard-go</strong> (spike, §20).</li>
+<li>Existing <code>dperson/openvpn-client</code> → <strong>retained as a
+<code>legacy</code> profile, marked deprecated</strong> (NOT removed —
+§11.4.122 operator-confirmation required to drop).</li>
+<li>gluetun kill-switch drops packets on down; the <strong>graceful L7
+503 we build</strong> (helper), because the kill-switch alone yields
+hangs, not a clean signal.</li>
+</ul>
+<h2 id="data-model-postgres-extended-from-research-doc">6. Data model
+(Postgres — extended from research doc)</h2>
+<p><code>vpn_profiles(id, name, type[wireguard|openvpn], config jsonb, enabled, …)</code>,
+<code>target_hosts(id, public_alias, private_ip, port, protocol, vpn_profile_id, health_check, enabled, …)</code>,
+<code>proxy_rules(id, priority, match_host, match_path, target_host_id, enabled, …)</code>
+— <strong>plus</strong>:
+<code>target_tunnel_tiers(target_id, vpn_profile_id, tier)</code>
+(ordered failover list, §11 feature ①),
+<code>proxy_users(id, username, secret_ref, …)</code> (auth, §12),
+<code>audit_log(id, ts, actor, action, detail)</code> (§12). Full DDL +
+migrations + ER diagram ship under <code>sql/</code> +
+<code>docs/</code>.</p>
+<h2 id="redis-contract">7. Redis contract</h2>
+<ul>
+<li><code>vpn:status:&lt;profile&gt;</code> — JSON
+<code>{state, last_handshake, rx, tx, egress_ip, checked_at}</code> (TTL
+⇒ stale = treated <strong>down</strong>, fail-closed).</li>
+<li><code>vpn:events</code> — pub/sub <code>{profile_id, state}</code>
+for instant helper/UI updates.</li>
+<li><code>route:&lt;target&gt;</code> — resolved
+<code>{tunnel, tier, breaker_state}</code> (compiler-written).</li>
+</ul>
+<h2 id="squid-integration-stream-b">8. Squid integration (Stream B)</h2>
+<p>Fixed base <code>squid.conf</code> + generated include: per-tunnel
+<code>cache_peer &lt;gluetun-host&gt; parent &lt;port&gt; 0 no-query name=tun_&lt;profile&gt;</code>;
+<code>external_acl_type vpn_route ttl=0 concurrency=… %&gt;{Host} &lt;helper&gt;</code>;
+<code>acl tun_up external vpn_route</code>;
+<code>cache_peer_access tun_&lt;p&gt; allow …</code>;
+<code>never_direct allow all</code>;
+<code>deny_info 503:ERR_TUNNEL_DOWN tunnel_down</code>. <strong>Verify
+Squid major version</strong> — <code>tcp_outgoing_address</code>
+dstdomain form <strong>removed in v8</strong> (spike, §20). 503-on-down
++ auto-recovery come from the helper flipping OK/ERR on the Redis state
+— <strong>no reconfigure</strong>.</p>
+<h2 id="dante-integration-stream-b">9. Dante integration (Stream B)</h2>
+<p>Generated <code>route { ... via &lt;per-tunnel upstream&gt; }</code>
+/ <code>external.rotation route</code>; reload via <code>SIGHUP</code>.
+<strong>Dante has no external-helper hook</strong>, so SOCKS dynamism =
+config rewrite + SIGHUP. <strong>SIGHUP preserves an active SOCKS
+session — RESOLVED FACT</strong> (G3 spike PASS: 20/20 chunks,
+<code>curl</code> exit 0, <code>/proc/net/tcp</code> ESTABLISHED proof
+across the reload; §20 G3 +
+<code>docs/research/mvp/findings/F_spikes_G1-G4.md</code>). The narrower
+<strong>route-change-mid-session</strong> behaviour (does an in-flight
+session keep its OLD path on a reload that changes its route?) stays
+<code>UNCONFIRMED:</code> and is owed to P9 (§20 G3).</p>
+<h2 id="error-handling-failure-modes-fail-closed-no-leak">10. Error
+handling &amp; failure modes (fail-closed, no leak)</h2>
+<ul>
+<li>Tunnel down → helper <code>ERR</code> → branded <strong>503</strong>
+(Squid PID unchanged — proven).</li>
+<li>Redis down / stale key → <strong>fail-closed 503</strong> (never
+fall through to a leak).</li>
+<li>Circuit-breaker open for a target → <strong>failover</strong> to
+next up tier, else 503.</li>
+<li>Control-plane crash → Squid keeps serving last good config (degrade,
+not die).</li>
+<li>gluetun kill-switch → <strong>zero</strong> packets on the real
+uplink while down (proven by <code>tcpdump</code>, §14).</li>
+</ul>
+<h2 id="bleeding-edge-features-stream-d-all-mvp-now">11. Bleeding-edge
+features (Stream D — all MVP-now)</h2>
+<p>① <strong>per-target circuit breakers + tunnel tier-failover</strong>
+(<code>sony/gobreaker/v2</code>). ② <strong>DoH/DoT per-tunnel DNS +
+leak prevention</strong> (<code>AdguardTeam/dnsproxy</code> sidecar). ③
+<strong>observability</strong> — <code>boynux/squid-exporter</code> +
+Prometheus + Grafana + OTel spans in the Go control-plane. ④
+<strong>zero-trust</strong> — Squid per-user auth + audit + Podman
+secrets + in-netns kill-switch + mTLS on the control-API. ⑤
+<strong>dynamic PAC + health/geo routing + hot-reload +
+split-tunnel</strong> (Go <code>FindProxyForURL</code>). ⑥ <strong>real
+admin UI + REST API</strong> (templ+htmx+SSE, OpenDesign §11.4.162,
+pixel proof §11.4.170). ⑦ <strong>IPv6 dual-stack + keep-alive/pool
+tuning</strong>. ⑧ <strong>cache analytics + Store-ID URL
+normalization</strong>.</p>
+<p><strong>Deferred — honest §11.4.112 boundaries:</strong>
+HTTP/3/MASQUE forward-proxy (Squid cannot; early adoption) ·
+streaming/range caching in Squid (structurally limited —
+<code>range_offset_limit</code> removed in v8; needs a different engine)
+· eBPF/Cilium-Hubble (<strong>AVOID</strong> — needs kernel privileges,
+breaks the rootless mandate; in-process OTel/metrics give equivalent
+insight).</p>
+<h2 id="security-secrets">12. Security &amp; secrets</h2>
+<p>VPN creds, proxy-auth secrets, mTLS keys via <strong>Podman secrets /
+file refs</strong> — <strong>never</strong> plaintext in git (§11.4.10);
+<code>.env.example</code> documents refs only. Per-user Squid auth,
+audit log, in-netns kill-switch, mTLS on control-API.</p>
+<h2 id="anti-bluff-test-strategy-the-heart-11.4-11.4.69-11.4.107">13.
+Anti-bluff test strategy (the heart — §11.4 / §11.4.69 / §11.4.107)</h2>
+<p><strong>Only data-plane signals are evidence</strong> (Stream C). For
+every capability, the required captured-evidence probe:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Capability</th>
+<th>PASS evidence (captured)</th>
+<th>Don’t-be-fooled gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>http_forward / https_connect</td>
+<td>real <code>curl -x</code> 200 + body</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>cache_hit</strong></td>
+<td><code>X-Cache: HIT</code> + <code>access.log TCP_HIT</code> +
+<code>store.log SWAPOUT</code> + 2nd-req latency drop</td>
+<td><code>?</code>-URLs uncacheable; a header alone is forgeable</td>
+</tr>
+<tr>
+<td><strong>vpn_real_egress</strong></td>
+<td>egress IP via proxy
+<code>== tunnel exit &amp;&amp; != host IP</code>, <strong>+
+<code>wg transfer</code> Δ</strong></td>
+<td>200 OK ≠ routing; egress-IP cache → pair with counter</td>
+</tr>
+<tr>
+<td><strong>graceful_503</strong></td>
+<td>tunnel down → 503 + branded body + <strong>PID unchanged</strong> →
+up → 200</td>
+<td>a 503 from a crashed proxy isn’t graceful</td>
+</tr>
+<tr>
+<td><strong>no_leak/killswitch</strong></td>
+<td>drop tunnel → <strong>zero</strong> target packets on real uplink
+(<code>tcpdump</code>) + DNS only via intended resolver</td>
+<td>leak-testing while up proves nothing</td>
+</tr>
+<tr>
+<td><strong>vpn_reconnect</strong></td>
+<td>kill tunnel → status down→up auto</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>cache_invalidation</strong></td>
+<td>populate → invalidate → eviction observed</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>circuit_breaker/failover</strong></td>
+<td>force target failures → breaker opens → fail to next tunnel</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>socks5_egress</strong></td>
+<td><code>curl --socks5-hostname</code> exit IP</td>
+<td>plain <code>socks5://</code> leaks DNS — use
+<code>socks5h</code></td>
+</tr>
+<tr>
+<td><strong>admin UI</strong></td>
+<td>host-rendered pixel proof (§11.4.170) + real REST CRUD</td>
+<td>value/token-equality tests are NOT proof</td>
+</tr>
+</tbody>
+</table>
+<p><strong>All test types (§11.4.169):</strong> unit (Go
+<code>-short</code>, mocks OK), integration (real PG/Redis/Squid/gluetun
+booted on-demand via the <strong>containers submodule</strong>,
+§11.4.76), e2e, full-automation (re-runnable, no manual step, §11.4.98),
+security (auth/leak/mTLS), DDoS/load
+(<code>k6</code>/<code>vegeta</code>), stress, chaos
+(<strong>toxiproxy</strong> — rootless-safe; <code>pumba</code> needs
+rootful — caveat captured), concurrency, race (<code>-race</code>),
+memory (soak), benchmark. <strong>Challenges</strong> (one per
+capability, real evidence) + <strong>HelixQA banks</strong> +
+<strong>paired §1.1 mutation</strong> per test + <strong>§11.4.115
+RED-on-broken-artifact</strong> + <strong>§11.4.135 standing regression
+guard</strong>.</p>
+<h2 id="live-evidence-harness">14. Live-evidence harness</h2>
+<p>Shared <code>tests/lib/evidence.sh</code>
+(<code>ab_pass_with_evidence</code>, <code>ab_skip_with_reason</code>,
+data-plane probes: <code>assert_egress_ip</code>,
+<code>assert_cache_hit</code>, <code>assert_graceful_503</code>,
+<code>assert_no_leak</code>, <code>wg_transfer_delta</code>).
+bats-core/shellspec orchestration; evidence artifacts under
+<code>qa-results/&lt;run-id&gt;/</code> + curated proof under
+<code>docs/qa/&lt;run-id&gt;/</code> (§11.4.83). Window-scoped,
+project-prefixed recordings (§11.4.154/§11.4.155) for any UI/terminal
+capture.</p>
+<h2 id="existing-test-remediation-stream-e-fix-the-named-bluffs">15.
+Existing-test remediation (Stream E — fix the named bluffs)</h2>
+<ol type="1">
+<li><strong>False VPN-routing PASS</strong>
+(<code>final-verify.sh:74</code>, <code>verify-proxy.sh:49</code>,
+<code>comprehensive-test.sh:400</code>):
+<code>host_ip == proxy_ip</code> PASSes with <strong>no VPN</strong>.
+Replace with <code>egress != host_ip &amp;&amp; == tunnel_exit</code> +
+<code>wg</code> Δ; reproduce the bluff first (§11.4.115/§11.4.138
+bluff-audit + permanent guard).</li>
+<li><strong>Cache-timing bluff</strong>
+(<code>comprehensive-test.sh:456</code>): assert
+<code>X-Cache</code>/<code>TCP_HIT</code> on a cacheable URL, not timing
+on random bytes.</li>
+<li><strong>Concurrent FAIL-bluff</strong>
+(<code>comprehensive-test.sh:633</code>): capture
+<code>%{http_code}</code>, not job exit status.</li>
+<li><strong>Presence-only <code>run-tests.sh</code></strong>
+(<code>test_vpn:273</code>, <code>test_service_startup:311</code>):
+convert PASS-by-default to real probes or honest §11.4.3 SKIP. The solid
+<strong>governance</strong> tests/mutation are preserved as-is.</li>
+</ol>
+<h2 id="governance-docs-submodules">16. Governance, docs &amp;
+submodules</h2>
+<ul>
+<li><strong>Carriers:</strong> add project <code>QWEN.md</code> +
+<code>GEMINI.md</code> (§11.4.157 lockstep); ensure the §11.4 anti-bluff
+covenant + the verbatim “tests pass but features unusable” anchor + the
+<strong>full-docs-sync directive</strong> are present in
+<code>CLAUDE.md</code>/<code>AGENTS.md</code>/<code>CONSTITUTION.md</code>/<code>QWEN.md</code>/<code>GEMINI.md</code>.
+The canonical text lives in the constitution submodule (§11.4.35) —
+carriers cite/inherit.</li>
+<li><strong>Required submodules (§11.4.27/§11.4.74):</strong>
+<code>vasic-digital/containers</code> (§11.4.76 orchestration +
+§11.4.173 build), <code>HelixDevelopment/HelixQA</code>,
+<code>vasic-digital/challenges</code>,
+<code>vasic-digital/docs_chain</code> (§11.4.106). Added via SSH +
+<code>install_upstreams</code> (§11.4.36), recursive.</li>
+<li><strong>Docs always-in-sync (§11.4.12/.44/.60/.65/.106):</strong>
+ARCHITECTURE/CACHE/VPN docs updated; new SQL/diagrams/graphs; HTML+PDF
+(+DOCX where mandated) exports; bound by <strong>docs_chain</strong> so
+docs↔︎DB↔︎diagrams never drift. README + USER_GUIDE updated for the
+dynamic mode.</li>
+</ul>
+<h2 id="build-deploy-11.4.76-11.4.173">17. Build &amp; deploy (§11.4.76
+/ §11.4.173)</h2>
+<p>New compose profile <strong><code>dynamic</code></strong> brings up
+postgres + redis + control-plane + gluetun(s) + squid(+helper) + dante.
+Existing <code>vpn</code>/<code>host-vpn</code>/<code>no-vpn</code>
+preserved. <code>init</code> generates configs + provisions Podman
+secrets; <code>start</code>/ <code>status</code>/<code>stop</code> learn
+the <code>dynamic</code> profile. Go control-plane builds via the
+<strong>containers submodule</strong> on the remote build host
+(§11.4.173), artifacts brought back. Orchestration through the
+containers submodule, not ad-hoc commands.</p>
+<h2 id="module-file-layout">18. Module / file layout</h2>
+<pre><code>control-plane/                 # new Go module
+  go.mod  cmd/{healthd,acl-helper,compiler,api}/  internal/{vpn,routing,store,redis,breaker,api,pac,otel}/
+sql/                           # DDL + migrations
+config/squid/squid.conf.base   # + generated includes
+config/dante/                  # + generated routes
+tests/lib/evidence.sh          # data-plane evidence helpers
+tests/{unit,integration,e2e,security,load,chaos,...}/
+challenges/scripts/&lt;capability&gt;_challenge.sh
+docs/{ARCHITECTURE,CACHE,VPN,DYNAMIC_ROUTING}.md + diagrams/ + qa/
+.docs_chain/contexts/*.yaml    # docs_chain wiring</code></pre>
+<h2 id="out-of-scope-deferred-structural-impossibilities">19. Out of
+scope / deferred / structural impossibilities</h2>
+<ul>
+<li>HTTP/3 forward-proxy, Squid range-caching, eBPF — §11 deferred list
+(honest §11.4.112). K8s DaemonSet — design stays portable, compose ships
+first.</li>
+</ul>
+<h2
+id="open-questions-honest-gaps-resolved-by-p1-spikes-captured-evidence">20.
+Open questions / honest gaps — RESOLVED by P1 spikes (captured
+evidence)</h2>
+<p>All four gaps are resolved as FACT with captured evidence
+(§11.4.123); full detail + evidence paths in
+<code>docs/research/mvp/findings/F_spikes_G1-G4.md</code>.</p>
+<ul>
+<li><strong>G1 — RESOLVED (nuanced):</strong> kernel-WireGuard
+<em>interface creation</em> succeeds rootless inside a container with
+<code>--cap-add NET_ADMIN</code> + <code>--device /dev/net/tun</code>;
+gluetun auto-selects kernelspace, with userspace
+<code>wireguard-go</code> as the portability fallback.
+<strong>Decision:</strong> keep gluetun auto-select; required container
+grants are <code>--cap-add NET_ADMIN</code> +
+<code>--device /dev/net/tun</code>. Full rootless kernel-WG
+<em>operation</em> (handshake+traffic) stays <code>UNCONFIRMED:</code> →
+proven live in P10.</li>
+<li><strong>G2 — RESOLVED:</strong> <code>ubuntu/squid:latest</code> =
+<strong>Squid 6.13</strong> (NOT v8); the full §8 directive set
+(<code>cache_peer</code> / <code>external_acl_type</code> /
+<code>cache_peer_access</code> / <code>never_direct</code> /
+<code>deny_info</code>) parses clean (<code>squid -k parse</code> exit
+0). <strong>Decision:</strong> pin the Squid base by
+<strong>digest</strong> or a specific
+<code>6.13-&lt;ubuntu&gt;_&lt;channel&gt;</code> tag —
+docker.io/ubuntu/squid has <strong>NO bare <code>6.13</code>
+tag</strong> (P4-templates finding; published tags are
+<code>6.13-25.04_*</code> / <code>latest</code> / <code>edge</code>, and
+<code>:latest</code> is verified = 6.13); the config-compiler emits
+<strong><code>%&gt;ha{Host}</code></strong> (6.13 deprecates
+<code>%&gt;{Host}</code>); the v8
+<code>tcp_outgoing_address</code>-dstdomain concern is moot (design
+routes via <code>cache_peer</code> + <code>external_acl</code>, not
+<code>tcp_outgoing_address</code>). Squid template
+<code>squid -k parse</code> exit 0 on real 6.13 (P4-templates). Dante
+config is assembled by <strong>concatenation</strong> (Dante has no
+<code>include</code> directive — P4-templates finding), base preserved +
+per-tunnel <code>route{}</code> blocks appended.</li>
+<li><strong>G3 — RESOLVED (spike PASS):</strong> Dante
+<code>SIGHUP</code> reloads config and <strong>preserves an active SOCKS
+session</strong> (20/20 chunks, curl exit 0; <code>/proc/net/tcp</code>
+ESTABLISHED proof). <strong>Decision:</strong> §9 config-rewrite +
+SIGHUP dynamism is safe for live sessions. P9 still owes a broader live
+test (concurrent / repeated SIGHUP + route-change-mid-session →
+<code>UNCONFIRMED:</code> whether an in-flight session keeps its old
+path).</li>
+<li><strong>G4 — RESOLVED:</strong> gluetun pinned
+<strong><code>v3.40</code> (=v3.40.4)</strong>; control API
+<code>:8000</code> (<code>/v1/vpn/status</code>,
+<code>/v1/publicip/ip</code>) answers 200 (publicip empty without real
+egress — the live <code>vpn_real_egress</code> evidence source, §13);
+internal healthcheck on <code>127.0.0.1:9999</code>. <strong>Issue #3060
+confirmed live</strong> (routes open-by-default on v3.40.x).
+<strong>Decision:</strong> pin v3.40; <strong>any upgrade past v3.40
+MUST add control-server auth</strong> (apikey/role) — a pinned-version
+constraint + upgrade-checklist item aligning §11 ④ zero-trust.</li>
+</ul>
+<h2 id="phasing-full-detail-in-the-companion-plan">21. Phasing (full
+detail in the companion plan)</h2>
+<p>P0 governance+submodules+scaffold → P1 spikes (G1–G4) → P2 data
+model+stores → P3 health-publisher → P4 config-compiler+Squid/Dante
+integration → P5 external-acl-helper+503+failover → P6 control-API+admin
+UI → P7 DNS/observability/ security → P8 fix existing bluffs → P9 full
+test matrix+Challenges+HelixQA → P10 live validation+evidence → P11 docs
+sync+exports → P12 review+release (no-force §11.4.113, prefixed tag
+§11.4.151). Each phase: TDD reproduce-first, all test types, paired
+mutation, captured evidence, independent code review (§11.4.142/
+.125/.134), zero bluff.</p>
+</body>
+</html>
