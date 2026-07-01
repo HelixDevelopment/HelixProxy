@@ -1,0 +1,168 @@
+#############################################
+# Proxy Service — `observability` OVERLAY (control-API + Prometheus /metrics)
+#############################################
+# STATUS: AUTHORED / config-plan — structurally validated only (this file is
+#   parse-clean when merged with docker-compose.yml + docker-compose.dynamic.yml
+#   via `podman-compose config`). LIVE boot is owed to the conductor and is
+#   gated on the SAME preconditions as the dynamic overlay: (a) the Go
+#   control-plane image builds (control-plane/Containerfile → `api` binary), and
+#   (b) operator-provisioned Podman secrets (Postgres password + the three mTLS
+#   materials). NOTHING here is claimed to run yet (§11.4.6). The live scrape +
+#   "dashboard reads real metrics" proof is owed to the conductor (§11.4.119 —
+#   exactly ONE stream owns the live boot).
+#
+# This is a SEPARATE overlay file (the base docker-compose.yml AND the
+# docker-compose.dynamic.yml overlay both stay pristine — §11.4.122: no existing
+# service is edited or removed). It ADDS one new service, `proxy-api`, that runs
+# the control-plane REST API (control-plane/cmd/api) with its OPTIONAL plaintext
+# Prometheus /metrics listener ENABLED via CONTROL_API_METRICS_ADDR (empty ⇒ OFF
+# is the code default — control-plane/internal/api/api.go:19,31 +
+# control-plane/internal/api/server.go:134). The mutating control surface stays on
+# the fail-closed mTLS port (CONTROL_API_ADDR); ONLY /metrics is served on the
+# separate plaintext listener (control-plane/internal/api/server.go:110-114).
+#
+# Merge + bring up ON TOP OF the dynamic stack (Postgres + Redis live in the
+# `dynamic` profile — the api depends on both):
+#   $COMPOSE_CMD -f docker-compose.yml \
+#                -f docker-compose.dynamic.yml \
+#                -f docker-compose.observability.yml \
+#                --profile dynamic up -d proxy-api
+#
+# Services resolve each other BY NAME (§11.4.111) over the private
+# `proxy-dynamic` network — no enumerated IPs, no host-index binding. Rootless
+# podman only (§11.4.161). NEW service/container name only — proxy-api does NOT
+# collide with any operator workload (wg0-mullvad / lava-* are NEVER referenced)
+# nor with the base `proxy-admin` whoami placeholder.
+#
+# Metric NAMES exposed on /metrics (control-plane/internal/api/metrics.go:35-37):
+#   * helix_proxy_vpn_up{profile}               gauge   (per profile, fail-closed
+#                                                        from Redis; absent when no
+#                                                        profiles exist)
+#   * helix_proxy_acl_decisions_total{decision} counter (decision=OK|ERR, both
+#                                                        pre-touched to 0)
+#   * helix_proxy_tunnel_down_responses_total   counter (fail-closed 503s)
+# The scrape target is pinned to config/prometheus/prometheus.yml job
+# `helix-control-plane` → `proxy-control-plane:59090` — this service carries that
+# name as a network alias so the committed scrape config binds without re-design.
+#############################################
+
+version: "3.8"
+
+#############################################
+# Secrets (operator-provisioned Podman secrets — NAMES ONLY, never values; §11.4.10)
+#############################################
+# `helixproxy_pg_password` is shared with the dynamic overlay (re-declared here
+# so this file is self-consistent when merged; identical external ref). The three
+# mTLS materials are the api's fail-closed client-cert verification inputs
+# (control-plane/internal/api/tls.go:26 requires all three, or the server refuses
+# to start). Operator steps (before boot):
+#   podman secret create helixproxy_pg_password  -   < pg_password_file
+#   podman secret create helixproxy_api_cert      -  < server.crt
+#   podman secret create helixproxy_api_key       -  < server.key
+#   podman secret create helixproxy_api_client_ca -  < client-ca.crt
+secrets:
+  helixproxy_pg_password:
+    external: true
+  helixproxy_api_cert:
+    external: true
+  helixproxy_api_key:
+    external: true
+  helixproxy_api_client_ca:
+    external: true
+
+#############################################
+# Private network — name-resolution between control-plane services (§11.4.111).
+# Re-declared (same name) so the merged config is consistent; the dynamic overlay
+# owns its creation.
+#############################################
+networks:
+  proxy-dynamic:
+    name: proxy-dynamic
+
+services:
+  #############################################
+  # Control-API — REST/SSE/PAC over mTLS + PLAINTEXT Prometheus /metrics listener
+  #############################################
+  # The control-plane image ENTRYPOINT is `compiler` (control-plane/Containerfile:55),
+  # so — exactly like proxy-healthd / proxy-compiler in the dynamic overlay — the
+  # entrypoint is overridden to a shell that (1) assembles HELIX_PG_DSN from the
+  # mounted Podman secret at RUNTIME (never an embedded plaintext password, §11.4.10;
+  # cmd/api/main.go:66 reads HELIX_PG_DSN), then (2) `exec api`. `$$`/`$${VAR}` keep
+  # the secret read + PG_USER/PG_DB as runtime shell refs (compose leaves them
+  # un-interpolated).
+  proxy-api:
+    build:
+      context: ./control-plane
+      dockerfile: Containerfile
+    image: ${CONTROL_PLANE_IMAGE:-localhost/helixproxy-control-plane:dev}
+    container_name: proxy-api
+    # hostname + network alias `proxy-control-plane` matches the committed
+    # Prometheus scrape target (config/prometheus/prometheus.yml → proxy-control-plane:59090).
+    hostname: proxy-control-plane
+    profiles:
+      - dynamic
+    environment:
+      - TZ=${TZ:-UTC}
+      - PG_USER=${PG_USER:-proxy}
+      - PG_DB=${PG_DB:-proxy}
+      # Fail-closed status bus (cmd/api/main.go:78 default 127.0.0.1:6379).
+      - REDIS_ADDR=proxy-redis:6379
+      # mTLS control port (cmd/api/main.go:47 default :58080). Kept INTERNAL to the
+      # proxy-dynamic network — NOT published to the host (the mutating surface is
+      # the trust boundary; only /metrics is published).
+      - CONTROL_API_ADDR=${CONTROL_API_ADDR:-:58080}
+      # mTLS materials — FILE PATHS to the mounted Podman secrets (§11.4.10; the
+      # server fails closed without all three, control-plane/internal/api/tls.go:26).
+      - CONTROL_API_TLS_CERT=/run/secrets/helixproxy_api_cert
+      - CONTROL_API_TLS_KEY=/run/secrets/helixproxy_api_key
+      - CONTROL_API_TLS_CLIENT_CA=/run/secrets/helixproxy_api_client_ca
+      # THE observability wiring: ENABLE the separate plaintext /metrics listener.
+      # Empty ⇒ OFF (code default); set here to 0.0.0.0:59090 so a same-network
+      # Prometheus scrapes proxy-control-plane:59090/metrics. Bind address is
+      # security-load-bearing (api.go:24) — this listener carries UNAUTHENTICATED
+      # metrics, so the private proxy-dynamic network is its trust boundary and the
+      # host publish below is pinned to loopback by default.
+      - CONTROL_API_METRICS_ADDR=0.0.0.0:59090
+    secrets:
+      - helixproxy_pg_password
+      - helixproxy_api_cert
+      - helixproxy_api_key
+      - helixproxy_api_client_ca
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - |
+        set -e
+        PGPW="$$(cat /run/secrets/helixproxy_pg_password)"
+        export HELIX_PG_DSN="postgres://$${PG_USER}:$${PGPW}@proxy-postgres:5432/$${PG_DB}?sslmode=disable"
+        exec api
+    networks:
+      proxy-dynamic:
+        aliases:
+          # Committed Prometheus scrape target name (§11.4.111 name-resolution).
+          - proxy-control-plane
+    ports:
+      # Publish ONLY the plaintext /metrics port to the host, pinned to loopback by
+      # default (METRICS_BIND_ADDRESS) so unauthenticated metrics never reach the
+      # wider network. The mTLS control port (58080) is intentionally NOT published.
+      - "${METRICS_BIND_ADDRESS:-127.0.0.1}:${METRICS_PORT:-59090}:59090"
+    depends_on:
+      # podman-compose ignores `service_healthy`; `restart: unless-stopped` lets the
+      # api retry until Postgres/Redis are ready (store.Open/redis.Open fail-fast
+      # otherwise — cmd/api/main.go:72,78).
+      proxy-postgres:
+        condition: service_healthy
+      proxy-redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # Anti-bluff healthcheck: not merely a 200 — the body MUST carry a real
+      # helix_proxy_* metric line (busybox wget ships in the alpine final image).
+      test:
+        - "CMD-SHELL"
+        - "wget -q -O - http://127.0.0.1:59090/metrics 2>/dev/null | grep -q helix_proxy_ || exit 1"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s

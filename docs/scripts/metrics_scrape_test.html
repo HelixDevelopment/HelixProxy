@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>metrics_scrape_test</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="metrics_scrape_testsh--control-api-prometheus-metrics-live-scrape-proof">metrics_scrape_test.sh
+— control-API Prometheus /metrics live-scrape proof</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T09:45:00Z <strong>Authority:</strong> Constitution §11.4.115
+(RED-baseline polarity), §11.4.107 (liveness content), §11.4.69
+(positive evidence), §11.4.119 (single live-boot owner), §11.4.18
+(script documentation), §11.4.6 (no-guessing). <strong>Scope:</strong>
+observability wiring for the control-plane REST API's Prometheus metrics
+endpoint.</p>
+<h2 id="overview">Overview</h2>
+<p><code>tests/observability/metrics_scrape_test.sh</code> is the
+RED/GREEN polarity guard for the control-API's Prometheus
+<code>/metrics</code> endpoint. The control-plane REST API
+(<code>control-plane/cmd/api</code>) exposes an OPTIONAL separate
+plaintext <code>/metrics</code> listener enabled by the
+<code>CONTROL_API_METRICS_ADDR</code> environment variable; the listener
+is wired into the compose stack by
+<code>docker-compose.observability.yml</code> as the
+<code>proxy-api</code> service.</p>
+<p>The script has two polarities selected by the <code>RED_MODE</code>
+environment variable:</p>
+<ul>
+<li><strong><code>RED_MODE=1</code></strong> reproduces the "metrics not
+exposed" defect. It scrapes the endpoint and asserts NO valid Prometheus
+exposition is served (connection refused, or a body with no
+<code>helix_proxy_</code> metrics). This is provable BEFORE any boot and
+is the §11.4.115 RED baseline.</li>
+<li><strong><code>RED_MODE=0</code></strong> (default) is the standing
+GREEN guard the conductor runs AFTER booting <code>proxy-api</code>. It
+scrapes <code>/metrics</code> and asserts REAL Prometheus exposition
+CONTENT — a known <code>helix_proxy_</code> metric name present,
+<code># HELP</code> / <code># TYPE</code> lines present, the
+acl-decisions counter parseable — and attempts the
+counter-increment-after-a-proxied-request proof. It asserts the scraped
+metric CONTENT, never merely HTTP 200 (§11.4 / §11.4.69 /
+§11.4.107).</li>
+</ul>
+<p>The script performs NO boot. The live boot + scrape is owned by the
+conductor (§11.4.119 — exactly one stream owns each exclusive live
+resource). With defaults and nothing booted, the GREEN guard emits an
+honest SKIP, never a fake PASS.</p>
+<h3 id="metric-names-asserted">Metric names asserted</h3>
+<p>Pinned to
+<code>control-plane/internal/api/metrics.go:35-37</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Kind</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>helix_proxy_vpn_up{profile}</code></td>
+<td>gauge</td>
+<td>per profile, fail-closed from Redis; absent when no profiles
+exist</td>
+</tr>
+<tr>
+<td><code>helix_proxy_acl_decisions_total{decision}</code></td>
+<td>counter</td>
+<td><code>decision=OK|ERR</code>, both pre-touched to 0</td>
+</tr>
+<tr>
+<td><code>helix_proxy_tunnel_down_responses_total</code></td>
+<td>counter</td>
+<td>fail-closed 503 responses</td>
+</tr>
+</tbody>
+</table>
+<p>The two counters are always present (pre-touched at registration), so
+they are the hard-required content. <code>helix_proxy_vpn_up</code> is
+present only when at least one VPN profile exists; its absence with zero
+profiles is recorded honestly, not failed (§11.4.6).</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>POSIX <code>sh</code>, <code>awk</code>, <code>grep</code>,
+<code>curl</code>.</li>
+<li>The canonical evidence helper <code>tests/lib/evidence.sh</code>
+(sourced for <code>ab_pass_with_evidence</code> /
+<code>ab_skip_with_reason</code>).</li>
+<li>For the GREEN live proof only: the conductor has booted
+<code>proxy-api</code> via the observability overlay (see the command
+sequence below), the operator has provisioned the four Podman secrets,
+and the control-plane image is built.</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<p>RED baseline (provable now, nothing booted):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    bash tests/observability/metrics_scrape_test.sh</span></code></pre></div>
+<p>GREEN guard, authored-not-booted default (honest SKIP):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    bash tests/observability/metrics_scrape_test.sh</span></code></pre></div>
+<p>GREEN guard, live (conductor, after boot):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_OBSERVABILITY_STACK</span><span class="op">=</span>1 <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_METRICS_URL</span><span class="op">=</span>http://127.0.0.1:59090/metrics <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_PROXY_URL</span><span class="op">=</span>http://127.0.0.1:53128 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    bash tests/observability/metrics_scrape_test.sh</span></code></pre></div>
+<h2 id="environment-variables">Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RED_MODE</code></td>
+<td><code>0</code></td>
+<td><code>1</code> = RED reproduction, <code>0</code> = GREEN guard</td>
+</tr>
+<tr>
+<td><code>HELIX_METRICS_URL</code></td>
+<td><code>http://127.0.0.1:59090/metrics</code></td>
+<td>scrape URL (METRICS_PORT=59090)</td>
+</tr>
+<tr>
+<td><code>HELIX_OBSERVABILITY_STACK</code></td>
+<td>unset</td>
+<td>set <code>1</code> (conductor, post-boot) to declare
+<code>proxy-api</code> up</td>
+</tr>
+<tr>
+<td><code>HELIX_PROXY_URL</code></td>
+<td><code>http://127.0.0.1:53128</code></td>
+<td>HTTP proxy for the proxied-request step</td>
+</tr>
+<tr>
+<td><code>HELIX_METRICS_PROBE_TARGET</code></td>
+<td><code>http://target-a.internal/</code></td>
+<td>URL fetched through the proxy</td>
+</tr>
+<tr>
+<td><code>HELIX_METRICS_BYTEPATH_WIRED</code></td>
+<td><code>0</code></td>
+<td>set <code>1</code> once the byte-path to api counter increment
+lands</td>
+</tr>
+<tr>
+<td><code>HELIX_METRICS_EVIDENCE_DIR</code></td>
+<td><code>qa-results/observability/metrics_scrape/&lt;run-id&gt;</code></td>
+<td>evidence dir</td>
+</tr>
+<tr>
+<td><code>HELIX_PROBE_TIMEOUT</code></td>
+<td><code>10</code></td>
+<td>curl <code>--max-time</code> for probes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Not booted, GREEN</strong>:
+<code>HELIX_OBSERVABILITY_STACK</code> unset yields
+<code>SKIP: topology_unsupported</code> (authored-not-booted), return
+0.</li>
+<li><strong>Declared up but <code>/metrics</code> dead</strong>:
+<code>HELIX_OBSERVABILITY_STACK=1</code> with no valid exposition is a
+FAIL — the metrics-not-exposed defect is live.</li>
+<li><strong>Counter flat after a proxied request</strong>: today the
+byte-path to api counter increment is P5/P10-pending
+(<code>control-plane/internal/api/metrics.go:14-17</code>); the
+acl-helper writes <code>OK</code>/<code>ERR</code> to Squid's stdout and
+does NOT call the api process
+(<code>control-plane/cmd/acl-helper/main.go</code>). So a flat counter
+is an honest <code>feature_disabled_by_config</code> SKIP for the
+increment sub-proof, while the exposition-content proof still PASSes.
+Once the wiring lands the conductor sets
+<code>HELIX_METRICS_BYTEPATH_WIRED=1</code>, after which a flat counter
+is a HARD FAIL (regression guard).</li>
+<li><strong>Proxy unreachable</strong>: the increment sub-proof cannot
+be driven; it is skipped for that run while the exposition-content proof
+stands.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Resource cap: the script self-re-execs under
+<code>nice -n 19 ionice -c 3</code> with <code>GOMAXPROCS=2</code> when
+those tools are present.</li>
+<li>Sources <code>tests/lib/evidence.sh</code>.</li>
+<li>Scrapes <code>HELIX_METRICS_URL</code> (body + HTTP code captured to
+the evidence dir).</li>
+<li>RED: asserts the scrape is NOT valid exposition (else FAIL — nothing
+to reproduce). GREEN: gates on <code>HELIX_OBSERVABILITY_STACK</code>,
+then asserts the content, then drives one proxied request and re-scrapes
+to compute the acl-decisions counter delta.</li>
+<li>Emits structured
+<code>PASS</code>/<code>FAIL</code>/<code>SKIP</code> verdict lines and
+cites the captured scrape artefacts as evidence.</li>
+</ol>
+<h2 id="wiring-facts-fileline">Wiring FACTS (file:line)</h2>
+<ul>
+<li>Metrics-listener enable var <code>CONTROL_API_METRICS_ADDR</code> to
+<code>Config.MetricsAddr</code>:
+<code>control-plane/cmd/api/main.go:93</code>; documented
+<code>internal/api/api.go:19,31</code>; consumed
+<code>internal/api/server.go:134</code> (empty means off).</li>
+<li>Metrics path <code>/metrics</code> (GET):
+<code>internal/api/server.go:100</code> (mTLS mux) and
+<code>internal/api/server.go:112</code> (<code>metricsRoutes</code>
+plaintext mux).</li>
+<li>mTLS certs required before the listener starts (fail-closed):
+<code>internal/api/tls.go:26</code>; <code>startMetricsListener</code>
+runs after <code>buildTLSConfig</code> in
+<code>internal/api/server.go:170-175</code>.</li>
+<li>Metric names: <code>internal/api/metrics.go:35-37</code>.</li>
+</ul>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>docker-compose.observability.yml</code> — the compose overlay
+adding <code>proxy-api</code> with the metrics listener enabled.</li>
+<li><code>tests/lib/evidence.sh</code> — the canonical anti-bluff
+evidence helper.</li>
+<li><code>tests/dynamic/suites/ddos_flood_suite.sh</code> — the
+RED/GREEN + honest-SKIP pattern this guard follows.</li>
+<li><code>config/prometheus/prometheus.yml</code> — the committed scrape
+config (job <code>helix-control-plane</code>, target
+<code>proxy-control-plane:59090</code>).</li>
+</ul>
+<h2 id="conductor-live-proof-command-sequence">Conductor live-proof
+command sequence</h2>
+<p>The conductor (single owner of the live boot, §11.4.119) runs, from
+the repo root, after provisioning the four Podman secrets:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_pg_password  <span class="at">-</span> <span class="op">&lt;</span> /path/pg_password</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_cert      <span class="at">-</span> <span class="op">&lt;</span> /path/server.crt</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_key       <span class="at">-</span> <span class="op">&lt;</span> /path/server.key</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_client_ca <span class="at">-</span> <span class="op">&lt;</span> /path/client-ca.crt</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="va">COMPOSE</span><span class="op">=</span><span class="st">&quot;podman-compose -f docker-compose.yml -f docker-compose.dynamic.yml -f docker-compose.observability.yml --profile dynamic&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE</span> up <span class="at">-d</span> proxy-postgres proxy-redis</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE</span> up <span class="at">-d</span> proxy-api</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_OBSERVABILITY_STACK</span><span class="op">=</span>1 <span class="dt">\</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_METRICS_URL</span><span class="op">=</span>http://127.0.0.1:59090/metrics <span class="dt">\</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_PROXY_URL</span><span class="op">=</span>http://127.0.0.1:53128 <span class="dt">\</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    bash tests/observability/metrics_scrape_test.sh</span></code></pre></div>
+<h2 id="last-verified">Last verified</h2>
+<ul>
+<li>2026-07-01 — authored; <code>sh -n</code> + <code>bash -n</code>
+clean; RED baseline PASS + GREEN authored-not-booted SKIP confirmed
+without booting; overlay merges clean under
+<code>podman-compose config</code>. Live GREEN scrape proof is owed to
+the conductor.</li>
+</ul>
+</body>
+</html>
