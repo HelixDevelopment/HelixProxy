@@ -174,31 +174,39 @@
 <body>
 <h1 id="proxy-config-security-review--status">Proxy Config Security
 Review — Status</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T13:56:00Z <strong>Status:</strong> Static config-security
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T14:48:00Z <strong>Status:</strong> Static config-security
 review of the proxy data plane (Squid forward proxy + Dante SOCKS5). 2
 areas already HARDENED (Squid ACL chain, Squid TLS N/A-by-design); 4
-Squid header/version-hygiene leaks were FIXED this round
-(<code>via</code>, <code>httpd_suppress_version_string</code>,
-<code>forwarded_for</code>, <code>visible_hostname</code>) — RED→GREEN
-proven (the <code>Via</code> leak is gone + the security test S3 gate
-now PASSes); the Dante SSRF/BIND exposure was also FIXED this round
-(<code>command: connect</code> + <code>socks block</code> for
-link-local/loopback/RFC1918 — RED→GREEN proven, dante-log-confirmed,
-security-test S4 gate PASS); 2 items remain TRACKED-for-operator because
-the safe fix carries a connectivity risk requiring an operator decision
-(Squid <code>dns_nameservers</code> DNS-leak in static mode; Dante
-client-side open-relay — <code>socksmethod none</code> +
+Squid header/version-hygiene leaks were FIXED (<code>via</code>,
+<code>httpd_suppress_version_string</code>, <code>forwarded_for</code>,
+<code>visible_hostname</code>) — RED→GREEN proven (the <code>Via</code>
+leak is gone + the security test S3 gate now PASSes); the Dante
+SSRF/BIND exposure was also FIXED (<code>command: connect</code> +
+<code>socks block</code> for link-local/loopback/RFC1918 — RED→GREEN
+proven, dante-log-confirmed, security-test S4 gate PASS); 2 items remain
+TRACKED-for-operator because the safe fix carries a connectivity risk
+requiring an operator decision (Squid <code>dns_nameservers</code>
+DNS-leak in static mode; Dante client-side open-relay —
+<code>socksmethod none</code> +
 <code>client pass from:0.0.0.0/0</code>). One leak is CONFIRMED live
 (<code>via</code>); one is INFERRED from Squid defaults and fixed as
 defense-in-depth (<code>forwarded_for</code> / X-Forwarded-For) — the
-distinction is stated per §11.4.6, no guessing.
-<strong>Authority:</strong> Inherits
-<code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
-integration-status doc for the proxy config-security workstream;
-§11.4.56 two-audience companion; findings presented as FACTs from a
-static review (§11.4.6), not re-derived. <strong>Companion:</strong>
-summary <a
+distinction is stated per §11.4.6, no guessing. <strong>Rev 3:</strong>
+the S3/S4 security guard
+(<code>tests/security/proxy_acl_security.sh</code>) is now WIRED into
+the standing regression suite (<code>tests/run-tests.sh</code>
+<code>test_security_guards</code>, §11.4.135) with GREEN + RED-polarity,
+so a header-hygiene or SSRF regression fails the build; and the S4 SSRF
+verdict was hardened (§11.4.142 independent-review finding) to require
+dante's own <code>block(N)</code> log line as the authoritative §11.4.69
+sink-side signal rather than an elapsed-time heuristic (which was
+bluff-capable on a fast-refusing host). <strong>Authority:</strong>
+Inherits <code>constitution/Constitution.md</code> per §11.4.35.
+§11.4.45 integration-status doc for the proxy config-security
+workstream; §11.4.56 two-audience companion; findings presented as FACTs
+from a static review (§11.4.6), not re-derived.
+<strong>Companion:</strong> summary <a
 href="Status_Summary.md"><code>Status_Summary.md</code></a></p>
 <h2
 id="operator-blocked--pending-items-read-first--11445-o1-surface">Operator-blocked
@@ -360,7 +368,14 @@ targets refused fast, code 000 ~0.01s; dante log
 <code>block(N) … &lt;target&gt;</code>; external control 204). Evidence
 <code>qa-results/security/socks_ssrf/red_*.txt</code> +
 <code>green_*.txt</code>; security-test S4 gate PASS. No public-egress
-regression.</td>
+regression. <strong>S4 guard hardened (§11.4.142 review):</strong> the
+"blocked" verdict now REQUIRES dante's own <code>block(N)</code> log
+line for the target (authoritative §11.4.69 sink-side signal) — the
+prior elapsed-time-only discriminator was bluff-capable on a
+fast-refusing host; the block-log signal is topology-independent (RED
+<code>SEC_SSRF_TARGET=240.0.0.1</code> FAILs whether it fast-fails OR
+slow-times-out). Runtime-signature re-verified LIVE on the running base
+dante (§11.4.108).</td>
 </tr>
 </tbody>
 </table>

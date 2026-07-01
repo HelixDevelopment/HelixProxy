@@ -251,14 +251,24 @@ fi
 # ---------------------------------------------------------------------------
 # S4 — SOCKS5 SSRF hardening (§11.4.169 / §11.4.135 guard, §11.4.69 sink-side).
 # The SOCKS5 proxy MUST NOT forward a client CONNECT to internal / link-local /
-# loopback destinations. RED (pre-`socks block`): dante forwarded → curl timed
-# out (~MAX_TIME, rc 28). GREEN: dante blocks by ruleset → fast refusal (code
-# 000, sub-second) + a `block(...)` line in dante's own log. Heuristic is
-# rc-agnostic (code 000 AND elapsed < MAX_TIME/2), robust across curl versions.
+# loopback destinations. RED (pre-`socks block`): dante forwarded the CONNECT.
+# GREEN: dante blocks by ruleset → refusal (code 000) AND — the AUTHORITATIVE
+# signal — a `block(N) ... <target>` line in dante's OWN log (§11.4.69 positive
+# sink-side evidence).  §11.4.107(10)/§11.4.142 review finding: elapsed-time
+# alone is a topology-dependent, bluff-capable discriminator — on a host that
+# fast-*refuses* link-local (RST / no-route) an UN-blocked dante would forward,
+# fail fast, and yield code 000 in < MAX_TIME/2 → a FALSE PASS with the block
+# rules removed. So the block-log line is REQUIRED for PASS; a refusal WITHOUT a
+# matching block-log line is a FAIL (dante forwarded, did not block); if dante's
+# log cannot be read at all we SKIP (topology_unsupported — the sink signal is
+# unobtainable, never a timing-only PASS, §11.4.69 no-fail-open). Timing is kept
+# as corroborating evidence in the artifact, not as the decision.
 # ---------------------------------------------------------------------------
 S4_EV="$EVIDENCE_DIR/s4_socks_ssrf.evidence"
 SOCKS_URL=${SEC_SOCKS_URL:-socks5h://127.0.0.1:51080}
 SSRF_TARGET=${SEC_SSRF_TARGET:-169.254.169.254}
+DANTE_CTR=${SEC_DANTE_CONTAINER:-proxy-dante}
+DANTE_LOG=${SEC_DANTE_LOG:-/var/log/sockd.log}
 socks_ctrl=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$MAX_TIME" -x "$SOCKS_URL" http://www.gstatic.com/generate_204 2>/dev/null || printf '000')
 if [ "$socks_ctrl" != "204" ]; then
     printf '=== S4: SOCKS5 SSRF ===\nverdict=SKIP (SOCKS5 control probe=%s, not 204)\n' "$socks_ctrl" > "$S4_EV"
@@ -266,26 +276,53 @@ if [ "$socks_ctrl" != "204" ]; then
     ab_skip_with_reason "S4 SOCKS5 SSRF (proxy :51080 not serving / topology absent)" "topology_unsupported"
     N_SKIP=$((N_SKIP + 1))
 else
+    # Snapshot dante's own log length BEFORE the probe so we read ONLY the lines
+    # this probe appends (avoids matching a block from a prior run). The dante
+    # block(N) log line is the AUTHORITATIVE positive sink-side signal (§11.4.69).
+    dante_log_avail=no; log_before=0
+    if _lb=$(podman exec "$DANTE_CTR" sh -c "wc -l < '$DANTE_LOG'" 2>/dev/null); then
+        _lb=$(printf '%s' "$_lb" | tr -dc '0-9')
+        [ -n "$_lb" ] && { log_before=$_lb; dante_log_avail=yes; }
+    fi
     ssrf_t0=$(date +%s.%N 2>/dev/null || date +%s)
     ssrf_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$MAX_TIME" -x "$SOCKS_URL" "http://$SSRF_TARGET/" 2>/dev/null); ssrf_rc=$?
     [ -n "$ssrf_code" ] || ssrf_code=000
     ssrf_t1=$(date +%s.%N 2>/dev/null || date +%s)
     ssrf_dt=$(awk -v a="$ssrf_t0" -v b="$ssrf_t1" 'BEGIN{printf "%.2f", b-a}')
-    blocked=no
-    if [ "$ssrf_code" = "000" ] && awk -v d="$ssrf_dt" -v m="$MAX_TIME" 'BEGIN{exit !(d < m/2)}'; then blocked=yes; fi
+    fast=no
+    awk -v d="$ssrf_dt" -v m="$MAX_TIME" 'BEGIN{exit !(d < m/2)}' && fast=yes
+    # Authoritative discriminator: a `block(N) ... <target>` line dante appended
+    # for THIS target during THIS probe (matched below with grep -E + a sed-
+    # escaped, EOL-anchored target — POSIX, keeps sh -n clean, §11.4.67).
+    block_log_seen=no; block_line=""
+    if [ "$dante_log_avail" = yes ]; then
+        # Anchor the target to the destination field ("<ip>.<port>" at end of the
+        # block line) so an overridden prefix target (e.g. 10.0.0.1) cannot
+        # substring-match a longer blocked dest (10.0.0.10) — review finding,
+        # §11.4.6. Escape the IP dots for the ERE (POSIX sed, keeps sh -n clean).
+        _tgt_re=$(printf '%s' "$SSRF_TARGET" | sed 's/\./\\./g')
+        block_line=$(podman exec "$DANTE_CTR" sh -c "tail -n +$((log_before + 1)) '$DANTE_LOG'" 2>/dev/null \
+            | grep -E 'block\([0-9]+\)' | grep -E " ${_tgt_re}\.[0-9]+[[:space:]]*\$" | tail -1)
+        [ -n "$block_line" ] && block_log_seen=yes
+    fi
     {
         printf '=== S4: SOCKS5 SSRF hardening ===\n'
         printf 'socks_url=%s control_204=%s\n' "$SOCKS_URL" "$socks_ctrl"
-        printf 'ssrf_target=%s code=%s curl_rc=%s elapsed=%ss\n' "$SSRF_TARGET" "$ssrf_code" "$ssrf_rc" "$ssrf_dt"
-        printf 'blocked=%s (fast+code000 => ruleset block; ~timeout => forwarded=SSRF)\n' "$blocked"
+        printf 'ssrf_target=%s code=%s curl_rc=%s elapsed=%ss fast=%s\n' "$SSRF_TARGET" "$ssrf_code" "$ssrf_rc" "$ssrf_dt" "$fast"
+        printf 'dante_log_avail=%s block_log_seen=%s (AUTHORITATIVE sink signal, §11.4.69)\n' "$dante_log_avail" "$block_log_seen"
+        [ -n "$block_line" ] && printf 'dante_block_line=%s\n' "$block_line"
     } > "$S4_EV"
-    if [ "$blocked" = "yes" ]; then
-        echo "[S4] PASS SOCKS5 SSRF blocked ($SSRF_TARGET refused fast, code=$ssrf_code ${ssrf_dt}s; external control 204)"
-        ab_pass_with_evidence "S4 SOCKS5 SSRF: internal $SSRF_TARGET blocked by ruleset (fast refusal), external control works" "$S4_EV"
+    if [ "$dante_log_avail" != yes ]; then
+        echo "[S4] SKIP dante log unreadable (container=$DANTE_CTR log=$DANTE_LOG) — sink signal unobtainable, timing alone insufficient"
+        ab_skip_with_reason "S4 SOCKS5 SSRF (dante block-log unreadable — cannot obtain §11.4.69 sink signal)" "topology_unsupported"
+        N_SKIP=$((N_SKIP + 1))
+    elif [ "$block_log_seen" = yes ]; then
+        echo "[S4] PASS SOCKS5 SSRF blocked ($SSRF_TARGET — dante block() log line present, code=$ssrf_code ${ssrf_dt}s fast=$fast)"
+        ab_pass_with_evidence "S4 SOCKS5 SSRF: internal $SSRF_TARGET blocked by ruleset (dante block() log line, §11.4.69 sink-side)" "$S4_EV"
         N_PASS=$((N_PASS + 1))
     else
-        echo "[S4] FAIL SOCKS5 forwarded CONNECT to $SSRF_TARGET (code=$ssrf_code rc=$ssrf_rc ${ssrf_dt}s) — SSRF possible"
-        _evidence_emit FAIL "S4 SOCKS5 SSRF" "[reason: SOCKS5 forwarded a CONNECT to internal $SSRF_TARGET (SSRF, §11.4.68/.169); add socks block rules; see $S4_EV]"
+        echo "[S4] FAIL SOCKS5 did NOT block $SSRF_TARGET (no dante block() log line; code=$ssrf_code rc=$ssrf_rc ${ssrf_dt}s fast=$fast) — CONNECT forwarded, SSRF possible"
+        _evidence_emit FAIL "S4 SOCKS5 SSRF" "[reason: no dante block() line for internal $SSRF_TARGET — the CONNECT was forwarded, not blocked (SSRF, §11.4.68/.69/.169); add/restore socks block rules; see $S4_EV]"
         N_FAIL=$((N_FAIL + 1))
     fi
 fi

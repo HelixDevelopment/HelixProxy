@@ -746,6 +746,46 @@ test_regression_guards() {
 }
 
 #######################################
+# Security guards (§11.4.135 standing regression suite; §11.4.69 sink-side)
+#######################################
+test_security_guards() {
+    echo -e "\n${BLUE}=== Security Guards (§11.4.135 / §11.4.69) ===${NC}"
+    # proxy_acl_security.sh asserts S3 Via/version-hygiene + S4 SOCKS5-SSRF-block
+    # against the LIVE proxy: exit 0=PASS / 3=topology SKIP (proxy not serving,
+    # §11.4.3) / 1=FAIL. GREEN proves the shipped Squid/Dante hardening is really
+    # deployed (§11.4.108 runtime-signature). The RED polarity — SEC_SSRF_TARGET
+    # set to a target dante does NOT block (240.0.0.1, class-E) — MUST FAIL,
+    # proving S4's dante-block-log discriminator has teeth (§11.4.115) and is not
+    # the timing-only bluff the §11.4.142 independent review flagged.
+    # Exit-code capture uses the `|| rc=$?` idiom (NOT `cmd; rc=$?`) so a non-zero
+    # guard exit does NOT abort the `set -euo pipefail` suite before the code is
+    # captured — the BUGFIX-0003 lesson, mirroring the if-condition guards above.
+    _sec_out=""; _sec_rc=0
+    _sec_out=$(bash "$SCRIPT_DIR/security/proxy_acl_security.sh" 2>&1) || _sec_rc=$?
+    case "$_sec_rc" in
+        0) test_result "Security guards (S3 Via + S4 SOCKS-SSRF, GREEN live)" "PASS" ;;
+        3) test_result "Security guards (S3 Via + S4 SOCKS-SSRF)" "SKIP" "proxy not serving — topology absent §11.4.3" ;;
+        *) test_result "Security guards (S3 Via + S4 SOCKS-SSRF, GREEN live)" "FAIL" \
+               "run: bash tests/security/proxy_acl_security.sh" ;;
+    esac
+    # RED negation is assertable ONLY when S4 itself ran GREEN (dante reachable);
+    # a topology gap (S4 SKIP → aggregate may still exit 0 via S3) must NOT
+    # manufacture a false FAIL (§11.4.1/§11.4.3) — so gate on the [S4] PASS line.
+    if printf '%s\n' "$_sec_out" | grep -q '\[S4\] PASS'; then
+        _sec_red=0
+        SEC_SSRF_TARGET=240.0.0.1 bash "$SCRIPT_DIR/security/proxy_acl_security.sh" >/dev/null 2>&1 || _sec_red=$?
+        if [ "$_sec_red" = "1" ]; then
+            test_result "Security guard S4 RED reproduces (unblocked target => FAIL, block-log has teeth)" "PASS"
+        else
+            test_result "Security guard S4 RED reproduces" "FAIL" \
+                "RED (SEC_SSRF_TARGET=240.0.0.1) did not FAIL (rc=$_sec_red) — S4 discriminator weak §11.4.7/§11.4.115"
+        fi
+    else
+        test_result "Security guard S4 RED reproduces" "SKIP" "S4 not GREEN (dante not serving) — RED not assertable §11.4.3"
+    fi
+}
+
+#######################################
 # Print summary
 #######################################
 print_summary() {
@@ -784,6 +824,7 @@ main() {
 
     test_constitution_inheritance
     test_regression_guards
+    test_security_guards
     test_environment
     test_directories
     test_scripts

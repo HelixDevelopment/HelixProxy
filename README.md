@@ -428,8 +428,8 @@ rather than fabricated.
 | Feature Status Summary | 2026-07-01T15:30:00Z | 3 | [md](docs/features/Status_Summary.md) | [html](docs/features/Status_Summary.html) | [pdf](docs/features/Status_Summary.pdf) |
 | Hardening Status | 2026-07-01T13:26:00Z | 3 | [md](docs/design/hardening/Status.md) | [html](docs/design/hardening/Status.html) | [pdf](docs/design/hardening/Status.pdf) |
 | Hardening Status Summary | 2026-07-01T13:26:00Z | 3 | [md](docs/design/hardening/Status_Summary.md) | [html](docs/design/hardening/Status_Summary.html) | [pdf](docs/design/hardening/Status_Summary.pdf) |
-| Security Status | 2026-07-01T13:56:00Z | 2 | [md](docs/design/security/Status.md) | [html](docs/design/security/Status.html) | [pdf](docs/design/security/Status.pdf) |
-| Security Status Summary | 2026-07-01T13:56:00Z | 2 | [md](docs/design/security/Status_Summary.md) | [html](docs/design/security/Status_Summary.html) | [pdf](docs/design/security/Status_Summary.pdf) |
+| Security Status | 2026-07-01T14:48:00Z | 3 | [md](docs/design/security/Status.md) | [html](docs/design/security/Status.html) | [pdf](docs/design/security/Status.pdf) |
+| Security Status Summary | 2026-07-01T14:48:00Z | 3 | [md](docs/design/security/Status_Summary.md) | [html](docs/design/security/Status_Summary.html) | [pdf](docs/design/security/Status_Summary.pdf) |
 | Let's Encrypt Status | 2026-07-01T11:42:00Z | 3 | [md](docs/design/letsencrypt/Status.md) | [html](docs/design/letsencrypt/Status.html) | [pdf](docs/design/letsencrypt/Status.pdf) |
 | Let's Encrypt Status Summary | 2026-07-01T11:42:00Z | 3 | [md](docs/design/letsencrypt/Status_Summary.md) | [html](docs/design/letsencrypt/Status_Summary.html) | [pdf](docs/design/letsencrypt/Status_Summary.pdf) |
 <!-- doc-link-section:end -->

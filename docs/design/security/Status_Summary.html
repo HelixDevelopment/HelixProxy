@@ -174,8 +174,8 @@
 <body>
 <h1 id="proxy-config-security-review--status-summary">Proxy Config
 Security Review — Status Summary</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T13:56:00Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T14:48:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
@@ -344,7 +344,10 @@ SSRF to <code>169.254.169.254</code>/RFC1918 + BIND</td>
 <td><code>command: connect</code> + <code>socks block</code> for 127/8,
 169.254/16, 10/8, 172.16/12, 192.168/16 — RED→GREEN (5 internal targets
 refused fast, dante-log <code>block(N)</code>, external 204); S4 gate
-PASS — <code>qa-results/security/socks_ssrf/</code></td>
+PASS — <code>qa-results/security/socks_ssrf/</code>. S4 verdict hardened
+(§11.4.142 review) to require the authoritative dante
+<code>block(N)</code> log line (§11.4.69), not elapsed-time; guard now
+standing-suite-wired (§11.4.135)</td>
 </tr>
 </tbody>
 </table>
