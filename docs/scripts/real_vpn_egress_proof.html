@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>real_vpn_egress_proof</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="real_vpn_egress_proofsh--companion-guide-11418">real_vpn_egress_proof.sh
+— companion guide (§11.4.18)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T06:40:00Z <strong>Script:</strong>
+<code>tests/egress_proof/real_vpn_egress_proof.sh</code>
+<strong>Workable item:</strong> #54 — real-VPN-egress functional proof
+(the POSITIVE egress half)</p>
+<h2 id="overview">Overview</h2>
+<p><code>real_vpn_egress_proof.sh</code> is the
+<strong>creds-drop-ready</strong> harness that proves the
+<em>positive</em> half of the dynamic VPN-aware proxy: that with
+<strong>real</strong> operator-provisioned gluetun WireGuard
+credentials, a real packet leaves through the tunnel and the egress
+public IP observed <strong>through the proxy</strong> equals the tunnel
+exit <strong>and</strong> differs from the host's own IP (design §15 /
+research §15 — the hardest-to-fake routing proof).</p>
+<p>The complementary <em>negative</em> half — <strong>fail-closed
+security</strong> (tunnel-down → branded 503, no leak) — is already
+proven, independently, by the committed Go integration test
+<code>control-plane/cmd/healthd/healthd_integration_test.go</code>
+(<code>TestIntegration_HealthdWritesDownAgainstRealGluetun</code>,
+assertion at <code>:174-176</code>): a REAL gluetun booted with a FAKE
+WireGuard config produces an EMPTY egress, so healthd MUST write a
+<code>DOWN</code> snapshot. This harness does <strong>not</strong>
+re-prove that; it targets only the egress PASS that needs real key
+material.</p>
+<p>Real WireGuard keys are <strong>operator-provisioned</strong>
+(§11.4.21 / §11.4.52) and are <strong>never</strong> fabricated,
+invented, or committed (§11.4.10). The harness therefore has two honest
+outcomes and never fakes a pass.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Operator WireGuard creds in gitignored <code>./.env</code> (or
+exported)</td>
+<td>Only the creds path boots the stack; absence → honest SKIP.</td>
+</tr>
+<tr>
+<td>Rootless <code>podman</code> on <code>PATH</code> (§11.4.161)</td>
+<td>Runs the tunnel-UP probe
+(<code>podman exec proxy-gluetun ...</code>).</td>
+</tr>
+<tr>
+<td><code>curl</code>, <code>awk</code>, <code>grep</code>,
+<code>ss</code>/<code>netstat</code></td>
+<td>Egress capture + the §11.4.174 port guard.</td>
+</tr>
+<tr>
+<td>The sanctioned <code>./start</code> / <code>./stop</code>
+orchestrators</td>
+<td>Boot/teardown — <strong>never</strong> raw
+<code>podman run</code>.</td>
+</tr>
+<tr>
+<td>A free <code>:53128</code> (<code>HTTP_PROXY_PORT</code>) + no
+running <code>proxy-squid</code>/<code>proxy-gluetun</code></td>
+<td>Guarded; the harness refuses (exit 3) rather than disturb a foreign
+owner.</td>
+</tr>
+</tbody>
+</table>
+<p>The five operator cred vars (the <strong>exact</strong> names the
+<code>dynamic</code> overlay reads —
+<code>docker-compose.dynamic.yml:149-153</code>,
+<code>.env.example:177-182</code>):</p>
+<pre><code>WIREGUARD_PRIVATE_KEY   WIREGUARD_PUBLIC_KEY   WIREGUARD_ADDRESSES
+WIREGUARD_ENDPOINT_IP   WIREGUARD_ENDPOINT_PORT</code></pre>
+<h2 id="usage-examples">Usage examples</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Auto-detect creds. No creds -&gt; clean SKIP (exit 0). Creds -&gt; real-egress PASS.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">tests/egress_proof/real_vpn_egress_proof.sh</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional overrides:</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">EXPECTED_EXIT_IP</span><span class="op">=</span>185.65.135.70 <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">PROXY_PORT</span><span class="op">=</span>53128 <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="va">IP_ECHO_URL</span><span class="op">=</span>https://icanhazip.com <span class="dt">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="va">BOOT_TIMEOUT</span><span class="op">=</span>180 <span class="dt">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="ex">tests/egress_proof/real_vpn_egress_proof.sh</span></span></code></pre></div>
+<p>Outcomes:</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>stdout verdict</th>
+<th>Exit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Creds absent</td>
+<td><code>SKIP: ... [reason: operator_attended]</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td>Creds present, egress == exit &amp;&amp; != host</td>
+<td><code>PASS: ... [evidence: .../egress_via_proxy.ip]</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td>Creds present, egress == host / wrong exit / no egress</td>
+<td><code>FAIL: ... [reason: ...]</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>:PROXY_PORT</code> bound OR a <code>proxy-*</code> container
+already up</td>
+<td><code>FAIL-SAFE ... NOT booting (§11.4.174)</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>No container runtime</td>
+<td><code>SKIP: ... [reason: hardware_not_present]</code></td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>No <code>.env</code> at all</strong> → treated as
+creds-absent → SKIP (the default developer state).</li>
+<li><strong>Partial creds</strong> (any one of the five empty) →
+creds-absent → SKIP (never a half-boot).</li>
+<li><strong>Secrets never printed</strong> — presence is tested via
+<code>grep -q</code> exit-status / a length test; the key value is never
+echoed or logged (§11.4.10). Safe to run with verbose shells.</li>
+<li><strong>Foreign proxy stack already up</strong> (e.g.
+<code>proxy-squid</code> from another session on the shared host) → exit
+3, nothing touched (§11.4.174). Observed live during authoring: a
+pre-existing <code>proxy-squid</code> "Up 5 hours" holding
+<code>:53128</code> correctly caused the guard to refuse.</li>
+<li><strong>Tunnel never comes UP within
+<code>BOOT_TIMEOUT</code></strong> → <code>FAIL</code> (bad
+creds/endpoint), stack torn down by the trap.</li>
+<li><strong>Re-runnable / deterministic</strong> (§11.4.98): SKIP path
+returns exit 0 identically across repeated runs; no manual step after
+start.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Source the committed <code>tests/lib/evidence.sh</code>
+(<code>ab_skip_with_reason</code>, <code>ab_pass_with_evidence</code>,
+<code>assert_egress_ip</code> — the §15 bluff-catcher,
+self-tested).</li>
+<li>Detect the five cred vars (env <strong>or</strong>
+<code>.env</code>) without capturing/printing any value.</li>
+<li><strong>Absent</strong> →
+<code>ab_skip_with_reason ... operator_attended</code>, write
+<code>verdict.txt</code>, exit 0.</li>
+<li><strong>Present</strong> → detect runtime; §11.4.174 guard on
+<code>:PROXY_PORT</code> + <code>proxy-*</code> names; if contended,
+exit 3 <strong>without booting</strong>.</li>
+<li><code>./start --dynamic</code> (sets <code>BOOTED=1</code>); poll
+gluetun <code>/v1/publicip/ip</code> until non-empty.</li>
+<li>Capture egress-via-proxy (<code>curl -x</code>) + host-direct IP
+into <code>qa-results/issue54/</code>; delegate the verdict to
+<code>assert_egress_ip</code> (egress == exit AND != host).</li>
+<li><code>trap cleanup EXIT</code> runs <code>./stop</code> iff
+<code>BOOTED=1</code> — quiescent on every path (§11.4.14).</li>
+</ol>
+<p>Evidence artefacts (under <code>qa-results/issue54/</code>,
+gitignored raw corpus §11.4.30): <code>verdict.txt</code>,
+<code>egress_via_proxy.ip</code>, <code>host_public.ip</code>,
+<code>expected_exit.ip</code>.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — the sourced §11.4.69 evidence
+helpers (<code>assert_egress_ip:213</code>).</li>
+<li><code>control-plane/cmd/healthd/healthd_integration_test.go</code> —
+the fail-closed (security) proof.</li>
+<li><code>tests/dynamic/analyzers/egress_neq_host_analyzer.sh</code> —
+the offline golden-good/bad analyzer for the same egress-≠-host
+oracle.</li>
+<li><code>./start</code> / <code>./stop</code> — the sanctioned
+dynamic-stack orchestrators.</li>
+<li><code>docs/DYNAMIC_VPN_EGRESS_PROOF.md</code> — the operator runbook
+(how to supply creds + run).</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — SKIP path executed (exit 0, deterministic ×3);
+creds-present branch + §11.4.174 port guard executed (exit 3, did not
+boot); <code>sh -n</code> + <code>bash -n</code> parse-clean.</p>
+</body>
+</html>

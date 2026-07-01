@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>DYNAMIC_VPN_EGRESS_PROOF</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="dynamic-vpn-egress-proof--operator-runbook-workable-item-54">Dynamic
+VPN Egress Proof — Operator Runbook (workable item #54)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T06:42:00Z <strong>Audience:</strong> operator with real VPN
+(gluetun/WireGuard) credentials <strong>Harness:</strong>
+<code>tests/egress_proof/real_vpn_egress_proof.sh</code>
+<strong>Companion:</strong>
+<code>docs/scripts/real_vpn_egress_proof.md</code></p>
+<h2 id="what-this-proves-and-what-is-already-proven">What this proves
+(and what is already proven)</h2>
+<p>The dynamic VPN-aware proxy has two halves:</p>
+<table>
+<thead>
+<tr>
+<th>Half</th>
+<th>Claim</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Security (fail-closed)</strong></td>
+<td>Tunnel down → branded <code>503</code>, <strong>no leak</strong>;
+healthd writes <code>DOWN</code></td>
+<td><strong>PROVEN</strong> (no creds needed)</td>
+<td><code>control-plane/cmd/healthd/healthd_integration_test.go:134</code>
+(<code>TestIntegration_HealthdWritesDownAgainstRealGluetun</code>),
+assertion <code>:174-176</code></td>
+</tr>
+<tr>
+<td><strong>Functional (real egress)</strong></td>
+<td>With real creds, a packet routes <strong>out through the
+tunnel</strong>; egress IP via proxy <strong>== tunnel exit</strong> and
+<strong>!= host IP</strong></td>
+<td><strong>CREDS-GATED</strong> — this runbook</td>
+<td><code>tests/egress_proof/real_vpn_egress_proof.sh</code> →
+<code>tests/lib/evidence.sh:assert_egress_ip:213</code></td>
+</tr>
+</tbody>
+</table>
+<p>The security half uses a <strong>FAKE</strong> length-shaped
+WireGuard config (empty egress) on purpose, so it can prove fail-closed
+<strong>without</strong> any real key. The functional half is the only
+thing that needs <strong>your real credentials</strong> — Claude cannot
+and must not fabricate them (§11.4.10).</p>
+<p>Until you run this proof with real creds, the honest project
+statement is: <strong>"security proven / functional-egress
+creds-gated."</strong></p>
+<h2 id="step-1--provide-credentials-never-committed-11410">Step 1 —
+Provide credentials (never committed, §11.4.10)</h2>
+<p>Real WireGuard keys live <strong>only</strong> in the gitignored
+<code>./.env</code> (or exported in your shell). <code>.env</code> is
+already in <code>.gitignore</code> (line 6) — it is never tracked.
+<strong>Do not</strong> put keys in <code>.env.example</code>, in the
+compose files, or anywhere git-tracked.</p>
+<p>Copy the template and fill the <strong>five</strong> gluetun
+WireGuard variables (the exact names the <code>dynamic</code> overlay
+reads — <code>docker-compose.dynamic.yml:149-153</code>,
+<code>.env.example:177-182</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.example .env      <span class="co"># if you don&#39;t already have one</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 600 .env            <span class="co"># §11.4.10 — restrict the secret file</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">$EDITOR</span> .env</span></code></pre></div>
+<p>Set (values from your VPN provider's WireGuard config, e.g.
+Mullvad/gluetun):</p>
+<pre class="dotenv"><code>VPN_SERVICE_PROVIDER=custom
+VPN_DEFAULT_TYPE=wireguard
+WIREGUARD_PRIVATE_KEY=&lt;your real private key&gt;
+WIREGUARD_PUBLIC_KEY=&lt;the server/peer public key&gt;
+WIREGUARD_ADDRESSES=&lt;e.g. 10.64.0.2/32&gt;
+WIREGUARD_ENDPOINT_IP=&lt;the tunnel endpoint IP&gt;
+WIREGUARD_ENDPOINT_PORT=&lt;e.g. 51820&gt;
+# Optional — the known exit IP; if omitted the harness derives it from gluetun:
+EXPECTED_EXIT_IP=&lt;the VPN exit public IP&gt;</code></pre>
+<blockquote>
+<p><strong>Note on names.</strong> The five variables are
+<code>WIREGUARD_ENDPOINT_IP</code> /
+<code>WIREGUARD_ENDPOINT_PORT</code> (per <code>.env.example</code> +
+the overlay). The gluetun <strong>container</strong> ultimately consumes
+<code>VPN_ENDPOINT_IP</code> / <code>VPN_ENDPOINT_PORT</code>; the
+overlay maps the <code>WIREGUARD_ENDPOINT_*</code> <code>.env</code>
+names onto gluetun's env, so <strong>set the
+<code>WIREGUARD_ENDPOINT_*</code> names in <code>.env</code></strong>
+and the mapping is handled for you.</p>
+</blockquote>
+<h3 id="alternative--podman-secrets-rootless">Alternative — Podman
+secrets (rootless)</h3>
+<p>gluetun auto-reads <code>/run/secrets/wireguard_private_key</code>
+etc. If you prefer Podman secrets to <code>.env</code> values:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">&#39;%s&#39;</span> <span class="st">&#39;&lt;your real private key&gt;&#39;</span> <span class="kw">|</span> <span class="ex">podman</span> secret create wireguard_private_key <span class="at">-</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ...repeat for wireguard_public_key, wireguard_addresses, wireguard_endpoint_ip, wireguard_endpoint_port</span></span></code></pre></div>
+<p>(Also create the control-plane Postgres secret if not already
+present:
+<code>podman secret create helixproxy_pg_password -</code>.)</p>
+<h2 id="step-2--pre-flight-shared-host-safety-114174">Step 2 —
+Pre-flight (shared-host safety, §11.4.174)</h2>
+<p>Ensure <strong>your</strong> run will not collide with another owner
+of the data plane. The harness guards this automatically (refuses with
+exit 3), but check first:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ss</span> <span class="at">-ltn</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&#39;:53128&#39;</span>                          <span class="co"># HTTP_PROXY_PORT must be free</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> ps <span class="at">--format</span> <span class="st">&#39;{{.Names}}&#39;</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">&#39;proxy-(squid|gluetun)&#39;</span>   <span class="co"># must be empty</span></span></code></pre></div>
+<p>If a <code>proxy-*</code> stack is already up from a previous run,
+stop <strong>yours</strong> first:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop</span></span></code></pre></div>
+<p>The harness <strong>never</strong> touches operator resources
+<code>wg0-mullvad</code>, <code>lava-*</code>, or <code>:58080</code>
+(§11.4.174) — it only inspects <code>:53128</code> and the
+<code>proxy-squid</code>/<code>proxy-gluetun</code> names the
+<code>dynamic</code> overlay itself creates.</p>
+<h2 id="step-3--run-the-proof">Step 3 — Run the proof</h2>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tests/egress_proof/real_vpn_egress_proof.sh</span></span></code></pre></div>
+<p>The harness will: boot <code>./start --dynamic</code> (rootless
+podman, §11.4.161) → wait up to <code>BOOT_TIMEOUT</code> (default 180s)
+for the tunnel to report a public IP → fetch the egress IP
+<strong>through the proxy</strong> and the host IP
+<strong>directly</strong> → assert <strong>egress == tunnel exit AND
+egress != host</strong> → tear the stack down (<code>./stop</code>).</p>
+<h3 id="expected-pass">Expected PASS</h3>
+<pre><code>PASS: assert_egress_ip [evidence: egress=&lt;EXIT&gt; == exit &lt;EXIT&gt;, != host &lt;HOST&gt;]
+PASS: issue#54 real-VPN-egress functional proof (egress != host, == tunnel exit) [evidence: .../qa-results/issue54/egress_via_proxy.ip]</code></pre>
+<p>Exit code <code>0</code>. Captured artefacts under
+<code>qa-results/issue54/</code>: <code>verdict.txt</code>,
+<code>egress_via_proxy.ip</code>, <code>host_public.ip</code>,
+<code>expected_exit.ip</code>.</p>
+<h3 id="interpreting-other-outcomes">Interpreting other outcomes</h3>
+<table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Meaning</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SKIP ... operator_attended</code>, exit 0</td>
+<td>Creds not detected</td>
+<td>Complete Step 1; re-run</td>
+</tr>
+<tr>
+<td><code>FAIL ... egress IP == host real IP</code></td>
+<td>Traffic <strong>not</strong> routed via VPN (the §15 bluff)</td>
+<td>Check kill-switch / cred correctness</td>
+</tr>
+<tr>
+<td><code>FAIL ... egress != expected exit</code></td>
+<td>Routed, but not to the expected exit</td>
+<td>Verify <code>EXPECTED_EXIT_IP</code> / server</td>
+</tr>
+<tr>
+<td><code>FAIL ... tunnel never came UP</code></td>
+<td>gluetun got no egress in <code>BOOT_TIMEOUT</code></td>
+<td>Verify keys/endpoint; raise <code>BOOT_TIMEOUT</code></td>
+</tr>
+<tr>
+<td><code>FAIL-SAFE ... NOT booting</code>, exit 3</td>
+<td><code>:53128</code>/<code>proxy-*</code> contended</td>
+<td><code>./stop</code>, free the port, re-run</td>
+</tr>
+</tbody>
+</table>
+<h2 id="step-4--record-the-evidence-release-prep">Step 4 — Record the
+evidence (release prep)</h2>
+<p><code>qa-results/</code> is the gitignored raw corpus (§11.4.30). For
+the tracked release proof, copy the run artefacts into the curated
+evidence tree (§11.4.83):</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> docs/qa/issue54-real-egress</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> qa-results/issue54/verdict.txt docs/qa/issue54-real-egress/</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># (egress_via_proxy.ip / host_public.ip / expected_exit.ip contain PUBLIC IPs only,</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#  never key material — safe to commit as evidence; the conductor commits.)</span></span></code></pre></div>
+<h2 id="security-note">Security note</h2>
+<ul>
+<li>No secret is ever printed by the harness (§11.4.10) — presence is
+tested by exit status.</li>
+<li><code>.env</code> and <code>*.ovpn</code> /
+<code>credentials.txt</code> are already gitignored; keep keys out of
+tracked files.</li>
+<li>If a key is ever suspected leaked, rotate it (§11.4.10) — do not
+merely delete the commit.</li>
+</ul>
+<h2 id="sources-verified">Sources verified</h2>
+<p>2026-07-01 — cross-checked against in-repo sources of truth:
+<code>docker-compose.dynamic.yml:127-167</code> (gluetun env),
+<code>.env.example:173-182</code> (cred var names),
+<code>start:118-124</code> (<code>--dynamic</code> orchestrator),
+<code>control-plane/cmd/healthd/healthd_integration_test.go:134,174</code>
+(fail-closed proof), <code>tests/lib/evidence.sh:213</code>
+(<code>assert_egress_ip</code>).</p>
+</body>
+</html>
