@@ -949,6 +949,37 @@ test_vpn_lan_ingress() {
     fi
 }
 
+# VPN-LAN Phase 12 — autonomous test battery (§11.4.135 standing regression guards).
+# The stress+chaos, benchmark+memory, concurrency+load, and DNS-rebinding-gap tests all
+# run WITHOUT the svord bridge or podman (pure evaluator/policy logic), so they belong in
+# the standing suite as permanent GREEN guards. Each is run in its normal mode and must
+# PASS (rc=0, >=1 '^PASS:' line, 0 '^FAIL:'); each ships its own §1.1 mutation self-check
+# (proven at commit time), so the suite guard asserts the normal-mode GREEN. Uses the
+# set-e-safe capture idiom ('rc=0; cmd || rc=$?', 'grep -c ... || true').
+test_vpn_lan_autonomous_battery() {
+    local _bat _p _out _rc _pass _fail _name
+    for _bat in \
+        "SSRF stress+chaos (100-iter determinism + fail-safe chaos)|vpn_lan/ssrf_bridge_stress_chaos.sh" \
+        "evaluator benchmark+memory (throughput floor + no RSS growth)|vpn_lan/evaluator_bench_memory.sh" \
+        "evaluator concurrency+load (N-worker hash agreement + load correctness)|vpn_lan/evaluator_concurrency_load.sh" \
+        "DNS-rebinding SSRF gap demo + resolved-IP-recheck fix|security/dns_rebinding_ssrf_gap.sh"; do
+        _name=${_bat%%|*}; _p="$SCRIPT_DIR/${_bat#*|}"
+        if [[ ! -f "$_p" ]]; then
+            test_result "VPN-LAN autonomous: $_name" "SKIP" "test absent §11.4.3"
+            continue
+        fi
+        _rc=0; _out=$(GOMAXPROCS=2 nice -n 19 ionice -c 3 sh "$_p" 2>&1) || _rc=$?
+        _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:' || true)
+        _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:' || true)
+        if [[ $_rc -eq 0 && $_pass -ge 1 && $_fail -eq 0 ]]; then
+            test_result "VPN-LAN autonomous: $_name" "PASS"
+        else
+            test_result "VPN-LAN autonomous: $_name" "FAIL" \
+                "expected rc=0 + >=1 PASS + 0 FAIL (rc=$_rc pass=$_pass fail=$_fail): run sh $_p"
+        fi
+    done
+}
+
 #######################################
 # Print summary
 #######################################
@@ -992,6 +1023,7 @@ main() {
     test_vpn_lan_bridge
     test_vpn_lan_ssrf
     test_vpn_lan_ingress
+    test_vpn_lan_autonomous_battery
     test_environment
     test_directories
     test_scripts
