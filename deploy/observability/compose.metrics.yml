@@ -1,0 +1,251 @@
+#############################################
+# Helix Proxy — FULLY-ISOLATED observability metrics stack (task #56 enablement)
+#############################################
+# STATUS: AUTHORED / config-plan — structurally validated only (`podman-compose
+#   -f deploy/observability/compose.metrics.yml config` parses clean). LIVE boot is
+#   owed to the conductor (§11.4.119 — exactly ONE stream owns the live boot) and
+#   is gated ONLY on (a) the control-plane image building
+#   (control-plane/Containerfile → `api` binary) and (b) the 4 DISPOSABLE test
+#   podman secrets from tests/observability/gen_test_mtls.sh. NOTHING here is
+#   claimed to run yet (§11.4.6).
+#
+# WHY THIS FILE EXISTS (the fix, §11.4.6 FACT):
+#   The committed docker-compose.observability.yml adds `proxy-api` ON TOP OF the
+#   `dynamic` profile and points HELIX_PG_DSN at the BASE `proxy-postgres`. That
+#   base Postgres (a) initialises its password from the operator's
+#   `helixproxy_pg_password` secret on FIRST init of the proxy-pgdata volume —
+#   whose VALUE we do not know and whose already-initialised data dir will NOT
+#   re-read a new secret — and (b) lives in the `dynamic` profile alongside
+#   proxy-gluetun, which needs OPERATOR-PROVISIONED WireGuard creds (§11.4.21) to
+#   come up healthy. So the committed overlay cannot self-boot for a pure
+#   /metrics-scrape proof: the api's store.Open (control-plane/cmd/api/main.go:66-75)
+#   fail-fast-aborts when it cannot authenticate to Postgres.
+#
+#   THIS overlay is a FULLY-ISOLATED trio — obs-postgres + obs-redis + obs-api — on
+#   its OWN private network `obs-metrics` with its OWN fresh named volume
+#   `obs-pgdata`, using the SAME test password secret `helixproxy_pg_password`
+#   SYMMETRICALLY for BOTH obs-postgres (initdb POSTGRES_PASSWORD_FILE) AND obs-api
+#   (the runtime-assembled HELIX_PG_DSN). Because the volume is fresh, initdb bakes
+#   EXACTLY that password, so postgres and api ALWAYS match — no dependency on the
+#   base stack's unknown password and no dependency on gluetun/WireGuard. It is a
+#   NEW, additive file: the base docker-compose.yml, docker-compose.dynamic.yml,
+#   and docker-compose.observability.yml all stay pristine (§11.4.122 — no existing
+#   service edited or removed). NEW service/container/network/volume names only —
+#   no collision with any base/dynamic/observability service or operator workload
+#   (proxy-postgres / proxy-redis / proxy-api / wg0-mullvad / lava-* are NEVER
+#   referenced; the isolated names carry the `obs-` prefix).
+#
+# HOST PORTS (all loopback-pinned; chosen to avoid the in-use set
+#   5432/6379/53128/51080/58080/59090 — §11.4.6):
+#   * obs-api  /metrics   127.0.0.1:59091 -> 59091   (base overlay uses 59090)
+#   * obs-postgres         127.0.0.1:55432 -> 5432    (debug/verify only)
+#   * obs-redis            127.0.0.1:56379 -> 6379    (debug/verify only)
+#   The mTLS control port (:58080) is INTERNAL to the obs-metrics network — never
+#   published (the mutating surface is the trust boundary; only /metrics is
+#   published, and only to loopback — unauthenticated metrics never reach the
+#   wider network).
+#
+# CONDUCTOR BOOT + SCRAPE (see docs/scripts/obs_isolated_stack.md for the full
+#   sequence with resource caps):
+#   1. bash tests/observability/gen_test_mtls.sh          # 7 files under .mtls/
+#   2. podman secret create helixproxy_api_cert      tests/observability/.mtls/server.crt
+#      podman secret create helixproxy_api_key       tests/observability/.mtls/server.key
+#      podman secret create helixproxy_api_client_ca tests/observability/.mtls/ca.crt
+#      podman secret create helixproxy_pg_password   tests/observability/.mtls/pg_password.txt
+#   3. podman-compose -f deploy/observability/compose.metrics.yml up -d
+#   4. HELIX_OBSERVABILITY_STACK=1 \
+#      HELIX_METRICS_URL=http://127.0.0.1:59091/metrics \
+#      bash tests/observability/metrics_scrape_test.sh
+#
+# Metric NAMES on /metrics (control-plane/internal/api/metrics.go:35-37): the two
+#   counters helix_proxy_acl_decisions_total{decision} +
+#   helix_proxy_tunnel_down_responses_total are pre-registered and pre-touched to 0
+#   (metrics.go:65-68), so valid Prometheus exposition is served regardless of DB
+#   schema; helix_proxy_vpn_up{profile} appears per seeded profile (sql/seed_example.sql).
+#############################################
+
+version: "3.8"
+
+#############################################
+# Secrets — REUSED, DISPOSABLE TEST material from tests/observability/gen_test_mtls.sh
+# (NAMES ONLY, never values; §11.4.10). `helixproxy_pg_password` here is a THROWAWAY
+# test cred used SYMMETRICALLY by obs-postgres (initdb) AND obs-api (DSN) — it is NOT
+# an operator/production secret. The 3 mTLS materials are the api's fail-closed
+# client-cert inputs (control-plane/internal/api/tls.go:26 requires all three or the
+# server refuses to start, so the plaintext /metrics listener never binds without them).
+#   Operator/conductor creates them once (idempotent) BEFORE boot:
+#     podman secret create helixproxy_api_cert      tests/observability/.mtls/server.crt
+#     podman secret create helixproxy_api_key       tests/observability/.mtls/server.key
+#     podman secret create helixproxy_api_client_ca tests/observability/.mtls/ca.crt
+#     podman secret create helixproxy_pg_password   tests/observability/.mtls/pg_password.txt
+#############################################
+secrets:
+  helixproxy_pg_password:
+    external: true
+  helixproxy_api_cert:
+    external: true
+  helixproxy_api_key:
+    external: true
+  helixproxy_api_client_ca:
+    external: true
+
+#############################################
+# Named volume — FRESH, ISOLATED Postgres data dir (§11.4.30 / §11.4.77 regenerable:
+# re-seeded from ./sql initdb on first boot). Deliberately NOT the base `proxy-pgdata`
+# so initdb runs against an EMPTY dir and bakes the KNOWN test password.
+#############################################
+volumes:
+  obs-pgdata:
+
+#############################################
+# Private network — name-resolution between the isolated trio (§11.4.111). Its OWN
+# network, disjoint from `proxy-dynamic`, so nothing here can reach or be reached by
+# the base/dynamic/observability stacks.
+#############################################
+networks:
+  obs-metrics:
+    name: obs-metrics
+
+services:
+  #############################################
+  # obs-postgres — ISOLATED control-plane store (KNOWN test password)
+  #############################################
+  # Same image as the base (docker-compose.dynamic.yml:89). POSTGRES_PASSWORD_FILE
+  # reads the SAME `helixproxy_pg_password` secret the api's DSN uses, so on this
+  # FRESH volume initdb bakes exactly the password the api will present — they match
+  # by construction. `./sql` initdb applies schema.sql then seed_example.sql
+  # alphabetically (the migrations/ subdir is ignored by initdb — top-level *.sql
+  # only), so the store is fully materialised (schema is NOT required for the metrics
+  # exposition itself, but it makes vpnUpCollector clean and surfaces vpn_up series).
+  obs-postgres:
+    image: ${POSTGRES_IMAGE:-docker.io/library/postgres:16-alpine}
+    container_name: obs-postgres
+    hostname: obs-postgres
+    environment:
+      - TZ=${TZ:-UTC}
+      - POSTGRES_DB=${PG_DB:-proxy}
+      - POSTGRES_USER=${PG_USER:-proxy}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/helixproxy_pg_password
+    secrets:
+      - helixproxy_pg_password
+    volumes:
+      - obs-pgdata:/var/lib/postgresql/data
+      # First-init DDL + seed (relative to the repo root — the conductor runs
+      # podman-compose from there). schema.sql before seed_example.sql (alphabetical).
+      - ../../sql:/docker-entrypoint-initdb.d:ro
+    networks:
+      - obs-metrics
+    ports:
+      # Loopback-only publish for conductor verification (psql); NOT required by the api.
+      - "127.0.0.1:${OBS_PG_PORT:-55432}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-proxy} -d ${PG_DB:-proxy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  #############################################
+  # obs-redis — ISOLATED fail-closed status bus
+  #############################################
+  # Same image as the base (docker-compose.dynamic.yml:67). Ephemeral (no persistence)
+  # — the api's redis.Open (control-plane/cmd/api/main.go:78) only needs it reachable.
+  obs-redis:
+    image: ${REDIS_IMAGE:-docker.io/library/redis:7-alpine}
+    container_name: obs-redis
+    hostname: obs-redis
+    environment:
+      - TZ=${TZ:-UTC}
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - obs-metrics
+    ports:
+      # Loopback-only publish for conductor verification (redis-cli); NOT required by the api.
+      - "127.0.0.1:${OBS_REDIS_PORT:-56379}:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  #############################################
+  # obs-api — control-API with the PLAINTEXT Prometheus /metrics listener ENABLED
+  #############################################
+  # The control-plane image ENTRYPOINT is `compiler` (control-plane/Containerfile:55,
+  # USER helix), so — exactly like the committed docker-compose.observability.yml
+  # proxy-api — the entrypoint is overridden to a shell that (1) assembles
+  # HELIX_PG_DSN from the mounted `helixproxy_pg_password` secret at RUNTIME (never an
+  # embedded plaintext password, §11.4.10; cmd/api/main.go:66 reads HELIX_PG_DSN),
+  # then (2) `exec api`. `$$`/`$${VAR}` keep the secret read + PG_USER/PG_DB as runtime
+  # shell refs (compose leaves them un-interpolated). The DSN points at obs-postgres
+  # (the ISOLATED pg), so it authenticates with the KNOWN test password.
+  obs-api:
+    build:
+      context: ../../control-plane
+      dockerfile: Containerfile
+    image: ${CONTROL_PLANE_IMAGE:-localhost/helixproxy-control-plane:dev}
+    container_name: obs-api
+    hostname: obs-api
+    environment:
+      - TZ=${TZ:-UTC}
+      - PG_USER=${PG_USER:-proxy}
+      - PG_DB=${PG_DB:-proxy}
+      # Fail-closed status bus — the ISOLATED redis (cmd/api/main.go:78).
+      - REDIS_ADDR=obs-redis:6379
+      # mTLS control port (cmd/api/main.go:47 default :58080). INTERNAL to obs-metrics
+      # only — NOT published to the host (the mutating surface is the trust boundary).
+      - CONTROL_API_ADDR=${CONTROL_API_ADDR:-:58080}
+      # mTLS materials — FILE PATHS to the mounted podman secrets (§11.4.10; the server
+      # fails closed without all three — control-plane/internal/api/tls.go:26).
+      - CONTROL_API_TLS_CERT=/run/secrets/helixproxy_api_cert
+      - CONTROL_API_TLS_KEY=/run/secrets/helixproxy_api_key
+      - CONTROL_API_TLS_CLIENT_CA=/run/secrets/helixproxy_api_client_ca
+      # THE observability wiring: ENABLE the separate plaintext /metrics listener on
+      # 59091 (empty ⇒ OFF is the code default — api.go / server.go:134). Bind address
+      # is security-load-bearing (this listener carries UNAUTHENTICATED metrics) — the
+      # private obs-metrics network is its trust boundary and the host publish below is
+      # pinned to loopback.
+      - CONTROL_API_METRICS_ADDR=0.0.0.0:59091
+    secrets:
+      - helixproxy_pg_password
+      - helixproxy_api_cert
+      - helixproxy_api_key
+      - helixproxy_api_client_ca
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - |
+        set -e
+        PGPW="$$(cat /run/secrets/helixproxy_pg_password)"
+        export HELIX_PG_DSN="postgres://$${PG_USER}:$${PGPW}@obs-postgres:5432/$${PG_DB}?sslmode=disable"
+        exec api
+    networks:
+      - obs-metrics
+    ports:
+      # Publish ONLY the plaintext /metrics port, pinned to loopback by default so
+      # unauthenticated metrics never reach the wider network. The mTLS control port
+      # (58080) is intentionally NOT published.
+      - "${OBS_METRICS_BIND_ADDRESS:-127.0.0.1}:${OBS_METRICS_PORT:-59091}:59091"
+    depends_on:
+      # podman-compose ignores `service_healthy`; `restart: unless-stopped` lets the
+      # api retry until obs-postgres/obs-redis are ready (store.Open/redis.Open
+      # fail-fast otherwise — cmd/api/main.go:72,78).
+      obs-postgres:
+        condition: service_healthy
+      obs-redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # Anti-bluff healthcheck: not merely a 200 — the body MUST carry a real
+      # helix_proxy_ metric line (busybox wget ships in the alpine final image).
+      test:
+        - "CMD-SHELL"
+        - "wget -q -O - http://127.0.0.1:59091/metrics 2>/dev/null | grep -q helix_proxy_ || exit 1"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
