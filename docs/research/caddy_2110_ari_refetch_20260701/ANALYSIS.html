@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ANALYSIS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="caddy-2110-ari-refetch-feasibility--the-storage-surgery-renewal-path">Caddy
+≥2.11.0 ARI-refetch feasibility + the storage-surgery renewal path</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T11:40:00Z <strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.150
+deep-research deciding the LE Phase-5 renewal approach. Source-verified
+2026-07-01.</p>
+<h2
+id="verdict--does-bumping-to-caddy-2110-enable-on-demand-ari-re-fetch-no-go">Verdict
+— does bumping to Caddy ≥2.11.0 enable on-demand ARI re-fetch?
+<strong>NO-GO.</strong></h2>
+<p><strong>FACT (source-proven, certmagic v0.25.2 + acmez/v3 v3.1.6 =
+Caddy 2.11.0's pins):</strong> a network ARI re-fetch is triggered by
+exactly one condition, <code>cert.ari.NeedsRefresh()</code>, which in
+acmez/v3 v3.1.6 <code>acme/ari.go</code> returns true only when the
+cached <code>RetryAfter</code> has elapsed:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>ari RenewalInfo<span class="op">)</span> NeedsRefresh<span class="op">()</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">!</span>ari<span class="op">.</span>HasWindow<span class="op">()</span>       <span class="op">{</span> <span class="cf">return</span> <span class="ot">false</span> <span class="op">}</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ari<span class="op">.</span>RetryAfter <span class="op">==</span> <span class="ot">nil</span>  <span class="op">{</span> <span class="cf">return</span> <span class="ot">true</span> <span class="op">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> time<span class="op">.</span>Now<span class="op">().</span>After<span class="op">(*</span>ari<span class="op">.</span>RetryAfter<span class="op">)</span>   <span class="co">// the SOLE gate</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>updateARI</code> (the only function that hits the
+<code>renewalInfo</code> endpoint) has exactly two call sites
+(<code>config.go</code> <code>manageOne</code>, <code>maintain.go</code>
+<code>RenewManagedCertificates</code>), <strong>both gated by
+<code>NeedsRefresh()</code></strong>. There is NO
+<code>POST /load</code>, admin-API, or startup path that bypasses the
+cached <code>RetryAfter</code>. Behaviour is identical to certmagic
+v0.21.3. <strong>So the Caddy 2.11.0 bump does not move the decisive
+seam</strong> — it is worth doing (fixes the #354 panic, RFC 9773 via
+acmez/v3, ARI <code>TryLock</code>) and <em>forces</em> the libdns v1
+migration anyway, but it is NOT the ARI-refresh unblocker it was
+hypothesised to be.</p>
+<table>
+<thead>
+<tr>
+<th>Caddy tag</th>
+<th>certmagic</th>
+<th>acmez</th>
+<th>libdns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v2.10.0</td>
+<td>v0.23.0</td>
+<td>v3.1.2</td>
+<td>v1.0.0-beta.1</td>
+</tr>
+<tr>
+<td>v2.10.2</td>
+<td>v0.24.0</td>
+<td>v3.1.2</td>
+<td>v1.1.0</td>
+</tr>
+<tr>
+<td><strong>v2.11.0</strong></td>
+<td><strong>v0.25.2</strong></td>
+<td><strong>v3.1.6</strong></td>
+<td><strong>v1.1.1</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>v2.11.0</code> is the first release with certmagic ≥v0.25.1.
+(The libdns-v1 migration is already required at Caddy ≥2.10.)</p>
+<h2
+id="the-path-that-works--storage-surgery-on-the-current-284-stack-go">The
+path that WORKS — storage surgery on the CURRENT 2.8.4 stack (GO)</h2>
+<p>certmagic renews a cert when its <strong>cached</strong> ARI
+<code>_selectedTime</code> is in the past (it does NOT re-check
+<code>RetryAfter</code> in the renewal decision — only in the
+<em>fetch</em> gate). So rewriting the cert's cached ARI window to the
+past, then reloading it into memory, triggers a genuine zero-downtime
+ACME renewal — no version bump, no re-fetch.</p>
+<p><strong>Confirmed on-disk structure (§11.4.6, Caddy 2.8.4):</strong>
+<code>/data/caddy/certificates/pebble-14000-dir/&lt;host&gt;/&lt;host&gt;.json</code>
+→</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span> <span class="dt">&quot;sans&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">...</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;issuer_data&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;url&quot;</span><span class="fu">:</span> <span class="er">...</span><span class="fu">,</span> <span class="dt">&quot;ca&quot;</span><span class="fu">:</span> <span class="er">...</span><span class="fu">,</span> <span class="dt">&quot;renewal_info&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;suggestedWindow&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;start&quot;</span><span class="fu">:</span> <span class="st">&quot;...&quot;</span><span class="fu">,</span> <span class="dt">&quot;end&quot;</span><span class="fu">:</span> <span class="st">&quot;...&quot;</span><span class="fu">},</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;_uniqueIdentifier&quot;</span><span class="fu">:</span> <span class="st">&quot;...&quot;</span><span class="fu">,</span> <span class="dt">&quot;_retryAfter&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;+6h&gt;&quot;</span><span class="fu">,</span> <span class="dt">&quot;_selectedTime&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;future&gt;&quot;</span> <span class="fu">}</span> <span class="fu">}</span> <span class="fu">}</span></span></code></pre></div>
+<p><strong>The mechanism (proven live 2026-07-01):</strong></p>
+<ol type="1">
+<li>Rewrite <code>issuer_data.renewal_info.suggestedWindow</code> +
+<code>_selectedTime</code> to the PAST (leave <code>_retryAfter</code>
+as-is so <code>NeedsRefresh()</code> stays false — no re-fetch
+overwrites the edit).</li>
+<li><strong>Restart Caddy</strong> — a config <code>/load</code> keeps
+the in-memory cert (with the old future window); only a restart re-loads
+<code>issuer_data</code> from storage into the in-memory cert.</li>
+<li>Caddy's next maintenance tick reads the past
+<code>_selectedTime</code> → logs
+<code>certificate needs renewal based on ARI window</code> →
+<code>renewing certificate</code> →
+<code>certificate renewed successfully</code>. New serial + later
+notBefore; the renewal SWAP (old leaf → new leaf) is zero-downtime
+(Caddy serves the old leaf until the new one is ready). The restart is
+TEST SCAFFOLDING (a brief downtime <em>before</em> the cert is served);
+in production the maintenance loop fires on its own schedule with no
+restart at all.</li>
+</ol>
+<p>Reference impl: <code>deploy/letsencrypt/phase5_rotation.sh</code>
+(re-runnable §11.4.98). Proven runs: S1→S2 with
+<code>swap_availability ok=N fails=0</code> and cert-analyzer PASS on S2
+(chain to the per-run Pebble CA). Guard:
+<code>tests/letsencrypt/phase5_rotation_guard.sh</code> (RED =
+no-surgery → no renewal).</p>
+<h2 id="alternatives-1146">Alternatives (§11.4.6)</h2>
+<ul>
+<li><strong>(a) storage surgery — CHOSEN</strong> (above):
+deterministic, zero-downtime swap, works on 2.8.4.</li>
+<li>(b) wait out <code>Retry-After</code> (6h) — deterministic but too
+slow for a gate.</li>
+<li>(c) wipe <code>/data</code> → re-ISSUE (new serial, WITH downtime) —
+proves rotation, not zero-downtime renewal.</li>
+<li>On-demand reload-triggered re-fetch is <em>unimplemented in
+certmagic</em> (not structurally impossible) — would need an upstream
+contribution; tracked separately from this project.</li>
+</ul>
+<h2
+id="libdns-v02x--v100-migration-for-the-independent-caddy-211-modernization">libdns
+v0.2.x → v1.0.0 migration (for the independent Caddy-2.11
+modernization)</h2>
+<p><code>Record</code> is now an interface (<code>RR() RR</code>); field
+access → <code>rec.RR()</code>, value field
+<code>Value</code>→<code>Data</code>.
+<code>AppendRecords</code>/<code>DeleteRecords</code> signatures +
+<code>libdns.AbsoluteName</code> unchanged; certmagic's
+<code>DNSProvider</code> is still
+<code>RecordAppender + RecordDeleter</code>. The two provider methods
+become:
+<code>rr := rec.RR(); host := fqdn(rr.Name, zone); …{"value": rr.Data}</code>.
+<code>go.mod</code>: <code>caddy/v2 v2.11.0</code> +
+<code>libdns/libdns v1.1.1</code>; <code>Dockerfile.caddy</code>
+<code>ARG CADDY_VERSION=2.11.0</code>. <code>UNCONFIRMED:</code>
+existence of the <code>caddy:2.11.0-{builder,alpine}</code> tags — the
+build's <code>list-modules</code> gate proves it at build time.</p>
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<p>Caddy go.mod pins v2.11.0/v2.10.2/v2.10.0 (raw.githubusercontent.com)
+· certmagic v0.25.2
+<code>config.go</code>/<code>maintain.go</code>/<code>certificates.go</code>/<code>solvers.go</code>
+· acmez/v3 v3.1.6 <code>acme/ari.go</code> · libdns v1.0.0
+<code>record.go</code>/<code>rrtypes.go</code> · caddyserver/caddy
+issues #6789/#6943 · caddy.community "force renewal" + "ari renew on
+startup" threads · RFC 9773 · project prior
+<code>docs/research/pebble_set_renewal_info_20260701/ANALYSIS.md</code>.</p>
+</body>
+</html>

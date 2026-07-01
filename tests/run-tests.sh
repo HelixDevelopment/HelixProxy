@@ -721,6 +721,28 @@ test_regression_guards() {
             *) test_result "LE Phase-3 issuance guard RED" "FAIL" "RED could not reproduce — §11.4.7" ;;
         esac
     fi
+
+    # LE Phase-5 renewal/rotation guard (§11.4.135) — boots the hermetic stack, so the
+    # same 3-way exit (0=PASS / 2=topology SKIP §11.4.3 / else FAIL) + SKIP_LE_ISSUANCE_GUARD.
+    # GREEN = real renewal S1->S2 with a 0-downtime swap + analyzer-verified S2; RED (no
+    # ARI surgery) MUST NOT renew — proves the surgery is the trigger.
+    if [ "${SKIP_LE_ISSUANCE_GUARD:-0}" = "1" ]; then
+        test_result "LE Phase-5 renewal/rotation guard" "SKIP" "SKIP_LE_ISSUANCE_GUARD=1"
+    else
+        sh "$SCRIPT_DIR/letsencrypt/phase5_rotation_guard.sh" >/dev/null 2>&1; _p5_rc=$?
+        case "$_p5_rc" in
+            0) test_result "LE Phase-5 renewal rotation (GREEN: real S1->S2, 0-downtime swap, analyzer verifies S2)" "PASS" ;;
+            2) test_result "LE Phase-5 renewal rotation (GREEN)" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
+            *) test_result "LE Phase-5 renewal rotation (GREEN)" "FAIL" \
+                   "run: sh tests/letsencrypt/phase5_rotation_guard.sh" ;;
+        esac
+        RED_MODE=1 sh "$SCRIPT_DIR/letsencrypt/phase5_rotation_guard.sh" >/dev/null 2>&1; _p5_rc=$?
+        case "$_p5_rc" in
+            0) test_result "LE Phase-5 rotation guard RED reproduces (no surgery => no renewal)" "PASS" ;;
+            2) test_result "LE Phase-5 rotation guard RED" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
+            *) test_result "LE Phase-5 rotation guard RED" "FAIL" "RED could not reproduce — §11.4.7" ;;
+        esac
+    fi
 }
 
 #######################################

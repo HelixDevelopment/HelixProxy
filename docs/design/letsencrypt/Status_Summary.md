@@ -1,7 +1,7 @@
 # Let's Encrypt HTTPS — Status Summary
 
-**Revision:** 2
-**Last modified:** 2026-07-01T10:06:00Z
+**Revision:** 3
+**Last modified:** 2026-07-01T11:42:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -26,16 +26,20 @@ to babysit) and the **DNS-01** method so it works even without opening ports on 
   name, and was really signed by that authority. This runs from scratch on demand in about
   15 seconds and produces saved proof each time.
 
+- **Auto-renewal + rotation now works too** (proven on this machine): the system forces the
+  certificate's renewal moment, Caddy obtains a fresh certificate through the normal renewal
+  path (a genuinely new certificate, different serial number), and swaps to it **without
+  dropping a single request** — the checker confirms the new certificate is valid. So the
+  proxy will keep its HTTPS certificate up to date on its own, with no downtime.
+
 **What's still pending / needs you:**
 
-- **Renewal + rotation** (proving the certificate auto-renews with no downtime) — the next
-  automated step; the research for it is done.
 - **Going live on the real domain** needs you to provide a DNS provider API token and give the
   go-ahead. Until then nothing touches production.
 
-**Bottom line:** the foundation, the safety-checker, AND real end-to-end certificate issuance
-are done and proven on this machine; renewal/rotation is next and the real-domain go-live
-waits on your go-ahead.
+**Bottom line:** the foundation, the safety-checker, real end-to-end certificate issuance, AND
+automatic zero-downtime renewal are all done and proven on this machine; only the real-domain
+go-live waits on your go-ahead.
 
 ---
 
@@ -67,8 +71,14 @@ waits on your go-ahead.
   chain-to-this-run's-Pebble-CA. Two clean runs, evidence in `qa-results/letsencrypt/phase3_issuance/`.
   Root-cause research for the zone-determination + a certmagic #354 panic in
   `docs/research/letsencrypt_hermetic_20260701/` + `docs/research/certmagic_chain_panic_20260701/`.
-- **Pending (autonomous):** Phase 5 renewal/rotation sim (research done —
-  `docs/research/letsencrypt_renewal_20260701/`: `renewal_window_ratio 1` via admin `/load`).
+- **Phase 5 renewal/rotation (PASS):** `deploy/letsencrypt/phase5_rotation.sh` (re-runnable §11.4.98)
+  — forces the ARI renewal window (storage-surgery on the cached ARI + restart) so Caddy renews via
+  the ACME renewal path to a NEW serial (later notBefore); the renewal SWAP is zero-downtime
+  (0 dropped), cert-analyzer verifies the new leaf (chain to per-run Pebble CA). Guard
+  `tests/letsencrypt/phase5_rotation_guard.sh` RED+GREEN proven (wired in `run-tests.sh`). The
+  trigger is source-justified (`docs/research/caddy_2110_ari_refetch_20260701/`: certmagic — even
+  ≥v0.25.1/Caddy ≥2.11.0 — has no on-demand ARI re-fetch; production renews on its own schedule).
+  Evidence `qa-results/letsencrypt/phase5_rotation/`.
 - **OPERATOR-BLOCKED:** Phase 4 LE-staging (real DNS-01 token §11.4.10), Phase 6 prod cutover (real-domain go-live gate, design §9).
 - **Guard wiring:** `cert_analyzer_selfvalidation_test.sh` registered; the Phase-3 issuance guard
   (`tests/letsencrypt/phase3_issuance_guard.sh`) + LE Challenge land with this lane (§11.4.135).

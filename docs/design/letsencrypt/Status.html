@@ -174,11 +174,12 @@
 <body>
 <h1 id="lets-encrypt-https--integration-status">Let's Encrypt HTTPS —
 Integration Status</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T10:06:00Z <strong>Status:</strong> In progress — Phases 0–3
-PASS: a REAL hermetic DNS-01 certificate is issued by local Pebble and
-verified by the cert-analyzer (re-runnable). Phase 5 (renewal/rotation)
-next; Phase 4 (LE staging) + Phase 6 (production cutover)
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T11:42:00Z <strong>Status:</strong> In progress — Phases 0–3 +
+5 PASS: a REAL hermetic DNS-01 certificate is issued by local Pebble AND
+auto-renewed/rotated (S1→S2, new serial, zero-downtime swap), both
+cert-analyzer-verified + re-runnable + guarded. All autonomous LE phases
+are DONE. Phase 4 (LE staging) + Phase 6 (production cutover) remain
 OPERATOR-BLOCKED (design §9 real-domain gate).
 <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
@@ -326,10 +327,19 @@ negative-SAN-reject + <strong>chain-to-this-run's-Pebble-CA</strong>;
 </tr>
 <tr>
 <td>5 — Renewal + rotation simulation (zero-downtime)</td>
-<td>Force near-expiry → observe Caddy renew → analyzer confirms new
-cert; no downtime</td>
-<td>PENDING</td>
-<td>—</td>
+<td>Force the ARI renewal window → Caddy renews via the ACME renewal
+path → analyzer confirms the new cert; 0 dropped across the swap</td>
+<td>PASS</td>
+<td>re-runnable <code>phase5_rotation.sh</code>: S1→S2 (new serial,
+later notBefore), caddy log
+<code>certificate needs renewal based on ARI window</code>→<code>renewed successfully</code>,
+swap <code>ok=6 fails=0</code>, cert-analyzer PASS (S2→per-run Pebble
+CA); guard <code>phase5_rotation_guard.sh</code> RED+GREEN proven (wired
+in run-tests.sh); <code>qa-results/letsencrypt/phase5_rotation/</code>.
+Trigger mechanism (storage-surgery on the cached ARI + restart) is
+source-justified in
+<code>docs/research/caddy_2110_ari_refetch_20260701/</code> — in
+production Caddy renews on its own schedule, no trigger needed</td>
 </tr>
 <tr>
 <td>6 — Production cutover + rollback runbook</td>
@@ -340,18 +350,29 @@ cert; no downtime</td>
 </tbody>
 </table>
 <h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
-<p>Phases 0–3 are DONE with captured evidence: the custom Caddy image is
-built with the DNS-01 module linked (anti-bluff-verified), the hermetic
-stack is wired (with the CoreDNS SOA front that fixes certmagic's
-zone-determination), and <code>phase3_hermetic_issue.sh</code> issues a
-REAL cert via DNS-01 against local Pebble (genuine validation —
-<code>PEBBLE_VA_ALWAYS_VALID=0</code>) that the cert-analyzer verifies
-over the served leaf, including that it chains to THIS RUN's Pebble CA —
-proven on two clean re-runnable runs (§11.4.98 / §11.4.107). What is NOT
-yet exercised (honestly): Phase 5 renewal/rotation (research landed,
-<code>docs/research/letsencrypt_renewal_20260701/</code>; the running
-stack is left up via <code>KEEP_UP=1</code> for it) and the real-domain
-paths (Phase 4 LE staging, Phase 6 production cutover) which wait on the
-operator gate — never a metadata-only PASS (§11.4 / §11.4.1).</p>
+<p>Phases 0–3 + 5 are DONE with captured evidence. Issuance (Phase 3):
+the custom Caddy image is built with the DNS-01 module linked
+(anti-bluff-verified), the hermetic stack is wired (CoreDNS SOA front
+fixes certmagic's zone-determination), and
+<code>phase3_hermetic_issue.sh</code> issues a REAL cert via DNS-01
+against local Pebble (<code>PEBBLE_VA_ALWAYS_VALID=0</code>) that the
+cert-analyzer verifies over the served leaf (incl. chain to THIS RUN's
+Pebble CA). Renewal (Phase 5): <code>phase5_rotation.sh</code> forces
+the ARI renewal window and Caddy renews via the ACME renewal path
+(<code>certificate needs renewal based on ARI window</code>→<code>renewed successfully</code>)
+to a NEW serial with a later notBefore, the renewal SWAP measured
+zero-downtime (0 dropped), and the cert-analyzer verifies the new leaf.
+Both are re-runnable (§11.4.98/§11.4.107) + guarded (§11.4.135,
+RED+GREEN). Honest trigger boundary (§11.4.6): the hermetic renewal is
+forced via storage-surgery on the cached ARI window + a Caddy restart
+because certmagic v0.21.3 (and even Caddy ≥2.11.0 — source-proven
+<code>docs/research/caddy_2110_ari_refetch_20260701/</code>) offers no
+on-demand ARI re-fetch; in PRODUCTION Caddy renews on its own
+maintenance schedule with no trigger + no restart. NOT exercised
+(honestly): the real-domain paths — Phase 4 (LE staging)</p>
+<ul>
+<li>Phase 6 (production cutover) — wait on the operator gate; never a
+metadata-only PASS (§11.4 / §11.4.1).</li>
+</ul>
 </body>
 </html>
