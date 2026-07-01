@@ -17,16 +17,30 @@ import (
 // ErrNotFound is returned by Get* methods when no row matches.
 var ErrNotFound = errors.New("store: not found")
 
+// dbExecutor is the subset of *sql.DB used by every query method. Both *sql.DB
+// (the pool, normal path) and *sql.Tx (inside WithTx) satisfy it, so the SAME
+// method bodies run either directly on the pool or inside a transaction without
+// duplicating any SQL — the transactional seam that closes P6 WARNING-4.
+type dbExecutor interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
 // Postgres implements Queries over a *sql.DB opened with the pgx stdlib driver.
+// exec is the executor every query runs against: the pool itself on the normal
+// path, or a *sql.Tx when this Postgres is the tx-scoped view passed to WithTx's
+// callback. db is retained for transaction/lifecycle ops (BeginTx/Ping/Close/DB).
 type Postgres struct {
-	db *sql.DB
+	db   *sql.DB
+	exec dbExecutor
 }
 
 // compile-time assertion that *Postgres satisfies the contract.
 var _ Queries = (*Postgres)(nil)
 
 // New wraps an already-open *sql.DB (the database/sql connection pool).
-func New(db *sql.DB) *Postgres { return &Postgres{db: db} }
+func New(db *sql.DB) *Postgres { return &Postgres{db: db, exec: db} }
 
 // Open opens a pgx-stdlib pool against dsn and verifies connectivity with
 // PingContext. The caller owns Close.
@@ -39,7 +53,7 @@ func Open(ctx context.Context, dsn string) (*Postgres, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("store: ping: %w", err)
 	}
-	return &Postgres{db: db}, nil
+	return &Postgres{db: db, exec: db}, nil
 }
 
 // DB exposes the underlying pool (e.g. for schema application in tests/migrations).
@@ -47,6 +61,29 @@ func (p *Postgres) DB() *sql.DB { return p.db }
 
 // Close closes the underlying pool.
 func (p *Postgres) Close() error { return p.db.Close() }
+
+// WithTx runs fn inside ONE database transaction (database/sql BeginTx → run on
+// *sql.Tx → Commit on success / Rollback on error — the recommended BeginTxFunc
+// idiom). The callback receives a tx-scoped *Postgres whose every query executes
+// against the *sql.Tx, so a mutation and its AppendAudit committed inside fn are
+// atomic: if fn returns an error (e.g. the audit write fails) the whole
+// transaction is rolled back and the mutation never persists. fn MUST NOT call
+// WithTx again (it would begin a second, independent transaction on the pool).
+func (p *Postgres) WithTx(ctx context.Context, fn func(tx Queries) error) error {
+	tx, err := p.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("store: begin tx: %w", err)
+	}
+	txStore := &Postgres{db: p.db, exec: tx}
+	if err := fn(txStore); err != nil {
+		_ = tx.Rollback() // best-effort; the original fn error is authoritative
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("store: commit tx: %w", err)
+	}
+	return nil
+}
 
 // =============================================================================
 // SQL text — package-level constants so they are unit-testable (parameterisation,
@@ -150,7 +187,7 @@ func scanProfile(s interface{ Scan(...any) error }) (VPNProfile, error) {
 }
 
 func (p *Postgres) ListProfiles(ctx context.Context) ([]VPNProfile, error) {
-	rows, err := p.db.QueryContext(ctx, sqlListProfiles)
+	rows, err := p.exec.QueryContext(ctx, sqlListProfiles)
 	if err != nil {
 		return nil, fmt.Errorf("store: list profiles: %w", err)
 	}
@@ -167,7 +204,7 @@ func (p *Postgres) ListProfiles(ctx context.Context) ([]VPNProfile, error) {
 }
 
 func (p *Postgres) GetProfile(ctx context.Context, id string) (VPNProfile, error) {
-	v, err := scanProfile(p.db.QueryRowContext(ctx, sqlGetProfile, id))
+	v, err := scanProfile(p.exec.QueryRowContext(ctx, sqlGetProfile, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return VPNProfile{}, ErrNotFound
 	}
@@ -187,7 +224,7 @@ func (p *Postgres) UpsertProfile(ctx context.Context, v VPNProfile) (string, err
 		typ = VPNTypeWireGuard
 	}
 	var id string
-	err := p.db.QueryRowContext(ctx, sqlUpsertProfile, v.Name, typ, cfg, v.SecretRef, v.Enabled).Scan(&id)
+	err := p.exec.QueryRowContext(ctx, sqlUpsertProfile, v.Name, typ, cfg, v.SecretRef, v.Enabled).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("store: upsert profile: %w", err)
 	}
@@ -195,7 +232,7 @@ func (p *Postgres) UpsertProfile(ctx context.Context, v VPNProfile) (string, err
 }
 
 func (p *Postgres) DeleteProfile(ctx context.Context, id string) error {
-	_, err := p.db.ExecContext(ctx, sqlDeleteProfile, id)
+	_, err := p.exec.ExecContext(ctx, sqlDeleteProfile, id)
 	if err != nil {
 		return fmt.Errorf("store: delete profile: %w", err)
 	}
@@ -214,7 +251,7 @@ func scanTarget(s interface{ Scan(...any) error }) (TargetHost, error) {
 }
 
 func (p *Postgres) ListTargets(ctx context.Context) ([]TargetHost, error) {
-	rows, err := p.db.QueryContext(ctx, sqlListTargets)
+	rows, err := p.exec.QueryContext(ctx, sqlListTargets)
 	if err != nil {
 		return nil, fmt.Errorf("store: list targets: %w", err)
 	}
@@ -231,7 +268,7 @@ func (p *Postgres) ListTargets(ctx context.Context) ([]TargetHost, error) {
 }
 
 func (p *Postgres) GetTargetHost(ctx context.Context, publicAlias string) (TargetHost, error) {
-	t, err := scanTarget(p.db.QueryRowContext(ctx, sqlGetTargetHost, publicAlias))
+	t, err := scanTarget(p.exec.QueryRowContext(ctx, sqlGetTargetHost, publicAlias))
 	if errors.Is(err, sql.ErrNoRows) {
 		return TargetHost{}, ErrNotFound
 	}
@@ -251,7 +288,7 @@ func (p *Postgres) UpsertTarget(ctx context.Context, t TargetHost) (string, erro
 		proto = "http"
 	}
 	var id string
-	err := p.db.QueryRowContext(ctx, sqlUpsertTarget,
+	err := p.exec.QueryRowContext(ctx, sqlUpsertTarget,
 		t.PublicAlias, t.PrivateIP, port, proto, t.VPNProfileID, t.HealthCheck, t.Enabled).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("store: upsert target: %w", err)
@@ -260,7 +297,7 @@ func (p *Postgres) UpsertTarget(ctx context.Context, t TargetHost) (string, erro
 }
 
 func (p *Postgres) DeleteTarget(ctx context.Context, id string) error {
-	_, err := p.db.ExecContext(ctx, sqlDeleteTarget, id)
+	_, err := p.exec.ExecContext(ctx, sqlDeleteTarget, id)
 	if err != nil {
 		return fmt.Errorf("store: delete target: %w", err)
 	}
@@ -279,7 +316,7 @@ func scanRule(s interface{ Scan(...any) error }) (ProxyRule, error) {
 }
 
 func (p *Postgres) ListRules(ctx context.Context) ([]ProxyRule, error) {
-	rows, err := p.db.QueryContext(ctx, sqlListRules)
+	rows, err := p.exec.QueryContext(ctx, sqlListRules)
 	if err != nil {
 		return nil, fmt.Errorf("store: list rules: %w", err)
 	}
@@ -296,7 +333,7 @@ func (p *Postgres) ListRules(ctx context.Context) ([]ProxyRule, error) {
 }
 
 func (p *Postgres) GetRuleByHost(ctx context.Context, host string) (ProxyRule, error) {
-	r, err := scanRule(p.db.QueryRowContext(ctx, sqlGetRuleByHost, host))
+	r, err := scanRule(p.exec.QueryRowContext(ctx, sqlGetRuleByHost, host))
 	if errors.Is(err, sql.ErrNoRows) {
 		return ProxyRule{}, ErrNotFound
 	}
@@ -310,13 +347,13 @@ func (p *Postgres) UpsertRule(ctx context.Context, r ProxyRule) (string, error) 
 	var id string
 	var err error
 	if r.ID != "" {
-		err = p.db.QueryRowContext(ctx, sqlUpdateRule,
+		err = p.exec.QueryRowContext(ctx, sqlUpdateRule,
 			r.ID, r.Priority, r.MatchHost, r.MatchPath, r.TargetHostID, r.Enabled).Scan(&id)
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrNotFound
 		}
 	} else {
-		err = p.db.QueryRowContext(ctx, sqlInsertRule,
+		err = p.exec.QueryRowContext(ctx, sqlInsertRule,
 			r.Priority, r.MatchHost, r.MatchPath, r.TargetHostID, r.Enabled).Scan(&id)
 	}
 	if err != nil {
@@ -326,7 +363,7 @@ func (p *Postgres) UpsertRule(ctx context.Context, r ProxyRule) (string, error) 
 }
 
 func (p *Postgres) DeleteRule(ctx context.Context, id string) error {
-	_, err := p.db.ExecContext(ctx, sqlDeleteRule, id)
+	_, err := p.exec.ExecContext(ctx, sqlDeleteRule, id)
 	if err != nil {
 		return fmt.Errorf("store: delete rule: %w", err)
 	}
@@ -338,7 +375,7 @@ func (p *Postgres) DeleteRule(ctx context.Context, id string) error {
 // =============================================================================
 
 func (p *Postgres) ListTiers(ctx context.Context, targetID string) ([]TargetTunnelTier, error) {
-	rows, err := p.db.QueryContext(ctx, sqlListTiers, targetID)
+	rows, err := p.exec.QueryContext(ctx, sqlListTiers, targetID)
 	if err != nil {
 		return nil, fmt.Errorf("store: list tiers: %w", err)
 	}
@@ -355,7 +392,7 @@ func (p *Postgres) ListTiers(ctx context.Context, targetID string) ([]TargetTunn
 }
 
 func (p *Postgres) UpsertTier(ctx context.Context, t TargetTunnelTier) error {
-	_, err := p.db.ExecContext(ctx, sqlUpsertTier, t.TargetID, t.VPNProfileID, t.Tier)
+	_, err := p.exec.ExecContext(ctx, sqlUpsertTier, t.TargetID, t.VPNProfileID, t.Tier)
 	if err != nil {
 		return fmt.Errorf("store: upsert tier: %w", err)
 	}
@@ -363,7 +400,7 @@ func (p *Postgres) UpsertTier(ctx context.Context, t TargetTunnelTier) error {
 }
 
 func (p *Postgres) DeleteTier(ctx context.Context, targetID string, tier int) error {
-	_, err := p.db.ExecContext(ctx, sqlDeleteTier, targetID, tier)
+	_, err := p.exec.ExecContext(ctx, sqlDeleteTier, targetID, tier)
 	if err != nil {
 		return fmt.Errorf("store: delete tier: %w", err)
 	}
@@ -375,7 +412,7 @@ func (p *Postgres) DeleteTier(ctx context.Context, targetID string, tier int) er
 // =============================================================================
 
 func (p *Postgres) ListUsers(ctx context.Context) ([]ProxyUser, error) {
-	rows, err := p.db.QueryContext(ctx, sqlListUsers)
+	rows, err := p.exec.QueryContext(ctx, sqlListUsers)
 	if err != nil {
 		return nil, fmt.Errorf("store: list users: %w", err)
 	}
@@ -397,7 +434,7 @@ func (p *Postgres) UpsertUser(ctx context.Context, u ProxyUser) (string, error) 
 		role = "user"
 	}
 	var id string
-	err := p.db.QueryRowContext(ctx, sqlUpsertUser, u.Username, u.SecretRef, role, u.Enabled).Scan(&id)
+	err := p.exec.QueryRowContext(ctx, sqlUpsertUser, u.Username, u.SecretRef, role, u.Enabled).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("store: upsert user: %w", err)
 	}
@@ -409,7 +446,7 @@ func (p *Postgres) UpsertUser(ctx context.Context, u ProxyUser) (string, error) 
 // =============================================================================
 
 func (p *Postgres) AppendAudit(ctx context.Context, e AuditLogEntry) error {
-	_, err := p.db.ExecContext(ctx, sqlAppendAudit, e.Actor, e.Action, e.Detail)
+	_, err := p.exec.ExecContext(ctx, sqlAppendAudit, e.Actor, e.Action, e.Detail)
 	if err != nil {
 		return fmt.Errorf("store: append audit: %w", err)
 	}

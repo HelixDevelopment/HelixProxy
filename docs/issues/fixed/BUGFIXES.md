@@ -607,3 +607,61 @@ selected) but the live `squid -k rotate` was not executed end-to-end (target-saf
 proven on a throwaway dir. `warmup` remains the original documented placeholder.
 
 Evidence: `qa-results/cachectl/`, `qa-results/regression/cachecli/`.
+
+---
+
+## BUGFIX-0008 — un-audited mutation window: control-API mutate+audit were two separate store calls (audit-fail left the mutation persisted)
+
+- **Type:** Bug (latent data-integrity defect — transactional atomicity; P6 WARNING-4)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `control-plane/internal/store/store.go` (WithTx),
+  `internal/store/postgres.go` (dbExecutor seam + real tx), `internal/api/handlers.go`
+  (mutateWithAudit), 2 test fakes, `internal/api/atomicity_test.go` (§11.4.135 guard),
+  `internal/store/postgres_integration_test.go` (real-PG proof)
+- **Workable item:** #52 (P6 review WARNING-4 follow-up)
+
+### Symptom & root cause (FACT — §11.4.102/§11.4.124 investigation)
+
+All 9 mutating control-API handlers did TWO separate store calls — `Upsert*/Delete*`
+then a distinct `AppendAudit` — with no transaction spanning them. Proven on the
+pre-fix artifact (RED_MODE=0 FAILed): when `AppendAudit` fails, the mutation is
+already durable and the handler returns HTTP 500 → an **un-audited mutation
+persists** (a silent integrity hole: the audit trail no longer reflects the data).
+
+### Fix (at source, §11.4.150 pgx-tx research)
+
+One store-interface method `WithTx(ctx, func(tx Queries) error) error` (chosen over
+9 per-op `*WithAudit` methods — 1 vs 9, audit SQL in one place). Real impl begins a
+`*sql.Tx` (a `dbExecutor` seam lets both `*sql.DB` and `*sql.Tx` satisfy the query
+path with zero SQL duplication), commits on nil / rolls back on error; the fake
+snapshot-restores. The handler seam `mutateWithAudit` runs `mutate(tx)` + `AppendAudit`
+inside ONE `WithTx` — the mutation error passes through UNWRAPPED (so
+`errors.Is(…, ErrNotFound)`→404 is preserved), the audit error is wrapped (→500 +
+rollback). The store owns begin/commit/rollback; the handler never orchestrates a
+transaction it cannot roll back.
+
+### Verification (captured, re-run independently by the conductor §11.4.142)
+
+```
+# §11.4.135 guard atomicity_test.go (RED_MODE polarity, 3 entity types):
+#   RED_MODE=0 GREEN — audit-fail rolls back the mutation (0 profiles / row restored / 0 targets)
+#   RED_MODE=1 reproduces the defect on the 2-call pre-fix path
+# Conductor §1.1 mutation: swallow the audit error in the WithTx seam ->
+#   atomicity_test FAILs with real assertions (audit-fail returns 200/204 not 500,
+#   across all 3 subtests) -> byte-identical restore md5 a0fb9b65dac430e641130200bcb802d4.
+$ go test -race -count=3 -short ./internal/...          -> all 8 packages ok, no data races (§11.4.50)
+$ go test -run TestIntegration_WithTxAtomicAuditAndMutation ./internal/store/
+    -> PASS 4.76s (real postgres:16-alpine: commit persists both; rollback leaves NEITHER)
+$ go build/vet ./... exit 0; gofmt -l . empty
+```
+
+Honest gaps (§11.4.6): the `-count=3` determinism sweep is the logic layer (the
+real-PG integration is proven once — booting N postgres containers is wall-time
+non-deterministic by nature, §12.6); the fake `WithTx` is single-process
+snapshot/restore (real atomicity proven separately against live PG); nested `WithTx`
+is unsupported (documented; handlers never nest). Operator PG (`lava-postgres-thinker`)
+never touched — the integration test boots a throwaway `hp-it-pg-<port>` (`--rm`,
+`t.Cleanup`).
+
+Evidence: pasted `-race`/integration output; test at `internal/api/atomicity_test.go`.

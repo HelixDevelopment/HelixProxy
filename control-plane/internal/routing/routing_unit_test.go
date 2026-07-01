@@ -90,6 +90,12 @@ func (f *fakeQueries) ListUsers(context.Context) ([]store.ProxyUser, error)     
 func (f *fakeQueries) UpsertUser(context.Context, store.ProxyUser) (string, error) { return "", nil }
 func (f *fakeQueries) AppendAudit(context.Context, store.AuditLogEntry) error      { return nil }
 
+// WithTx satisfies the contract; the compiler/routing path is read-only, so it just
+// runs fn against this fake (no mutation to roll back).
+func (f *fakeQueries) WithTx(ctx context.Context, fn func(store.Queries) error) error {
+	return fn(f)
+}
+
 var _ store.Queries = (*fakeQueries)(nil)
 
 // --- golden render tests -----------------------------------------------------

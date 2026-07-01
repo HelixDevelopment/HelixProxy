@@ -115,6 +115,17 @@ type AuditLogEntry struct {
 // methods are context-aware and use parameterised SQL (no string interpolation
 // of caller input — §ANTI-INJECTION).
 type Queries interface {
+	// WithTx runs fn inside a single store transaction: every mutation fn performs
+	// on the supplied tx Queries (incl. its AppendAudit) commits together or rolls
+	// back together. It is the transactional-integrity seam (P6 WARNING-4): a
+	// control-API handler wraps its `mutate + AppendAudit` pair in WithTx so a failed
+	// audit write rolls back the mutation — an un-audited mutation is impossible. The
+	// STORE owns begin/commit/rollback; fn never commits/rolls back itself. fn MUST
+	// use the supplied tx, not the outer Queries, and MUST NOT nest WithTx
+	// (§11.4.6 honest boundary: nesting would begin a second, independent transaction
+	// on the real Postgres pool — handlers never nest).
+	WithTx(ctx context.Context, fn func(tx Queries) error) error
+
 	// --- vpn_profiles ---
 	ListProfiles(ctx context.Context) ([]VPNProfile, error)
 	GetProfile(ctx context.Context, id string) (VPNProfile, error)

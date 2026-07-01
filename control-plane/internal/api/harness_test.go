@@ -199,6 +199,7 @@ func (h *harness) clientNoCert() *http.Client {
 // can assert "every mutation wrote an audit row".
 type fakeQueries struct {
 	mu       sync.Mutex
+	txMu     sync.Mutex                  // serialises WithTx transactions (isolation for snapshot/restore)
 	profiles map[string]store.VPNProfile // keyed by id
 	byName   map[string]string           // name -> id
 	targets  map[string]store.TargetHost // keyed by id
@@ -209,6 +210,7 @@ type fakeQueries struct {
 	audits   []store.AuditLogEntry
 	seq      int
 	listErr  error // when set, List* return it (drives the 500 + collector-error paths)
+	auditErr error // when set, AppendAudit returns it (drives the WARNING-4 atomicity test)
 }
 
 var _ store.Queries = (*fakeQueries)(nil)
@@ -231,6 +233,34 @@ func (f *fakeQueries) auditCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return len(f.audits)
+}
+
+// setAuditErr arms (or disarms with nil) the AppendAudit failure injection used by
+// the WARNING-4 transactional-integrity test. Set under the lock so the toggle is
+// -race clean against the handler goroutine that reads it inside AppendAudit.
+func (f *fakeQueries) setAuditErr(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.auditErr = err
+}
+
+// profileCount reports how many profiles are persisted (used to assert a mutation
+// was — or, after the fix, was NOT — left behind when its audit row failed).
+func (f *fakeQueries) profileCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.profiles)
+}
+
+// firstProfileID returns the id of any one persisted profile ("" if none) — used to
+// drive the delete-path atomicity test against a seeded row.
+func (f *fakeQueries) firstProfileID() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for id := range f.profiles {
+		return id
+	}
+	return ""
 }
 
 func (f *fakeQueries) ListProfiles(context.Context) ([]store.VPNProfile, error) {
@@ -425,7 +455,91 @@ func (f *fakeQueries) UpsertUser(_ context.Context, u store.ProxyUser) (string, 
 func (f *fakeQueries) AppendAudit(_ context.Context, e store.AuditLogEntry) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.auditErr != nil {
+		return f.auditErr // injected failure: append NOTHING (no partial audit row)
+	}
 	f.audits = append(f.audits, e)
+	return nil
+}
+
+// fakeSnapshot is a deep copy of the fake's mutable state, used to roll a failed
+// WithTx transaction back so the mutation + its audit row are atomic (the single-
+// lock emulation of a real Postgres BEGIN/ROLLBACK).
+type fakeSnapshot struct {
+	profiles map[string]store.VPNProfile
+	byName   map[string]string
+	targets  map[string]store.TargetHost
+	byAlias  map[string]string
+	rules    map[string]store.ProxyRule
+	tiers    map[string][]store.TargetTunnelTier
+	users    map[string]store.ProxyUser
+	audits   []store.AuditLogEntry
+	seq      int
+}
+
+func (f *fakeQueries) snapshotLocked() fakeSnapshot {
+	cp := func(m map[string]string) map[string]string {
+		out := make(map[string]string, len(m))
+		for k, v := range m {
+			out[k] = v
+		}
+		return out
+	}
+	s := fakeSnapshot{
+		profiles: make(map[string]store.VPNProfile, len(f.profiles)),
+		byName:   cp(f.byName),
+		targets:  make(map[string]store.TargetHost, len(f.targets)),
+		byAlias:  cp(f.byAlias),
+		rules:    make(map[string]store.ProxyRule, len(f.rules)),
+		tiers:    make(map[string][]store.TargetTunnelTier, len(f.tiers)),
+		users:    make(map[string]store.ProxyUser, len(f.users)),
+		audits:   append([]store.AuditLogEntry(nil), f.audits...),
+		seq:      f.seq,
+	}
+	for k, v := range f.profiles {
+		s.profiles[k] = v
+	}
+	for k, v := range f.targets {
+		s.targets[k] = v
+	}
+	for k, v := range f.rules {
+		s.rules[k] = v
+	}
+	for k, v := range f.users {
+		s.users[k] = v
+	}
+	for k, v := range f.tiers { // tier slices are mutated in place — copy each
+		s.tiers[k] = append([]store.TargetTunnelTier(nil), v...)
+	}
+	return s
+}
+
+func (f *fakeQueries) restoreLocked(s fakeSnapshot) {
+	f.profiles, f.byName = s.profiles, s.byName
+	f.targets, f.byAlias = s.targets, s.byAlias
+	f.rules, f.tiers, f.users = s.rules, s.tiers, s.users
+	f.audits, f.seq = s.audits, s.seq
+}
+
+// WithTx emulates a store transaction: it snapshots all state, runs fn against this
+// fake, and on error restores the snapshot so every mutation fn made (entity write
+// AND audit append) is rolled back together — never a mutation without its audit.
+// txMu serialises transactions so no other WithTx interleaves between snapshot and
+// restore (concurrent reads stay safe via f.mu in each method).
+func (f *fakeQueries) WithTx(_ context.Context, fn func(tx store.Queries) error) error {
+	f.txMu.Lock()
+	defer f.txMu.Unlock()
+
+	f.mu.Lock()
+	snap := f.snapshotLocked()
+	f.mu.Unlock()
+
+	if err := fn(f); err != nil {
+		f.mu.Lock()
+		f.restoreLocked(snap)
+		f.mu.Unlock()
+		return err
+	}
 	return nil
 }
 

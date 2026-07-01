@@ -919,5 +919,74 @@ cache); destructive subcommands were proven on a throwaway dir.
 <code>warmup</code> remains the original documented placeholder.</p>
 <p>Evidence: <code>qa-results/cachectl/</code>,
 <code>qa-results/regression/cachecli/</code>.</p>
+<hr />
+<h2
+id="bugfix-0008--un-audited-mutation-window-control-api-mutateaudit-were-two-separate-store-calls-audit-fail-left-the-mutation-persisted">BUGFIX-0008
+— un-audited mutation window: control-API mutate+audit were two separate
+store calls (audit-fail left the mutation persisted)</h2>
+<ul>
+<li><strong>Type:</strong> Bug (latent data-integrity defect —
+transactional atomicity; P6 WARNING-4)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong>
+<code>control-plane/internal/store/store.go</code> (WithTx),
+<code>internal/store/postgres.go</code> (dbExecutor seam + real tx),
+<code>internal/api/handlers.go</code> (mutateWithAudit), 2 test fakes,
+<code>internal/api/atomicity_test.go</code> (§11.4.135 guard),
+<code>internal/store/postgres_integration_test.go</code> (real-PG
+proof)</li>
+<li><strong>Workable item:</strong> #52 (P6 review WARNING-4
+follow-up)</li>
+</ul>
+<h3 id="symptom--root-cause-fact--114102114124-investigation">Symptom
+&amp; root cause (FACT — §11.4.102/§11.4.124 investigation)</h3>
+<p>All 9 mutating control-API handlers did TWO separate store calls —
+<code>Upsert*/Delete*</code> then a distinct <code>AppendAudit</code> —
+with no transaction spanning them. Proven on the pre-fix artifact
+(RED_MODE=0 FAILed): when <code>AppendAudit</code> fails, the mutation
+is already durable and the handler returns HTTP 500 → an
+<strong>un-audited mutation persists</strong> (a silent integrity hole:
+the audit trail no longer reflects the data).</p>
+<h3 id="fix-at-source-114150-pgx-tx-research">Fix (at source, §11.4.150
+pgx-tx research)</h3>
+<p>One store-interface method
+<code>WithTx(ctx, func(tx Queries) error) error</code> (chosen over 9
+per-op <code>*WithAudit</code> methods — 1 vs 9, audit SQL in one
+place). Real impl begins a <code>*sql.Tx</code> (a
+<code>dbExecutor</code> seam lets both <code>*sql.DB</code> and
+<code>*sql.Tx</code> satisfy the query path with zero SQL duplication),
+commits on nil / rolls back on error; the fake snapshot-restores. The
+handler seam <code>mutateWithAudit</code> runs <code>mutate(tx)</code> +
+<code>AppendAudit</code> inside ONE <code>WithTx</code> — the mutation
+error passes through UNWRAPPED (so
+<code>errors.Is(…, ErrNotFound)</code>→404 is preserved), the audit
+error is wrapped (→500 + rollback). The store owns
+begin/commit/rollback; the handler never orchestrates a transaction it
+cannot roll back.</p>
+<h3
+id="verification-captured-re-run-independently-by-the-conductor-114142-1">Verification
+(captured, re-run independently by the conductor §11.4.142)</h3>
+<pre><code># §11.4.135 guard atomicity_test.go (RED_MODE polarity, 3 entity types):
+#   RED_MODE=0 GREEN — audit-fail rolls back the mutation (0 profiles / row restored / 0 targets)
+#   RED_MODE=1 reproduces the defect on the 2-call pre-fix path
+# Conductor §1.1 mutation: swallow the audit error in the WithTx seam -&gt;
+#   atomicity_test FAILs with real assertions (audit-fail returns 200/204 not 500,
+#   across all 3 subtests) -&gt; byte-identical restore md5 a0fb9b65dac430e641130200bcb802d4.
+$ go test -race -count=3 -short ./internal/...          -&gt; all 8 packages ok, no data races (§11.4.50)
+$ go test -run TestIntegration_WithTxAtomicAuditAndMutation ./internal/store/
+    -&gt; PASS 4.76s (real postgres:16-alpine: commit persists both; rollback leaves NEITHER)
+$ go build/vet ./... exit 0; gofmt -l . empty</code></pre>
+<p>Honest gaps (§11.4.6): the <code>-count=3</code> determinism sweep is
+the logic layer (the real-PG integration is proven once — booting N
+postgres containers is wall-time non-deterministic by nature, §12.6);
+the fake <code>WithTx</code> is single-process snapshot/restore (real
+atomicity proven separately against live PG); nested <code>WithTx</code>
+is unsupported (documented; handlers never nest). Operator PG
+(<code>lava-postgres-thinker</code>) never touched — the integration
+test boots a throwaway <code>hp-it-pg-&lt;port&gt;</code>
+(<code>--rm</code>, <code>t.Cleanup</code>).</p>
+<p>Evidence: pasted <code>-race</code>/integration output; test at
+<code>internal/api/atomicity_test.go</code>.</p>
 </body>
 </html>

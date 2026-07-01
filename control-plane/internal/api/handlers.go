@@ -120,27 +120,35 @@ func decodeJSON(r *http.Request, dst any) error {
 	return nil
 }
 
-// audit records a control-plane mutation; a failed audit write fails the request
-// (the audit trail is not optional — spec §12).
-//
-// WARNING-4 (P6 review — investigated, §11.4.6): every mutating handler does
-// `mutate (Upsert*/Delete*) → audit (AppendAudit)`, NOT `read state → mutate on
-// it`, so there is NO read-then-mutate TOCTOU here, and concurrent callers cause
-// neither a lost update nor partial ENTITY state (each store call is individually
-// atomic; proven by TestConcurrency_MutationAndAuditConsistent under -race). The
-// ONE residual non-atomicity is cross-step: if the mutation commits but THIS
-// AppendAudit then fails, the handler returns 500 yet the mutation already
-// persisted — an un-audited mutation. Closing that needs the mutation + its audit
-// row to share a single STORE transaction (e.g. a store.Queries `Tx`/`*WithAudit`
-// seam), which is a store-layer change spanning the real Postgres impl + every
-// caller — out of the API package's scope and deferred to the store owner rather
-// than worked around in-handler (auditing BEFORE the mutation would record an
-// action that might not happen, which is worse). No in-API change is made: there
-// is no atomicity gap the API layer can correctly close on its own.
-func (s *server) audit(r *http.Request, action string, detail any) error {
+// auditEntry builds the audit row for a control-plane mutation. The actor is the
+// verified mTLS client-cert CN; detail is JSON-marshalled (a marshal error yields
+// "" → normalised to {} by the store, never a partial write).
+func auditEntry(r *http.Request, action string, detail any) store.AuditLogEntry {
 	db, _ := json.Marshal(detail)
-	return s.q.AppendAudit(r.Context(), store.AuditLogEntry{
-		Actor: actorFromRequest(r), Action: action, Detail: string(db),
+	return store.AuditLogEntry{Actor: actorFromRequest(r), Action: action, Detail: string(db)}
+}
+
+// mutateWithAudit runs an entity mutation and its audit append inside ONE store
+// transaction (store.WithTx). This closes P6 WARNING-4: every mutating handler used
+// to do two separate store calls — `mutate (Upsert*/Delete*)` THEN `AppendAudit` —
+// so if the mutation committed and AppendAudit then failed, the handler returned 500
+// yet the mutation was already durable: an un-audited mutation (proven on the pre-fix
+// artifact by TestAtomicity_MutationAndAuditCommitTogether, RED_MODE=1). Wrapping the
+// pair in WithTx makes them atomic: a failed audit rolls the mutation back, so an
+// un-audited mutation is impossible. The STORE owns begin/commit/rollback; the handler
+// only composes the two operations inside the transaction boundary (it never holds a
+// transaction it cannot roll back). mutate receives the tx-scoped store and returns the
+// audit row to append; both run on the same tx.
+func (s *server) mutateWithAudit(r *http.Request, mutate func(tx store.Queries) (store.AuditLogEntry, error)) error {
+	return s.q.WithTx(r.Context(), func(tx store.Queries) error {
+		entry, err := mutate(tx)
+		if err != nil {
+			return err // mutation error returns UNWRAPPED so errors.Is(…, ErrNotFound) still maps to 404
+		}
+		if err := tx.AppendAudit(r.Context(), entry); err != nil {
+			return fmt.Errorf("audit write failed: %w", err)
+		}
+		return nil
 	})
 }
 
@@ -192,16 +200,20 @@ func (s *server) putProfile(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "config must be a valid JSON object")
 		return
 	}
-	id, err := s.q.UpsertProfile(r.Context(), store.VPNProfile{
-		Name: d.Name, Type: store.VPNType(d.Type), Config: []byte(d.Config),
-		SecretRef: d.SecretRef, Enabled: d.Enabled,
+	var id string
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		var e error
+		id, e = tx.UpsertProfile(r.Context(), store.VPNProfile{
+			Name: d.Name, Type: store.VPNType(d.Type), Config: []byte(d.Config),
+			SecretRef: d.SecretRef, Enabled: d.Enabled,
+		})
+		if e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "profile.upsert", map[string]string{"id": id, "name": d.Name}), nil
 	})
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "profile.upsert", map[string]string{"id": id, "name": d.Name}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"id": id})
@@ -209,12 +221,14 @@ func (s *server) putProfile(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) deleteProfile(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if err := s.q.DeleteProfile(r.Context(), id); err != nil {
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		if e := tx.DeleteProfile(r.Context(), id); e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "profile.delete", map[string]string{"id": id}), nil
+	})
+	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "profile.delete", map[string]string{"id": id}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -266,16 +280,20 @@ func (s *server) putTarget(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "port must be 0..65535")
 		return
 	}
-	id, err := s.q.UpsertTarget(r.Context(), store.TargetHost{
-		PublicAlias: d.PublicAlias, PrivateIP: d.PrivateIP, Port: d.Port, Protocol: d.Protocol,
-		VPNProfileID: d.VPNProfileID, HealthCheck: d.HealthCheck, Enabled: d.Enabled,
+	var id string
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		var e error
+		id, e = tx.UpsertTarget(r.Context(), store.TargetHost{
+			PublicAlias: d.PublicAlias, PrivateIP: d.PrivateIP, Port: d.Port, Protocol: d.Protocol,
+			VPNProfileID: d.VPNProfileID, HealthCheck: d.HealthCheck, Enabled: d.Enabled,
+		})
+		if e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "target.upsert", map[string]string{"id": id, "public_alias": d.PublicAlias}), nil
 	})
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "target.upsert", map[string]string{"id": id, "public_alias": d.PublicAlias}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"id": id})
@@ -283,12 +301,14 @@ func (s *server) putTarget(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) deleteTarget(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if err := s.q.DeleteTarget(r.Context(), id); err != nil {
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		if e := tx.DeleteTarget(r.Context(), id); e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "target.delete", map[string]string{"id": id}), nil
+	})
+	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "target.delete", map[string]string{"id": id}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -332,9 +352,17 @@ func (s *server) putRule(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "at least one of match_host / match_path is required")
 		return
 	}
-	id, err := s.q.UpsertRule(r.Context(), store.ProxyRule{
-		ID: d.ID, Priority: d.Priority, MatchHost: d.MatchHost, MatchPath: d.MatchPath,
-		TargetHostID: d.TargetHostID, Enabled: d.Enabled,
+	var id string
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		var e error
+		id, e = tx.UpsertRule(r.Context(), store.ProxyRule{
+			ID: d.ID, Priority: d.Priority, MatchHost: d.MatchHost, MatchPath: d.MatchPath,
+			TargetHostID: d.TargetHostID, Enabled: d.Enabled,
+		})
+		if e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "rule.upsert", map[string]any{"id": id, "priority": d.Priority, "match_host": d.MatchHost}), nil
 	})
 	if errors.Is(err, store.ErrNotFound) {
 		writeErr(w, http.StatusNotFound, "rule id not found")
@@ -344,21 +372,19 @@ func (s *server) putRule(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if err := s.audit(r, "rule.upsert", map[string]any{"id": id, "priority": d.Priority, "match_host": d.MatchHost}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
-		return
-	}
 	writeJSON(w, http.StatusOK, map[string]string{"id": id})
 }
 
 func (s *server) deleteRule(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if err := s.q.DeleteRule(r.Context(), id); err != nil {
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		if e := tx.DeleteRule(r.Context(), id); e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "rule.delete", map[string]string{"id": id}), nil
+	})
+	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "rule.delete", map[string]string{"id": id}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -393,14 +419,16 @@ func (s *server) putTier(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "tier must be >= 0")
 		return
 	}
-	if err := s.q.UpsertTier(r.Context(), store.TargetTunnelTier{
-		TargetID: d.TargetID, VPNProfileID: d.VPNProfileID, Tier: d.Tier,
-	}); err != nil {
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		if e := tx.UpsertTier(r.Context(), store.TargetTunnelTier{
+			TargetID: d.TargetID, VPNProfileID: d.VPNProfileID, Tier: d.Tier,
+		}); e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "tier.upsert", d), nil
+	})
+	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "tier.upsert", d); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -413,12 +441,14 @@ func (s *server) deleteTier(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "tier must be an integer")
 		return
 	}
-	if err := s.q.DeleteTier(r.Context(), targetID, tier); err != nil {
+	err = s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		if e := tx.DeleteTier(r.Context(), targetID, tier); e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "tier.delete", map[string]any{"target_id": targetID, "tier": tier}), nil
+	})
+	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "tier.delete", map[string]any{"target_id": targetID, "tier": tier}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -449,15 +479,19 @@ func (s *server) putUser(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "username is required")
 		return
 	}
-	id, err := s.q.UpsertUser(r.Context(), store.ProxyUser{
-		Username: d.Username, SecretRef: d.SecretRef, Role: d.Role, Enabled: d.Enabled,
+	var id string
+	err := s.mutateWithAudit(r, func(tx store.Queries) (store.AuditLogEntry, error) {
+		var e error
+		id, e = tx.UpsertUser(r.Context(), store.ProxyUser{
+			Username: d.Username, SecretRef: d.SecretRef, Role: d.Role, Enabled: d.Enabled,
+		})
+		if e != nil {
+			return store.AuditLogEntry{}, e
+		}
+		return auditEntry(r, "user.upsert", map[string]string{"id": id, "username": d.Username}), nil
 	})
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if err := s.audit(r, "user.upsert", map[string]string{"id": id, "username": d.Username}); err != nil {
-		writeErr(w, http.StatusInternalServerError, "audit write failed: "+err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"id": id})

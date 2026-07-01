@@ -8,6 +8,7 @@ package store
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -238,6 +239,66 @@ func TestIntegration_UsersAndAudit(t *testing.T) {
 	}
 	if detail != "{}" {
 		t.Errorf("empty detail should normalise to {}, got %q", detail)
+	}
+}
+
+// TestIntegration_WithTxAtomicAuditAndMutation proves, against a REAL Postgres,
+// that WithTx commits a mutation + its audit row together and rolls BOTH back on
+// error — the P6 WARNING-4 transactional-integrity guarantee at the real DB layer.
+func TestIntegration_WithTxAtomicAuditAndMutation(t *testing.T) {
+	pg := bootPostgres(t)
+	ctx := context.Background()
+
+	countProfiles := func() int {
+		var n int
+		if err := pg.DB().QueryRowContext(ctx, "SELECT count(*) FROM vpn_profiles").Scan(&n); err != nil {
+			t.Fatalf("count profiles: %v", err)
+		}
+		return n
+	}
+	countAudit := func() int {
+		var n int
+		if err := pg.DB().QueryRowContext(ctx, "SELECT count(*) FROM audit_log").Scan(&n); err != nil {
+			t.Fatalf("count audit: %v", err)
+		}
+		return n
+	}
+
+	// (1) Commit path: a mutation + audit inside WithTx both persist.
+	if err := pg.WithTx(ctx, func(tx Queries) error {
+		id, e := tx.UpsertProfile(ctx, VPNProfile{Name: "tx-commit", Type: VPNTypeWireGuard, Enabled: true})
+		if e != nil {
+			return e
+		}
+		return tx.AppendAudit(ctx, AuditLogEntry{Actor: "tester", Action: "profile.upsert", Detail: `{"id":"` + id + `"}`})
+	}); err != nil {
+		t.Fatalf("WithTx commit path: %v", err)
+	}
+	if p, a := countProfiles(), countAudit(); p != 1 || a != 1 {
+		t.Fatalf("commit path: want 1 profile + 1 audit, got %d / %d", p, a)
+	}
+
+	// (2) Rollback path: the audit append "fails" (fn returns an error AFTER the
+	// mutation). The mutation MUST NOT persist — no un-audited profile, no audit row.
+	injected := errors.New("injected audit failure")
+	err := pg.WithTx(ctx, func(tx Queries) error {
+		if _, e := tx.UpsertProfile(ctx, VPNProfile{Name: "tx-rollback", Type: VPNTypeWireGuard, Enabled: true}); e != nil {
+			return e
+		}
+		return injected // simulates AppendAudit failing inside the same transaction
+	})
+	if !errors.Is(err, injected) {
+		t.Fatalf("rollback path: want the injected error back, got %v", err)
+	}
+	if p, a := countProfiles(), countAudit(); p != 1 || a != 1 {
+		t.Fatalf("rollback path: the un-audited mutation must NOT persist — want still 1 profile + 1 audit, got %d / %d", p, a)
+	}
+	var rolledBack int
+	if err := pg.DB().QueryRowContext(ctx, "SELECT count(*) FROM vpn_profiles WHERE name = $1", "tx-rollback").Scan(&rolledBack); err != nil {
+		t.Fatalf("count rolled-back profile: %v", err)
+	}
+	if rolledBack != 0 {
+		t.Fatalf("rolled-back profile must be absent: found %d rows named tx-rollback", rolledBack)
 	}
 }
 
