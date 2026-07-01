@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -174,18 +178,33 @@
 <body>
 <h1 id="vpn-lan-service-access--integration-status">VPN-LAN Service
 Access — Integration Status</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T16:48:00Z <strong>Status:</strong> In progress — ALL 12
-phases (0–11) now have committed deliverables. Phase 0 (bridge scaffold)
-+ Phase 1 (SSRF carve-out teeth, local-stub GREEN + wired into the
-standing suite) + Phase 8 (Miracast Won't-fix) + Phase 9 (docs) are
-autonomously PROVEN; Phases 2/3/4/5/6/7/10/11 protocol + reflector +
-Cast + ADB + containerization + Challenge/HelixQA assets are AUTHORED
-and honest-SKIP-proven (bridge-down ⇒ SKIP + exit 0, zero fake PASS);
-every live round-trip is operator-gated on the svord connection. Every
-claim below cites a real committed file/<code>qa-results/</code>
-artefact (§11.4.6); every live path honestly SKIPs until the operator
-connects the bridge (§11.4.3). <strong>Authority:</strong> Inherits
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T19:05:00Z <strong>Status:</strong> In progress — ALL 13
+phases (0–12) have committed deliverables on <code>main</code>.
+<strong>Phase 12 bidirectional exposure</strong> (operator mandate) is
+landed: design (<code>bidirectional_exposure.md</code>) + autonomous
+ingress-allowlist teeth (default-deny + narrow allowlist,
+<code>INGRESS_MUT</code> caught 3/3) + both-way reverse-leg assertions
+in all 5 protocol tests (NFS NLM/NSM callback, FTP active, Cast
+callback, adb reverse, email N/A). Autonomously PROVEN + wired into the
+standing suite as §11.4.135 guards: Phase-1 SSRF carve-out teeth,
+Phase-12 ingress teeth, and the autonomous battery (stress+chaos
+100-iter, benchmark+memory, concurrency+load, DNS-rebinding-gap) — ALL
+GREEN. Phases 2/3/4/5/6/7/10/11
+protocol/reflector/Cast/ADB/containerization/Challenge+HelixQA assets
+are AUTHORED + honest-SKIP-proven (bridge-down ⇒ SKIP + exit 0, zero
+fake PASS); every LIVE round-trip (both directions) is operator-gated on
+the svord connection. control-plane coverage raised (acl-helper 53.8% /
+cmd/api 61.1% / internal/redis 61.2% / cmd/healthd 70.3%, all -race
+clean). <strong>⚠️ Data-plane env-block (operator-actionable, NOT a code
+defect):</strong> host rootless-podman <code>aardvark-dns</code> cannot
+bind the netavark gateway <code>:53</code> →
+<code>:53128</code>/<code>:51080</code> don't serve +
+<code>./start</code> fails; the standing suite now honestly reports this
+(3 env FAILs) instead of hanging. Every claim below cites a real
+committed file/<code>qa-results/</code> artefact (§11.4.6); live paths
+honestly SKIP until the operator connects the bridge (§11.4.3) + repairs
+podman. <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
 integration-status doc for the VPN-LAN service-access feature workstream
 (<code>feature/vpn-aware-dynamic-routing</code>).
@@ -358,13 +377,40 @@ operator-gated (§11.4.122)</td>
 <tr>
 <td>11</td>
 <td>§11.4.169 full test-type coverage + Challenges + HelixQA</td>
-<td>AUTHORED (run-blocked)</td>
+<td>AUTHORED (mostly GREEN)</td>
 <td><code>89f73b7</code>
 <code>challenges/scripts/run_vpn_lan_challenges.sh</code> + HelixQA
-<code>tools/helixqa/banks/vpn_lan.yaml</code> (9 cases); bridge-down
-self-proof RESULT:OK PASS=0 FAIL=0 all-SKIP; HelixQA-run honestly
-blocked (6 un-vendored siblings, §11.4.3); stress+chaos §11.4.85 in
-flight</td>
+<code>tools/helixqa/banks/vpn_lan.yaml</code> (9 cases); autonomous test
+types LANDED + GREEN — stress+chaos (<code>97d9733</code>, 100-iter
+identical hash), benchmark+memory + DNS-rebinding gap
+(<code>4e2810c</code>), concurrency+load (<code>7e73b08</code>);
+HelixQA-run honestly blocked (6 un-vendored siblings + podman,
+§11.4.3)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Bidirectional exposure + ingress allowlist (operator mandate)</td>
+<td>AUTHORED (GREEN + suite-wired)</td>
+<td><code>2ed0fed</code> <code>bidirectional_exposure.md</code>
+(return-route model + per-protocol both-way table + inverted-posture
+ingress = mirror of egress floor) +
+<code>tests/vpn_lan/ingress_allowlist_teeth.sh</code>
+(default-deny/exact-permit/host+port-narrow, <code>INGRESS_MUT</code>
+caught 3/3, PASS=4); <code>cc8b620</code> both-way reverse-leg
+assertions in all 5 protocol tests (NFS NLM/NSM, FTP active, Cast
+callback, adb reverse, email N/A §11.4.6); live both-way round-trip
+operator-gated</td>
+</tr>
+<tr>
+<td>—</td>
+<td>§11.4.135 standing regression guards (autonomous, no
+bridge/podman)</td>
+<td>GREEN</td>
+<td><code>6d8893f</code> <code>test_vpn_lan_ssrf</code> +
+<code>test_vpn_lan_ingress</code> +
+<code>test_vpn_lan_autonomous_battery</code> wired into
+<code>run-tests.sh</code>; all rc=0 PASS≥1 FAIL=0 in the standing
+suite</td>
 </tr>
 </tbody>
 </table>
