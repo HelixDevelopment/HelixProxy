@@ -1,8 +1,8 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 6
-**Last modified:** 2026-07-01T14:20:00Z
-**Status:** Active — **§11.4.126 autonomous hardening loop** (operator: "keep hardening, don't tag yet"). **P10 VPN fail-closed = GREEN** (the last major pending item): booted the dynamic stack, forced tunnel DOWN via Redis `vpn:status` → branded 503 `ERR_TUNNEL_DOWN` ×3 (real 3132-byte page), `leak_seen=0`, Squid PID unchanged, deterministic ×3 (§11.4.50) + RED-polarity guard (§11.4.115); egress-half operator-gated SKIP (gluetun creds §11.4.21). **2 real security fixes landed** (RED→GREEN + sink-side evidence + standing guards): Squid header/version-hygiene (`via off`+`forwarded_for delete`+version suppression — `Via` leak CONFIRMED live) `4f983ee`; Dante SOCKS5 SSRF (block link-local/loopback/RFC1918 + `command:connect`) `4626f05`. **2 items TRACKED-for-operator** (connectivity-risk §11.4.101): Squid `dns_nameservers` DNS-leak (static mode); Dante client-side open-relay. **§11.4.169 hardening matrix = 9 PASS / 2 honest SKIP** (`docs/design/hardening/Status.md` Rev 3). **LE issuance + renewal BOTH PROVEN** — autonomous scope COMPLETE (Phase 3 hermetic DNS-01 + Phase 5 zero-downtime rotation, cert-analyzer-verified, guarded); Phase 4 (staging token) + Phase 6 (prod domain) OPERATOR-BLOCKED (§11.4.10). Full suite 65/59/6/0. HEAD `4626f05` (== `main` == github/origin/upstream).
+**Revision:** 7
+**Last modified:** 2026-07-01T14:52:00Z
+**Status:** Active — **§11.4.126 autonomous hardening loop** (operator: "keep hardening, don't tag yet"). **P10 VPN fail-closed = GREEN**: dynamic stack booted, tunnel DOWN → branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged, deterministic ×3 + RED-polarity; egress-half operator-gated SKIP (§11.4.21). **2 security fixes landed + VERIFIED DEPLOYED LIVE** (§11.4.108 runtime-signature): Squid header/version-hygiene (`via off`+`forwarded_for delete`+version-suppression — `Via` gone) `4f983ee`; Dante SOCKS5 SSRF (block link-local/loopback/RFC1918 + `command:connect`) `4626f05`. **Rev-7 hardening wave (5 commits):** `790c191` **S4 SSRF guard hardened** — the SOCKS-block verdict now requires dante's authoritative `block(N)` log line (§11.4.69), NOT elapsed-time (an independent §11.4.142 review found the timing-only discriminator bluff-capable on fast-refuse hosts); **security guard now WIRED into the standing suite** (`run-tests.sh test_security_guards`, §11.4.135, GREEN+RED-polarity, set-e-safe) — iterate-to-GO (§11.4.134); `487c918` **cache challenge authoritative** — reads Squid's own access.log via `podman exec` → real `TCP_MEM_HIT` (§11.4.69), no more SKIP-fallback (Squid caching proven genuine); `3755702` **control-plane unit coverage** store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% / healthd 61.3→67.6% (real error/fail-closed branches, race-clean, go.sum unchanged); `86126ac` README §11.4.57 doc-link section; `ad720ec` this file → Rev 6. **2 items TRACKED-for-operator** (connectivity-risk §11.4.101): Squid `dns_nameservers` DNS-leak (static mode); Dante client-side open-relay. **§11.4.169 matrix = 9 PASS / 2 honest SKIP** (`docs/design/hardening/Status.md` Rev 3). **LE issuance + renewal BOTH PROVEN** — autonomous scope COMPLETE; Phase 4/6 OPERATOR-BLOCKED (§11.4.10). HEAD `790c191` (== `main` == github/origin/upstream).
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
 **Plan:** `docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md` (Rev 1)
@@ -74,7 +74,7 @@ deny topology) + P10 egress-half (gluetun creds).
 ## 2. Landed commits (newest first)
 
 **`main` FF-tracks HEAD (§11.4.113 FF-only), so `main..HEAD` is empty — HEAD ==
-`main` == github/origin/upstream == `4626f05`.** The full feature-branch history
+`main` == github/origin/upstream == `790c191`.** The full feature-branch history
 since the original branch point is below; the historical table (numbered 1–28)
 is retained for the earlier construction wave.
 
@@ -82,6 +82,11 @@ is retained for the earlier construction wave.
 
 | Commit | Lane | Summary |
 |---|---|---|
+| `790c191` | security | S4 SSRF guard → authoritative dante `block(N)` log-line discriminator (§11.4.69) + security guard wired into standing suite (§11.4.135) — independent-review-driven (§11.4.142/.134) |
+| `487c918` | challenge | proxy cache challenge → authoritative `TCP_*HIT` via container access.log (§11.4.69), no more SKIP-fallback (Squid caching proven genuine) |
+| `3755702` | control-plane | unit coverage store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% / healthd 61.3→67.6% (real error/fail-closed branches, race-clean) |
+| `86126ac` | docs | README §11.4.57 Tracked-Items doc-link section (9 Status docs) |
+| `ad720ec` | docs | CONTINUATION → Rev 6 (§12.10 sync: P10 GREEN + security fixes + §11.4.169 matrix) |
 | `4626f05` | security | Dante SOCKS5 SSRF hardening — block internal/link-local/loopback egress + `command:connect` (RED→GREEN + S4 guard) |
 | `4d0a7ed` | control-plane | drop dead nil-check in TestPostgresSatisfiesQueries (golangci SA4023) |
 | `916e72b` | helixqa | unblock recipe for the proxy test bank (6 un-vendored own-org siblings) |
@@ -224,7 +229,7 @@ Requires real gluetun WireGuard credentials (§11.4.21); still **unproven live**
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `4626f05` (== `main` == all 3 remotes github/origin/upstream; integrate any
+   `790c191` (== `main` == all 3 remotes github/origin/upstream; integrate any
    newer foreign commit per §11.4.71, no force §11.4.113). The single canonical
    moment-valid resume file is `.remember/remember.md` (§11.4.131) — read it first.
 2. **Continue the §11.4.126 autonomous hardening loop** (operator: "keep

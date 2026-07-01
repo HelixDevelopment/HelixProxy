@@ -175,33 +175,43 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-07-01T14:20:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-07-01T14:52:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous hardening loop</strong> (operator: "keep hardening, don't tag
-yet"). <strong>P10 VPN fail-closed = GREEN</strong> (the last major
-pending item): booted the dynamic stack, forced tunnel DOWN via Redis
-<code>vpn:status</code> → branded 503 <code>ERR_TUNNEL_DOWN</code> ×3
-(real 3132-byte page), <code>leak_seen=0</code>, Squid PID unchanged,
-deterministic ×3 (§11.4.50) + RED-polarity guard (§11.4.115);
-egress-half operator-gated SKIP (gluetun creds §11.4.21). <strong>2 real
-security fixes landed</strong> (RED→GREEN + sink-side evidence +
-standing guards): Squid header/version-hygiene
-(<code>via off</code>+<code>forwarded_for delete</code>+version
-suppression — <code>Via</code> leak CONFIRMED live)
-<code>4f983ee</code>; Dante SOCKS5 SSRF (block
+yet"). <strong>P10 VPN fail-closed = GREEN</strong>: dynamic stack
+booted, tunnel DOWN → branded 503 <code>ERR_TUNNEL_DOWN</code> ×3,
+<code>leak_seen=0</code>, Squid PID unchanged, deterministic ×3 +
+RED-polarity; egress-half operator-gated SKIP (§11.4.21). <strong>2
+security fixes landed + VERIFIED DEPLOYED LIVE</strong> (§11.4.108
+runtime-signature): Squid header/version-hygiene
+(<code>via off</code>+<code>forwarded_for delete</code>+version-suppression
+— <code>Via</code> gone) <code>4f983ee</code>; Dante SOCKS5 SSRF (block
 link-local/loopback/RFC1918 + <code>command:connect</code>)
-<code>4626f05</code>. <strong>2 items TRACKED-for-operator</strong>
-(connectivity-risk §11.4.101): Squid <code>dns_nameservers</code>
-DNS-leak (static mode); Dante client-side open-relay. <strong>§11.4.169
-hardening matrix = 9 PASS / 2 honest SKIP</strong>
+<code>4626f05</code>. <strong>Rev-7 hardening wave (5 commits):</strong>
+<code>790c191</code> <strong>S4 SSRF guard hardened</strong> — the
+SOCKS-block verdict now requires dante's authoritative
+<code>block(N)</code> log line (§11.4.69), NOT elapsed-time (an
+independent §11.4.142 review found the timing-only discriminator
+bluff-capable on fast-refuse hosts); <strong>security guard now WIRED
+into the standing suite</strong>
+(<code>run-tests.sh test_security_guards</code>, §11.4.135,
+GREEN+RED-polarity, set-e-safe) — iterate-to-GO (§11.4.134);
+<code>487c918</code> <strong>cache challenge authoritative</strong> —
+reads Squid's own access.log via <code>podman exec</code> → real
+<code>TCP_MEM_HIT</code> (§11.4.69), no more SKIP-fallback (Squid
+caching proven genuine); <code>3755702</code> <strong>control-plane unit
+coverage</strong> store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% /
+healthd 61.3→67.6% (real error/fail-closed branches, race-clean, go.sum
+unchanged); <code>86126ac</code> README §11.4.57 doc-link section;
+<code>ad720ec</code> this file → Rev 6. <strong>2 items
+TRACKED-for-operator</strong> (connectivity-risk §11.4.101): Squid
+<code>dns_nameservers</code> DNS-leak (static mode); Dante client-side
+open-relay. <strong>§11.4.169 matrix = 9 PASS / 2 honest SKIP</strong>
 (<code>docs/design/hardening/Status.md</code> Rev 3). <strong>LE
-issuance + renewal BOTH PROVEN</strong> — autonomous scope COMPLETE
-(Phase 3 hermetic DNS-01 + Phase 5 zero-downtime rotation,
-cert-analyzer-verified, guarded); Phase 4 (staging token) + Phase 6
-(prod domain) OPERATOR-BLOCKED (§11.4.10). Full suite 65/59/6/0. HEAD
-<code>4626f05</code> (== <code>main</code> == github/origin/upstream).
-<strong>Branch:</strong> <code>feature/vpn-aware-dynamic-routing</code>
-<strong>Spec:</strong>
+issuance + renewal BOTH PROVEN</strong> — autonomous scope COMPLETE;
+Phase 4/6 OPERATOR-BLOCKED (§11.4.10). HEAD <code>790c191</code> (==
+<code>main</code> == github/origin/upstream). <strong>Branch:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> <strong>Spec:</strong>
 <code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>
 (Rev 4) <strong>Plan:</strong>
 <code>docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md</code>
@@ -291,7 +301,7 @@ HelixQA vendoring (6 un-vendored siblings), release tag.</p>
 first)</h2>
 <p><strong><code>main</code> FF-tracks HEAD (§11.4.113 FF-only), so
 <code>main..HEAD</code> is empty — HEAD == <code>main</code> ==
-github/origin/upstream == <code>4626f05</code>.</strong> The full
+github/origin/upstream == <code>790c191</code>.</strong> The full
 feature-branch history since the original branch point is below; the
 historical table (numbered 1–28) is retained for the earlier
 construction wave.</p>
@@ -305,6 +315,37 @@ construction wave.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>790c191</code></td>
+<td>security</td>
+<td>S4 SSRF guard → authoritative dante <code>block(N)</code> log-line
+discriminator (§11.4.69) + security guard wired into standing suite
+(§11.4.135) — independent-review-driven (§11.4.142/.134)</td>
+</tr>
+<tr>
+<td><code>487c918</code></td>
+<td>challenge</td>
+<td>proxy cache challenge → authoritative <code>TCP_*HIT</code> via
+container access.log (§11.4.69), no more SKIP-fallback (Squid caching
+proven genuine)</td>
+</tr>
+<tr>
+<td><code>3755702</code></td>
+<td>control-plane</td>
+<td>unit coverage store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% /
+healthd 61.3→67.6% (real error/fail-closed branches, race-clean)</td>
+</tr>
+<tr>
+<td><code>86126ac</code></td>
+<td>docs</td>
+<td>README §11.4.57 Tracked-Items doc-link section (9 Status docs)</td>
+</tr>
+<tr>
+<td><code>ad720ec</code></td>
+<td>docs</td>
+<td>CONTINUATION → Rev 6 (§12.10 sync: P10 GREEN + security fixes +
+§11.4.169 matrix)</td>
+</tr>
 <tr>
 <td><code>4626f05</code></td>
 <td>security</td>
@@ -748,7 +789,7 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <code>feature/vpn-aware-dynamic-routing</code>; confirm HEAD
-<code>4626f05</code> (== <code>main</code> == all 3 remotes
+<code>790c191</code> (== <code>main</code> == all 3 remotes
 github/origin/upstream; integrate any newer foreign commit per §11.4.71,
 no force §11.4.113). The single canonical moment-valid resume file is
 <code>.remember/remember.md</code> (§11.4.131) — read it first.</li>
