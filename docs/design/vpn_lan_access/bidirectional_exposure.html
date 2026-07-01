@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>VPN-LAN Bidirectional Exposure &amp; Ingress Allowlist — Design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">VPN-LAN Bidirectional Exposure &amp; Ingress Allowlist
+— Design</h1>
+</header>
+<h1
+id="vpn-lan-bidirectional-exposure--ingress-allowlist--design">VPN-LAN
+Bidirectional Exposure &amp; Ingress Allowlist — Design</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T20:15:00Z <strong>Status:</strong> Design reference — Phase
+12 of <a href="PLAN.md"><code>PLAN.md</code></a> §5 (operator mandate
+2026-07-01: exposure MUST work fully in BOTH directions). The
+<strong>ingress-allowlist logic is provable autonomously now</strong>
+(teeth: <a
+href="../../../tests/vpn_lan/ingress_allowlist_teeth.sh"><code>../../../tests/vpn_lan/ingress_allowlist_teeth.sh</code></a>);
+live bidirectional round-trips are <strong>operator-gated</strong>
+(return-route on both sides, §11.4.122/§11.4.133).
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Companion to <a
+href="PLAN.md"><code>PLAN.md</code></a> (§2 routing map [now
+bidirectional], §4 item 6 [ingress = mirror of egress SSRF floor], §5
+Phase 12), <a href="architecture.md"><code>architecture.md</code></a>
+(§2 per-protocol routing table, §4 SSRF trust boundary), and the egress
+teeth <a
+href="../../../tests/vpn_lan/ssrf_carveout_teeth.sh"><code>../../../tests/vpn_lan/ssrf_carveout_teeth.sh</code></a>
+whose structure the ingress teeth mirror exactly. <strong>Feature
+workstream:</strong> <code>feature/vpn-aware-dynamic-routing</code>
+(§11.4.167)</p>
+<hr />
+<h2 id="0-the-operator-mandate-verbatim-intent-2026-07-01">0. The
+operator mandate (verbatim intent, 2026-07-01)</h2>
+<blockquote>
+<p>"Exposure of network hosts and services MUST work in both directions
+... Everything MUST WORK fully bi-directional without any issues, fully
+covered with all supported tests, tested, validated and verified with
+real results, no false results and no bluff of any kind!"</p>
+</blockquote>
+<p>Direction 1 — <strong>egress</strong> (built): a helix_proxy-side
+host reaches a VPN host (L3 route over <code>ppp0</code> + the scoped
+SSRF carve-out, <a href="PLAN.md"><code>PLAN.md</code></a> §4, <a
+href="architecture.md"><code>architecture.md</code></a> §4). Direction 2
+— <strong>ingress</strong> (this mandate): a VPN host reaches an
+<strong>exposed proxy-side service</strong>. Ingress needs two new
+things that egress does not: <strong>(a)</strong> a <em>return
+route</em> on BOTH sides to each other's reachable subnet, and
+<strong>(b)</strong> an <strong>INGRESS ALLOWLIST</strong> —
+default-deny, only allowlisted
+<code>(proxy-side service, VPN host)</code> pairs permitted. The ingress
+allowlist is the <strong>mirror of the egress SSRF floor</strong> and is
+a <strong>NEW attack surface</strong>: the correct posture is never
+"expose everything," it is default-deny + a narrow explicit allowlist
+with the same anti-bluff teeth (<a
+href="../../../tests/vpn_lan/ingress_allowlist_teeth.sh"><code>../../../tests/vpn_lan/ingress_allowlist_teeth.sh</code></a>)
+and the same operator-gating discipline.</p>
+<p><strong>Honest boundary up front (§11.4.6):</strong> this document +
+the ingress teeth prove the ingress <em>allowlist logic</em> —
+default-deny holds, only the exact allowlisted pair is permitted, an
+out-of-allowlist inbound is refused — <strong>fully autonomously,
+now</strong>. They do NOT and cannot prove a <em>live</em> bidirectional
+round-trip: that requires the return-route configured on BOTH the remote
+and proxy sides (operator-gated, §11.4.122/§11.4.133). A live
+bidirectional capability is "done" only when its runtime signature
+verifies <strong>both directions</strong> with captured evidence on a
+genuinely-up bridge (§11.4.108). Until then the live both-way paths
+honestly SKIP (<code>network_unreachable_external</code>, §11.4.3),
+never fake-PASS.</p>
+<hr />
+<h2
+id="1-the-return-route-model-both-sides-route-to-each-others-reachable-subnet">1.
+The return-route model (both sides route to each other's reachable
+subnet)</h2>
+<p>A Layer-3 VPN moves unicast IP packets between reachable subnets. For
+<strong>any</strong> exchange to complete, each side must have a route
+to the other's source/destination address — this is symmetric by
+construction. What differs between egress and ingress is <strong>who
+initiates</strong> and therefore <strong>what must exist for the
+initiating packet to be delivered and its reply accepted</strong>.</p>
+<h3
+id="11-cryptokey-routing--the-return-route-is-not-optional-wireguard-fact">1.1
+Cryptokey routing = the return route is not optional (WireGuard,
+FACT)</h3>
+<p>On the WireGuard leg the routing table AND the inbound access-control
+list are <strong>the same field</strong> — <code>AllowedIPs</code>. When
+sending, WireGuard uses <code>AllowedIPs</code> as a routing table
+(match the destination IP → pick the peer to encrypt for). When
+receiving, the <strong>same</strong> list is an ACL: a decrypted packet
+whose inner <em>source</em> IP falls outside the sending peer's
+<code>AllowedIPs</code> is <strong>silently dropped, even if correctly
+encrypted</strong> (FACT — WireGuard whitepaper §2 "Cryptokey Routing";
+defguard "AllowedIPs Explained"). Consequence: for a VPN host to reach a
+proxy-side service, the <strong>proxy-side reachable subnet must appear
+in the remote peer's <code>AllowedIPs</code></strong> (so the remote
+will route the inbound packet to the tunnel) AND the <strong>remote
+host's address must appear in the proxy-side peer's
+<code>AllowedIPs</code></strong> (so the proxy-side WireGuard accepts
+the decrypted inbound packet). Both entries are required; a one-sided
+<code>AllowedIPs</code> is the single most common cause of "the tunnel
+is up but the reverse direction is silently dropped." On the L2TP/PPP
+leg the analogous requirement is a <code>ppp0</code> route on the remote
+side back to the proxy-side reachable subnet (INFERENCE — the PPP link
+carries unicast IP; the kernel needs a route entry for the reverse
+destination; svord owns that route, helix_proxy only <em>verifies</em>
+reachability, never re-routes host tables autonomously, §11.4.133).</p>
+<h3
+id="12-stateful-return-vs-host-initiated-the-distinction-that-decides-ingress">1.2
+Stateful-return vs. host-initiated (the distinction that decides
+ingress)</h3>
+<p>Two very different things are both loosely called
+"bidirectional":</p>
+<ul>
+<li><strong>Stateful return traffic</strong> — the <em>reply</em> to a
+connection the proxy side initiated. This rides the connection-tracking
+state the outbound SYN created; it needs the route to exist but needs
+<strong>no</strong> inbound allowlist entry, because it is not a
+<em>new</em> inbound flow. All of egress (Direction 1) is this: the
+proxy initiates, the VPN host replies, conntrack lets the reply back.
+<strong>This already works and is not the subject of the ingress
+allowlist.</strong></li>
+<li><strong>Host-initiated ingress</strong> — a <em>new</em> connection
+the VPN host opens <strong>to</strong> a proxy-side service (FTP-active
+data connect, NFS lock callback, Cast status callback,
+<code>adb reverse</code> target, an RTP stream toward the proxy side).
+This is a fresh inbound flow with no prior outbound state to ride. It
+requires <strong>both</strong> the return route (§1.1)
+<strong>and</strong> an explicit ingress-allowlist permit (§3) — this is
+exactly the new attack surface, and default-deny is the only safe
+floor.</li>
+</ul>
+<pre class="text"><code>  PROXY SIDE                                         REMOTE VPN SUBNET (10/8)
+  exposed service :P            L3 VPN (ppp0)            VPN host H
+  ┌───────────────┐                 │                  ┌───────────────┐
+  │               │  (1) egress: proxy initiates ─────►│  reply rides   │  stateful return —
+  │               │◄──── stateful reply (conntrack) ───│  conntrack     │  route only, NO
+  │               │                 │                  │               │  ingress allow needed
+  │  ingress      │  (2) ingress: H initiates a NEW ◄──│  H → proxy :P  │  host-initiated —
+  │  allowlist    │──── permit ONLY if (H,:P) is in ───│  (FTP-active,  │  needs return route
+  │  (default-    │      the ingress allowlist         │   NFS callback,│  AND an explicit
+  │   deny)       │──── else DROP (default-deny) ──────│   Cast cb,RTP) │  allowlist permit
+  └───────────────┘                 │                  └───────────────┘
+      return route required on BOTH sides for either arrow to complete (§1.1)</code></pre>
+<p><strong>Rule of thumb:</strong> a route makes replies possible; only
+an <em>allowlist permit</em> makes a <strong>host-initiated
+inbound</strong> possible — and it must be granted per exact
+<code>(service-port, VPN-host)</code> pair, never host-wide or
+port-wide, never "expose everything."</p>
+<hr />
+<h2 id="2-per-protocol-both-way-needs-the-operative-table">2.
+Per-protocol both-way needs (the operative table)</h2>
+<p>Which protocols genuinely need the reverse (host-initiated ingress)
+direction, what breaks if only one-way is provisioned, and how
+helix_proxy handles it. Rows marked <strong>INFERENCE</strong> are
+reasoned from the cited mechanics, not from a live capture
+(§11.4.6).</p>
+<table>
+<thead>
+<tr>
+<th>Protocol</th>
+<th>Which direction(s) it initiates</th>
+<th>What breaks if only proxy→VPN (one-way)</th>
+<th>How helix_proxy handles it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FTP passive (PASV)</strong></td>
+<td>Client→server for BOTH control (21) and data (pinned PASV
+range)</td>
+<td>Nothing — passive is the one-way-friendly mode</td>
+<td><strong>Default path.</strong> Route 21 + the server's pinned
+passive range; PASV must advertise the routable <code>10.x</code> (Phase
+3). No ingress allowlist entry needed.</td>
+</tr>
+<tr>
+<td><strong>FTP active (PORT)</strong></td>
+<td>Control client→server (21); <strong>data server→client</strong>
+(server opens back to the client's advertised port, source :20)</td>
+<td>Active-mode transfers hang/fail — the server cannot open the return
+data connection to the client (FACT — slacksite; jscape)</td>
+<td>Prefer passive. If active is required: return-route + an
+ingress-allowlist permit for
+<code>(FTP-server VPN-host → client's pinned active-data port range on the proxy side)</code>.
+FTPS encrypts control so no ALG can rewrite PORT — routing, not
+proxying, is the fit.</td>
+</tr>
+<tr>
+<td><strong>NFS lock (NLM <code>lockd</code>)</strong></td>
+<td>Client→server locks (2049); <strong>server→client async GRANT /
+blocking-lock callbacks</strong></td>
+<td>File locking degrades — blocking locks never get their GRANT
+callback; advisory locking becomes unreliable (FACT — Oracle "About NFS
+Services"; man7 statd)</td>
+<td>Pin <code>lockd</code> port (<code>--port</code>, both TCP+UDP);
+return-route + ingress-allowlist permit for the server→client callback
+port.</td>
+</tr>
+<tr>
+<td><strong>NFS status monitor (NSM
+<code>rpc.statd</code>)</strong></td>
+<td><strong>Both peers notify each other</strong> —
+<code>SM_NOTIFY</code> on reboot (server→client AND client→server)</td>
+<td>Reboot recovery breaks — stale locks are never reclaimed/released
+after either side reboots (FACT — man7 <code>statd(8)</code>: sm-notify
+sends SM_NOTIFY to each monitored peer; a remote reboot notifies the
+local rpc.statd)</td>
+<td>Pin <code>rpc.statd --port</code> + <code>--outgoing-port</code>;
+return-route + ingress-allowlist permit for the statd notify port in
+<strong>both</strong> directions.</td>
+</tr>
+<tr>
+<td><strong>portmapper / rpcbind</strong></td>
+<td>Client→server discovery (111), used by NLM/NSM to find dynamic
+ports</td>
+<td>RPC service discovery fails — clients cannot resolve the dynamic
+<code>lockd</code>/<code>statd</code> ports (FACT — Oracle: rpcbind
+required on both client and server, port 111)</td>
+<td>rpcbind:111 reachable both ways; pin the dynamic ports so the
+allowlist entries are stable (INFERENCE — dynamic ports otherwise force
+a host-wide allow, defeating narrowness).</td>
+</tr>
+<tr>
+<td><strong>Cast / DIAL callbacks</strong></td>
+<td>Controller→receiver control (8008/8009); <strong>receiver→controller
+status callbacks</strong></td>
+<td>Cast degrades to fire-and-forget — the controller loses
+status/feedback transitions the receiver pushes back (INFERENCE — CASTV2
+is a bidirectional protocol; the receiver reports state changes)</td>
+<td>Return-route + ingress-allowlist permit for
+<code>(Cast receiver VPN-host → controller callback port on the proxy side)</code>.
+Discovery still reflects (Phase 5); control routes (Phase 6).</td>
+</tr>
+<tr>
+<td><strong>mDNS / DNS-SD</strong></td>
+<td>Inherently bidirectional — query one way, response the other; the
+reflector reflects queries, responses AND probes across interfaces</td>
+<td>Discovery is one-sided — services on the far subnet are never
+learned / conflicts never detected (FACT — Debian avahi-daemon.conf(5):
+reflector reflects to all local interfaces; deepwiki avahi reflects
+queries+responses+probes)</td>
+<td>Remote-side Avahi <code>enable-reflector=yes</code> (Phase 5),
+<strong>inherently bidirectional</strong>; not an ingress-allowlist case
+(multicast on the remote segment, not a host-initiated unicast into the
+proxy side).</td>
+</tr>
+<tr>
+<td><strong>SSDP / UPnP / WS-Discovery</strong></td>
+<td>Multicast <code>M-SEARCH</code> + unicast responses — bidirectional
+on the segment</td>
+<td>Discovery one-sided (as mDNS)</td>
+<td>Remote-side SSDP/WS-D relay (Phase 5); bidirectional on the remote
+segment; not a proxy-side ingress case.</td>
+</tr>
+<tr>
+<td><strong><code>adb reverse</code></strong></td>
+<td>Device→host connect-back (an on-device app dials a host-side
+service)</td>
+<td>On-device targets of <code>adb reverse</code> (RN Metro bundler, a
+local dev server) are unreachable — the reverse channel never forms
+(FACT — linuxcommandlibrary adb-reverse; android.googlesource
+system/core)</td>
+<td>The reverse forward is <strong>multiplexed inside the
+already-established adb connection</strong> over routed
+<code>5555</code> — it does <strong>not</strong> require a separate
+proxy-side ingress-allowlist port (INFERENCE — adb reverse rides the adb
+transport, not a new inbound socket to the proxy host). Requires the
+routed 5555 up + the adb server reachable.</td>
+</tr>
+<tr>
+<td><strong>SIP signalling + RTP media</strong></td>
+<td>SIP both ways (register/invite); <strong>RTP is bidirectional
+UDP</strong> (each side sends media to the other's negotiated port)</td>
+<td>One-way audio / no media — the reverse RTP stream toward the proxy
+side is dropped (INFERENCE — RTP negotiates a receive port per side; the
+reverse leg is host-initiated inbound)</td>
+<td>Return-route + ingress-allowlist permit for the negotiated RTP
+receive-port range on the proxy side; note FTP/SIP-class ALG blindness
+under TLS — route, don't proxy-rewrite.</td>
+</tr>
+<tr>
+<td><strong>Any PORT-based / callback protocol</strong></td>
+<td>Establishes a control channel one way, a <strong>data/callback
+channel the other way</strong></td>
+<td>The callback/data channel fails while control "looks connected" (the
+classic one-way-provisioned bug)</td>
+<td>Treat every such protocol as <strong>host-initiated
+ingress</strong>: pin its callback port, add the exact
+<code>(VPN-host, callback-port)</code> ingress-allowlist pair, prove
+both directions (§4).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The load-bearing observation:</strong> the protocols that
+break under one-way provisioning are exactly the ones with a
+<strong>server→client / receiver→controller / device→host
+callback</strong>. Each such callback is a <em>host-initiated inbound
+flow</em> and therefore each needs a narrow ingress allowlist permit —
+never a blanket "allow the VPN subnet inbound."</p>
+<hr />
+<h2
+id="3-the-ingress-security-surface--default-deny--explicit-allowlist">3.
+The INGRESS security surface = default-deny + explicit allowlist</h2>
+<p>The ingress allowlist is the <strong>mirror</strong> of the egress
+SSRF floor, but its <em>default posture is inverted</em> — and that
+inversion is deliberate, not incidental.</p>
+<h3 id="31-why-the-posture-is-inverted-vs-egress-design-fact">3.1 Why
+the posture is inverted vs. egress (design FACT)</h3>
+<table>
+<thead>
+<tr>
+<th>Axis</th>
+<th>Egress floor (<a
+href="../../../config/dante/sockd.conf"><code>config/dante/sockd.conf</code></a>)</th>
+<th>Ingress allowlist (this design)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Default</td>
+<td><strong>Allow public</strong> internet, with a <em>block-list
+floor</em> denying RFC1918 / link-local / loopback / metadata</td>
+<td><strong>Deny everything inbound</strong>, with an
+<em>allow-list</em> permitting only exact exposed pairs</td>
+</tr>
+<tr>
+<td>Match order</td>
+<td>First-match top-down: narrow subnet ALLOW above the broad
+internal-DENY</td>
+<td>First-match top-down: narrow <code>(host,port)</code> ALLOW;
+anything unmatched falls to the implicit DENY</td>
+</tr>
+<tr>
+<td>Unit of grant</td>
+<td>A destination CIDR (where the proxy may reach <em>out</em>)</td>
+<td>An exact <code>(proxy-service-port, VPN-host)</code> pair (who may
+reach <em>in</em>, to what)</td>
+</tr>
+<tr>
+<td>Risk if it drifts</td>
+<td>SSRF — the proxy reaches internal targets it should not</td>
+<td><strong>Exposure</strong> — an unallowlisted VPN host reaches a
+proxy-side service it should not</td>
+</tr>
+</tbody>
+</table>
+<p>The inversion is because <strong>inbound exposure is a strictly
+higher-risk surface than outbound reach</strong>: an over-broad egress
+rule lets the proxy <em>talk to</em> something; an over-broad ingress
+rule lets an arbitrary remote host <em>open connections into</em>
+proxy-side services. So ingress is default-<strong>deny</strong>
+(allow-list), never default-allow-with-a-floor. "Expose everything" is
+explicitly forbidden (operator mandate + <a
+href="PLAN.md"><code>PLAN.md</code></a> §4 item 6).</p>
+<h3 id="32-the-ingress-allowlist-contract-what-the-teeth-enforce">3.2
+The ingress allowlist contract (what the teeth enforce)</h3>
+<ul>
+<li><strong>Default-deny holds.</strong> Any inbound
+<code>(VPN-host, proxy-service-port)</code> that is not an exact
+allowlist match is DENIED. There is no catch-all permit and no "allow
+the whole subnet."</li>
+<li><strong>Only the exact pair is permitted.</strong> The allowlisted
+<code>(service-port, VPN-host)</code> is PERMITTED — and <em>nothing
+wider</em>.</li>
+<li><strong>Narrow, not host-wide or port-wide.</strong> A
+<strong>different host</strong> (same port) ⇒ DENIED; a
+<strong>different port</strong> (same host) ⇒ DENIED. The permit is per
+exact pair.</li>
+<li><strong>Teeth, not a bluff gate.</strong> A paired §1.1 mutation
+renders a golden-bad policy (allow-all / default-permit) and the teeth
+<strong>FAIL</strong> it (§11.4.107(10)): the allowlist logic that
+PASSes the good policy MUST reject the golden-bad, else the gate proves
+nothing. This is the ingress mirror of
+<code>ssrf_carveout_teeth.sh SSRF_MUT=1</code>.</li>
+<li><strong>Operator-gated live path.</strong> Granting a live ingress
+pair changes remote-side + proxy-side config (§11.4.122
+interactive-question-before-change / §11.4.133 target-safety). The
+<em>allowlist logic</em> is provable now against a local-stub policy
+(exactly as the Phase-1 egress teeth prove the carve-out logic without
+touching the live data-plane); the <em>live</em> grant is parked until
+the operator authorises it.</li>
+</ul>
+<h3
+id="33-autonomous-proof-available-now--testsvpn_laningress_allowlist_teethsh">3.3
+Autonomous proof available now —
+<code>tests/vpn_lan/ingress_allowlist_teeth.sh</code></h3>
+<p>A deterministic first-match-wins ingress-allowlist evaluator (the
+ingress twin of the egress evaluator in
+<code>ssrf_carveout_teeth.sh</code>): given an inbound
+<code>(vpn-host, proxy-service-port)</code> it decides permit/deny
+against a default-deny + allowlist policy rendered into a scratch file.
+Normal run asserts the §3.2 contract and exits 0 with PASS lines +
+captured evidence under
+<code>qa-results/vpn_lan/phase12/&lt;ts&gt;/</code>.
+<code>INGRESS_MUT=1</code> renders the golden-bad allow-all policy, runs
+the same teeth, and exits <strong>1</strong> — the teeth caught the
+golden-bad, proving they are not a bluff gate. It opens
+<strong>no</strong> listening socket, edits <strong>no</strong> live
+config, runs <strong>no</strong> <code>pkill</code>/<code>kill</code>,
+and touches <strong>no</strong> data-plane port — pure policy logic.</p>
+<hr />
+<h2
+id="4-all-test-type-coverage-plan-114169--bidirectionality-across-every-test-type">4.
+All-test-type coverage plan (§11.4.169) — bidirectionality across every
+test type</h2>
+<p>Every protocol's both-directions behaviour is exercised across the
+full §11.4.169 test-type set. The <strong>autonomous-now</strong> column
+is the security-critical ingress-allowlist logic + parsers that need no
+live bridge; the <strong>operator-gated</strong> column is the live
+round-trip that honestly SKIPs
+(<code>network_unreachable_external</code>, §11.4.3) until the bridge +
+return-route are up, and emits real captured evidence (§11.4.5/§11.4.69)
+when they are.</p>
+<table>
+<thead>
+<tr>
+<th>Test type (§11.4.169)</th>
+<th>Bidirectional assertion</th>
+<th>Autonomous now?</th>
+<th>Evidence / honest-SKIP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>unit</strong></td>
+<td>Ingress-allowlist evaluator: default-deny, exact-pair permit,
+host/port narrowness; policy parser edge cases</td>
+<td>YES</td>
+<td><code>ingress_allowlist_teeth.sh</code> evidence dir;
+golden-good/golden-bad self-validation</td>
+</tr>
+<tr>
+<td><strong>integration</strong></td>
+<td>Each protocol driven against the real service <strong>both
+ways</strong> (e.g. NFS lock held from proxy side +
+<code>SM_NOTIFY</code> observed inbound) via the bridge</td>
+<td>Live-gated</td>
+<td>Real capture when up; SKIP when bridge/service down</td>
+</tr>
+<tr>
+<td><strong>e2e</strong></td>
+<td>Full round-trip proving BOTH directions completed (FTP-active
+transfer; Cast status callback received; <code>adb reverse</code> target
+reached)</td>
+<td>Live-gated</td>
+<td>Round-trip evidence (bytes/sha256/status transition) or honest
+SKIP</td>
+</tr>
+<tr>
+<td><strong>full-automation</strong></td>
+<td>Re-runnable, no manual step (§11.4.98); both-way assertions run
+headless</td>
+<td>Logic: YES · live: gated</td>
+<td>Deterministic across N iters (§11.4.50); SKIP when down</td>
+</tr>
+<tr>
+<td><strong>security</strong></td>
+<td>Ingress default-deny holds; an out-of-allowlist inbound
+<code>(host,port)</code> is REFUSED (the teeth +
+<code>INGRESS_MUT=1</code> mutation); egress SSRF floor still GREEN (no
+ingress rule weakens it)</td>
+<td>YES</td>
+<td><code>INGRESS_MUT=1 ⇒ rc=1</code>; egress
+<code>ssrf_carveout_teeth.sh</code> unchanged/GREEN</td>
+</tr>
+<tr>
+<td><strong>stress + chaos</strong> (§11.4.85)</td>
+<td>Callback storms (many concurrent NFS GRANT/SM_NOTIFY);
+reverse-channel drop + reconnect; boundary ports (0, 65535, off-by-one
+around the pinned range)</td>
+<td>Logic: YES · live: gated</td>
+<td>Per-iteration latency + categorised-recovery evidence; SKIP live
+when down</td>
+</tr>
+<tr>
+<td><strong>DDoS / load-flood</strong></td>
+<td>Inbound-flood against the exposed pair: default-deny refuses the
+flood cleanly (no fail-open); the allowlisted pair degrades
+gracefully</td>
+<td>Logic: YES · live: gated</td>
+<td>Refusal-count + throughput evidence</td>
+</tr>
+<tr>
+<td><strong>concurrency / atomicity</strong></td>
+<td>Simultaneous both-direction flows do not cross-contaminate
+(single-resource-owner per device, §11.4.119)</td>
+<td>Live-gated</td>
+<td>Non-interleaved evidence per direction</td>
+</tr>
+<tr>
+<td><strong>race / deadlock</strong></td>
+<td>No lock-order inversion when both directions are provisioned;
+ingress evaluator has no shared-lock blocking</td>
+<td>YES (evaluator)</td>
+<td><code>sh -n</code>/<code>bash -n</code> clean; deterministic
+verdict</td>
+</tr>
+<tr>
+<td><strong>memory</strong></td>
+<td>Long-soak both-way session shows no unbounded growth (evaluator +
+harness)</td>
+<td>YES (harness)</td>
+<td>RSS census over soak</td>
+</tr>
+<tr>
+<td><strong>benchmarking</strong></td>
+<td>Ingress-evaluate latency p50/p95/p99 vs. baseline; round-trip
+latency both ways</td>
+<td>Logic: YES · live: gated</td>
+<td>Latency distribution artifact</td>
+</tr>
+<tr>
+<td><strong>Challenges</strong> (challenges submodule)</td>
+<td>A Challenge entry per protocol scoring PASS only on positive
+both-direction captured evidence (§11.4.69)</td>
+<td>Logic: YES · live: gated</td>
+<td>Challenge <code>result.json</code> with evidence path; SKIP when
+down</td>
+</tr>
+<tr>
+<td><strong>HelixQA</strong></td>
+<td>A bank case per protocol driven by an autonomous session asserting
+BOTH directions</td>
+<td>Logic: YES · live: gated</td>
+<td>HelixQA wire evidence; honest SKIP when down</td>
+</tr>
+</tbody>
+</table>
+<p>Bridge-down ⇒ honest SKIP across the board (§11.4.3) —
+<strong>never</strong> a fake PASS. A live both-way capability is only
+"done" when its runtime signature verifies <strong>both</strong>
+directions with captured evidence on a genuinely-up bridge
+(§11.4.108).</p>
+<hr />
+<h2 id="5-honest-boundary-1146">5. Honest boundary (§11.4.6)</h2>
+<ul>
+<li><strong>Provable autonomously, now:</strong> the ingress-allowlist
+<em>logic</em> — default-deny holds, only the exact
+<code>(service-port, VPN-host)</code> pair is permitted, a different
+host or port is denied, and the teeth reject a golden-bad allow-all
+policy (<code>INGRESS_MUT=1 ⇒ rc=1</code>). This is the mirror of the
+Phase-1 egress SSRF teeth and needs no live VPN.</li>
+<li><strong>Requires the operator (parked, §11.4.21):</strong> every
+<em>live</em> bidirectional round-trip. It needs the return route
+configured on BOTH the remote and proxy sides (WireGuard
+<code>AllowedIPs</code> on both peers, §1.1 / a <code>ppp0</code>
+reverse route the svord bridge owns), the pinned callback ports on the
+far service, and an explicit ingress-allowlist grant — all of which
+change remote-side and/or proxy-side config and are therefore
+§11.4.122/§11.4.133 operator-gated. Until authorised, the live both-way
+paths honestly SKIP (§11.4.3), never fake-PASS.</li>
+<li><strong>Not claimed:</strong> this document does NOT claim any live
+bidirectional protocol works today. It designs the model, enumerates the
+per-protocol both-way needs, defines the ingress security surface, and
+ships the autonomous ingress-allowlist teeth. Each live capability
+becomes "done" only under §11.4.108 (runtime signature verified BOTH
+directions on a genuinely-up bridge) + independent review (§11.4.142) +
+the §11.4.169 test-type matrix.</li>
+<li><strong><code>adb reverse</code> and multicast are reasoned, not
+captured (INFERENCE):</strong> <code>adb reverse</code> is taken to ride
+the existing adb transport (no separate proxy-side ingress port) from
+the adb protocol's documented behaviour; mDNS/SSDP bidirectionality is a
+remote-segment reflector property, not a proxy-side ingress case. Both
+are marked INFERENCE and are confirmed only by live capture when the
+bridge is up.</li>
+</ul>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>WireGuard cryptokey routing / <code>AllowedIPs</code> bidirectional
+(routing-table-on-send, ACL-on-receive; both peers need complementary
+<code>AllowedIPs</code>): <a
+href="https://www.wireguard.com/papers/wireguard.pdf">https://www.wireguard.com/papers/wireguard.pdf</a>
+(whitepaper §2 "Cryptokey Routing"); <a
+href="https://defguard.net/blog/allowedips-explained/">https://defguard.net/blog/allowedips-explained/</a>;
+<a
+href="https://github.com/pirate/wireguard-docs">https://github.com/pirate/wireguard-docs</a>.</li>
+<li>FTP active vs. passive (active = server initiates the data
+connection back to the client, source port 20; passive = client
+initiates both): <a
+href="https://slacksite.com/other/ftp.html">https://slacksite.com/other/ftp.html</a>;
+<a
+href="https://www.jscape.com/blog/active-v-s-passive-ftp-simplified">https://www.jscape.com/blog/active-v-s-passive-ftp-simplified</a>.</li>
+<li>NFS NLM (<code>lockd</code>) / NSM (<code>rpc.statd</code>)
+callbacks + rpcbind, and their bidirectional <code>SM_NOTIFY</code> /
+GRANT requirement + port-pinning (<code>--port</code> /
+<code>--outgoing-port</code>, <code>lockd</code> port): <a
+href="https://man7.org/linux/man-pages/man8/statd.8.html">https://man7.org/linux/man-pages/man8/statd.8.html</a>;
+<a
+href="https://docs.oracle.com/en/operating-systems/oracle-linux/8/nfs/about-nfs-services_concept.html">https://docs.oracle.com/en/operating-systems/oracle-linux/8/nfs/about-nfs-services_concept.html</a>.</li>
+<li>mDNS reflector inherent bidirectionality (Avahi
+<code>enable-reflector=yes</code> reflects queries, responses and probes
+across all local interfaces): <a
+href="https://manpages.debian.org/unstable/avahi-daemon/avahi-daemon.conf.5.en.html">https://manpages.debian.org/unstable/avahi-daemon/avahi-daemon.conf.5.en.html</a>;
+<a
+href="https://deepwiki.com/avahi/avahi/2.6-mdns-reflector">https://deepwiki.com/avahi/avahi/2.6-mdns-reflector</a>.</li>
+<li><code>adb reverse</code> device→host connect-back (reverse of
+<code>adb forward</code>; rides the adb transport; requires the adb
+server to maintain the connection): <a
+href="https://linuxcommandlibrary.com/man/adb-reverse">https://linuxcommandlibrary.com/man/adb-reverse</a>;
+<a
+href="https://android.googlesource.com/platform/system/core/+/252586941934d23073a8d167ec240b221062505f">https://android.googlesource.com/platform/system/core/+/252586941934d23073a8d167ec240b221062505f</a>.</li>
+</ul>
+<p><em>Deep-research pass per §11.4.150 (multi-angle: WireGuard routing
+/ FTP modes / NFS callback mechanics / mDNS reflection / adb reverse).
+Access date 2026-07-01. Latest-source verified per §11.4.99. No claim
+rests on training memory; each mechanic above is cited to an
+authoritative source and cross-checked against a second where the claim
+is load-bearing.</em></p>
+</body>
+</html>

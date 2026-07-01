@@ -1,8 +1,8 @@
 # VPN-LAN Service Access — Plan Summary
 
-**Revision:** 1
-**Last modified:** 2026-07-01T16:05:00Z
-**Status:** Companion summary of [`PLAN.md`](PLAN.md) (§11.4.56 two-audience).
+**Revision:** 2
+**Last modified:** 2026-07-01T17:05:00Z
+**Status:** Companion summary of [`PLAN.md`](PLAN.md) (§11.4.56 two-audience). Rev 2 adds the operator's **bidirectional** mandate (2026-07-01): exposure must work fully **both ways** (VPN hosts can also reach exposed proxy-side services — needed by FTP active, NFS lock callbacks, Cast callbacks, `adb reverse`, etc.), governed by a **default-deny + allowlist** ingress surface (the mirror of the egress SSRF floor) and covered by all supported test types — see Phase 12 + `bidirectional_exposure.md`.
 
 ---
 

@@ -1,7 +1,7 @@
 # VPN-LAN Service Access — Comprehensive Phased Plan
 
-**Revision:** 1
-**Last modified:** 2026-07-01T16:05:00Z
+**Revision:** 2
+**Last modified:** 2026-07-01T17:05:00Z
 **Status:** Planning (Phase-0 scaffold next) — feature workstream on branch `feature/vpn-aware-dynamic-routing` (§11.4.167)
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.172 phased-planning doc + §11.4.167 big-work-item feature-workstream lifecycle for the VPN-LAN service-access feature.
 **Companion:** summary [`PLAN_Summary.md`](PLAN_Summary.md) · integration status [`Status.md`](Status.md) (created when ≥2 phases land)
@@ -43,6 +43,8 @@ The VPN is **L3-routed** (WireGuard + L2TP/PPP over `ppp0`; reachable subnet `10
 
 **Rule of thumb:** unicast services route; HTTP-shaped services already work through Squid; multicast discovery needs a remote-side reflector; Wi-Fi-Direct/L2 is out of scope by physics. Deep-research citations recorded in §11 (per §11.4.150).
 
+**Bidirectional (operator mandate 2026-07-01) — MUST work fully both ways.** Every routed class above is **bidirectional**: the proxy side reaches VPN hosts AND VPN hosts reach exposed proxy-side services (return-route both ways). This is mandatory because most services depend on both-way host-to-host reachability (FTP active data-connect, NFS lock callbacks, Cast receiver callbacks, mDNS/SSDP, `adb reverse`, any PORT-based protocol). Bidirectionality MUST be fully covered by **all supported test types** (§11.4.169) and verified with real results, no false results, no bluff — the ingress security surface is governed default-deny + allowlist per §4.6; see Phase 12 (§5) + [`bidirectional_exposure.md`](bidirectional_exposure.md).
+
 ---
 
 ## 3. The env-var bridge contract (§11.4.28 decoupled, NOT git-versioned)
@@ -71,6 +73,7 @@ Widening egress to the VPN subnet reopens SSRF surface. Reconcile per §11.4.120
 3. **Open-relay guard (email, §4-recon FACT):** never expose anonymous CONNECT-to-:25. Route authenticated **submission** (587/465) to VPN clients; keep :25 server-to-server behind the boundary. The SSRF allowlist must NOT make helix_proxy an anonymizing spam conduit.
 4. **STARTTLS-stripping caveat:** prefer routing implicit-TLS ports (993/995/465, RFC 8314) over plaintext-upgradable STARTTLS ports where the choice exists.
 5. Every widening ships with a paired §1.1 mutation proving the allowlist has teeth (an out-of-allowlist target still denies).
+6. **Bidirectional exposure — the INGRESS surface (operator mandate 2026-07-01).** Exposure MUST work in **both directions**: many services depend on hosts talking to each other both ways (FTP **active** mode server→client data connect; NFS NLM/NSM lock **callbacks** + `rpc.statd`; portmapper/rpcbind callbacks; Cast/DIAL receiver→controller callbacks; mDNS/SSDP inherently bidirectional; `adb reverse`; SIP/RTP + any PORT-based protocol). So the routing map (§2) is **bidirectional** — the remote side needs a **return route** to the reachable proxy-side subnet, and a VPN host must be able to **initiate** to an exposed proxy-side service. This ingress is a NEW attack surface and is the **mirror of the egress SSRF floor**: it MUST be **default-deny + explicit allowlist** (only allowlisted proxy-side services exposed to only allowlisted VPN hosts — never "expose everything"), with the SAME anti-bluff teeth discipline (a paired §1.1 mutation proving an out-of-allowlist inbound target is refused) and the SAME operator-gating (live ingress needs remote-side + proxy-side config, §11.4.122/§11.4.133; the ingress-allowlist LOGIC is provable autonomously against a local stub like the §Phase-1 egress teeth). Detailed design: [`bidirectional_exposure.md`](bidirectional_exposure.md).
 
 ---
 
@@ -144,7 +147,13 @@ Each phase is a Parallel Work Unit (§11.4.58) with: RED-first test (§11.4.115)
 - The reflector, the adb server, and any helper services boot **on-demand via `submodules/containers`** `pkg/boot`/`pkg/compose`/`pkg/health` (rootless Podman §11.4.161) — no ad-hoc podman. Missing capability ⇒ extend the submodule upstream (§11.4.74), never worked around.
 
 ### Phase 11 — Full test coverage (§11.4.169) + Challenges + HelixQA  `[verification]`
-- Every phase's protocol gets: unit (parsers/config), integration (real service via bridge), e2e (full round-trip), full-automation (re-runnable, no manual step §11.4.98), security (SSRF allowlist teeth + open-relay guard), stress+chaos (§11.4.85), a **Challenge** entry (challenges submodule), and a **HelixQA bank** case (`tools/helixqa/banks/`) driven by an autonomous session. Bridge-down ⇒ honest SKIP across the board (§11.4.3), never a fake PASS.
+- Every phase's protocol gets: unit (parsers/config), integration (real service via bridge), e2e (full round-trip), full-automation (re-runnable, no manual step §11.4.98), security (SSRF allowlist teeth + open-relay guard), stress+chaos (§11.4.85), a **Challenge** entry (challenges submodule), and a **HelixQA bank** case (`tools/helixqa/banks/`) driven by an autonomous session. Bridge-down ⇒ honest SKIP across the board (§11.4.3), never a fake PASS. **Every protocol test MUST cover BOTH directions (Phase 12) across all these test types.**
+
+### Phase 12 — Bidirectional exposure + ingress allowlist  `[security-critical]` (operator mandate 2026-07-01)
+- **Requirement:** exposure MUST work fully in BOTH directions (proxy↔VPN), because most services depend on both-way host-to-host reachability — and it MUST be fully covered by **all supported test types** (§11.4.169) and verified with real results, no false results, no bluff.
+- **Design** (`bidirectional_exposure.md`): the return-route model (both sides route to each other's reachable subnet); the per-protocol both-way needs (FTP active data-connect; NFS NLM/NSM lock callbacks + `rpc.statd`; portmapper/rpcbind callbacks; Cast/DIAL receiver→controller callbacks; mDNS/SSDP; `adb reverse`; SIP/RTP/PORT-based); the **ingress security surface** = the mirror of the egress SSRF floor — **default-deny + explicit allowlist** (only allowlisted proxy-side services exposed to only allowlisted VPN hosts), never "expose everything".
+- **Autonomous now:** the **ingress-allowlist teeth** (local-stub, mirror of the Phase-1 egress `ssrf_carveout_teeth.sh`): default-deny holds, only the allowlisted (service,host) inbound pair is permitted, a paired §1.1 mutation proves an out-of-allowlist inbound target is refused. Each protocol test gains a **both-directions** assertion that honestly SKIPs when the bridge is down and asserts BOTH ways when it is up.
+- **Operator-gated:** live bidirectional round-trips need the return-route configured on BOTH the remote and proxy sides (§11.4.122/§11.4.133) — until then the both-way live paths honestly SKIP (§11.4.3), never a fake PASS. A live capability is "done" only when its runtime signature verifies BOTH directions with captured evidence on a genuinely-up bridge (§11.4.108).
 
 ---
 

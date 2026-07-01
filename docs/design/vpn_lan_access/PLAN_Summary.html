@@ -174,9 +174,16 @@
 <body>
 <h1 id="vpn-lan-service-access--plan-summary">VPN-LAN Service Access —
 Plan Summary</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T16:05:00Z <strong>Status:</strong> Companion summary of <a
-href="PLAN.md"><code>PLAN.md</code></a> (§11.4.56 two-audience).</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T17:05:00Z <strong>Status:</strong> Companion summary of <a
+href="PLAN.md"><code>PLAN.md</code></a> (§11.4.56 two-audience). Rev 2
+adds the operator's <strong>bidirectional</strong> mandate (2026-07-01):
+exposure must work fully <strong>both ways</strong> (VPN hosts can also
+reach exposed proxy-side services — needed by FTP active, NFS lock
+callbacks, Cast callbacks, <code>adb reverse</code>, etc.), governed by
+a <strong>default-deny + allowlist</strong> ingress surface (the mirror
+of the egress SSRF floor) and covered by all supported test types — see
+Phase 12 + <code>bidirectional_exposure.md</code>.</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
 For the operator / stakeholders (plain language)</h2>

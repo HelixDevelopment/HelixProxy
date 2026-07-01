@@ -174,8 +174,8 @@
 <body>
 <h1 id="vpn-lan-service-access--comprehensive-phased-plan">VPN-LAN
 Service Access — Comprehensive Phased Plan</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T16:05:00Z <strong>Status:</strong> Planning (Phase-0 scaffold
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T17:05:00Z <strong>Status:</strong> Planning (Phase-0 scaffold
 next) — feature workstream on branch
 <code>feature/vpn-aware-dynamic-routing</code> (§11.4.167)
 <strong>Authority:</strong> Inherits
@@ -287,6 +287,18 @@ discovery</td>
 services already work through Squid; multicast discovery needs a
 remote-side reflector; Wi-Fi-Direct/L2 is out of scope by physics.
 Deep-research citations recorded in §11 (per §11.4.150).</p>
+<p><strong>Bidirectional (operator mandate 2026-07-01) — MUST work fully
+both ways.</strong> Every routed class above is
+<strong>bidirectional</strong>: the proxy side reaches VPN hosts AND VPN
+hosts reach exposed proxy-side services (return-route both ways). This
+is mandatory because most services depend on both-way host-to-host
+reachability (FTP active data-connect, NFS lock callbacks, Cast receiver
+callbacks, mDNS/SSDP, <code>adb reverse</code>, any PORT-based
+protocol). Bidirectionality MUST be fully covered by <strong>all
+supported test types</strong> (§11.4.169) and verified with real
+results, no false results, no bluff — the ingress security surface is
+governed default-deny + allowlist per §4.6; see Phase 12 (§5) + <a
+href="bidirectional_exposure.md"><code>bidirectional_exposure.md</code></a>.</p>
 <hr />
 <h2
 id="3-the-env-var-bridge-contract-11428-decoupled-not-git-versioned">3.
@@ -376,6 +388,28 @@ implicit-TLS ports (993/995/465, RFC 8314) over plaintext-upgradable
 STARTTLS ports where the choice exists.</li>
 <li>Every widening ships with a paired §1.1 mutation proving the
 allowlist has teeth (an out-of-allowlist target still denies).</li>
+<li><strong>Bidirectional exposure — the INGRESS surface (operator
+mandate 2026-07-01).</strong> Exposure MUST work in <strong>both
+directions</strong>: many services depend on hosts talking to each other
+both ways (FTP <strong>active</strong> mode server→client data connect;
+NFS NLM/NSM lock <strong>callbacks</strong> + <code>rpc.statd</code>;
+portmapper/rpcbind callbacks; Cast/DIAL receiver→controller callbacks;
+mDNS/SSDP inherently bidirectional; <code>adb reverse</code>; SIP/RTP +
+any PORT-based protocol). So the routing map (§2) is
+<strong>bidirectional</strong> — the remote side needs a <strong>return
+route</strong> to the reachable proxy-side subnet, and a VPN host must
+be able to <strong>initiate</strong> to an exposed proxy-side service.
+This ingress is a NEW attack surface and is the <strong>mirror of the
+egress SSRF floor</strong>: it MUST be <strong>default-deny + explicit
+allowlist</strong> (only allowlisted proxy-side services exposed to only
+allowlisted VPN hosts — never "expose everything"), with the SAME
+anti-bluff teeth discipline (a paired §1.1 mutation proving an
+out-of-allowlist inbound target is refused) and the SAME operator-gating
+(live ingress needs remote-side + proxy-side config,
+§11.4.122/§11.4.133; the ingress-allowlist LOGIC is provable
+autonomously against a local stub like the §Phase-1 egress teeth).
+Detailed design: <a
+href="bidirectional_exposure.md"><code>bidirectional_exposure.md</code></a>.</li>
 </ol>
 <hr />
 <h2 id="5-phase-breakdown-tasks--subtasks--evidence">5. Phase breakdown
@@ -593,8 +627,44 @@ id="phase-11--full-test-coverage-114169--challenges--helixqa-verification">Phase
 open-relay guard), stress+chaos (§11.4.85), a <strong>Challenge</strong>
 entry (challenges submodule), and a <strong>HelixQA bank</strong> case
 (<code>tools/helixqa/banks/</code>) driven by an autonomous session.
-Bridge-down ⇒ honest SKIP across the board (§11.4.3), never a fake
-PASS.</li>
+Bridge-down ⇒ honest SKIP across the board (§11.4.3), never a fake PASS.
+<strong>Every protocol test MUST cover BOTH directions (Phase 12) across
+all these test types.</strong></li>
+</ul>
+<h3
+id="phase-12--bidirectional-exposure--ingress-allowlist-security-critical-operator-mandate-2026-07-01">Phase
+12 — Bidirectional exposure + ingress allowlist
+<code>[security-critical]</code> (operator mandate 2026-07-01)</h3>
+<ul>
+<li><strong>Requirement:</strong> exposure MUST work fully in BOTH
+directions (proxy↔︎VPN), because most services depend on both-way
+host-to-host reachability — and it MUST be fully covered by <strong>all
+supported test types</strong> (§11.4.169) and verified with real
+results, no false results, no bluff.</li>
+<li><strong>Design</strong> (<code>bidirectional_exposure.md</code>):
+the return-route model (both sides route to each other's reachable
+subnet); the per-protocol both-way needs (FTP active data-connect; NFS
+NLM/NSM lock callbacks + <code>rpc.statd</code>; portmapper/rpcbind
+callbacks; Cast/DIAL receiver→controller callbacks; mDNS/SSDP;
+<code>adb reverse</code>; SIP/RTP/PORT-based); the <strong>ingress
+security surface</strong> = the mirror of the egress SSRF floor —
+<strong>default-deny + explicit allowlist</strong> (only allowlisted
+proxy-side services exposed to only allowlisted VPN hosts), never
+"expose everything".</li>
+<li><strong>Autonomous now:</strong> the <strong>ingress-allowlist
+teeth</strong> (local-stub, mirror of the Phase-1 egress
+<code>ssrf_carveout_teeth.sh</code>): default-deny holds, only the
+allowlisted (service,host) inbound pair is permitted, a paired §1.1
+mutation proves an out-of-allowlist inbound target is refused. Each
+protocol test gains a <strong>both-directions</strong> assertion that
+honestly SKIPs when the bridge is down and asserts BOTH ways when it is
+up.</li>
+<li><strong>Operator-gated:</strong> live bidirectional round-trips need
+the return-route configured on BOTH the remote and proxy sides
+(§11.4.122/§11.4.133) — until then the both-way live paths honestly SKIP
+(§11.4.3), never a fake PASS. A live capability is "done" only when its
+runtime signature verifies BOTH directions with captured evidence on a
+genuinely-up bridge (§11.4.108).</li>
 </ul>
 <hr />
 <h2 id="6-test-evidence-strategy-autonomous-anti-bluff">6. Test-evidence
