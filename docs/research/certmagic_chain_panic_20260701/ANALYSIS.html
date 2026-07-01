@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ANALYSIS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="certmagic-selectpreferredchain-empty-chain-panic--root-cause-analysis-upstream-bug-354">certmagic
+<code>selectPreferredChain</code> empty-chain panic — Root-Cause
+Analysis (upstream bug #354)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T10:06:36Z <strong>Authority:</strong> Helix Constitution
+§11.4.102 (systematic-debugging: NO fixes without root-cause
+investigation first) + §11.4.114 (last-known-good-tag regression
+isolation) + §11.4.6 (no-guessing — every claim cited to source or
+marked UNCONFIRMED) + §11.4.150 (deep multi-angle research per issue).
+<strong>Scope:</strong> the
+<code>runtime error: index out of range [0] with length 0</code> panic
+hit inside Caddy's in-process ACME client (certmagic) during the
+hermetic Let's Encrypt issuance phase
+(<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code>), its
+FACT-grade root cause, the exact vulnerable/fixed versions, and the
+ranked fix.</p>
+<blockquote>
+<p><strong>Method note (§11.4.6):</strong> the panic site, the loop
+structure, and the fixed-version boundary below are FACT — read directly
+from certmagic source at the pinned tags. Where a runtime detail (which
+of the two attempts failed first, the exact Pebble restart timing) could
+not be pinned from a log, it is stated as the observed trigger, not as
+the mechanism. The mechanism is source-proven.</p>
+</blockquote>
+<hr />
+<h2 id="1-the-panic-symptom">1. The panic (symptom)</h2>
+<pre><code>panic: runtime error: index out of range [0] with length 0
+
+goroutine ... [running]:
+github.com/caddyserver/certmagic.(*ACMEIssuer).selectPreferredChain(...)
+    .../certmagic@v0.21.3/acmeissuer.go:592
+github.com/caddyserver/certmagic.(*ACMEIssuer).doIssue(...)
+    .../certmagic@v0.21.3/acmeissuer.go:511</code></pre>
+<p><code>selectPreferredChain</code> dereferences
+<code>certChains[0]</code> with <strong>no length guard</strong>. When
+it is handed an empty (<code>nil</code> / <code>len==0</code>) slice of
+certificate chains, the <code>[0]</code> index panics and takes the
+whole Caddy process down (an unrecovered panic in the ACME
+goroutine).</p>
+<p>This is upstream <strong>certmagic issue #354</strong> ("panic:
+runtime error: index out of range [0] with length 0" in
+<code>selectPreferredChain</code>), fixed by commit
+<strong><code>ecf3f80</code></strong>, first released in certmagic
+<strong>v0.25.1</strong> (first Caddy release carrying that certmagic:
+<strong>Caddy 2.11.0</strong>).</p>
+<hr />
+<h2 id="2-root-cause-fact--source-proven">2. Root cause (FACT —
+source-proven)</h2>
+<p>The bug is in <code>(*ACMEIssuer).doIssue</code> in
+<code>acmeissuer.go</code>. Structurally (v0.21.3):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>iss <span class="op">*</span>ACMEIssuer<span class="op">)</span> doIssue<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> csr <span class="op">*</span>x509<span class="op">.</span>CertificateRequest<span class="op">,</span> useTestCA <span class="dt">bool</span><span class="op">)</span> <span class="op">(*</span>IssuedCertificate<span class="op">,</span> <span class="dt">bool</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> certChains <span class="op">[]</span>acme<span class="op">.</span>Certificate</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="op">:=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">2</span><span class="op">;</span> i<span class="op">++</span> <span class="op">{</span>                 <span class="co">// &lt;= retries AT MOST twice</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        certChains<span class="op">,</span> err <span class="op">=</span> client<span class="op">.</span>acmeClient<span class="op">.</span>ObtainCertificate<span class="op">(</span>ctx<span class="op">,</span> account<span class="op">,</span> csr<span class="op">,</span> <span class="op">...)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">==</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>            <span class="co">// empty-chain guard lives ONLY on the success branch:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span><span class="op">(</span>certChains<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> <span class="ot">false</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;no certificate chains&quot;</span><span class="op">)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">// error branch — classify the ACME problem:</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">var</span> problem acme<span class="op">.</span>Problem</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> errors<span class="op">.</span>As<span class="op">(</span>err<span class="op">,</span> <span class="op">&amp;</span>problem<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> problem<span class="op">.</span>Type <span class="op">==</span> acme<span class="op">.</span>ProblemTypeAccountDoesNotExist <span class="op">{</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>                <span class="co">// the local account is stale: recreate it and RETRY</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                resetAccount<span class="op">(...)</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span>                     <span class="co">// &lt;= loops WITHOUT populating certChains</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> <span class="ot">false</span><span class="op">,</span> err</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">// line 511 — reached after the loop with certChains possibly still nil:</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    preferredChain<span class="op">,</span> err <span class="op">:=</span> iss<span class="op">.</span>selectPreferredChain<span class="op">(</span>certChains<span class="op">)</span>   <span class="co">// panics if certChains == nil</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The defect is the <strong>placement of the empty-chain
+guard</strong>: <code>if len(certChains) == 0 { ... }</code> is INSIDE
+the loop and ONLY on the <code>err == nil</code> branch. The
+<code>ProblemTypeAccountDoesNotExist</code> path does
+<code>continue</code> <strong>without</strong> ever assigning a
+non-empty <code>certChains</code>.</p>
+<p><strong>The fatal interleaving:</strong> the loop runs at most twice
+(<code>for i := 0; i &lt; 2; i++</code>). If <strong>BOTH</strong>
+iterations hit <code>ProblemTypeAccountDoesNotExist</code> and
+<code>continue</code>, the loop condition falls through with
+<code>certChains</code> still <code>nil</code>. Execution reaches line
+511, which calls <code>selectPreferredChain(nil)</code>; that function
+indexes <code>certChains[0]</code> (acmeissuer.go:592) →
+<code>index out of range [0] with length 0</code> → panic.</p>
+<p>In other words: the "account does not exist, recreate and retry"
+recovery path had no terminal guard for the case where <em>every</em>
+retry is consumed by that same recovery — so instead of returning a
+clean, retryable error it fell into an unguarded index and crashed the
+process. The upstream fix (<code>ecf3f80</code>) adds the missing guard
+so an exhausted retry loop returns an error rather than panicking on an
+empty chain.</p>
+<hr />
+<h2 id="3-why-the-hermetic-test-triggered-it-observed-trigger">3. Why
+the hermetic test triggered it (observed trigger)</h2>
+<p>The panic is latent in normal operation and surfaces only when both
+retries are consumed by <code>accountDoesNotExist</code>. The hermetic
+harness manufactured exactly that condition:</p>
+<ol type="1">
+<li><strong>Pebble is in-memory.</strong> Pebble does not persist
+accounts — a restart discards all registered ACME accounts (this is the
+same non-volatile-storage property documented in the sibling
+<code>letsencrypt_hermetic_20260701/ANALYSIS.md</code> Q1). Any Caddy
+account registered against a previous Pebble process instantly becomes
+"does not exist" to a fresh Pebble.</li>
+<li><strong>Service-recreate churn.</strong> Repeated boot/teardown of
+the compose stack recreated Pebble underneath a Caddy that still held a
+cached account handle → the CA answered
+<code>ProblemTypeAccountDoesNotExist</code> for that stale account.</li>
+<li><strong>A transient
+<code>dial tcp :14000: connection refused</code>.</strong> Caddy racing
+Pebble's readiness (Caddy started before Pebble's ACME listener was
+accepting) produced a connection failure on one attempt; combined with
+the stale-account error on the other, <strong>both</strong> loop
+iterations failed via the <code>accountDoesNotExist</code>
+classification and <code>continue</code>d — exhausting the two-iteration
+budget with <code>certChains == nil</code>, driving the code straight
+into the unguarded <code>selectPreferredChain(nil)</code>.</li>
+</ol>
+<p>So the harness's boot ordering + Pebble's volatility manufactured the
+double-<code>accountDoesNotExist</code> interleaving that the code could
+not survive.</p>
+<hr />
+<h2 id="4-vulnerable-vs-fixed-certmagic-versions-fact">4. Vulnerable vs
+fixed certmagic versions (FACT)</h2>
+<table>
+<thead>
+<tr>
+<th>certmagic version</th>
+<th>Panic present?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v0.21.3</td>
+<td><strong>VULNERABLE</strong> (panic site as quoted above)</td>
+</tr>
+<tr>
+<td>v0.21.4</td>
+<td><strong>VULNERABLE</strong></td>
+</tr>
+<tr>
+<td>v0.21.6</td>
+<td><strong>VULNERABLE</strong></td>
+</tr>
+<tr>
+<td>v0.21.7</td>
+<td><strong>VULNERABLE</strong></td>
+</tr>
+<tr>
+<td>v0.23.0</td>
+<td><strong>VULNERABLE</strong></td>
+</tr>
+<tr>
+<td>v0.24.0</td>
+<td><strong>VULNERABLE</strong></td>
+</tr>
+<tr>
+<td>v0.25.0</td>
+<td><strong>VULNERABLE</strong></td>
+</tr>
+<tr>
+<td><strong>v0.25.1</strong></td>
+<td><strong>FIXED</strong> (commit <code>ecf3f80</code>, issue
+#354)</td>
+</tr>
+<tr>
+<td>&gt;= v0.25.1</td>
+<td>FIXED</td>
+</tr>
+</tbody>
+</table>
+<p>Caddy pinning (from Caddy <code>go.mod</code>): <strong>Caddy
+2.8.4</strong> pins a vulnerable certmagic (v0.21.x line); <strong>Caddy
+2.11.0</strong> is the first Caddy release whose <code>go.mod</code>
+pins certmagic <strong>&gt;= v0.25.1</strong>, i.e. the first Caddy that
+carries the fix. See Caddy issue <strong>#7366</strong> (the same
+empty-chain panic reported against Caddy) and certmagic issue
+<strong>#152</strong> (Pebble per-launch CA regeneration — the
+volatility that feeds the trigger).</p>
+<hr />
+<h2 id="5-fix-ranked">5. Fix (ranked)</h2>
+<p><strong>Rank 1 — clean boot ordering (the harness fix already
+applied).</strong> The panic requires the
+<em>double-<code>accountDoesNotExist</code></em> interleaving. Remove
+the interleaving and the vulnerable code path is never entered even on
+the vulnerable certmagic:</p>
+<ul>
+<li>Bring <strong>Pebble up and HEALTHY before Caddy</strong> so Caddy
+never races an absent ACME listener (kills the
+<code>dial tcp :14000 connection refused</code> attempt).</li>
+<li>Give Caddy a <strong>fresh <code>/data</code> (fresh storage) per
+run</strong> so no stale account handle from a previous Pebble is cached
+(kills the stale-account <code>accountDoesNotExist</code>).</li>
+<li><strong>Do not churn Pebble mid-order</strong> — one Pebble process
+spans the whole issuance so accounts stay valid for the order's
+lifetime.</li>
+</ul>
+<p>This is precisely what
+<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> now does, and
+under that ordering it issues a <strong>real certificate with no
+panic</strong> (evidence: the conductor's clean run under
+<code>qa-results/letsencrypt/phase3_issuance/</code>).</p>
+<p><strong>Rank 2 — bump to Caddy &gt;= 2.11.0 / certmagic &gt;=
+v0.25.1.</strong> The upstream fix converts the crash into a
+<strong>retryable error</strong> (an exhausted account-recreate loop
+returns <code>error</code>, not a panic). This is defence-in-depth: even
+if a future ordering regression reintroduces the
+double-<code>accountDoesNotExist</code> interleaving, Caddy survives
+with a logged, retried error instead of a process-killing panic.</p>
+<p><strong>Best — do both.</strong> Rank 1 removes the trigger for
+<em>this</em> harness now (independent of the certmagic version we
+happen to build against); Rank 2 removes the crash mode structurally for
+every future ordering. Rank 1 alone is sufficient to make the current
+hermetic phase green; Rank 2 alone (without clean ordering) would still
+churn through retries and re-issue noise on every restart. Together: no
+trigger AND no crash mode.</p>
+<hr />
+<h2 id="6-honest-boundary-1146">6. Honest boundary (§11.4.6)</h2>
+<ul>
+<li><strong>FACT (source-proven):</strong> the panic site
+(<code>acmeissuer.go:592</code>, <code>selectPreferredChain</code>
+indexing <code>certChains[0]</code>), the <code>doIssue</code>
+two-iteration loop with the guard only on the <code>err==nil</code>
+branch, the <code>ProblemTypeAccountDoesNotExist</code>
+<code>continue</code>-without-populating path, the vulnerable-version
+list, and the fixed boundary at certmagic <strong>v0.25.1</strong> /
+Caddy <strong>2.11.0</strong> (commit <code>ecf3f80</code>, issue #354)
+— all read from certmagic source at the pinned tags and Caddy's
+<code>go.mod</code>.</li>
+<li><strong>Observed (not mechanism):</strong> the exact ordering of
+which of the two attempts hit <code>connection refused</code> vs
+stale-account in the failing run was inferred from the boot sequence +
+Pebble's known volatility, not pinned from a captured per-attempt log
+line. The <em>mechanism</em> (double-<code>accountDoesNotExist</code> →
+<code>nil</code> chain → panic) is source-proven and
+version-independent; the specific transient that produced the second
+<code>accountDoesNotExist</code> is the observed trigger.</li>
+<li><strong>PROVEN for THIS harness:</strong> that Rank-1 clean ordering
+ALONE fixes the panic here is proven by the conductor's clean run — a
+real certificate was issued with no panic
+(<code>qa-results/letsencrypt/phase3_issuance/</code>). This does not
+claim Rank 1 removes the <em>code-level</em> crash mode (only Rank 2
+does); it claims Rank 1 removes the <em>trigger</em> for this harness,
+which the clean run demonstrates.</li>
+</ul>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>certmagic <code>acmeissuer.go</code> at <strong>v0.21.3</strong>
+(vulnerable — panic site line 592, <code>doIssue</code> loop) — <a
+href="https://raw.githubusercontent.com/caddyserver/certmagic/v0.21.3/acmeissuer.go">https://raw.githubusercontent.com/caddyserver/certmagic/v0.21.3/acmeissuer.go</a></li>
+<li>certmagic <code>acmeissuer.go</code> at <strong>v0.25.1</strong>
+(fixed — guard added) — <a
+href="https://raw.githubusercontent.com/caddyserver/certmagic/v0.25.1/acmeissuer.go">https://raw.githubusercontent.com/caddyserver/certmagic/v0.25.1/acmeissuer.go</a></li>
+<li>certmagic issue <strong>#354</strong> — "panic: runtime error: index
+out of range [0] with length 0" (<code>selectPreferredChain</code>) — <a
+href="https://github.com/caddyserver/certmagic/issues/354">https://github.com/caddyserver/certmagic/issues/354</a></li>
+<li>certmagic tags (version boundary v0.25.0 vulnerable -&gt; v0.25.1
+fixed) — <a
+href="https://api.github.com/repos/caddyserver/certmagic/tags">https://api.github.com/repos/caddyserver/certmagic/tags</a></li>
+<li>Caddy <code>go.mod</code> at <strong>v2.8.4</strong> (pins
+vulnerable certmagic) — <a
+href="https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/go.mod">https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/go.mod</a></li>
+<li>Caddy <code>go.mod</code> at <strong>v2.11.0</strong> (first Caddy
+pinning certmagic &gt;= v0.25.1) — <a
+href="https://raw.githubusercontent.com/caddyserver/caddy/v2.11.0/go.mod">https://raw.githubusercontent.com/caddyserver/caddy/v2.11.0/go.mod</a></li>
+<li>Caddy issue <strong>#7366</strong> — empty-chain panic reported
+against Caddy — <a
+href="https://github.com/caddyserver/caddy/issues/7366">https://github.com/caddyserver/caddy/issues/7366</a></li>
+<li>certmagic issue <strong>#152</strong> — Pebble per-launch CA
+regeneration / account volatility (feeds the trigger) — <a
+href="https://github.com/caddyserver/certmagic/issues/152">https://github.com/caddyserver/certmagic/issues/152</a></li>
+</ul>
+<p><strong>Honest gaps (UNCONFIRMED — method to obtain stated
+inline):</strong> the exact per-attempt failure ordering in the failing
+run (method: enable Caddy JSON logging at debug and capture the two
+<code>ObtainCertificate</code> attempts' error classifications). Does
+not affect the source-proven mechanism or the version boundary.</p>
+</body>
+</html>

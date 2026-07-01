@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ANALYSIS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="lets-encrypt-phase-5-renewal--rotation--deep-research-caddy-in-process-renewal-vs-pebble-ari-zero-downtime-rotation-proof">Let's
+Encrypt Phase-5 RENEWAL + ROTATION — Deep Research (Caddy in-process
+renewal vs Pebble ARI, zero-downtime rotation proof)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T09:45:35Z <strong>Authority:</strong> Helix Constitution
+§11.4.150 (deep multi-angle research before workstream commitment) +
+§11.4.99 (latest-source cross-reference) + §11.4.6 (no-guessing — every
+claim cited or marked UNCONFIRMED) + §11.4.107/§11.4.115 (rock-solid
+rotation proof). <strong>Scope:</strong> design the hermetic Phase-5
+RENEWAL + ROTATION test against the already-built hermetic stack — Caddy
+image <code>localhost/helix_proxy/caddy-challtestsrv:2.8.4</code>,
+Pebble <code>ghcr.io/letsencrypt/pebble:v2.6.0</code>,
+<code>pebble-challtestsrv</code>, per
+<code>deploy/letsencrypt/compose.hermetic.yml</code> +
+<code>deploy/letsencrypt/Caddyfile</code>. <strong>Consumes:</strong>
+<code>tests/letsencrypt/cert_analyzer.sh</code>
+(<code>cert_chain_roots_in</code> / <code>cert_not_expired</code> /
+<code>cert_san_matches</code> / <code>cert_days_remaining</code> /
+<code>cert_renewal_due</code>, with the
+<code>CERT_ANALYZER_NOW_EPOCH</code> now-seam). <strong>Prior research
+this REFINES:</strong>
+<code>docs/research/letsencrypt_hermetic_20260701/ANALYSIS.md</code> Q4
++ gotcha #10. That doc recommended <code>renewal_window_ratio 1</code> +
+reload but marked "whether this Pebble build serves ARI" and "whether
+ARI overrides the ratio" as <strong>UNCONFIRMED</strong>. <strong>This
+doc resolves both from source at the EXACT deployed versions</strong>
+and vindicates the lever (see Q1).</p>
+<blockquote>
+<p><strong>Method note (§11.4.6 / §11.4.99):</strong> the load-bearing
+facts below are read directly from the source of the
+<strong>deployed</strong> versions — Pebble <code>v2.6.0</code>
+(<code>wfe/wfe.go</code>, <code>core/types.go</code>,
+<code>ca/ca.go</code>, <code>test/config/pebble-config.json</code> at
+tag <code>v2.6.0</code>) and the certmagic/acmez that Caddy
+<code>2.8.4</code> bundles (<code>go.mod@v2.8.4</code> -&gt;
+<code>certmagic v0.21.3</code> + <code>acmez/v2 v2.0.1</code>, read
+<code>certificates.go</code>/<code>config.go</code>/<code>maintain.go</code>
+at <code>certmagic@v0.21.3</code>) — fetched via <code>gh api</code>
+2026-07-01. Version-mapped facts (release dates, PR-&gt;tag) come from
+the GitHub Releases/PR API. Where a runtime latency or an unread code
+path cannot be proven from source, it is marked
+<strong>UNCONFIRMED</strong> with the exact runtime method to obtain it
+— never guessed.</p>
+</blockquote>
+<hr />
+<h2 id="executive-answer-the-three-asks">Executive answer (the three
+asks)</h2>
+<ol type="1">
+<li><strong>Recommended force-renewal mechanism:</strong>
+<strong><code>renewal_window_ratio 1</code> loaded via the admin API
+<code>POST /load</code> graceful reload</strong> (the
+<code>CADDY_RENEWAL_RATIO</code> lever already stubbed in
+<code>deploy/letsencrypt/Caddyfile</code>). <strong>Winning rationale
+(source-proven for Caddy 2.8.4 / certmagic v0.21.3):</strong> on config
+load Caddy re-manages the cert and runs <code>certNeedsRenewal</code>;
+with ratio <code>1</code>,
+<code>currentlyInRenewalWindow(notBefore, notAfter, 1.0)</code> computes
+<code>renewalWindowStart = notAfter - lifetime = notBefore</code>, so it
+returns <code>time.Now().After(notBefore)</code> = <strong>TRUE for any
+already-issued cert</strong> -&gt; immediate in-process renewal +
+hot-swap. This ratio check runs <strong>unconditionally after</strong>
+the ARI block (which can only trigger renewal <em>earlier</em>, never
+<em>suppress</em> the ratio check), so it is <strong>not defeated by
+Pebble's ARI</strong> — resolving the prior doc's gotcha #10. It needs
+<strong>no Pebble version bump, no revocation, no storage
+surgery</strong>, and is the only lever that is both deterministic AND
+zero-downtime on the deployed stack.</li>
+<li><strong>Concrete zero-downtime observable:</strong> the served
+leaf's <strong>serial number</strong> and <strong>notBefore</strong>
+both CHANGE across the swap
+(<code>openssl s_client -connect ... | openssl x509 -noout -serial -startdate</code>)
+WHILE a tight continuous TLS-fetch probe records <strong>0 failed
+requests / 0 dropped connections</strong> — corroborated by the
+certmagic log line <code>certificate renewed successfully</code> (exact
+string, verified in source). A changed serial + advanced notBefore
+proves a real re-issue (not an in-memory cache reload).</li>
+<li><strong>File written:</strong>
+<code>docs/research/letsencrypt_renewal_20260701/ANALYSIS.md</code> (+
+<code>.html</code> + <code>.pdf</code>). <strong>Cited source
+count:</strong> 24 distinct URLs (see footer) plus 7 pinned source-file
+reads at exact version tags.</li>
+</ol>
+<hr />
+<h2
+id="q1--forcing-an-immediate-deterministic-renewal-four-levers-compared">Q1
+— Forcing an immediate, deterministic renewal: four levers compared</h2>
+<h3
+id="the-core-mechanism-source-confirmed-caddy-284--certmagic-v0213">The
+core mechanism (source-confirmed, Caddy 2.8.4 = certmagic v0.21.3)</h3>
+<p><code>certmagic@v0.21.3/certificates.go:certNeedsRenewal(leaf, ari, ...)</code>
+is the single decision function. Its structure (verbatim shape):</p>
+<pre><code>if !cfg.DisableARI {
+    selectedTime := ari.SelectedTime           // (or a random pick inside SuggestedWindow)
+    if !selectedTime.IsZero() {
+        cutoff := ari.SelectedTime - RenewCheckInterval
+        if time.Now().After(cutoff) { return true }              // ARI window reached -&gt; renew EARLY
+        if currentlyInRenewalWindow(notBefore, exp, 1.0/20.0) { return true }  // emergency (past 95% life)
+    }
+}
+// runs UNCONDITIONALLY (the ARI block only ever early-returns true; it never returns false)
+if currentlyInRenewalWindow(notBefore, exp, cfg.RenewalWindowRatio) {           // the ratio check
+    return true
+}
+if currentlyInRenewalWindow(notBefore, exp, 1.0/50.0) ||
+   time.Until(exp) &lt; RenewCheckInterval*5 { return true }        // imminent-expiry safety net
+return false</code></pre>
+<p>and
+<code>certmagic@v0.21.3/certificates.go:currentlyInRenewalWindow</code>:</p>
+<pre><code>lifetime           = notAfter - notBefore
+renewalWindow      = lifetime * renewalWindowRatio
+renewalWindowStart = notAfter - renewalWindow
+return time.Now().After(renewalWindowStart)</code></pre>
+<p><strong>Key deduction (the whole basis of the
+recommendation):</strong> with <code>renewalWindowRatio = 1.0</code>,
+<code>renewalWindowStart = notAfter - lifetime = notBefore</code>, so
+the ratio check returns <code>time.Now().After(notBefore)</code> =
+<strong>TRUE for any issued cert</strong>, immediately. And because this
+check sits <strong>after</strong> the
+<code>if !cfg.DisableARI { ... }</code> block — not inside an
+<code>else</code> — <strong>ARI cannot suppress it</strong>. certmagic's
+ARI/ratio relationship is therefore an <strong>OR</strong> (renew if ARI
+says so <strong>OR</strong> the ratio window is reached
+<strong>OR</strong> expiry is imminent), NOT "ARI wins over ratio." The
+widely-repeated "ARI takes precedence over
+<code>renewal_window_ratio</code>" statement (Caddy docs, community
+threads) is true only in the narrow sense that <strong>ARI can trigger a
+renewal <em>earlier</em> than the ratio would</strong> — it does not,
+and cannot, <em>prevent</em> a ratio-triggered renewal. <strong>This is
+why <code>renewal_window_ratio 1</code> deterministically forces renewal
+even though Pebble v2.6.0 serves an ARI window far in the future
+(Q3).</strong></p>
+<p><strong>Renewal trigger timing (source-confirmed):</strong> Caddy
+runs its maintenance loop on a
+<code>time.NewTicker(RenewCheckInterval)</code>;
+<code>certmagic v0.21.3</code> default
+<code>RenewCheckInterval = 10 * time.Minute</code> — but the test must
+NOT wait for the ticker. On config load Caddy re-manages each cert via
+the <code>renew()</code> closure in
+<code>certmagic@v0.21.3/config.go</code>
+(<code>... ensure ARI is updated ... if cert.NeedsRenewal(cfg) { RenewCertAsync/Sync } ... reloadManagedCertificate</code>),
+i.e. it checks <strong>at config-load time</strong> — matching Caddy
+author Matt Holt: <em>"Caddy will immediately renew the certificate
+regardless of scan time, because it always checks when the config is
+first loaded."</em> A continuous TLS probe (Q2) additionally drives the
+on-demand/handshake maintenance path, so the async renewal completes
+promptly.</p>
+<h3 id="lever-comparison-deployed-stack-pebble-v260--caddy-284">Lever
+comparison (deployed stack: Pebble v2.6.0 + Caddy 2.8.4)</h3>
+<table>
+<thead>
+<tr>
+<th>Lever</th>
+<th>Deterministic?</th>
+<th>Zero-downtime?</th>
+<th>Needs</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A. <code>renewal_window_ratio 1</code> +
+<code>POST /load</code> reload</strong></td>
+<td><strong>YES</strong> — ratio check returns true immediately, ARI
+cannot suppress it (source-proven)</td>
+<td><strong>YES</strong> — in-process renewal hot-swaps the cert;
+<code>POST /load</code> is a graceful reload</td>
+<td>nothing new (uses the stubbed <code>CADDY_RENEWAL_RATIO</code> lever
++ admin API)</td>
+<td><strong>RECOMMENDED</strong></td>
+</tr>
+<tr>
+<td>B. Pebble <code>/set-renewal-info/</code> ARI override -&gt; past
+window</td>
+<td>YES (ARI-native)</td>
+<td>YES (in-process)</td>
+<td><strong>Pebble bump to &gt;= v2.8.0</strong> (endpoint added by PR
+#501, merged 2025-06-05; ABSENT in the deployed v2.6.0) + forcing an ARI
+re-fetch (ARI is cached ~<code>Retry-After 6h</code>)</td>
+<td>Alternative if operator bumps Pebble; more moving parts</td>
+</tr>
+<tr>
+<td>C. ACME-revoke the served leaf</td>
+<td>Partial</td>
+<td>YES (in-process)</td>
+<td>out-of-band ACME revoke; Pebble returns
+<code>RenewalInfoImmediate</code> for revoked serials — but Caddy must
+re-fetch ARI (6h cache) to see it, and Pebble config disables OCSP
+(<code>ocspResponderURL:""</code>) so certmagic's OCSP-revoke
+<code>forceRenew</code> path is unavailable</td>
+<td>Not clean on this stack</td>
+</tr>
+<tr>
+<td>D. Delete cert from storage + <strong>restart</strong> Caddy</td>
+<td>YES (fresh issuance, ARI-independent)</td>
+<td><strong>NO</strong> — process restart drops connections</td>
+<td>nothing new</td>
+<td>Good as a SEPARATE "issuance rotation" proof;
+<strong>cannot</strong> prove zero-downtime</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why not "delete cert from storage + <em>reload</em>" (no
+restart)?</strong> Caddy issues #5589 and #6789 show a config
+<em>reload</em> does <strong>not</strong> reliably flush the in-memory
+cert cache / re-read storage for a same-identity cert — so delete+reload
+risks continuing to serve the cached leaf. That caveat is about
+<strong>re-reading externally-modified/deleted files</strong>, and is
+exactly why Lever A (which drives certmagic's <em>own</em> renewal
+codepath, replacing the cert in cache via
+<code>reloadManagedCertificate</code> on successful renewal) is
+preferred over any storage-surgery approach.</p>
+<p><strong>Runtime-toggle wiring (important — the Caddyfile is mounted
+<code>:ro</code>).</strong> <code>deploy/letsencrypt/Caddyfile</code>
+reads <code>renewal_window_ratio {$CADDY_RENEWAL_RATIO}</code> from
+process env, and env is fixed at container start; the Caddyfile mount is
+read-only. So the ratio cannot be flipped by editing the file in place.
+Two supported ways to apply ratio=1 at runtime without a restart:</p>
+<ul>
+<li><strong>(preferred) <code>POST /load</code> a config that carries a
+literal <code>renewal_window_ratio 1</code>.</strong> Enable the admin
+API for the test (<code>CADDY_ADMIN=0.0.0.0:2019</code>, publish
+<code>127.0.0.1:2019:2019</code>), then <code>POST</code> the adapted
+config (Caddyfile body via <code>Content-Type: text/caddyfile</code>, or
+the JSON from <code>caddy adapt</code>) with the ratio line set to the
+literal <code>1</code>. This is a genuine config change -&gt; full TLS
+reprovision -&gt; <code>renew()</code> runs -&gt; renew + hot-swap.
+Reset by <code>POST /load</code>-ing the original config afterward.</li>
+<li><strong>(simplest) boot with <code>CADDY_RENEWAL_RATIO=1</code> from
+the start.</strong> Caddy then renews on every maintenance pass; the
+endpoint continuously rotates. The test samples the served leaf twice
+and asserts the serial changed with 0 dropped connections. Less
+controlled (no stable "before" baseline window) but requires no
+admin/config surgery. Revert to the default ratio when done.</li>
+</ul>
+<p>Sources: Caddy <code>tls</code> directive + global options
+(<code>renewal_window_ratio</code>, default <code>0.3333</code>; ARI "is
+a suggestion ... may not align with this ratio"); Caddy
+<code>API</code>/<code>automatic-https</code> (<code>POST /load</code>
+"incurs zero downtime", background cert management, renewal hot-swap);
+Matt Holt on force-renewal (ratio=1 + reload; delete+reload); Caddy
+issues #5589/#6789 (reload cert-cache caveat); certmagic
+<code>v0.21.3</code>
+<code>certificates.go</code>/<code>config.go</code>/<code>maintain.go</code>
+(read at tag). See footer.</p>
+<hr />
+<h2 id="q2--proving-zero-downtime-rotation-the-concrete-observable">Q2 —
+Proving ZERO-DOWNTIME rotation: the concrete observable</h2>
+<p><strong>Primary evidence = the cert changed AND the endpoint never
+dropped.</strong> Two independent captures taken across the forced
+renewal:</p>
+<ol type="1">
+<li><strong>Re-issue proof (the leaf actually rotated, not a cache
+reload).</strong> Pull the <em>served</em> leaf before and after and
+compare two fields:</li>
+</ol>
+<pre><code>openssl s_client -connect 127.0.0.1:8443 -servername proxy.hermetic.test &lt;/dev/null 2&gt;/dev/null \
+  | openssl x509 -noout -serial -startdate
+# serial=&lt;hex&gt;     notBefore=&lt;date&gt;</code></pre>
+<p>PASS requires
+<strong><code>serial_after != serial_before</code></strong> AND
+<strong><code>notBefore_after &gt; notBefore_before</code></strong>. A
+changed serial proves Pebble issued a NEW certificate (each Pebble
+issuance gets a fresh random serial); an advanced notBefore proves it
+was issued later (not the same cert re-served). Comparing only one field
+is insufficient — the serial alone could in principle collide; the pair
+is the rock-solid signal (§11.4.107 not-stale cross-check).</p>
+<ol start="2" type="1">
+<li><strong>Continuous-availability proof (no dropped connection across
+the swap).</strong> Run a tight sampling loop against the TLS endpoint
+spanning the reload + the renewal swap, counting failures:</li>
+</ol>
+<pre><code># sample every ~0.2s; a full TLS handshake + HTTP 200 each iteration
+while &lt;rotation not yet observed&gt;; do
+  curl -sf --max-time 2 --resolve proxy.hermetic.test:8443:127.0.0.1 \
+       --cacert pebble_ca_bundle.pem \
+       https://proxy.hermetic.test:8443/health &gt;/dev/null \
+    &amp;&amp; ok=$((ok+1)) || fail=$((fail+1))
+done</code></pre>
+<p>PASS requires <strong><code>fail == 0</code></strong> (every request
+completed a TLS handshake and got its response) across the entire window
+in which the serial transitions from <code>serial_before</code> to
+<code>serial_after</code>. This is the zero-downtime assertion: Caddy
+"swaps out the old certificate with the new one ... zero downtime"
+(automatic-https docs) and <code>POST /load</code> "incurs zero
+downtime" (API docs) — the probe MEASURES it rather than asserting
+it.</p>
+<p><strong>Corroborating (not sole) evidence — Caddy logs.</strong> With
+JSON logging, grep the certmagic/<code>tls</code> logger stream for the
+exact strings (verified in <code>certmagic@v0.21.3</code> source):</p>
+<ul>
+<li><code>renewing certificate</code> (<code>config.go</code>) — renewal
+started;</li>
+<li><code>certificate renewed successfully</code>
+(<code>config.go</code>) — renewal completed;</li>
+<li><code>certificate is in configured renewal window based on expiration date</code>
+(<code>certificates.go</code>) — the ratio check fired (proves ratio=1
+was the trigger, not ARI);</li>
+<li>(initial issuance, for the baseline:
+<code>obtaining certificate</code> -&gt;
+<code>certificate obtained successfully</code>).</li>
+</ul>
+<p>Treat the log as corroboration of <em>why/when</em>; the
+changed-serial + zero-failure pair is the proof.
+<strong>UNCONFIRMED:</strong> the exact wall-clock latency from
+<code>POST /load</code> to the new serial appearing (depends on Pebble
+VA scheduling + acmez retry) — the test polls the served serial with a
+bounded timeout rather than assuming a fixed delay;
+<code>PEBBLE_VA_NOSLEEP=1</code> + <code>PEBBLE_WFE_NONCEREJECT=0</code>
+(already set in the compose) keep it prompt.</p>
+<p><strong>Do NOT conflate the reload blip with the renewal.</strong> A
+<em>full config reload</em> (<code>POST /load</code>) reprovisions the
+TLS app; the <em>renewal</em> is the in-process hot-swap. Both are
+documented zero-downtime; the single continuous probe spans both, so
+<code>fail == 0</code> covers the whole operation. (This is also why the
+probe, not the log, is authoritative — issues #5589/#6789 show cache
+behavior around reload is subtle.)</p>
+<p>Sources: Caddy automatic-https + API docs; certmagic
+<code>v0.21.3</code> log strings (read at tag). See footer.</p>
+<hr />
+<h2
+id="q3--pebble-specific-rotation-quirks-deployed-v260-source-confirmed">Q3
+— Pebble-specific rotation quirks (deployed v2.6.0),
+source-confirmed</h2>
+<ol type="1">
+<li><p><strong>Per-boot issuance-CA regeneration (unchanged from the
+hermetic doc — still load-bearing here).</strong> Pebble regenerates its
+issuance root/intermediate on every launch and stores nothing on disk.
+<strong>Consequence for Phase-5:</strong> re-fetch the run's CA chain
+(<code>/roots/0</code> + <code>/intermediates/0</code>) at assertion
+time; NEVER pin a golden CA fixture. Because Phase-5 renews <em>within
+one Pebble boot</em>, <code>leaf_1</code> and <code>leaf_2</code> chain
+to the <strong>same</strong> run-CA — so the CA bundle is fetched once
+per test run and reused for both chain assertions (Q4). (If the stack is
+restarted mid-test, the CA changes and both leaves must be re-verified
+against the new bundle.)</p></li>
+<li><p><strong>Pebble v2.6.0 DOES serve ARI — and its window is far in
+the future for a fresh cert.</strong> Confirmed at tag
+<code>v2.6.0</code>: <code>wfe/wfe.go</code> exposes
+<code>renewalInfoPath = "/draft-ietf-acme-ari-03/renewalInfo/"</code>,
+advertised in the directory.
+<code>determineARIWindow(certID)</code>:</p>
+<ul>
+<li>returns <code>core.RenewalInfoImmediate(now)</code> (a window
+<strong>1 hour in the past</strong>) <strong>only if the serial is
+REVOKED</strong>;</li>
+<li>otherwise returns
+<code>core.RenewalInfoSimple(notBefore, notAfter)</code>, whose window
+is <em>"a point 2/3 of the way through the validity period, then a 2-day
+window around that"</em> (<code>core/types.go</code>:
+<code>idealRenewal = notAfter - validity/3</code>; window =
+<code>[idealRenewal - 24h, idealRenewal + 24h]</code>). With Pebble's
+default validity (see #3), a freshly-issued cert's ARI window starts
+<strong>~3.3 years out</strong>, so ARI on its own never triggers
+renewal in-test — and, per Q1, it also does NOT suppress the
+<code>renewal_window_ratio 1</code> trigger. <strong>This is the fact
+that both (a) explains why time-based waiting is infeasible and (b)
+confirms Lever A is safe against ARI.</strong> The
+<code>/set-renewal-info/</code> override endpoint that could move this
+window is <strong>NOT in v2.6.0</strong> (added by PR #501, merged
+2025-06-05, first shipped in <strong>v2.8.0</strong>).</li>
+</ul></li>
+<li><p><strong>Pebble default issued-leaf validity ~= 5 years, and
+Pebble HONORS a client-requested notBefore/notAfter (resolves a prior
+UNCONFIRMED).</strong>
+<code>test/config/pebble-config.json@v2.6.0</code> sets
+<code>"certificateValidityPeriod": 157766400</code> seconds =
+<strong>1826 days ~= 5 years</strong>; <code>ca/ca.go@v2.6.0</code>
+computes <code>certNotAfter = certNotBefore + (validity-1)s</code>,
+<strong>but</strong> if the ACME order carries
+<code>notBefore</code>/<code>notAfter</code> it parses and honors them
+(<code>ca/ca.go@v2.6.0</code> lines ~272-286). So a client (Caddy's
+global <code>cert_lifetime</code>, which maps to the ACME order's
+notAfter) can request a SHORTER cert. <strong>UNCONFIRMED:</strong>
+whether <code>certmagic v0.21.3</code> actually populates the ACME order
+<code>notAfter</code> from <code>cert_lifetime</code> — verify at
+runtime with <code>openssl x509 -noout -startdate -enddate</code> on the
+issued leaf. Not needed for Lever A (validity-independent), but a short
+<code>cert_lifetime</code> is a useful secondary knob if a future test
+wants a time-based (rather than ratio-forced) renewal.</p></li>
+<li><p><strong>ARI is client-cached ~6h (<code>Retry-After</code>),
+gated by <code>acmez</code> <code>NeedsRefresh()</code>.</strong>
+<code>wfe/wfe.go@v2.6.0</code> sets <code>Retry-After: 21600</code> (6h)
+on the renewalInfo response; <code>certmagic@v0.21.3</code> only
+re-fetches ARI when
+<code>!DisableARI &amp;&amp; cert.ari.NeedsRefresh()</code>.
+<strong>Consequence:</strong> any ARI-based lever (B or C) is not
+promptly deterministic without forcing an ARI re-fetch (delete stored
+ARI metadata or restart) — a second reason Lever A (which bypasses ARI
+via the unconditional ratio check) is the clean choice.</p></li>
+<li><p><strong>Nonce/VA randomization (already mitigated in the deployed
+compose).</strong> Pebble defaults: 0-15 s VA sleep, 5% nonce rejection,
+~50% authz reuse. The compose already sets
+<code>PEBBLE_VA_NOSLEEP=1</code> and
+<code>PEBBLE_WFE_NONCEREJECT=0</code> and runs
+<code>-strict false</code>; acmez retries nonces automatically. Keep
+per-attempt timeouts generous enough that a single retry does not
+surface as a failure in the availability probe.</p></li>
+<li><p><strong><code>Retry-After</code> on validation is
+separate</strong> (<code>pebble-config.json@v2.6.0</code>
+<code>"retryAfter":{"authz":3,"order":5}</code>) — small, does not
+impede a single-boot renewal.</p></li>
+<li><p><strong>The management interface is HTTPS on <code>:15000</code>,
+signed by <code>pebble.minica.pem</code></strong> — <code>curl -k</code>
+(or trust minica) to fetch <code>/roots/0</code> +
+<code>/intermediates/0</code>. The compose publishes it on
+<code>127.0.0.1:15000</code>, reachable by the conductor.</p></li>
+</ol>
+<p>Sources: Pebble source at tag <code>v2.6.0</code>
+(<code>wfe/wfe.go</code>, <code>core/types.go</code>,
+<code>ca/ca.go</code>, <code>test/config/pebble-config.json</code>);
+Pebble Releases + PRs #461/#484/#501 (GitHub API); RFC 9773 /
+draft-ietf-acme-ari (ARI window semantics). See footer.</p>
+<hr />
+<h2 id="q4--how-cert_analyzersh-plugs-into-the-rotation-assertion">Q4 —
+How <code>cert_analyzer.sh</code> plugs into the rotation assertion</h2>
+<p>The analyzer is client-and-challenge-agnostic and already provides
+every predicate the rotation test needs. Rotation adds only the
+<strong>before/after</strong> dimension (serial + notBefore delta),
+which is captured with <code>openssl</code> and asserted alongside the
+analyzer's PEM-level checks.</p>
+<pre><code>. tests/letsencrypt/cert_analyzer.sh
+
+# --- run CA bundle (Pebble regenerates per boot; fetch ONCE per test run, Q3.1) ---
+curl -sk https://127.0.0.1:15000/roots/0         -o pebble_root.pem
+curl -sk https://127.0.0.1:15000/intermediates/0 -o pebble_intermediate.pem
+cat pebble_intermediate.pem pebble_root.pem      &gt; pebble_ca_bundle.pem   # bundle: Q4 note below
+
+# --- BEFORE: served leaf #1 ---
+openssl s_client -connect 127.0.0.1:8443 -servername proxy.hermetic.test &lt;/dev/null 2&gt;/dev/null \
+  | openssl x509 &gt; leaf_1.pem
+serial_1=$(openssl x509 -in leaf_1.pem -noout -serial)
+nb_1=$(openssl x509 -in leaf_1.pem -noout -startdate)
+
+# --- (force renewal per Q1 Lever A; poll served leaf until serial changes) -&gt; leaf_2.pem ---
+
+# --- AFTER: assert with the analyzer + the delta ---
+cert_chain_roots_in leaf_2.pem pebble_ca_bundle.pem   # new cert still ISSUED by the run&#39;s Pebble CA
+cert_not_expired    leaf_2.pem                         # inside validity now (honours CERT_ANALYZER_NOW_EPOCH seam)
+cert_san_matches    leaf_2.pem proxy.hermetic.test     # SAN still covers the served host
+cert_days_remaining leaf_2.pem                          # scalar for the evidence report
+# rotation delta (NOT in the analyzer — captured with openssl):
+#   serial_2 != serial_1   AND   nb_2 &gt; nb_1</code></pre>
+<p><strong>Mapping (each analyzer function -&gt; its role in the
+rotation PASS):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Assertion</th>
+<th>Function / capture</th>
+<th>PASS condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A real re-issue happened</td>
+<td><code>openssl x509 -serial -startdate</code> before vs after</td>
+<td><code>serial_2 != serial_1</code> <strong>and</strong>
+<code>notBefore_2 &gt; notBefore_1</code></td>
+</tr>
+<tr>
+<td>New cert issued by the run's Pebble CA</td>
+<td><code>cert_chain_roots_in leaf_2.pem pebble_ca_bundle.pem</code></td>
+<td>returns 0</td>
+</tr>
+<tr>
+<td>New cert valid now</td>
+<td><code>cert_not_expired leaf_2.pem [now_epoch]</code></td>
+<td>returns 0</td>
+</tr>
+<tr>
+<td>New cert covers the host</td>
+<td><code>cert_san_matches leaf_2.pem proxy.hermetic.test</code></td>
+<td>returns 0</td>
+</tr>
+<tr>
+<td>Zero-downtime</td>
+<td>continuous TLS probe failure counter (Q2)</td>
+<td><code>fail == 0</code></td>
+</tr>
+<tr>
+<td>(report scalar)</td>
+<td><code>cert_days_remaining leaf_2.pem</code></td>
+<td>prints days</td>
+</tr>
+<tr>
+<td>(regression seam, optional)</td>
+<td><code>cert_renewal_due leaf_1.pem &lt;thresh&gt; &lt;now_epoch&gt;</code></td>
+<td>using the <code>CERT_ANALYZER_NOW_EPOCH</code> seam,
+<code>leaf_1</code> can be <em>asserted</em> "due" at a synthetic now —
+the deterministic §11.4.115 RED baseline that a rotation then
+clears</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Load-bearing integration note (matches the analyzer
+implementation).</strong> <code>cert_chain_roots_in</code> runs
+<code>openssl verify -no_check_time -CAfile &lt;expected_ca_pem&gt; &lt;leaf&gt;</code>.
+Pebble issues a <strong>leaf -&gt; intermediate -&gt; root</strong>
+chain, so verifying against the <strong>root alone</strong> FAILS
+("unable to get local issuer certificate"). Pass the
+<strong>root+intermediate BUNDLE</strong> as
+<code>expected_ca_pem</code> (as above) — <code>openssl verify</code>
+treats every cert in <code>-CAfile</code> as a trust anchor, supplying
+the intermediate AND proving the leaf chains into the run's CA.
+<code>-no_check_time</code> keeps the chain check orthogonal to
+<code>cert_not_expired</code> (an expired-but-correctly-rooted cert
+still passes the chain check and fails the expiry check — by design, and
+useful for the §11.4.115 RED baseline). The
+<code>CERT_ANALYZER_NOW_EPOCH</code> seam (per-run) / trailing
+<code>now_epoch</code> arg (per-call) lets the same fixtures assert both
+"renewal was DUE before" and "the fresh leaf is valid now" with no
+time-travel (§11.4.50).</p>
+<p>Sources: <code>tests/letsencrypt/cert_analyzer.sh</code> (in-repo);
+Pebble chain shape / "cannot get local issuer" (LE community + Pebble
+test/certs README). See footer.</p>
+<hr />
+<h2
+id="phase-5-test-procedure-conductor-executable-against-the-already-built-stack">Phase-5
+test PROCEDURE (conductor-executable against the already-built
+stack)</h2>
+<p><strong>Assumptions:</strong> the hermetic stack is booted via the
+containers submodule (§11.4.76) from
+<code>deploy/letsencrypt/compose.hermetic.yml</code>; Caddy
+<code>localhost/helix_proxy/caddy-challtestsrv:2.8.4</code> has issued
+the Phase-3 baseline cert for <code>proxy.hermetic.test</code>; host
+ports per compose: Caddy HTTPS <code>127.0.0.1:8443</code>, Pebble mgmt
+<code>127.0.0.1:15000</code>. This procedure is <strong>read/observe + a
+graceful reload only</strong> — it does not stop/rebuild containers and
+does not touch <code>deploy/</code>, <code>wg0-mullvad</code>,
+<code>lava-*</code>, or <code>whoami:58080</code>.</p>
+<p><strong>Determinism prerequisite (one-time, in the boot
+config):</strong> enable the admin API for the test — set
+<code>CADDY_ADMIN=0.0.0.0:2019</code> and publish
+<code>127.0.0.1:2019:2019</code> (uncomment the admin port line in the
+compose). This is the only wiring the rotation test adds beyond
+Phase-3.</p>
+<ol type="1">
+<li><strong>Fetch the run's Pebble CA bundle (once).</strong>
+<code>curl -sk https://127.0.0.1:15000/roots/0 -o pebble_root.pem; curl -sk https://127.0.0.1:15000/intermediates/0 -o pebble_intermediate.pem; cat pebble_intermediate.pem pebble_root.pem &gt; pebble_ca_bundle.pem</code>.</li>
+<li><strong>Baseline (leaf #1).</strong>
+<code>openssl s_client -connect 127.0.0.1:8443 -servername proxy.hermetic.test &lt;/dev/null 2&gt;/dev/null | openssl x509 &gt; leaf_1.pem</code>;
+record
+<code>serial_1 = openssl x509 -in leaf_1.pem -noout -serial</code> and
+<code>nb_1 = ... -startdate</code>. Sanity:
+<code>cert_chain_roots_in leaf_1.pem pebble_ca_bundle.pem</code>,
+<code>cert_not_expired leaf_1.pem</code>,
+<code>cert_san_matches leaf_1.pem proxy.hermetic.test</code> all return
+0.</li>
+<li><strong>Start the availability probe (background).</strong> Tight
+loop (~0.2 s)
+<code>curl -sf --max-time 2 --resolve proxy.hermetic.test:8443:127.0.0.1 --cacert pebble_ca_bundle.pem https://proxy.hermetic.test:8443/health</code>,
+incrementing <code>ok</code>/<code>fail</code>. Keep it running through
+steps 4-5.</li>
+<li><strong>Force renewal (Lever A).</strong> <code>POST</code> to the
+admin API a config identical to the running one except the site's
+<code>renewal_window_ratio</code> is the literal <code>1</code>:
+<code>curl -X POST -H 'Content-Type: text/caddyfile' --data-binary @Caddyfile.ratio1 http://127.0.0.1:2019/load</code>
+(where <code>Caddyfile.ratio1</code> is the deployed Caddyfile with the
+<code>renewal_window_ratio {$CADDY_RENEWAL_RATIO}</code> line
+uncommented and set to literal <code>1</code>). The graceful reload
+re-manages the cert -&gt; <code>certNeedsRenewal</code> returns true via
+the unconditional ratio check -&gt; in-process renewal + hot-swap.</li>
+<li><strong>Observe the rotation.</strong> Poll
+<code>openssl s_client ... | openssl x509 -noout -serial -startdate</code>
+(bounded timeout, e.g. 60 s) until the serial differs from
+<code>serial_1</code>; capture <code>leaf_2.pem</code>,
+<code>serial_2</code>, <code>nb_2</code>. Corroborate in the Caddy JSON
+log: <code>renewing certificate</code> then
+<code>certificate renewed successfully</code> (+
+<code>certificate is in configured renewal window based on expiration date</code>).</li>
+<li><strong>Stop the probe; record
+<code>ok</code>/<code>fail</code>.</strong></li>
+<li><strong>Assert (PASS requires ALL):</strong>
+<ul>
+<li><code>serial_2 != serial_1</code> <strong>and</strong>
+<code>nb_2 &gt; nb_1</code> (real re-issue);</li>
+<li><code>cert_chain_roots_in leaf_2.pem pebble_ca_bundle.pem</code> ==
+0 (new cert roots in the run's Pebble CA);</li>
+<li><code>cert_not_expired leaf_2.pem</code> == 0 <strong>and</strong>
+<code>cert_san_matches leaf_2.pem proxy.hermetic.test</code> == 0;</li>
+<li><code>fail == 0</code> across the whole window (zero-downtime).</li>
+</ul></li>
+<li><strong>Reset (rate-limit / renew-storm hygiene).</strong>
+<code>POST /load</code> the ORIGINAL config (ratio back to the default
+<code>0.3333</code>) so Caddy stops renewing every maintenance pass.
+(Moot against Pebble, correct discipline for the staging/prod
+cutover.)</li>
+<li><strong>Determinism (§11.4.50).</strong> Repeat steps 2-8 N times
+(default 3), asserting identical PASS + identical assertion outcomes
+each iteration; because the renewal is within one boot, the CA bundle
+from step 1 is reused (Q3.1).</li>
+<li><strong>Evidence (§11.4.69 / §11.4.107).</strong> Persist under
+<code>qa-results/&lt;run-id&gt;/letsencrypt_rotation/</code>:
+<code>leaf_1.pem</code>, <code>leaf_2.pem</code>, the serial/notBefore
+captures, the Caddy renewal log lines, the availability
+<code>ok</code>/<code>fail</code> counters, and
+<code>pebble_ca_bundle.pem</code>.</li>
+</ol>
+<p><strong>RED baseline (§11.4.115, optional but recommended).</strong>
+Before the fix/lever is wired, the same harness with the availability
+probe but WITHOUT step 4 (or with a broken force-lever) must show the
+serial NEVER changes within the timeout -&gt; the test FAILs
+(<code>serial_2 == serial_1</code>), proving the assertion genuinely
+catches "no rotation." Flipping in Lever A turns it GREEN.</p>
+<p><strong>Anti-bluff (§11.4 / §11.4.107).</strong> The proof is the
+tuple <em>(serial changed AND notBefore advanced AND new leaf chains to
+the run's Pebble CA AND new leaf valid AND 0 dropped connections)</em>
+with captured PEMs — never a log line alone, never
+<code>PEBBLE_VA_ALWAYS_VALID</code> (which the compose correctly sets to
+<code>0</code>; setting it to <code>1</code> would not exercise DNS-01
+and would be a §11.4 PASS-bluff for this phase).</p>
+<hr />
+<h2
+id="honest-gaps-unconfirmed--runtime-method-stated-inline-none-block-phase-5">Honest
+gaps (UNCONFIRMED — runtime method stated inline; none block
+Phase-5)</h2>
+<ul>
+<li><strong>Exact <code>POST /load</code> -&gt; new-serial
+latency</strong> (Pebble VA scheduling + acmez retries). Method: the
+procedure POLLS the served serial with a bounded timeout;
+<code>PEBBLE_VA_NOSLEEP=1</code> + <code>NONCEREJECT=0</code> (already
+set) keep it prompt.</li>
+<li><strong>Whether <code>certmagic v0.21.3</code> populates the ACME
+order <code>notAfter</code> from Caddy
+<code>cert_lifetime</code></strong> (Pebble v2.6.0 <em>would</em> honor
+it). Method: <code>openssl x509 -noout -startdate -enddate</code> on an
+issued leaf after setting <code>cert_lifetime</code>. Not needed for
+Lever A.</li>
+<li><strong>Whether the availability probe records literally 0 failures
+across the reload+swap on this host</strong> — this is precisely what
+the test MEASURES (the zero-downtime claim is asserted from Caddy docs
+and PROVEN by the probe, not assumed).</li>
+<li><strong>Renewal sync vs async on the load path</strong>
+(<code>config.go</code> <code>renew()</code> calls
+<code>RenewCertAsync</code>/<code>RenewCertSync</code> depending on
+context). The poll-until-serial-changes design is robust to either.</li>
+</ul>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>Caddy <code>tls</code> directive (renewal_window_ratio, dns,
+resolvers, trusted_roots; ARI "is a suggestion") — <a
+href="https://caddyserver.com/docs/caddyfile/directives/tls">https://caddyserver.com/docs/caddyfile/directives/tls</a></li>
+<li>Caddy global options (renewal_window_ratio default 0.3333; ARI/ratio
+note) — <a
+href="https://caddyserver.com/docs/caddyfile/options">https://caddyserver.com/docs/caddyfile/options</a></li>
+<li>Caddy Automatic HTTPS (background cert management; renewal
+zero-downtime hot-swap) — <a
+href="https://caddyserver.com/docs/automatic-https">https://caddyserver.com/docs/automatic-https</a></li>
+<li>Caddy API (<code>POST /load</code> "incurs zero downtime"; rollback
+on failure) — <a
+href="https://caddyserver.com/docs/api">https://caddyserver.com/docs/api</a></li>
+<li>Caddy community — "How to force renewal of Let's Encrypt
+certificates" (Matt Holt: ratio=1 + reload "checks when the config is
+first loaded"; delete+reload) — <a
+href="https://caddy.community/t/how-to-force-renewal-of-lets-encrypt-certificates/14843">https://caddy.community/t/how-to-force-renewal-of-lets-encrypt-certificates/14843</a></li>
+<li>Caddy issue #6789 — "reload --force won't recache certificates"
+(v2.9.0-beta.3, 2025-01-16; reload does not re-read storage for a
+same-identity cert) — <a
+href="https://github.com/caddyserver/caddy/issues/6789">https://github.com/caddyserver/caddy/issues/6789</a></li>
+<li>Caddy issue #5589 — cert cache flush on config reload — <a
+href="https://github.com/caddyserver/caddy/issues/5589">https://github.com/caddyserver/caddy/issues/5589</a></li>
+<li>Caddy issue #5516 — ARI support request — <a
+href="https://github.com/caddyserver/caddy/issues/5516">https://github.com/caddyserver/caddy/issues/5516</a></li>
+<li>certmagic <code>certificates.go</code> @v0.21.3
+(<code>certNeedsRenewal</code>, <code>currentlyInRenewalWindow</code>) —
+<a
+href="https://github.com/caddyserver/certmagic/blob/v0.21.3/certificates.go">https://github.com/caddyserver/certmagic/blob/v0.21.3/certificates.go</a></li>
+<li>certmagic <code>config.go</code> @v0.21.3 (load-time
+<code>renew()</code> path; ARI update; renew log strings) — <a
+href="https://github.com/caddyserver/certmagic/blob/v0.21.3/config.go">https://github.com/caddyserver/certmagic/blob/v0.21.3/config.go</a></li>
+<li>certmagic <code>maintain.go</code> (master, RenewCheckInterval=10m
+default; ARI refresh gating; DisableARI) — <a
+href="https://github.com/caddyserver/certmagic/blob/master/maintain.go">https://github.com/caddyserver/certmagic/blob/master/maintain.go</a></li>
+<li>certmagic <code>certificates.go</code> (master, cross-check of the
+same logic + updated comments) — <a
+href="https://github.com/caddyserver/certmagic/blob/master/certificates.go">https://github.com/caddyserver/certmagic/blob/master/certificates.go</a></li>
+<li>Caddy <code>go.mod</code> @v2.8.4 (pins certmagic v0.21.3 + acmez/v2
+v2.0.1) — <a
+href="https://github.com/caddyserver/caddy/blob/v2.8.4/go.mod">https://github.com/caddyserver/caddy/blob/v2.8.4/go.mod</a></li>
+<li>certmagic ARI implementation PR #286 (Matt Holt) — <a
+href="https://github.com/caddyserver/certmagic/pull/286">https://github.com/caddyserver/certmagic/pull/286</a></li>
+<li>Pebble <code>wfe/wfe.go</code> @v2.6.0
+(<code>renewalInfoPath</code>, <code>determineARIWindow</code>; no
+<code>/set-renewal-info/</code>) — <a
+href="https://github.com/letsencrypt/pebble/blob/v2.6.0/wfe/wfe.go">https://github.com/letsencrypt/pebble/blob/v2.6.0/wfe/wfe.go</a></li>
+<li>Pebble <code>core/types.go</code> @v2.6.0
+(<code>RenewalInfoSimple</code> 2/3-of-lifetime +/-1d window;
+<code>RenewalInfoImmediate</code> 1h-past window) — <a
+href="https://github.com/letsencrypt/pebble/blob/v2.6.0/core/types.go">https://github.com/letsencrypt/pebble/blob/v2.6.0/core/types.go</a></li>
+<li>Pebble <code>ca/ca.go</code> @v2.6.0 (default validity + honors
+requested notBefore/notAfter) — <a
+href="https://github.com/letsencrypt/pebble/blob/v2.6.0/ca/ca.go">https://github.com/letsencrypt/pebble/blob/v2.6.0/ca/ca.go</a></li>
+<li>Pebble <code>test/config/pebble-config.json</code> @v2.6.0
+(<code>certificateValidityPeriod</code> 157766400s ~= 5y) — <a
+href="https://github.com/letsencrypt/pebble/blob/v2.6.0/test/config/pebble-config.json">https://github.com/letsencrypt/pebble/blob/v2.6.0/test/config/pebble-config.json</a></li>
+<li>Pebble Releases (v2.6.0 2024-05-31, v2.7.0 2025-01-24, v2.8.0
+2025-06-05, v2.9.0 2025-12-18, v2.10.1 2026-04-20) — <a
+href="https://github.com/letsencrypt/pebble/releases">https://github.com/letsencrypt/pebble/releases</a></li>
+<li>Pebble PR #461 "Implement latest draft-ietf-acme-ari spec" (merged
+2024-05-24 -&gt; in v2.6.0) — <a
+href="https://github.com/letsencrypt/pebble/pull/461">https://github.com/letsencrypt/pebble/pull/461</a></li>
+<li>Pebble PR #484 "return logical and compliant ARI windows for
+expiring certs" (merged 2025-02-21 -&gt; v2.8.0) — <a
+href="https://github.com/letsencrypt/pebble/pull/484">https://github.com/letsencrypt/pebble/pull/484</a></li>
+<li>Pebble PR #501 "add overriding of ARI response" /
+<code>/set-renewal-info/</code> (merged 2025-06-05 -&gt; v2.8.0) — <a
+href="https://github.com/letsencrypt/pebble/pull/501">https://github.com/letsencrypt/pebble/pull/501</a></li>
+<li>Pebble issue #403 "ACME Renewal Information (ARI)" (closed via #461)
+— <a
+href="https://github.com/letsencrypt/pebble/issues/403">https://github.com/letsencrypt/pebble/issues/403</a></li>
+<li>RFC 9773 — ACME Renewal Information (ARI) Extension (suggestedWindow
+start/end semantics) — <a
+href="https://datatracker.ietf.org/doc/rfc9773/">https://datatracker.ietf.org/doc/rfc9773/</a></li>
+<li>Let's Encrypt — "An Engineer's Guide to Integrating ARI into
+Existing ACME Clients" (2024-04-25) — <a
+href="https://letsencrypt.org/2024/04/25/guide-to-integrating-ari-into-existing-acme-clients">https://letsencrypt.org/2024/04/25/guide-to-integrating-ari-into-existing-acme-clients</a></li>
+</ul>
+<p><strong>Source-file reads at pinned version tags (via
+<code>gh api</code>, 2026-07-01):</strong>
+<code>letsencrypt/pebble@v2.6.0</code>: <code>wfe/wfe.go</code>,
+<code>core/types.go</code>, <code>ca/ca.go</code>,
+<code>test/config/pebble-config.json</code>.
+<code>caddyserver/caddy@v2.8.4</code>: <code>go.mod</code>.
+<code>caddyserver/certmagic@v0.21.3</code>:
+<code>certificates.go</code>, <code>config.go</code> (+
+<code>maintain.go</code>/<code>certificates.go</code> @master for
+cross-check).</p>
+</body>
+</html>

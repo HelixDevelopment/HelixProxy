@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ANALYSIS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="lets-encrypt-hermetic-https--deep-research-caddy--pebble--challtestsrv-dns-01">Let's
+Encrypt Hermetic HTTPS — Deep Research (Caddy + Pebble + challtestsrv,
+DNS-01)</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T10:06:36Z <strong>Authority:</strong> Helix Constitution
+§11.4.150 (deep multi-angle research before workstream commitment) +
+§11.4.99 (latest-source cross-reference) + §11.4.6 (no-guessing — every
+claim cited or marked UNCONFIRMED). <strong>Scope:</strong> de-risk the
+hermetic (offline) issuance + auto-renewal phases (Phase 3 build-out,
+Phase 5 rotation test) of the Let's Encrypt HTTPS workstream in
+<code>helix_proxy</code>. <strong>Locked operator decisions (inputs, not
+under research):</strong> TLS client = <strong>Caddy auto-HTTPS</strong>
+(Caddy is BOTH the in-process ACME client AND the TLS terminator;
+renewal is Caddy's in-process loop — NO cron / CI / systemd timer /
+hooks, per §11.4.156); ACME challenge = <strong>DNS-01</strong>; rollout
+= <strong>hermetic (Pebble) + LE-staging first</strong>, real domain
+deferred. <strong>Consumes:</strong>
+<code>tests/letsencrypt/cert_analyzer.sh</code>
+(<code>cert_chain_roots_in</code> / <code>cert_not_expired</code> /
+<code>cert_san_matches</code> / <code>cert_days_remaining</code> /
+<code>cert_renewal_due</code>) — the client-and-challenge-AGNOSTIC PEM
+analyzer that scores the RESULTING certificate.</p>
+<blockquote>
+<p><strong>Method note (§11.4.6 / §11.4.99):</strong> all facts below
+are cited to primary sources (project READMEs / official Caddy docs /
+maintainer statements) fetched <strong>2026-07-01</strong>. Where a
+source is silent or I could not confirm from a primary source, the claim
+is marked <strong>UNCONFIRMED</strong> with the concrete method to
+obtain the fact at runtime — never guessed.</p>
+</blockquote>
+<hr />
+<h2 id="q1--pebble-as-a-local-hermetic-acme-server">Q1 — Pebble as a
+local hermetic ACME server</h2>
+<p><strong>What it is.</strong> Pebble (<code>letsencrypt/pebble</code>)
+is a miniature RFC-8555 ACME test CA — "a small RFC 8555 ACME test
+server not suited for a production certificate authority." It is the
+intended offline stand-in for Boulder / Let's Encrypt.</p>
+<p><strong>How to run it (three forms, all cited from the
+README):</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (a) container image (recommended for hermetic use)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> run <span class="at">-p</span> 14000:14000 <span class="at">-p</span> 15000:15000 <span class="at">-e</span> <span class="st">&quot;PEBBLE_VA_NOSLEEP=1&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  ghcr.io/letsencrypt/pebble:latest</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># (b) docker-compose (the repo ships a compose file)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">docker-compose</span> up</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># (c) binary</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">pebble</span> <span class="at">-config</span> ./test/config/pebble-config.json</span></code></pre></div>
+<p><strong>Ports / endpoints (README):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACME <strong>directory URL</strong></td>
+<td><code>https://localhost:14000/dir</code></td>
+</tr>
+<tr>
+<td>ACME port</td>
+<td><code>14000</code></td>
+</tr>
+<tr>
+<td><strong>Management</strong> interface (HTTPS)</td>
+<td><code>https://localhost:15000</code></td>
+</tr>
+<tr>
+<td>Issuance <strong>root</strong> (fetch at runtime)</td>
+<td><code>GET https://localhost:15000/roots/0</code></td>
+</tr>
+<tr>
+<td>Issuance <strong>intermediate</strong> (fetch at runtime)</td>
+<td><code>GET https://localhost:15000/intermediates/0</code></td>
+</tr>
+<tr>
+<td>Alt root retrieval (also seen)</td>
+<td><code>GET https://localhost:14000/root</code></td>
+</tr>
+<tr>
+<td>Default HTTP-01 validation port</td>
+<td><code>5002</code></td>
+</tr>
+<tr>
+<td>Default TLS-ALPN-01 port</td>
+<td><code>5001</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Its test CA — TWO distinct CAs (do not conflate; this is the
+#1 gotcha, see Q6):</strong></p>
+<ul>
+<li><strong><code>test/certs/pebble.minica.pem</code></strong> signs
+Pebble's <strong>own HTTPS endpoints</strong> (the <code>:14000</code>
+directory and <code>:15000</code> management interface). A client
+(Caddy, curl) must trust THIS to <em>talk to</em> Pebble over HTTPS.
+Files: <code>test/certs/pebble.minica.pem</code>,
+<code>test/certs/pebble.minica.key.pem</code>,
+<code>test/certs/localhost/</code> (the end-entity cert for the Pebble
+HTTPS server). This CA is <strong>static in the repo</strong> and its
+private key is <strong>public</strong> — README: "Do not add the
+<code>pebble.minica.pem</code> CA to the system-wide trust store."</li>
+<li>The <strong>issuance root/intermediate</strong> returned by
+<code>/roots/0</code> + <code>/intermediates/0</code> sign the
+certificates Pebble <strong>issues to ACME clients</strong>. This is
+what the test asserts the resulting leaf chains to (Q5).</li>
+</ul>
+<p><strong>Caveats — Pebble deliberately randomizes
+(README):</strong></p>
+<ul>
+<li>Issuance CA is <strong>regenerated on every launch</strong> —
+"Pebble's root certificate is regenerated on every launch… Pebble does
+not support non-volatile storage… and will randomize keys/certificates
+used for issuance" (issue #152 / README). <strong>Consequence:</strong>
+a <em>static</em> expected-CA fixture is INVALID across restarts — the
+test MUST fetch <code>/roots/0</code> (+ <code>/intermediates/0</code>)
+dynamically each run (drives Q5 design).</li>
+<li>Validation Authority sleeps a random <strong>0–15 s</strong> between
+attempts unless <code>PEBBLE_VA_NOSLEEP=1</code>.</li>
+<li>Rejects <strong>5 %</strong> of valid nonces by default
+(<code>PEBBLE_WFE_NONCEREJECT</code>, set <code>=0</code> to
+disable).</li>
+<li>Reuses authorizations ~50 % of the time
+(<code>PEBBLE_AUTHZREUSE</code>).</li>
+<li><code>-strict false</code> recommended for test stability.</li>
+</ul>
+<p><strong>Key env vars (README):</strong>
+<code>PEBBLE_VA_NOSLEEP=1</code>, <code>PEBBLE_VA_ALWAYS_VALID=1</code>
+(skips actual challenge validation — see Q3 fidelity note),
+<code>PEBBLE_VA_SLEEPTIME</code>, <code>PEBBLE_WFE_NONCEREJECT=0</code>,
+<code>PEBBLE_ALTERNATE_ROOTS</code>, <code>PEBBLE_CHAIN_LENGTH</code>
+(chain depth, min 1). <strong>DNS wiring flag:</strong>
+<code>pebble -config … -dnsserver &lt;host&gt;:8053</code> points
+Pebble's VA at an external DNS server (challtestsrv) instead of the
+system resolver — mandatory for hermetic DNS-01.</p>
+<p><strong>UNCONFIRMED:</strong> the exact validity period (in days) of
+a Pebble-<em>issued</em> leaf. No primary source consulted stated a
+number, and I found no config knob for it. Method to obtain at runtime:
+<code>openssl x509 -in &lt;leaf.pem&gt; -noout -startdate -enddate</code>.
+(This does not block Phase 5 — the force-renewal lever in Q4 is
+validity-period-independent.)</p>
+<p>Sources: <a
+href="https://github.com/letsencrypt/pebble/blob/main/README.md">pebble
+README</a>, <a href="https://github.com/letsencrypt/pebble">pebble
+repo</a>, <a
+href="https://github.com/letsencrypt/pebble/blob/main/test/certs/README.md">test/certs
+README</a>, <a
+href="https://github.com/letsencrypt/pebble/issues/152">issue #152 "get
+hold of root certificate"</a>, <a
+href="https://letsencrypt.org/2025/04/30/pebbleacmeimplementation">LE
+blog "How Pebble Supports ACME Client Developers"</a> — accessed
+2026-07-01.</p>
+<hr />
+<h2
+id="q2--pebble-challtestsrv-serving-dns-01-responses-hermetically">Q2 —
+pebble-challtestsrv: serving DNS-01 responses hermetically</h2>
+<p><strong>What it is.</strong> <code>pebble-challtestsrv</code>
+(bundled in <code>letsencrypt/pebble</code> under
+<code>cmd/pebble-challtestsrv</code>; library form
+<code>letsencrypt/challtestsrv</code>) is a TEST-ONLY mock challenge +
+DNS server: it runs HTTP-01, HTTPS HTTP-01, DNS-01 and TLS-ALPN-01
+responders plus a <strong>mock DNS server</strong> answering
+<code>A/AAAA/TXT/CNAME/CAA</code>, all mutated live via an
+<strong>unauthenticated HTTP management API</strong>. README: "trivially
+insecure, offering no authentication whatsoever. Only use … in a
+controlled test environment."</p>
+<p><strong>Command-line flags + DEFAULT ports (cmd README):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Default</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-dnsserver</code></td>
+<td><code>:8053</code></td>
+<td><strong>mock DNS server</strong> (UDP+TCP) — Pebble's VA and Caddy's
+self-check point here</td>
+</tr>
+<tr>
+<td><code>-management</code></td>
+<td><code>:8055</code></td>
+<td><strong>HTTP management API</strong> (set/clear records)</td>
+</tr>
+<tr>
+<td><code>-http01</code></td>
+<td><code>:5002</code></td>
+<td>HTTP-01 responder (unused for DNS-01)</td>
+</tr>
+<tr>
+<td><code>-https01</code></td>
+<td><code>:5003</code></td>
+<td>HTTPS HTTP-01 responder (unused)</td>
+</tr>
+<tr>
+<td><code>-tlsalpn01</code></td>
+<td><code>:5001</code></td>
+<td>TLS-ALPN-01 responder (unused)</td>
+</tr>
+<tr>
+<td><code>-defaultIPv4</code></td>
+<td><code>127.0.0.1</code></td>
+<td>default A answer</td>
+</tr>
+<tr>
+<td><code>-defaultIPv6</code></td>
+<td><code>::1</code></td>
+<td>default AAAA answer (see IPv6 gotcha, Q6)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Publishing / clearing a DNS-01 TXT record (management API on
+:8055):</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># publish the challenge TXT (</span><span class="al">NOTE</span><span class="co"> the REQUIRED trailing &#39;.&#39; on host)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-d</span> <span class="st">&#39;{&quot;host&quot;:&quot;_acme-challenge.proxy.test.&quot;, &quot;value&quot;:&quot;&lt;base64url-challenge-digest&gt;&quot;}&#39;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  http://localhost:8055/set-txt</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># clear it after validation</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-d</span> <span class="st">&#39;{&quot;host&quot;:&quot;_acme-challenge.proxy.test.&quot;}&#39;</span> <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  http://localhost:8055/clear-txt</span></code></pre></div>
+<p><strong>Mock A / defaults (used to make the FQDN resolve inside the
+podman net):</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-d</span> <span class="st">&#39;{&quot;host&quot;:&quot;proxy.test.&quot;, &quot;addresses&quot;:[&quot;10.89.0.20&quot;]}&#39;</span>  http://localhost:8055/add-a</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-d</span> <span class="st">&#39;{&quot;ip&quot;:&quot;10.89.0.20&quot;}&#39;</span>  http://localhost:8055/set-default-ipv4</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST <span class="at">-d</span> <span class="st">&#39;{&quot;ip&quot;:&quot;&quot;}&#39;</span>   http://localhost:8055/set-default-ipv6   <span class="co"># blank AAAA — see Q6</span></span></code></pre></div>
+<p><strong>How the CA resolves it.</strong> The mock DNS server listens
+on <code>:8053</code> and answers <code>A/AAAA/TXT/CAA</code>. When
+Pebble's VA validates DNS-01 it issues a
+<code>TXT _acme-challenge.&lt;domain&gt;</code> query to whatever
+<code>-dnsserver</code> points at; challtestsrv returns the value
+previously POSTed to <code>/set-txt</code>. This closes the loop
+<strong>with no real DNS provider and no real domain</strong>.</p>
+<p>Sources: <a
+href="https://github.com/letsencrypt/pebble/blob/main/cmd/pebble-challtestsrv/README.md">pebble-challtestsrv
+cmd README</a>, <a
+href="https://github.com/letsencrypt/challtestsrv">challtestsrv
+repo</a>, <a
+href="https://github.com/letsencrypt/challtestsrv/blob/master/README.md">challtestsrv
+README</a>, <a
+href="https://manpages.ubuntu.com/manpages/noble/man1/pebble-challtestsrv.1.html">Ubuntu
+manpage</a> — accessed 2026-07-01.</p>
+<hr />
+<h2
+id="q3--caddy-dns-01-does-it-need-a-custom-xcaddy-build-can-challtestsrv-be-used-without-a-provider-plugin">Q3
+— Caddy DNS-01: does it need a custom (xcaddy) build? Can challtestsrv
+be used without a provider plugin?</h2>
+<p><strong>Fact 1 — mainline Caddy needs a DNS provider MODULE for ANY
+DNS-01.</strong> The official Caddy binary/image ships
+<strong>no</strong> DNS provider modules. The <code>tls</code>
+directive's <code>dns</code> subdirective requires a module "which must
+be plugged in from one of the <code>caddy-dns</code> repositories,"
+compiled at build time with <strong>xcaddy</strong>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># custom image = stock caddy builder + the DNS provider module</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> caddy:builder <span class="kw">AS</span> build</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">xcaddy</span> build <span class="at">--with</span> github.com/caddy-dns/<span class="op">&lt;</span>provider<span class="op">&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> caddy:latest</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=build</span> /usr/bin/caddy /usr/bin/caddy</span></code></pre></div>
+<p><strong>Fact 2 — there is NO off-the-shelf <code>caddy-dns</code>
+provider for challtestsrv.</strong> challtestsrv exposes its own HTTP
+<code>set-txt</code>/<code>clear-txt</code> API (Q2); stock Caddy cannot
+drive it, because Caddy's DNS-01 solver writes the TXT through a
+<strong>libdns provider</strong> (certmagic → acmez → libdns), not
+through challtestsrv's bespoke API. <code>PEBBLE_VA_ALWAYS_VALID</code>
+/ <code>dns_challenge_override_domain</code> do <strong>not</strong>
+remove the provider requirement — Caddy still needs a provider to
+<em>attempt</em> DNS-01. So challtestsrv <strong>cannot</strong> be used
+by stock Caddy without wiring. This is the honest crux of Q3.</p>
+<p><strong>Therefore, three hermetic options (pick one in Phase
+3):</strong></p>
+<ul>
+<li><p><strong>Option A — tiny custom libdns provider → challtestsrv
+(fully hermetic, minimal SERVICES, ~60 LOC).</strong> Write a small
+Caddy/libdns module (<code>dns.providers.challtestsrv</code>)
+implementing <code>libdns.RecordAppender</code> +
+<code>RecordDeleter</code> that POSTs to challtestsrv
+<code>:8055/set-txt</code> and <code>/clear-txt</code>. Compile via
+<code>xcaddy build --with &lt;that-module&gt;</code>. This genuinely
+exercises Caddy's DNS-01 code path end-to-end against the SAME
+challtestsrv the CA queries. Cost: one small owned Go module to maintain
+(extend-don't-reimplement, §11.4.74 — could live in a
+<code>caddy-dns/challtestsrv</code>-style upstream).</p></li>
+<li><p><strong>Option B — acme-dns server + existing
+<code>caddy-dns/acmedns</code> (zero custom code, more
+SERVICES).</strong> Run <code>joohoi/acme-dns</code> as the
+authoritative DNS + build Caddy
+<code>--with github.com/caddy-dns/acmedns</code>. Caddyfile:</p>
+<pre class="caddyfile"><code>tls {
+  dns acmedns {
+    username &lt;u&gt;
+    password &lt;p&gt;
+    subdomain &lt;subdomain&gt;
+    server_url http://acme-dns:8080
+  }
+}</code></pre>
+<p>Pebble's <code>-dnsserver</code> points at acme-dns
+(<code>:53</code>); Caddy writes TXT via acme-dns's HTTP API.
+<strong>challtestsrv is not used in this variant.</strong> Cost:
+acme-dns has its own SQLite + a one-time account-registration step (a
+§11.4.98(B)-permissible bootstrap, outside the test), and requires a
+<code>_acme-challenge</code> CNAME → acme-dns subdomain (acme-dns serves
+it, so still hermetic).</p></li>
+<li><p><strong>Option C — <code>PEBBLE_VA_ALWAYS_VALID=1</code> (NOT a
+DNS-01 proof — reduced fidelity).</strong> Skips challenge validation
+entirely, so NO provider/challtestsrv is needed and
+issuance+chain+renewal plumbing can be smoke-tested. <strong>But it does
+not exercise DNS-01 at all</strong> — using it as <em>the</em> DNS-01
+proof would be a §11.4 PASS-bluff (green while the DNS-01 path is
+unproven). Acceptable only as a first plumbing smoke, explicitly
+labelled, never as the Phase-5 evidence.</p></li>
+</ul>
+<p><strong>Recommendation:</strong> <strong>Option A</strong> for the
+tightest hermetic footprint (Pebble + challtestsrv + custom-Caddy, three
+services, one shared DNS mock for both the CA and Caddy's self-check) —
+OR <strong>Option B</strong> if the operator prefers zero owned Go over
+one extra service. Both are genuinely hermetic and genuinely exercise
+DNS-01. Option C is a labelled smoke only.</p>
+<p>Sources: <a
+href="https://caddyserver.com/docs/caddyfile/directives/tls">Caddy
+<code>tls</code> directive</a>, <a
+href="https://caddy.community/t/how-to-use-dns-provider-modules-in-caddy-2/8148">How
+to use DNS provider modules in Caddy 2</a>, <a
+href="https://github.com/caddyserver/xcaddy">xcaddy</a>, <a
+href="https://github.com/caddy-dns/acmedns">caddy-dns/acmedns</a>, <a
+href="https://pkg.go.dev/github.com/caddyserver/certmagic">certmagic
+(libdns DNS01Solver)</a>, <a
+href="https://github.com/CaddyBuilds/caddy-cloudflare">caddy-dns/cloudflare
+Dockerfile example</a> — accessed 2026-07-01.</p>
+<hr />
+<h2
+id="q4--caddy-auto-renewal-trigger-window-forcing-a-near-expiry-renewal-zero-downtime-reload-observability">Q4
+— Caddy auto-renewal: trigger window, forcing a near-expiry renewal,
+zero-downtime reload, observability</h2>
+<p><strong>Renewal window (default &amp; formula).</strong> Caddy renews
+in-process when the remaining lifetime drops to the
+<code>renewal_window_ratio</code>. Default
+<strong><code>0.3333</code></strong> → renew when ≤ 1/3 of the lifetime
+remains (30 d on a 90 d cert). Exact certmagic formula:</p>
+<pre><code>renewAt = notBefore + (notAfter - notBefore) * (1 - renewal_window_ratio)</code></pre>
+<p>Both a <strong>global</strong> option and a per-site
+<code>tls { renewal_window_ratio &lt;r&gt; }</code> subdirective.
+<strong>ACME ARI</strong> (Automated Renewal Information) may override
+this ratio if the CA advertises it (the CA dictates the window) — a
+possible confounder for a deterministic rotation test (see Q6).</p>
+<p><strong>Requested cert lifetime.</strong> Global
+<code>cert_lifetime &lt;duration&gt;</code> — "validity period to ask
+the CA to issue a certificate for. Default <code>0</code> (CA chooses,
+usually 90 days)." (Whether Pebble honors a requested
+<code>notAfter</code> is <strong>UNCONFIRMED</strong> — not needed for
+the force-renew lever below.)</p>
+<p><strong>Forcing a near-expiry renewal (rotation test) — two
+authoritative methods:</strong></p>
+<ul>
+<li><strong>(preferred, deterministic)
+<code>renewal_window_ratio 1</code> + reload.</strong> Per Caddy author
+Matt Holt: "Caddy will immediately renew the certificate regardless of
+scan time, because it always checks when the config is first loaded."
+Setting the ratio to <code>1</code> makes
+<code>renewAt ≈ notBefore</code>, so the current cert is already "due"
+and Caddy renews on the next config load. Revert afterwards (rate-limit
+hygiene — moot against Pebble).</li>
+<li><strong>(alternative) delete the cert from storage +
+reload.</strong> Remove
+<code>&lt;storage&gt;/certificates/&lt;acme-ca-host&gt;-directory/&lt;domain&gt;/&lt;domain&gt;.{crt,key,json}</code>
+then <code>caddy reload</code>; Caddy re-issues automatically ("the
+first request against this domain performed the certificate
+renewal").</li>
+</ul>
+<p><strong>Zero-downtime reload / hot-swap.</strong> Caddy applies new
+config with graceful, zero-downtime reload
+(<code>caddy reload --config …</code> or admin API
+<code>POST /load</code>); on renewal it "swaps out the old certificate
+with the new one … zero downtime" — connections are not dropped across
+the swap. (Caveat: a config <em>reload</em> flushes the in-memory cert
+cache and reloads from storage — issue #5589 — so distinguish "renewal
+hot-swap" (no downtime) from "full config reload".)</p>
+<p><strong>Observability (how a test SEES a renewal
+happened):</strong></p>
+<ul>
+<li><strong>Admin API</strong> on <code>localhost:2019</code> (global
+<code>admin &lt;addr&gt;</code>, default <code>localhost:2019</code> or
+<code>CADDY_ADMIN</code>) — <code>GET /config/</code> to read live
+config; <code>POST /load</code> to reload. No dedicated "force-renew"
+admin endpoint exists.</li>
+<li><strong>Structured logs</strong> — Caddy emits a
+certificate-obtained/renewed log event. <strong>UNCONFIRMED exact
+string</strong> (docs consulted did not quote it); method to capture:
+run Caddy with JSON logging and grep the log stream for the
+certificate-management logger (<code>tls</code>/<code>tls.obtain</code>)
+emitting an obtained/renewed entry. Treat the log as corroborating
+evidence, not the sole proof.</li>
+<li><strong>The cert itself is the primary evidence</strong> — compare
+leaf <strong>serial</strong> and <strong>notBefore</strong> before vs
+after (<code>openssl x509 -noout -serial -startdate</code>): a changed
+serial + advanced notBefore proves a real re-issue (not a cache
+reload).</li>
+</ul>
+<p>Sources: <a
+href="https://caddyserver.com/docs/caddyfile/directives/tls">Caddy
+<code>tls</code> directive</a>, <a
+href="https://caddyserver.com/docs/caddyfile/options">Caddy global
+options</a>, <a
+href="https://caddyserver.com/docs/automatic-https">Caddy
+automatic-https</a>, <a
+href="https://github.com/caddyserver/certmagic">certmagic</a>, <a
+href="https://caddy.community/t/how-to-force-renewal-of-lets-encrypt-certificates/14843">How
+to force renewal (Matt Holt)</a>, <a
+href="https://github.com/caddyserver/caddy/issues/5589">cert-cache-flush
+issue #5589</a>, <a
+href="https://deepwiki.com/caddyserver/caddy/4.2.3-certificate-storage-and-caching">DeepWiki
+cert storage &amp; caching</a> — accessed 2026-07-01.</p>
+<hr />
+<h2
+id="q5--trustverification-asserting-the-resulting-cert-chains-to-the-pebble-test-ca">Q5
+— Trust/verification: asserting the resulting cert chains to the Pebble
+test CA</h2>
+<p><strong>Runtime CA retrieval (mandatory — Pebble regenerates the
+issuance CA each launch, Q1):</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fetch THIS run&#39;s issuance chain from Pebble&#39;s management interface (-k: its own</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># endpoint is signed by pebble.minica.pem, NOT the issuance CA — see Q6)</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sk</span> https://pebble:15000/roots/0         <span class="at">-o</span> pebble_root.pem</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sk</span> https://pebble:15000/intermediates/0 <span class="at">-o</span> pebble_intermediate.pem</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> pebble_intermediate.pem pebble_root.pem   <span class="op">&gt;</span> pebble_ca_bundle.pem</span></code></pre></div>
+<p><strong>Pull the leaf Caddy is actually serving (proves the deployed
+artifact, not storage):</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> s_client <span class="at">-connect</span> caddy:443 <span class="at">-servername</span> proxy.test <span class="op">&lt;</span>/dev/null <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="dt">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="ex">openssl</span> x509 <span class="op">&gt;</span> served_leaf.pem</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># (alternatively read &lt;storage&gt;/certificates/&lt;ca&gt;-directory/proxy.test/proxy.test.crt)</span></span></code></pre></div>
+<p><strong>Feed the existing analyzer
+(<code>tests/letsencrypt/cert_analyzer.sh</code>):</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> tests/letsencrypt/cert_analyzer.sh</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cert_chain_roots_in</span> served_leaf.pem pebble_ca_bundle.pem   <span class="co"># issued by the Pebble run&#39;s CA</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cert_not_expired</span>    served_leaf.pem                        <span class="co"># inside validity window now</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cert_san_matches</span>    served_leaf.pem proxy.test             <span class="co"># SAN covers the served host</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">cert_days_remaining</span> served_leaf.pem                        <span class="co"># scalar for reporting</span></span></code></pre></div>
+<p><strong>Integration note (load-bearing — matches the analyzer's
+implementation).</strong> <code>cert_chain_roots_in</code> runs
+<code>openssl verify -no_check_time -CAfile &lt;expected_ca_pem&gt; &lt;leaf&gt;</code>.
+Pebble issues a <strong>leaf → intermediate → root</strong> chain
+(<code>PEBBLE_CHAIN_LENGTH</code> ≥ 1), so verifying against the
+<strong>root alone</strong> FAILS ("unable to get local issuer
+certificate"). Pass the <strong>root+intermediate BUNDLE</strong> as the
+<code>expected_ca_pem</code> (as above) — <code>openssl verify</code>
+treats every cert in <code>-CAfile</code> as a trust anchor, so the
+bundle both supplies the intermediate and proves the leaf chains into
+the Pebble run's CA. (Alternative: set
+<code>PEBBLE_CHAIN_LENGTH=0</code> for a direct leaf ← root so a
+single-root <code>-CAfile</code> suffices — but the bundle approach is
+closer to production chain shape and needs no Pebble reconfiguration.)
+<code>-no_check_time</code> keeps the issuance check orthogonal to
+<code>cert_not_expired</code> (an expired-but-correctly-rooted cert
+still passes the chain check and fails the expiry check — by
+design).</p>
+<p>Sources: <a
+href="https://github.com/letsencrypt/pebble/blob/main/test/certs/README.md">test/certs
+README</a>, <a
+href="https://github.com/letsencrypt/pebble/issues/152">pebble issue
+#152</a>, <a
+href="https://blog.xoxzo.com/2020/11/18/root-certificates-generation-using-acme-server-pebble/">Xoxzo
+"Root certificates generation using Pebble"</a>, <a
+href="https://community.letsencrypt.org/t/ssl-cannot-get-local-issuer-certificate-when-querying-pebble-server/230842">LE
+community "cannot get local issuer certificate querying Pebble"</a> —
+accessed 2026-07-01.</p>
+<hr />
+<h2 id="q6--common-pitfalls--gotchas-honest-negative-findings-11499">Q6
+— Common pitfalls / gotchas (honest negative findings, §11.4.99)</h2>
+<ol type="1">
+<li><strong>TWO CAs — the #1 conflation trap.</strong>
+<code>pebble.minica.pem</code> signs Pebble's OWN
+<code>:14000</code>/<code>:15000</code> HTTPS endpoints → Caddy must
+trust it (via <code>acme_ca_root</code>/<code>ca_root</code>) <em>to
+talk to Pebble</em>. The <code>/roots/0</code> issuance CA signs what
+Pebble ISSUES → the test asserts the leaf chains to <em>that</em>.
+Trusting the wrong one = "x509: certificate signed by unknown authority"
+on the ACME connection, or a chain assertion that never passes.</li>
+<li><strong>Pebble regenerates the issuance CA every launch</strong>
+(Q1) → NEVER pin a static expected-CA fixture; fetch
+<code>/roots/0</code> + <code>/intermediates/0</code> at runtime each
+run. A committed golden CA PEM will pass once then break on the next
+boot.</li>
+<li><strong>DNS resolver wiring is TWO-sided.</strong> (a) Pebble's VA
+must be pointed at challtestsrv:
+<code>pebble … -dnsserver challtestsrv:8053</code> (Pebble does NOT use
+system DNS for validation when set). (b) <strong>Caddy's own pre-flight
+propagation self-check</strong> must ALSO resolve via challtestsrv — set
+<code>tls { resolvers challtestsrv:8053 }</code>, else Caddy queries the
+system resolver, never sees the TXT, and stalls until
+<code>propagation_timeout</code>. Keep
+<code>propagation_delay</code>/<code>propagation_timeout</code> small
+in-test.</li>
+<li><strong>challtestsrv default AAAA <code>::1</code>
+interferes</strong> (confirmed in the field). Its default IPv6 answer
+can take precedence over your A record; blank it:
+<code>curl -X POST -d '{"ip":""}' http://challtestsrv:8055/set-default-ipv6</code>.</li>
+<li><strong>Trailing <code>.</code> required</strong> on
+<code>set-txt</code>/<code>clear-txt</code>/query host names
+(<code>_acme-challenge.proxy.test.</code>). Missing dot = no match =
+validation timeout.</li>
+<li><strong>Pebble randomization can look like flakiness.</strong>
+Default 0–15 s VA sleep and 5 % nonce rejection → set
+<code>PEBBLE_VA_NOSLEEP=1</code>, <code>PEBBLE_WFE_NONCEREJECT=0</code>,
+and <code>-strict false</code>. acmez/Caddy retries nonces
+automatically, but tight per-attempt timeouts can still surface it.</li>
+<li><strong>Pebble management interface is HTTPS</strong>, signed by
+<code>pebble.minica.pem</code> — curl needs <code>-k</code> (or trust
+minica). Fetching <code>/roots/0</code> without <code>-k</code>/trust
+fails.</li>
+<li><strong>stock Caddy image has no DNS module</strong> (Q3) → a custom
+xcaddy build is mandatory; do the build via the containers submodule /
+§11.4.173 containerized build, never an ad-hoc host
+<code>docker build</code>.</li>
+<li><strong>Admin API is plaintext HTTP on <code>:2019</code>, bound to
+<code>localhost</code> by default.</strong> To reach it from a sibling
+container/test, set <code>admin 0.0.0.0:2019</code> (or
+<code>CADDY_ADMIN</code>) — but treat it as test-only (no auth).</li>
+<li><strong>ACME ARI may override
+<code>renewal_window_ratio</code>.</strong> If Pebble advertises
+<code>renewalInfo</code>, Caddy honors the CA-dictated window, which can
+defeat a ratio-based rotation test. The
+<code>renewal_window_ratio 1</code> + reload lever (Q4) forces renewal
+at config-load time regardless — prefer it. <strong>UNCONFIRMED</strong>
+whether this Pebble build serves ARI; verify by watching for a
+<code>renewalInfo</code> request in Pebble logs, and fall back to the
+delete-storage+reload method if ARI interferes.</li>
+<li><strong>Config reload vs renewal hot-swap.</strong> A full
+<code>POST /load</code> flushes the in-memory cert cache and reloads
+from storage (issue #5589); the <em>renewal</em> swap is the
+zero-downtime one. For the zero-downtime assertion, force renewal
+(ratio=1 or delete+reload) and probe availability across the swap —
+don't conflate a cache-flush blip with a renewal.</li>
+<li><strong>Clock/validity.</strong> Container clock must be sane
+(Pebble issues time-bounded certs). <code>cert_lifetime</code> asks the
+CA for a lifetime but Pebble's honoring is <strong>UNCONFIRMED</strong>;
+the force-renew lever is validity-independent so this does not block
+Phase 5.</li>
+</ol>
+<p>Sources: <a
+href="https://community.letsencrypt.org/t/trouble-setting-up-pebble-challtestsrv-in-local-docker-env/135870">LE
+community "pebble-challtestsrv in local docker"</a>, <a
+href="https://github.com/letsencrypt/pebble/blob/main/README.md">pebble
+README</a>, <a
+href="https://github.com/letsencrypt/pebble/blob/main/cmd/pebble-challtestsrv/README.md">pebble-challtestsrv
+cmd README</a>, <a
+href="https://caddyserver.com/docs/caddyfile/directives/tls">Caddy
+<code>tls</code> directive</a>, <a
+href="https://caddyserver.com/docs/caddyfile/options">Caddy global
+options</a>, <a
+href="https://github.com/caddyserver/caddy/issues/5589">caddy issue
+#5589 cert cache flush</a> — accessed 2026-07-01.</p>
+<hr />
+<h2 id="recommended-hermetic-architecture-phase-3">Recommended hermetic
+architecture (Phase 3)</h2>
+<p><strong>Chosen path: Option A — Pebble + pebble-challtestsrv +
+custom-built Caddy (custom libdns → challtestsrv), three services, fully
+offline, DNS-01 genuinely exercised.</strong> (Option B — acme-dns +
+<code>caddy-dns/acmedns</code> — is the drop-in fallback if the operator
+prefers no owned Go over one extra service; wiring is identical except
+challtestsrv→acme-dns and no custom module.)</p>
+<pre><code>                     rootless podman network  &quot;letest_net&quot;  (§11.4.76 / §11.4.161)
+ +---------------+   ACME (DNS-01) https://pebble:14000/dir   +------------------+
+ |     caddy     |-------------------------------------------&gt;|      pebble       |
+ | (custom xcaddy|   trusts pebble.minica.pem via ca_root     |  ACME test CA     |
+ |  + challtestsrv   POST set-txt/clear-txt :8055 --+          |  :14000 dir       |
+ |  libdns module|                                  v          |  :15000 mgmt      |
+ |  :80 :443 :2019                          +----------------+ |  -dnsserver --+   |
+ +------+--------+                          |  challtestsrv  |&lt;-- TXT query --+   |
+        | resolvers challtestsrv:8053       |  DNS :8053     |   (Pebble VA)      |
+        +-----------------------------------&gt;  mgmt :8055    +--------------------+
+          (Caddy self-check reads same TXT) +----------------+</code></pre>
+<p><strong>Service declarations — via the containers submodule
+(<code>submodules/containers</code>, <code>pkg/compose</code> +
+<code>pkg/boot</code>), NOT ad-hoc podman</strong> (repo boots ONLY
+through the submodule; §11.4.76). Declare three
+<code>compose.HelixService</code> entries (real API surface confirmed in
+<code>submodules/containers/pkg/compose/helix_project.go</code>:
+<code>HelixService</code>, <code>HelixHealthCheck</code>,
+<code>HelixResourceLimits</code>, <code>PortMapping</code>; construct
+with <code>compose.NewHelixComposeProject(name, services)</code>), boot
+via <code>boot.BootManager.BootAll</code> /
+<code>orchestrator.Up</code>, and health-check via
+<code>pkg/health</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Image / build</th>
+<th>Ports (host:container)</th>
+<th>Key env / command</th>
+<th>Health (<code>pkg/health</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pebble</code></td>
+<td><code>ghcr.io/letsencrypt/pebble:latest</code></td>
+<td><code>14000:14000</code>, <code>15000:15000</code></td>
+<td><code>PEBBLE_VA_NOSLEEP=1</code>,
+<code>PEBBLE_WFE_NONCEREJECT=0</code>; cmd
+<code>pebble -config /test/config/pebble-config.json -dnsserver challtestsrv:8053 -strict false</code></td>
+<td><code>HealthTCP</code> on <code>14000</code> (TLS+non-system CA
+=&gt; TCP, or <code>HealthCustom</code> GETting <code>/dir</code> with
+minica injected)</td>
+</tr>
+<tr>
+<td><code>challtestsrv</code></td>
+<td><code>ghcr.io/letsencrypt/pebble-challtestsrv:latest</code></td>
+<td><code>8053:8053/udp</code>, <code>8053:8053/tcp</code>,
+<code>8055:8055</code></td>
+<td>cmd <code>pebble-challtestsrv -defaultIPv6 ""</code> (blank AAAA,
+gotcha #4)</td>
+<td><code>HealthTCP</code> on <code>8055</code></td>
+</tr>
+<tr>
+<td><code>caddy</code></td>
+<td><strong>custom xcaddy image</strong>
+(<code>xcaddy build --with &lt;challtestsrv-libdns-module&gt;</code>),
+built via containers submodule (§11.4.173)</td>
+<td><code>80:80</code>, <code>443:443</code>,
+<code>2019:2019</code></td>
+<td>mount <code>Caddyfile</code> + <code>pebble.minica.pem</code>;
+<code>admin 0.0.0.0:2019</code></td>
+<td><code>HealthHTTP</code> on <code>http://caddy:2019/config/</code>
+(admin API, plaintext)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Caddyfile (Phase-3 hermetic, DNS-01, Option A):</strong></p>
+<pre class="caddyfile"><code>{
+    admin 0.0.0.0:2019
+    acme_ca      https://pebble:14000/dir      # Pebble ACME directory (global)
+    acme_ca_root /etc/caddy/pebble.minica.pem   # trust Pebble&#39;s OWN https endpoint
+    email        hermetic@proxy.test
+    # (Phase-5 rotation flips renewal_window_ratio to 1 — see below)
+}
+
+proxy.test {
+    tls {
+        dns challtestsrv http://challtestsrv:8055   # custom libdns -&gt; set-txt/clear-txt
+        resolvers challtestsrv:8053                  # Caddy self-check reads the same mock DNS
+        propagation_delay   2s
+        propagation_timeout 30s
+    }
+    respond &quot;hermetic-ok&quot;
+}</code></pre>
+<p><strong>Bootstrap ordering:</strong> boot <code>challtestsrv</code> +
+<code>pebble</code> first (health-gated), POST the
+<code>add-a</code>/<code>set-default-ipv4</code> +
+<code>set-default-ipv6 ""</code> records to challtestsrv
+<code>:8055</code>, then boot <code>caddy</code> (its first request
+triggers issuance). Pebble's per-run <code>/roots/0</code> +
+<code>/intermediates/0</code> are fetched at assertion time (Q5), never
+pinned.</p>
+<p><strong>LE-staging step (after hermetic passes):</strong> same
+Caddyfile with
+<code>acme_ca https://acme-staging-v02.api.letsencrypt.org/directory</code>,
+drop <code>acme_ca_root</code>/<code>resolvers</code>, and swap the DNS
+provider to the real one — deferred until a real domain is
+available.</p>
+<hr />
+<h2 id="renewalrotation-test-approach-phase-5">Renewal/rotation test
+approach (Phase 5)</h2>
+<p><strong>Goal:</strong> prove Caddy's IN-PROCESS renewal loop
+genuinely re-issues a new cert, that the new cert still chains to the
+(same-run) Pebble CA and is valid, and that the swap is zero-downtime —
+all hermetic, autonomous, re-runnable (§11.4.98), with captured physical
+evidence (§11.4.5/§11.4.69/§11.4.107).</p>
+<p><strong>Force lever (deterministic, authoritative — Q4):</strong> set
+<code>renewal_window_ratio 1</code> (global) and
+<code>caddy reload</code> / <code>POST :2019/load</code> =&gt; Caddy
+renews immediately at config-load ("it always checks when the config is
+first loaded" — Matt Holt). Fallback if ARI interferes (gotcha #10):
+delete
+<code>&lt;storage&gt;/certificates/&lt;ca&gt;-directory/proxy.test/proxy.test.{crt,key,json}</code>
++ reload.</p>
+<p><strong>Procedure (RED-on-broken -&gt; GREEN, §11.4.115;
+extend-to-all-cases, §11.4.146):</strong></p>
+<ol type="1">
+<li><strong>Baseline</strong> — after Phase-3 issuance, capture leaf #1:
+<code>openssl s_client -connect caddy:443 -servername proxy.test | openssl x509 &gt; leaf_1.pem</code>;
+record <code>serial_1</code>, <code>notBefore_1</code>
+(<code>openssl x509 -noout -serial -startdate</code>).</li>
+<li><strong>Availability probe on</strong> — start a tight
+<code>curl https://caddy/ --resolve proxy.test:443:&lt;ip&gt; --cacert pebble_ca_bundle.pem</code>
+loop (or continuous s_client) sampling every ~0.2 s; count
+failures.</li>
+<li><strong>Force renewal</strong> — apply
+<code>renewal_window_ratio 1</code> + reload (lever above).</li>
+<li><strong>Observe</strong> — poll the served leaf until
+<code>serial != serial_1</code> (new issuance), capture leaf #2 -&gt;
+<code>leaf_2.pem</code>, record <code>serial_2</code>,
+<code>notBefore_2</code>. Corroborate with the Caddy JSON log
+obtained/renewed event (string UNCONFIRMED — grep the <code>tls</code>
+logger).</li>
+<li><strong>Assert (consume <code>cert_analyzer.sh</code>, Q5):</strong>
+<ul>
+<li><code>serial_2 != serial_1</code> AND
+<code>notBefore_2 &gt; notBefore_1</code> (a REAL re-issue, not a cache
+reload — gotcha #11).</li>
+<li><code>cert_chain_roots_in leaf_2.pem pebble_ca_bundle.pem</code>
+(new cert still roots in the Pebble run's CA).</li>
+<li><code>cert_not_expired leaf_2.pem</code> and
+<code>cert_san_matches leaf_2.pem proxy.test</code>.</li>
+<li>availability probe: <strong>0 failed requests</strong> across the
+swap (zero-downtime).</li>
+</ul></li>
+<li><strong>Evidence (§11.4.69):</strong> persist
+<code>leaf_1.pem</code>, <code>leaf_2.pem</code>, both serial/date
+captures, the Caddy renewal log line, and the availability-probe counter
+under <code>qa-results/&lt;run-id&gt;/letsencrypt_rotation/</code>.</li>
+<li><strong>Reset</strong> — remove <code>renewal_window_ratio 1</code>
+(revert to default <code>0.3333</code>).</li>
+</ol>
+<p><strong>Determinism (§11.4.50):</strong> run the rotation N× (default
+3), asserting identical PASS + identical assertion outcomes; Pebble's
+per-run CA regeneration means the CA bundle is re-fetched each
+iteration. <strong>Anti-bluff:</strong> the proof is the changed-serial
++ re-chained + still-valid + zero-downtime tuple with captured PEMs —
+never a log line alone, never <code>PEBBLE_VA_ALWAYS_VALID</code> (which
+would not exercise DNS-01 and would be a §11.4 PASS-bluff for this
+phase).</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>Pebble README — <a
+href="https://github.com/letsencrypt/pebble/blob/main/README.md">https://github.com/letsencrypt/pebble/blob/main/README.md</a></li>
+<li>Pebble repository — <a
+href="https://github.com/letsencrypt/pebble">https://github.com/letsencrypt/pebble</a></li>
+<li>Pebble test/certs README — <a
+href="https://github.com/letsencrypt/pebble/blob/main/test/certs/README.md">https://github.com/letsencrypt/pebble/blob/main/test/certs/README.md</a></li>
+<li>Pebble issue #152 (root certificate retrieval / per-launch
+regeneration) — <a
+href="https://github.com/letsencrypt/pebble/issues/152">https://github.com/letsencrypt/pebble/issues/152</a></li>
+<li>Let's Encrypt blog — "How Pebble Supports ACME Client Developers"
+(2025-04-30) — <a
+href="https://letsencrypt.org/2025/04/30/pebbleacmeimplementation">https://letsencrypt.org/2025/04/30/pebbleacmeimplementation</a></li>
+<li>pebble-challtestsrv cmd README — <a
+href="https://github.com/letsencrypt/pebble/blob/main/cmd/pebble-challtestsrv/README.md">https://github.com/letsencrypt/pebble/blob/main/cmd/pebble-challtestsrv/README.md</a></li>
+<li>challtestsrv repository — <a
+href="https://github.com/letsencrypt/challtestsrv">https://github.com/letsencrypt/challtestsrv</a></li>
+<li>challtestsrv README — <a
+href="https://github.com/letsencrypt/challtestsrv/blob/master/README.md">https://github.com/letsencrypt/challtestsrv/blob/master/README.md</a></li>
+<li>pebble-challtestsrv Ubuntu manpage — <a
+href="https://manpages.ubuntu.com/manpages/noble/man1/pebble-challtestsrv.1.html">https://manpages.ubuntu.com/manpages/noble/man1/pebble-challtestsrv.1.html</a></li>
+<li>Caddy <code>tls</code> directive — <a
+href="https://caddyserver.com/docs/caddyfile/directives/tls">https://caddyserver.com/docs/caddyfile/directives/tls</a></li>
+<li>Caddy global options — <a
+href="https://caddyserver.com/docs/caddyfile/options">https://caddyserver.com/docs/caddyfile/options</a></li>
+<li>Caddy automatic-https — <a
+href="https://caddyserver.com/docs/automatic-https">https://caddyserver.com/docs/automatic-https</a></li>
+<li>Caddy <code>acme_server</code> directive — <a
+href="https://caddyserver.com/docs/caddyfile/directives/acme_server">https://caddyserver.com/docs/caddyfile/directives/acme_server</a></li>
+<li>xcaddy — <a
+href="https://github.com/caddyserver/xcaddy">https://github.com/caddyserver/xcaddy</a></li>
+<li>caddy-dns/acmedns — <a
+href="https://github.com/caddy-dns/acmedns">https://github.com/caddy-dns/acmedns</a></li>
+<li>"How to use DNS provider modules in Caddy 2" — <a
+href="https://caddy.community/t/how-to-use-dns-provider-modules-in-caddy-2/8148">https://caddy.community/t/how-to-use-dns-provider-modules-in-caddy-2/8148</a></li>
+<li>certmagic (DNS01Solver / libdns) — <a
+href="https://pkg.go.dev/github.com/caddyserver/certmagic">https://pkg.go.dev/github.com/caddyserver/certmagic</a>
+and <a
+href="https://github.com/caddyserver/certmagic">https://github.com/caddyserver/certmagic</a></li>
+<li>caddy-dns/cloudflare (xcaddy Dockerfile pattern) — <a
+href="https://github.com/CaddyBuilds/caddy-cloudflare">https://github.com/CaddyBuilds/caddy-cloudflare</a></li>
+<li>Caddy community — "How to force renewal of Let's Encrypt
+certificates" (Matt Holt: ratio=1 + reload) — <a
+href="https://caddy.community/t/how-to-force-renewal-of-lets-encrypt-certificates/14843">https://caddy.community/t/how-to-force-renewal-of-lets-encrypt-certificates/14843</a></li>
+<li>Caddy issue #5589 (cert cache flush on config reload) — <a
+href="https://github.com/caddyserver/caddy/issues/5589">https://github.com/caddyserver/caddy/issues/5589</a></li>
+<li>DeepWiki — Caddy certificate storage &amp; caching (renewAt formula)
+— <a
+href="https://deepwiki.com/caddyserver/caddy/4.2.3-certificate-storage-and-caching">https://deepwiki.com/caddyserver/caddy/4.2.3-certificate-storage-and-caching</a></li>
+<li>LE community — "Trouble setting up pebble-challtestsrv in local
+docker env" (IPv6 gotcha, -dnsserver wiring) — <a
+href="https://community.letsencrypt.org/t/trouble-setting-up-pebble-challtestsrv-in-local-docker-env/135870">https://community.letsencrypt.org/t/trouble-setting-up-pebble-challtestsrv-in-local-docker-env/135870</a></li>
+<li>LE community — "SSL cannot get local issuer certificate when
+querying Pebble" — <a
+href="https://community.letsencrypt.org/t/ssl-cannot-get-local-issuer-certificate-when-querying-pebble-server/230842">https://community.letsencrypt.org/t/ssl-cannot-get-local-issuer-certificate-when-querying-pebble-server/230842</a></li>
+<li>Xoxzo blog — "Root certificates generation using ACME server Pebble"
+— <a
+href="https://blog.xoxzo.com/2020/11/18/root-certificates-generation-using-acme-server-pebble/">https://blog.xoxzo.com/2020/11/18/root-certificates-generation-using-acme-server-pebble/</a></li>
+</ul>
+<p><strong>Honest gaps (UNCONFIRMED — method to obtain stated
+inline):</strong> exact Pebble-issued leaf validity period; whether
+Pebble honors a client-requested
+<code>notAfter</code>/<code>cert_lifetime</code>; whether this Pebble
+build serves ACME ARI; the exact Caddy "certificate obtained/renewed"
+log string. None block Phase 3 or Phase 5 — the force-renew lever and
+the changed-serial assertion are independent of all four.</p>
+<hr />
+<h2 id="addendum-2026-07-01--coredns-soa-front-design-gap-fix">Addendum
+2026-07-01 — CoreDNS SOA-front (design-gap fix)</h2>
+<p><strong>Status:</strong> Phase-3 hermetic issuance is GREEN — a real
+certificate was issued and verified (<code>cert_chain_roots_in</code>
+PASS against the per-run Pebble issuance CA). Getting there required
+correcting a design gap in the Option-A architecture above that only
+surfaced at runtime.</p>
+<h3 id="the-design-gap-the-original-option-a-missed">The design gap the
+original Option A missed</h3>
+<p>The Option-A plan (a custom Caddy libdns provider that POSTs the
+challenge TXT to challtestsrv <code>:8055/set-txt</code>) is correct
+about how the TXT is <em>published</em> — but it silently assumed
+certmagic would present the TXT and stop there. It does not.
+<strong>Before</strong> presenting the DNS-01 TXT, certmagic runs a
+<strong>zone-determination SOA walk</strong>: to know which zone to
+write <code>_acme-challenge.hermetic.test</code> into, it queries for
+the <code>SOA</code> record, walking UP the name
+(<code>_acme-challenge.hermetic.test.</code> →
+<code>hermetic.test.</code> → <code>test.</code> → <code>.</code>) until
+a nameserver answers authoritatively for a zone.</p>
+<p>challtestsrv is a <em>mock</em> responder — it answers
+<code>A/AAAA/TXT/CNAME/CAA</code>, but it answers
+<strong><code>NOTIMP</code></strong> (not-implemented) to
+<code>SOA</code> queries. So certmagic's SOA walk got
+<code>NOTIMP</code> at every level and failed with:</p>
+<pre><code>could not determine zone for domain &quot;_acme-challenge.hermetic.test&quot;: ... NOTIMP</code></pre>
+<p>This was verified directly with <code>dig</code>:</p>
+<pre><code>dig @&lt;challtestsrv-ip&gt; -p 8053 SOA hermetic.test.
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOTIMP, ...</code></pre>
+<p>The TXT-publish path (Q2/Q3) was never the blocker; the
+<strong>zone-determination path that runs first</strong> was. Option A
+as written had no SOA authority in the hermetic net, so certmagic could
+never even get to presenting the TXT.</p>
+<h3
+id="the-fix--insert-a-coredns-authoritative-soa-front-for-hermetictest">The
+fix — insert a CoreDNS authoritative SOA front for
+<code>hermetic.test</code></h3>
+<p>Add a <strong>CoreDNS</strong> service that is authoritative for
+<code>hermetic.test</code>, sitting in front of challtestsrv:</p>
+<ul>
+<li><strong>CoreDNS answers the <code>SOA</code></strong> for
+<code>hermetic.test</code> via its <code>template</code> plugin
+(<code>template IN SOA hermetic.test</code>), so certmagic's
+zone-determination walk succeeds at the <code>hermetic.test.</code>
+level.</li>
+<li><strong>CoreDNS <code>fallthrough</code>s every other qtype</strong>
+(crucially the dynamic <code>_acme-challenge.hermetic.test TXT</code>
+that the libdns provider POSTs live) by <code>forward</code>ing to
+challtestsrv — so the actual challenge TXT is still served by
+challtestsrv, unchanged.</li>
+</ul>
+<p>Two non-obvious details were load-bearing (both cost a debug
+cycle):</p>
+<ol type="1">
+<li><p><strong>The SOA MUST be returned in the ANSWER section, with
+owner = the zone apex <code>hermetic.test.</code>.</strong> certmagic
+only accepts the zone from an <strong>ANSWER-section</strong> SOA whose
+owner name is the queried zone. A first attempt returned the SOA in the
+<strong>AUTHORITY</strong> section (the conventional place for SOA on a
+negative/referral answer) — certmagic did <strong>not</strong> treat
+that as "this is the zone", so the walk <em>continued upward</em> to
+<code>test.</code>, where CoreDNS is not authoritative and returned
+<strong><code>REFUSED</code></strong>, and issuance failed again.
+Putting the SOA in the ANSWER section with owner
+<code>hermetic.test.</code> stopped the walk at the right level. The
+CoreDNS <code>template</code> plugin is configured to emit the SOA as an
+ANSWER-section record for the apex.</p></li>
+<li><p><strong>CoreDNS <code>forward</code> needs an IP, not a
+name.</strong> The <code>forward . &lt;upstream&gt;</code> directive
+does not name-resolve its upstream inside the hermetic net (there is no
+bootstrap resolver for it), so the Corefile must point at challtestsrv's
+<strong>live pod IP</strong>. Because that IP changes per boot (rootless
+podman assigns it dynamically), <code>phase3_hermetic_issue.sh</code>
+<strong>rewrites <code>coredns/Corefile</code> with challtestsrv's
+current pod IP on each boot</strong> before starting CoreDNS.</p></li>
+</ol>
+<h3
+id="resulting-wiring-supersedes-the-option-a-diagram-for-the-soa-path">Resulting
+wiring (supersedes the Option-A diagram for the SOA path)</h3>
+<pre><code>                         hermetic podman net
+ caddy (custom xcaddy + challtestsrv libdns)
+   ACME_RESOLVERS=coredns:53   ---- SOA walk ----&gt;  coredns (authoritative hermetic.test)
+                                                      |  template IN SOA hermetic.test  (ANSWER, owner=apex)
+                                                      |  fallthrough / forward . &lt;challtestsrv-IP:8053&gt;
+   libdns POST set-txt :8055 ---------------------&gt;  challtestsrv
+                                                      |  DNS :8053  (A/AAAA/TXT/CNAME/CAA; NOTIMP for SOA)
+ pebble  (VA)  -- TXT _acme-challenge query --&gt;  challtestsrv:8053  (direct; NO SOA walk)</code></pre>
+<p>Key routing facts:</p>
+<ul>
+<li><strong>Caddy</strong> is pointed at CoreDNS for its own pre-flight
+resolution: <code>ACME_RESOLVERS=coredns:53</code> (name-resolved inside
+the net — CoreDNS is the resolver, so certmagic's SOA walk hits CoreDNS
+first).</li>
+<li><strong>Pebble's VA</strong> still queries <strong>challtestsrv:8053
+directly</strong> (<code>pebble … -dnsserver challtestsrv:8053</code>).
+Pebble's validation does a straight
+<code>TXT _acme-challenge.&lt;domain&gt;</code> lookup — it does
+<strong>not</strong> do certmagic's zone-determination SOA walk — so it
+needs no SOA front and talks to challtestsrv unchanged. Only the
+<em>Caddy/certmagic</em> side needed CoreDNS.</li>
+<li><strong>CoreDNS forwards the TXT</strong> (and A/AAAA/CAA) to
+challtestsrv, so the single live TXT the libdns provider publishes is
+what both the Caddy self-check (via CoreDNS→challtestsrv) and Pebble's
+VA (direct) observe — one source of truth for the challenge value.</li>
+</ul>
+<h3 id="result-evidence">Result (evidence)</h3>
+<p>With CoreDNS inserted, <code>phase3_hermetic_issue.sh</code> issues a
+<strong>real certificate</strong>: certmagic's SOA walk resolves the
+zone at <code>hermetic.test.</code>, the libdns provider publishes the
+TXT to challtestsrv, Pebble's VA validates it, and the issued leaf
+<strong>chains to the per-run Pebble issuance CA</strong> —
+<code>cert_chain_roots_in</code> PASS against the runtime-fetched
+<code>/roots/0</code> + <code>/intermediates/0</code> bundle (Q5). This
+is the concrete, working instantiation of Option A; the CoreDNS
+SOA-front is the missing piece the original Q3 write-up did not
+anticipate, added here so the architecture section reflects what
+actually issues a cert.</p>
+<p><strong>Honest boundary (§11.4.6):</strong> the CoreDNS-front
+necessity is FACT — the <code>NOTIMP</code>-on-SOA behaviour of
+challtestsrv and the ANSWER-vs-AUTHORITY-section SOA distinction were
+both confirmed by <code>dig</code> and by the reproduced failure→success
+transition, not assumed. The ANSWER-section requirement is certmagic's
+observed zone-acceptance behaviour in this build; the exact certmagic
+code path that rejects an AUTHORITY-section SOA was not read from source
+(method to confirm: trace certmagic's <code>dns01</code> zone-lookup,
+which uses the ANSWER-section SOA owner as the zone). The end-to-end
+result (real cert issued + <code>cert_chain_roots_in</code> PASS) is the
+captured proof the wiring works.</p>
+<h3 id="sources-verified-2026-07-01-addendum">Sources verified
+2026-07-01 (addendum)</h3>
+<ul>
+<li>CoreDNS <code>template</code> plugin (SOA synthesis, ANSWER-section
+records, <code>fallthrough</code>) — <a
+href="https://coredns.io/plugins/template/">https://coredns.io/plugins/template/</a></li>
+<li>CoreDNS <code>forward</code> plugin (upstream MUST be an IP; no
+self-bootstrap name resolution) — <a
+href="https://coredns.io/plugins/forward/">https://coredns.io/plugins/forward/</a></li>
+<li>pebble-challtestsrv cmd README (mock DNS answers
+A/AAAA/TXT/CNAME/CAA; no SOA) — <a
+href="https://github.com/letsencrypt/pebble/blob/main/cmd/pebble-challtestsrv/README.md">https://github.com/letsencrypt/pebble/blob/main/cmd/pebble-challtestsrv/README.md</a></li>
+<li>certmagic DNS-01 zone determination via SOA lookup (libdns
+<code>dns01</code>) — <a
+href="https://pkg.go.dev/github.com/caddyserver/certmagic">https://pkg.go.dev/github.com/caddyserver/certmagic</a>
+and <a
+href="https://github.com/caddyserver/certmagic">https://github.com/caddyserver/certmagic</a></li>
+<li>Pebble <code>-dnsserver</code> (VA points at challtestsrv directly;
+no SOA walk) — <a
+href="https://github.com/letsencrypt/pebble/blob/main/README.md">https://github.com/letsencrypt/pebble/blob/main/README.md</a></li>
+</ul>
+</body>
+</html>
