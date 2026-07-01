@@ -1,7 +1,7 @@
 # Proxy Hardening — Status Summary
 
-**Revision:** 2
-**Last modified:** 2026-07-01T13:14:00Z
+**Revision:** 3
+**Last modified:** 2026-07-01T13:26:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -46,9 +46,15 @@ none of these results can be faked.
 - **The access-control leak test** is honestly **skipped** because the current setup can't
   automatically produce a real "access denied" situation to test against.
 
-**Bottom line:** eight hardening dimensions — including the critical VPN fail-closed safety
-guarantee — are now proven solid with saved evidence; two items remain honestly skipped
-pending operator credentials / a specific topology. No result is overstated.
+**Also proven this round:** the proxy's own unit tests all pass (control-plane, every
+package), and the live Challenge bank passed (web-forward + SOCKS5; the cache check was
+honestly skipped because its log wasn't readable). An audit-record safety concern raised
+during the review turned out to be **already fixed** in the code — we verified it holds.
+
+**Bottom line:** nine hardening/coverage dimensions — including the critical VPN fail-closed
+safety guarantee — are now proven solid with saved evidence; two items remain honestly
+skipped pending operator credentials / a specific topology / a buildable QA binary. No
+result is overstated.
 
 ---
 
@@ -67,7 +73,10 @@ pending operator credentials / a specific topology. No result is overstated.
 | Full-automation (P10 VPN fail-closed) | PASS | `qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt` — tunnel DOWN ⇒ branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged; deterministic ×3 + RED polarity guard (§11.4.50/§11.4.115). Egress-half operator-gated SKIP (§11.4.21) |
 | Race / deadlock | PASS | `qa-results/race/control-plane_race_20260701T125739Z.log` — `go test -race ./...` 11 pkgs, **0 DATA RACE**, EXIT=0 |
 | Benchmarking / performance | PASS | `qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt` — 200/200 204s, `p50=0.086 p95=0.088 p99=0.091`s, 10.841 req/s, `OVERALL=PASS` |
-| Unit / Integration / E2E / Challenges / HelixQA | PENDING | Not re-proven in this hardening round; no captured hardening-round evidence this session (§11.4.6) |
+| Unit | PASS | `qa-results/unit/control-plane_unit_20260701T131306Z.log` — `go test -cover ./...` all pkgs pass; aclhelper 100% / breaker 97.5% / routing 85.9% / … |
+| Challenges | PASS (2/3, 1 SKIP) | `qa-results/challenges/20260701T131440Z/summary.txt` — HTTP-forward + SOCKS5 PASS, cache honest SKIP (access.log unreadable), `RESULT: OK` |
+| HelixQA | SKIP (blocked) | `qa-results/helixqa/20260701T090532Z/` — `helixqa` binary won't build (6 un-vendored own-org siblings); runner + `proxy.yaml` bank present. Honest §11.4.3, not a fake PASS |
+| Integration / E2E | PENDING | Not re-proven in this hardening round; covered by the broader `tests/run-tests.sh` suite (§11.4.6) |
 
 Composes §11.4.45 (integration-status doc), §11.4.56 (two-audience summary), §11.4.169
 (mandatory test-type coverage), §11.4.5/§11.4.69 (captured evidence), §11.4.6 (no-guessing),

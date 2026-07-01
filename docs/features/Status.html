@@ -173,8 +173,8 @@
 </head>
 <body>
 <h1 id="helix_proxy--feature-status">helix_proxy — Feature Status</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T14:15:00Z <strong>Status:</strong> Data plane (Squid
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T15:30:00Z <strong>Status:</strong> Data plane (Squid
 HTTP/HTTPS forward + Dante SOCKS5 + Squid caching) is deployed,
 end-user-reachable, and PASS with captured evidence. The VPN-aware
 control-plane (dynamic routing / control API / health publisher /
@@ -933,13 +933,16 @@ comprehensive PASS via container</td>
 <td>ACL helper (graceful 503)</td>
 <td><strong>UNIT</strong></td>
 <td><strong>UNIT</strong></td>
-<td>SKIP</td>
+<td><strong>PASS</strong> (live P10 fail-closed)</td>
 <td>PENDING</td>
 <td>SKIP</td>
 <td>UNIT (<code>graceful_503</code> self-val)</td>
 <td>SKIP</td>
 <td>N/A</td>
-<td><strong>PENDING</strong></td>
+<td><strong>PENDING</strong> (deployed-stack wiring; P10 VPN fail-closed
+e2e now <strong>PASS</strong> — 3/3 branded 503, 0 leak,
+<code>graceful_503_rc=0</code>:
+<code>qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt</code>)</td>
 </tr>
 <tr>
 <td>PAC generation</td>
@@ -1056,13 +1059,14 @@ negative-SAN)</td>
 <td>benchmark / latency ratchet</td>
 <td>UNIT (<code>benchmark_baseline_ratchet</code> guard)</td>
 <td>SKIP</td>
-<td>SKIP</td>
+<td><strong>PASS</strong> (live 200×204)</td>
 <td>N/A</td>
 <td>N/A</td>
 <td>N/A</td>
 <td>N/A</td>
-<td>SKIP (dynamic stack)</td>
-<td><strong>PENDING</strong> (live SKIP; guard PASS)</td>
+<td><strong>PASS</strong> (p50=0.086s)</td>
+<td><strong>PASS</strong> (live p50=0.086s, 200/200 204; guard PASS —
+<code>qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -1082,14 +1086,32 @@ the HelixQA HTTPExecutor client (<code>mech_http_forward.txt</code> 204,
 204). Unblock: vendor the six modules under
 <code>submodules/</code>.</li>
 <li><strong>Live stress/chaos/ddos/benchmark/memory/concurrency
-SKIP.</strong> These six dynamic-suite runs require the un-deployed
-<code>dynamic</code> stack (P10); all six honest-SKIP
+SKIP.</strong> As of run <code>20260630T221343Z</code> all six
+dynamic-suite runs honest-SKIP against the then-undeployed
+<code>dynamic</code> stack (P10)
 (<code>qa-results/p9-harness/20260630T221343Z/suite_results.txt</code>:
 <code>suites=6 PASS=0 SKIP=6 FAIL=0</code>). Their analyzers are
 self-validated (golden-good PASS / golden-bad FAIL) and their scripts
 parse-clean; the RED regression guards
 (<code>ddos_flood_evidence</code>,
-<code>benchmark_baseline_ratchet</code>) PASS.</li>
+<code>benchmark_baseline_ratchet</code>) PASS. <strong>Update
+2026-07-01:</strong> the <code>dynamic</code> stack was subsequently
+brought up and two of these now have live PASS this round — the
+<strong>forward-proxy benchmark</strong>
+(<code>qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt</code>:
+p50=0.086s, 200/200 204) and the separate <strong>P10 VPN
+fail-closed</strong> dynamic run
+(<code>qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt</code>:
+3/3 branded 503, 0 leak, <code>graceful_503_rc=0</code>); the
+control-plane is also race-clean
+(<code>qa-results/race/control-plane_race_20260701T125739Z.log</code>: 0
+DATA RACE, <code>EXIT=0</code>). The remaining stress/chaos/ddos/memory
+<em>p9-harness dynamic-stack</em> suites still SKIP pending their own
+live runs. (Distinct scope — the <strong>base-proxy</strong> hardening
+variants of stress+chaos, DDoS, memory-soak, and concurrency DID pass
+live this session against <code>:53128</code>; see
+<code>docs/design/hardening/Status.md</code> §11.4.169 matrix. The SKIPs
+here are the separate dynamic-stack p9-harness suites.)</li>
 <li><strong>ACL deny-path</strong> has enforcement but no dedicated
 committed deny-assertion capture — represented PENDING, not folded into
 the allow-path PASS.</li>

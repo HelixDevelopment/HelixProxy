@@ -41,9 +41,12 @@ func putProfileConc(c *http.Client, base, name string) (int, error) {
 // mutex-guarded map write in the fake) followed by (2) one AppendAudit. Under
 // concurrent callers this yields neither a lost update nor partial ENTITY state.
 // (The one genuine non-atomicity — a mutation that commits while its subsequent
-// AppendAudit fails, leaving an un-audited mutation — is a transactional-integrity
-// gap that needs a STORE-LAYER transaction to close, documented at handlers.go
-// `audit`; it is not a concurrency race and is out of the API package's scope.)
+// AppendAudit fails, leaving an un-audited mutation — is now CLOSED by a store-layer
+// transaction: handlers.go `mutateWithAudit` wraps the mutation + AppendAudit in one
+// `store.Queries.WithTx` (Postgres BeginTx→Rollback-on-error; the fake snapshots +
+// restores on rollback), proven by `TestAtomicity_MutationAndAuditCommitTogether`
+// (RED_MODE polarity §11.4.115) + the real-Postgres `TestIntegration_WithTxAtomicAuditAndMutation`.
+// It is not a concurrency race.)
 //
 // This test proves the entity+audit path is race-free + consistent under N parallel
 // mutating callers. Run under `-race` for the data-race proof.

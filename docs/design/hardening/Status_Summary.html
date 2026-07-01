@@ -174,8 +174,8 @@
 <body>
 <h1 id="proxy-hardening--status-summary">Proxy Hardening — Status
 Summary</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T13:14:00Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T13:26:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
@@ -226,10 +226,17 @@ honestly skipped, not faked.</li>
 <strong>skipped</strong> because the current setup can't automatically
 produce a real "access denied" situation to test against.</li>
 </ul>
-<p><strong>Bottom line:</strong> eight hardening dimensions — including
-the critical VPN fail-closed safety guarantee — are now proven solid
-with saved evidence; two items remain honestly skipped pending operator
-credentials / a specific topology. No result is overstated.</p>
+<p><strong>Also proven this round:</strong> the proxy's own unit tests
+all pass (control-plane, every package), and the live Challenge bank
+passed (web-forward + SOCKS5; the cache check was honestly skipped
+because its log wasn't readable). An audit-record safety concern raised
+during the review turned out to be <strong>already fixed</strong> in the
+code — we verified it holds.</p>
+<p><strong>Bottom line:</strong> nine hardening/coverage dimensions —
+including the critical VPN fail-closed safety guarantee — are now proven
+solid with saved evidence; two items remain honestly skipped pending
+operator credentials / a specific topology / a buildable QA binary. No
+result is overstated.</p>
 <hr />
 <h2 id="page-2--for-software-engineers">Page 2 — For software
 engineers</h2>
@@ -304,10 +311,32 @@ RACE</strong>, EXIT=0</td>
 req/s, <code>OVERALL=PASS</code></td>
 </tr>
 <tr>
-<td>Unit / Integration / E2E / Challenges / HelixQA</td>
+<td>Unit</td>
+<td>PASS</td>
+<td><code>qa-results/unit/control-plane_unit_20260701T131306Z.log</code>
+— <code>go test -cover ./...</code> all pkgs pass; aclhelper 100% /
+breaker 97.5% / routing 85.9% / …</td>
+</tr>
+<tr>
+<td>Challenges</td>
+<td>PASS (2/3, 1 SKIP)</td>
+<td><code>qa-results/challenges/20260701T131440Z/summary.txt</code> —
+HTTP-forward + SOCKS5 PASS, cache honest SKIP (access.log unreadable),
+<code>RESULT: OK</code></td>
+</tr>
+<tr>
+<td>HelixQA</td>
+<td>SKIP (blocked)</td>
+<td><code>qa-results/helixqa/20260701T090532Z/</code> —
+<code>helixqa</code> binary won't build (6 un-vendored own-org
+siblings); runner + <code>proxy.yaml</code> bank present. Honest
+§11.4.3, not a fake PASS</td>
+</tr>
+<tr>
+<td>Integration / E2E</td>
 <td>PENDING</td>
-<td>Not re-proven in this hardening round; no captured hardening-round
-evidence this session (§11.4.6)</td>
+<td>Not re-proven in this hardening round; covered by the broader
+<code>tests/run-tests.sh</code> suite (§11.4.6)</td>
 </tr>
 </tbody>
 </table>

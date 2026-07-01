@@ -174,17 +174,20 @@
 <body>
 <h1 id="proxy-hardening--test-type-coverage-status">Proxy Hardening —
 Test-Type Coverage Status</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T13:12:00Z <strong>Status:</strong> In progress — 8 hardening
-test types PASS with captured live evidence (stress+chaos, DDoS,
-concurrency/atomicity, memory-soak, <strong>P10 VPN fail-closed
-full-automation GREEN</strong>, <strong>race/deadlock</strong>,
-<strong>benchmarking/performance</strong>), 1 honest SKIP (security ACL
-— no autonomous real-ACL-deny topology). P10 GREEN was proven live this
-round after recreating the 4 dynamic-stack Podman secrets + booting the
-dynamic stack (tunnel-DOWN ⇒ branded 503 ×3 + NO leak, ×3 deterministic
-+ RED polarity guard). No PASS is claimed without a real
-<code>qa-results/</code> evidence path (§11.4.6).
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T13:26:00Z <strong>Status:</strong> In progress — 9 test types
+PASS with captured live evidence (unit [control-plane, all pkgs pass],
+stress+chaos, DDoS, concurrency/atomicity, memory-soak, <strong>P10 VPN
+fail-closed full-automation GREEN</strong>, <strong>race/deadlock [0
+DATA RACE]</strong>, <strong>benchmarking/performance [data-plane
+p50=86ms + control-plane Go micro-benchmarks]</strong>,
+<strong>Challenges [2 PASS / 1 honest SKIP]</strong>), 2 honest SKIP
+(security ACL — no autonomous real-ACL-deny topology; HelixQA — bank
+blocked on 6 un-vendored siblings), integration + e2e PENDING (broader
+<code>tests/run-tests.sh</code> suite). The control-plane store-layer
+audit-atomicity TOCTOU was investigated this round and found already
+CLOSED (<code>store.WithTx</code>), verified RED→GREEN. No PASS is
+claimed without a real <code>qa-results/</code> evidence path (§11.4.6).
 <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
 integration-status doc reconciling the §11.4.169 test-type-coverage
@@ -240,10 +243,13 @@ captured live this session.</p>
 <tbody>
 <tr>
 <td>Unit</td>
-<td>PENDING</td>
-<td>—</td>
-<td>Not re-proven in this hardening round; no captured hardening-round
-evidence this session (§11.4.6). Tracked in the broader test suite.</td>
+<td>PASS</td>
+<td><code>qa-results/unit/control-plane_unit_20260701T131306Z.log</code></td>
+<td><code>go test -mod=readonly -count=1 -cover ./...</code> on
+<code>control-plane</code>: all packages PASS, 0 failures. Coverage:
+aclhelper 100%, breaker 97.5%, pac 93.3%, routing 85.9%, redis 81.2%,
+vpn 78.6%, compiler 71.2%, api 69.4%, store 64.5%, healthd 61.3% (cmd
+shims / otel = integration-only).</td>
 </tr>
 <tr>
 <td>Integration</td>
@@ -274,17 +280,30 @@ FAILs a fabricated 200 leak (§11.4.115). Egress-half operator-gated SKIP
 </tr>
 <tr>
 <td>Challenges</td>
-<td>PENDING</td>
-<td>—</td>
-<td>Not re-proven in this hardening round; no captured hardening-round
-evidence this session (§11.4.6).</td>
+<td>PASS (2/3, 1 honest SKIP)</td>
+<td><code>qa-results/challenges/20260701T131440Z/summary.txt</code></td>
+<td><code>challenges/scripts/run_proxy_challenges.sh</code> live vs base
+proxy: HTTP-forward <strong>PASS</strong> (<code>Via</code> header +
+through-vs-direct), SOCKS5 <strong>PASS</strong> (204 + HTTPS 200 via
+<code>:51080</code>), cache <strong>SKIP</strong> (access.log not
+readable — client-side <code>Via</code>/<code>Age</code> captured as
+supplementary, no faked <code>TCP_HIT</code>, §11.4.3). Tally
+<code>PASS=2 FAIL=0 SKIP=1</code>, <code>RESULT: OK</code>.</td>
 </tr>
 <tr>
 <td>HelixQA</td>
-<td>PENDING</td>
-<td>—</td>
-<td>Not re-proven in this hardening round; no captured hardening-round
-evidence this session (§11.4.6).</td>
+<td>SKIP (blocked)</td>
+<td><code>qa-results/helixqa/20260701T090532Z/</code> (honest SKIP
+path)</td>
+<td>Honest §11.4.3 SKIP: the <code>helixqa</code> binary won't build
+here — <code>submodules/helix_qa/go.mod</code> <code>replace</code>s 6
+own-org siblings not vendored (<code>doc_processor</code>,
+<code>llm_orchestrator</code>, <code>llm_provider</code>,
+<code>llms_verifier</code>, <code>vision_engine</code>,
+<code>security</code>). Proxy bank
+<code>tools/helixqa/runner/run_proxy_bank.sh</code> (6 cases PRX-*) +
+<code>proxy.yaml</code> present; unblock = vendor the 6 siblings or pass
+<code>HELIXQA_BIN</code>. Not a fake PASS.</td>
 </tr>
 <tr>
 <td>DDoS / load-flood</td>
@@ -321,10 +340,17 @@ Header-hygiene sub-check captured
 <td>Concurrency / atomicity</td>
 <td>PASS</td>
 <td><code>qa-results/concurrency/proxy_concurrency_20260701T122740Z/concurrency.evidence</code>
-(+ <code>clients.tsv</code>)</td>
-<td>40 simultaneous mixed clients (http=20 + socks5=20),
-<code>crosstalk=0 proxy_drop=0 endpoint_limit=0</code>, zero cross-talk.
-<code>OVERALL=PASS</code>.</td>
+(+ <code>clients.tsv</code>) ·
+<code>qa-results/unit/control-plane_toctou_atomicity_20260701T131522Z.log</code></td>
+<td>Data-plane: 40 simultaneous mixed clients (http=20 + socks5=20),
+<code>crosstalk=0 proxy_drop=0 endpoint_limit=0</code>,
+<code>OVERALL=PASS</code>. Control-plane audit-atomicity: the
+store-layer TOCTOU (mutation commits while <code>AppendAudit</code>
+fails) is <strong>CLOSED</strong> —
+<code>handlers.mutateWithAudit</code> wraps mutation+audit in one
+<code>store.WithTx</code> (Postgres BeginTx→Rollback), verified
+RED→GREEN by <code>TestAtomicity_MutationAndAuditCommitTogether</code>
+(§11.4.115 polarity: GREEN PASS / RED FAIL).</td>
 </tr>
 <tr>
 <td>Race / deadlock</td>
@@ -338,9 +364,9 @@ EXIT=0, <strong>0 <code>WARNING: DATA RACE</code></strong>. Real
 concurrent tests spawn goroutines against mutex-guarded shared state
 (<code>internal/api/server.go:34</code>,
 <code>internal/breaker/tunnelbreaker.go:107</code>,
-<code>cmd/healthd/main.go:263</code>). Follow-up (documented, not a
-race): a store-layer TOCTOU un-audited-mutation atomicity gap —
-§11.4.169 concurrency/atomicity item.</td>
+<code>cmd/healthd/main.go:263</code>). The store-layer audit-atomicity
+gap that was investigated this round is already CLOSED + verified (see
+Concurrency/atomicity row).</td>
 </tr>
 <tr>
 <td>Memory</td>
@@ -354,31 +380,36 @@ race): a store-layer TOCTOU un-audited-mutation atomicity gap —
 <tr>
 <td>Benchmarking / performance</td>
 <td>PASS</td>
-<td><code>qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt</code></td>
-<td><code>tests/benchmark/proxy_forward_benchmark.sh</code> live vs base
-proxy: 200/200 proxied 204s, latency
-<code>p50=0.086s p95=0.088s p99=0.091s</code> (min 0.085 / max 0.102 /
-mean 0.087), throughput 10.841 req/s, direct-probe 204,
-<code>OVERALL=PASS</code>. Follow-up (documented):
-<code>control-plane</code> ships zero Go micro-benchmarks — §11.4.169
-Go-bench gap (submodules helix_qa + containers do carry real Go
-benchmarks).</td>
+<td><code>qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt</code>
+·
+<code>qa-results/benchmark/control-plane_gobench_20260701T131745Z.log</code></td>
+<td>Data-plane: <code>tests/benchmark/proxy_forward_benchmark.sh</code>
+live vs base proxy — 200/200 proxied 204s,
+<code>p50=0.086s p95=0.088s p99=0.091s</code> (mean 0.087), 10.841
+req/s, <code>OVERALL=PASS</code>. Control-plane Go micro-benchmarks (gap
+now closed — 3 new <code>*_bench_test.go</code>): <code>Decide</code>
+61–70 ns/op (0 allocs), <code>SelectTunnel</code> 30–101 ns/op (0
+allocs), <code>CompileAll</code> ~39 µs/op (167 allocs),
+<code>ResolveTunnels</code> ~5.7 µs/op.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
 <p>This matrix reconciles the <strong>hardening</strong> test-type
-picture proven in this session only. The 8 hardening-focused types
-(stress+chaos, DDoS, concurrency/atomicity, memory, P10 fail-closed
-full-automation, race/deadlock, benchmarking) are PASS with captured
-live <code>qa-results/</code> evidence. PENDING rows
-(unit/integration/e2e/Challenges/HelixQA) are not claims the underlying
-capability is broken — they mean no hardening-round captured evidence
-exists this session; they are neither PASS nor FAIL and are covered by
-the broader <code>tests/run-tests.sh</code> suite. The single SKIP
-(security ACL) is topology-honest (§11.4.3). Two documented follow-ups
-(store-TOCTOU atomicity gap; <code>control-plane</code> zero Go
-micro-benchmarks) are §11.4.169 items, not regressions. None of this
-substitutes for the §11.4.40 full-suite retest before a release tag.</p>
+picture proven in this session. Nine types (unit, stress+chaos, DDoS,
+concurrency/atomicity, memory, P10 fail-closed full-automation,
+race/deadlock, benchmarking, Challenges) are PASS with captured live
+<code>qa-results/</code> evidence. Two SKIPs are honest (§11.4.3):
+security ACL (no autonomous deny topology on the base stack) and HelixQA
+(bank blocked on 6 un-vendored own-org siblings — the runner +
+<code>proxy.yaml</code> bank exist; unblock = vendor them or pass
+<code>HELIXQA_BIN</code>). Integration + e2e remain PENDING — not claims
+the capability is broken; covered by the broader
+<code>tests/run-tests.sh</code> suite. The two follow-ups flagged
+earlier this round are RESOLVED: the store-layer audit-atomicity TOCTOU
+was found already CLOSED (<code>store.WithTx</code>, verified
+RED→GREEN), and the control-plane Go-benchmark gap is closed (3 new
+<code>*_bench_test.go</code>). None of this substitutes for the §11.4.40
+full-suite retest before a release tag.</p>
 </body>
 </html>

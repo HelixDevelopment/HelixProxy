@@ -174,8 +174,8 @@
 <body>
 <h1 id="helix_proxy--feature-status-summary">helix_proxy — Feature
 Status Summary</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T14:15:00Z <strong>Authority:</strong> §11.4.56 two-audience
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T15:30:00Z <strong>Authority:</strong> §11.4.56 two-audience
 companion to <a href="Status.md"><code>Status.md</code></a>. Inherits
 <code>constitution/Constitution.md</code> per §11.4.35.</p>
 <hr />
@@ -355,12 +355,23 @@ NOT-YET-LIVE PLAN, targets absent); LE <strong>renewal/rotation Phase
 (<code>docs/research/letsencrypt_renewal_20260701/ANALYSIS.md</code> Rev
 3 §11.4.138: ARI on Pebble 2.6.0 dominates
 <code>renewal_window_ratio</code>, <code>/set-renewal-info/</code>
-absent until v2.8.0 PR #501 → needs a Pebble ≥2.8.0 bump). Live
-stress/chaos/ddos/benchmark/memory/concurrency runs SKIP
-(<code>suite_results.txt</code>: <code>PASS=0 SKIP=6 FAIL=0</code>) —
-dynamic stack (P10) not deployed; analyzers self-validated + RED
-regression guards (<code>ddos_flood_evidence</code>,
-<code>benchmark_baseline_ratchet</code>) PASS.</p>
+absent until v2.8.0 PR #501 → needs a Pebble ≥2.8.0 bump). As of run
+<code>20260630T221343Z</code> the live
+stress/chaos/ddos/benchmark/memory/concurrency suites SKIP
+(<code>suite_results.txt</code>: <code>PASS=0 SKIP=6 FAIL=0</code>)
+against the then-undeployed dynamic stack (P10); analyzers
+self-validated + RED regression guards
+(<code>ddos_flood_evidence</code>,
+<code>benchmark_baseline_ratchet</code>) PASS.
+<strong>2026-07-01:</strong> the <code>dynamic</code> stack was brought
+up — <strong>P10 VPN fail-closed</strong> now <strong>PASS</strong>
+(<code>qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt</code>:
+3/3 branded 503, 0 leak, <code>graceful_503_rc=0</code>), the
+<strong>forward-proxy benchmark</strong> now <strong>PASS</strong>
+(<code>qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt</code>:
+p50=0.086s, 200/200 204), and the control-plane is race-clean
+(<code>qa-results/race/control-plane_race_20260701T125739Z.log</code>: 0
+DATA RACE). Remaining stress/chaos/ddos/memory suites still SKIP.</p>
 <p><strong>OPERATOR-BLOCKED:</strong> LE Phase 4 (staging real DNS-01 —
 needs DNS provider + scoped token as Podman secret); LE Phase 6
 (production cutover — operator go-live gate); real VPN egress proof
