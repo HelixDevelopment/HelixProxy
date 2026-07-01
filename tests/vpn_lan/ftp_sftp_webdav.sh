@@ -311,5 +311,65 @@ else
     log 'no curl available for WebDAV/PROPFIND — SKIP (client tool absent)'
 fi
 
+# ============================================================================
+# T3.4 REVERSE LEG (bidirectional_exposure.md §2) — FTP ACTIVE-mode (PORT) data
+# connection server->client. In active mode the client sends PORT/EPRT and the FTP
+# SERVER opens a NEW data connection BACK to the client's advertised port (source
+# :20) — a HOST-INITIATED INGRESS flow that rides no prior outbound state and needs
+# BOTH the return route AND an ingress-allowlist permit for
+# (FTP-server VPN-host -> client active-data port range on the proxy side)
+# (bidir §1.2/§3, operator-gated §11.4.122). If only passive is provisioned, active
+# transfers hang/fail (FACT — slacksite; jscape).
+#
+# Driving active mode autonomously (curl --ftp-port / -P) makes the CLIENT open a
+# transient data LISTENER for the server to connect back to — which THIS test will
+# NEVER open (constraint). So the active reverse leg is exercised ONLY via an
+# operator-supplied driver (HELIX_VPN_FTP_ACTIVE_CMD) that owns that data listener
+# + the ingress-allowlist grant. Driver contract: rc 0 + non-empty output = a real
+# server->client active transfer completed (PASS); an explicit DENIED/REFUSED/
+# BLOCKED / 425 token = the return data channel was refused (fail-closed FAIL,
+# §11.4.68); otherwise honest SKIP. SFTP (single connection) and WebDAV (HTTP
+# request/response via Squid) have NO host-initiated server->client leg —
+# documented N/A below, NOT fabricated (§11.4.6). This section runs only on a
+# genuinely-up bridge (bridge-down already exited 0 at the gate); it opens NO
+# listener and touches NO data-plane port (:53128/:51080).
+# ============================================================================
+ftp_rev_desc='FTP reverse leg — ACTIVE-mode (PORT) data connection server->client (bidir §2)'
+FTP_ACTIVE_CMD=${HELIX_VPN_FTP_ACTIVE_CMD:-}
+if [ -z "$FTP_URL" ]; then
+    ab_skip_with_reason "$ftp_rev_desc" feature_disabled_by_config
+    log 'FTP reverse leg: no FTP server configured — SKIP (not a PASS)'
+elif [ -z "$FTP_ACTIVE_CMD" ]; then
+    ab_skip_with_reason "$ftp_rev_desc" topology_unsupported
+    log 'FTP reverse leg: HELIX_VPN_FTP_ACTIVE_CMD unset — active-mode data is server->client host-initiated ingress needing a client-side data listener (this test opens NONE) + an ingress-allowlist permit for source:20 server->client; supply an operator active-mode driver to exercise it — SKIP (§11.4.6, operator-gated §11.4.122)'
+else
+    ftp_rev_ev="$EV_ROOT/ftp/reverse_active.evidence"
+    ftp_rev_out="$FT_TMPDIR/ftp_active.out"
+    sh -c "$FTP_ACTIVE_CMD" > "$ftp_rev_out" 2>"$EV_ROOT/ftp/active.err"; _ftp_rev_rc=$?
+    {
+        printf 'protocol_test : %s\n' "$ftp_rev_desc"
+        printf 'timestamp_utc : %s\n' "$FT_TS"
+        printf 'direction     : server->client data (active/PORT; host-initiated ingress)\n'
+        printf 'requires      : return-route + ingress-allowlist permit (FTP-server VPN-host -> client active-data port)\n'
+        printf 'driver_rc     : %s\n' "$_ftp_rev_rc"
+        printf 'driver_bytes  : %s\n' "$(wc -c < "$ftp_rev_out" 2>/dev/null | tr -d ' ')"
+        printf 'expected      : a real server->client active-mode data transfer completes\n'
+    } > "$ftp_rev_ev" 2>/dev/null
+    if grep -Eqi 'DENIED|REFUSED|BLOCKED|425' "$ftp_rev_out" 2>/dev/null; then
+        ab_fail "$ftp_rev_desc" "active-mode data connection refused (server could not open the return data channel — both-way path broken, fail-closed §11.4.68); evidence: $ftp_rev_ev"; mark_fail
+    elif [ "$_ftp_rev_rc" = 0 ] && [ -s "$ftp_rev_out" ]; then
+        { printf '\n--- active-mode driver output (server->client transfer evidence) ---\n'; cat "$ftp_rev_out"; } >> "$ftp_rev_ev" 2>/dev/null
+        ab_pass_with_evidence "$ftp_rev_desc" "$ftp_rev_ev" || mark_fail
+    else
+        ab_skip_with_reason "$ftp_rev_desc" network_unreachable_external
+        log "FTP reverse leg: active-mode driver did not complete (rc=$_ftp_rev_rc) — the server->client data channel needs the ingress-allowlisted active-data port up (operator-gated) — SKIP (not a fake PASS)"
+    fi
+fi
+# SFTP + WebDAV reverse leg — DOCUMENTED N/A (§11.4.6): SFTP multiplexes data
+# inside a single client->server connection (no host-initiated callback); WebDAV is
+# HTTP request/response through the existing Squid (no server->client leg). No
+# reverse leg to fabricate; forwards asserted by T3.2 (SFTP) + T3.3 (WebDAV).
+log 'SFTP/WebDAV reverse leg: N/A (§11.4.6) — no host-initiated server->client callback; forwards asserted by T3.2/T3.3'
+
 log "done — evidence root: $EV_ROOT"
 exit "$OVERALL_FAIL"

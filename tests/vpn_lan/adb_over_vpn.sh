@@ -121,8 +121,12 @@ mark_fail() { OVERALL_FAIL=1; }
 AD_TMPDIR=''
 ADB_TARGET=''
 ADB_CONNECTED=0
+ADB_REVERSE_SET=0
 cleanup() {
     if [ "$ADB_CONNECTED" = 1 ] && [ -n "$ADB_TARGET" ] && command -v adb >/dev/null 2>&1; then
+        # Remove ONLY the reverse mapping WE armed, scoped to OUR serial (§11.4.174)
+        # — never a blanket op that would touch operator / lava-* devices.
+        [ "$ADB_REVERSE_SET" = 1 ] && adb -s "$ADB_TARGET" reverse --remove-all >/dev/null 2>&1
         adb disconnect "$ADB_TARGET" >/dev/null 2>&1
     fi
     [ -n "$AD_TMPDIR" ] && rm -rf "$AD_TMPDIR" >/dev/null 2>&1
@@ -237,6 +241,80 @@ flash_ev="$EV_ROOT/flash/boundary.evidence"
 } > "$flash_ev" 2>/dev/null
 ab_skip_with_reason "$flash_desc" operator_attended
 log 'flash is operator-gated (usbip USB-over-IP; real-device flash §11.4.133) — SKIP; boundary documented in '"$flash_ev"
+
+# ============================================================================
+# T7.5 REVERSE LEG (bidirectional_exposure.md §2) — `adb reverse` device->host
+# connect-back. `adb reverse tcp:<p> tcp:<p>` arms a DEVICE-side listener whose
+# connections are tunnelled device->host — the reverse of `adb forward`. Per
+# bidirectional_exposure.md §2 (INFERENCE) this reverse channel is MULTIPLEXED
+# INSIDE the already-established adb connection over routed 5555 and therefore does
+# NOT require a separate proxy-side ingress-allowlist port (it rides the adb
+# transport, not a new inbound socket to the proxy host). It needs the routed 5555
+# up + OUR serial connected+usable (T7.1).
+#
+# We exercise it ONLY on OUR env-configured serial (§11.4.174) and ONLY when the
+# operator supplies a reverse spec (HELIX_VPN_ADB_REVERSE_SPEC, e.g.
+# 'tcp:8081 tcp:8081'): register it, confirm via the READ-ONLY `adb -s <serial>
+# reverse --list`, and REMOVE it in the cleanup trap (scoped to OUR serial only,
+# §11.4.14). Registering a reverse arms a DEVICE-side forward — it opens NO host
+# listener and touches NO host data-plane port (:53128/:51080); nothing dials it
+# in this test (a full device->host data flow would need a host-side target service
+# — operator-gated §11.4.122, honest boundary §11.4.6). This section runs only on a
+# genuinely-up bridge (bridge-down already exited 0 at the gate).
+#   PASS : our reverse mapping registered AND is confirmed present in `--list`.
+#   FAIL : our serial is usable but `adb reverse` did not register/confirm — the
+#          reverse channel could not form over the adb transport (fail-closed §11.4.68).
+#   SKIP : our serial not connected/usable / no reverse spec / adb absent (honest).
+# ============================================================================
+reverse_desc='ADB reverse leg — `adb reverse` device->host connect-back over the adb transport (bidir §2)'
+ADB_REVERSE_SPEC=${HELIX_VPN_ADB_REVERSE_SPEC:-}
+if [ -z "$ADB_HOST" ] || ! command -v adb >/dev/null 2>&1; then
+    ab_skip_with_reason "$reverse_desc" feature_disabled_by_config
+    log 'ADB reverse leg: no ADB device / no adb client — SKIP (not a PASS)'
+elif [ "$ADB_CONNECTED" != 1 ]; then
+    ab_skip_with_reason "$reverse_desc" network_unreachable_external
+    log 'ADB reverse leg: OUR serial is not connected (T7.1 did not connect) — the reverse channel rides the adb connection; SKIP (not a fake PASS)'
+elif [ -z "$ADB_REVERSE_SPEC" ]; then
+    ab_skip_with_reason "$reverse_desc" topology_unsupported
+    log 'ADB reverse leg: HELIX_VPN_ADB_REVERSE_SPEC unset — supply e.g. "tcp:8081 tcp:8081" to arm+confirm the device->host reverse channel; a full data flow needs a host-side target service (operator-gated §11.4.122) — SKIP (§11.4.6)'
+else
+    # Re-confirm OUR serial is in the usable `device` state (read-only, our serial
+    # only §11.4.174). T7.1 owns the usability verdict — a not-usable device here
+    # is a SKIP, not a second FAIL.
+    _rev_state=$(adb devices 2>/dev/null | awk -v s="$ADB_TARGET" '$1==s {print $2; exit}')
+    if [ "${_rev_state:-}" != 'device' ]; then
+        ab_skip_with_reason "$reverse_desc" network_unreachable_external
+        log "ADB reverse leg: OUR serial state='${_rev_state:-absent}' not usable — SKIP (T7.1 owns the usability verdict)"
+    else
+        mkdir -p "$EV_ROOT/reverse" 2>/dev/null || true
+        reverse_ev="$EV_ROOT/reverse/adb_reverse.evidence"
+        reverse_reg="$EV_ROOT/reverse/reverse_register.txt"
+        reverse_list="$EV_ROOT/reverse/reverse_list.txt"
+        # Register the reverse mapping on OUR serial only, then confirm via --list.
+        # shellcheck disable=SC2086
+        adb -s "$ADB_TARGET" reverse $ADB_REVERSE_SPEC > "$reverse_reg" 2>&1; _rev_reg_rc=$?
+        [ "$_rev_reg_rc" = 0 ] && ADB_REVERSE_SET=1
+        adb -s "$ADB_TARGET" reverse --list > "$reverse_list" 2>"$EV_ROOT/reverse/reverse_list.err" || true
+        # The remote-side spec token (first field, e.g. tcp:8081) must appear in --list.
+        _rev_remote=$(printf '%s\n' "$ADB_REVERSE_SPEC" | awk '{print $1; exit}')
+        {
+            printf 'check          : %s\n' "$reverse_desc"
+            printf 'timestamp_utc  : %s\n' "$AD_TS"
+            printf 'adb_serial     : %s\n' "$ADB_TARGET"
+            printf 'direction      : device->host (adb reverse; multiplexed inside the adb transport — no separate proxy-side ingress port, bidir §2 INFERENCE)\n'
+            printf 'reverse_spec   : %s\n' "$ADB_REVERSE_SPEC"
+            printf 'register_rc    : %s\n' "$_rev_reg_rc"
+            printf 'list_token     : %s\n' "$_rev_remote"
+            printf 'expected       : registration rc=0 AND the remote spec present in `adb reverse --list`\n'
+        } > "$reverse_ev" 2>/dev/null
+        if [ "$_rev_reg_rc" = 0 ] && grep -Fq "$_rev_remote" "$reverse_list" 2>/dev/null; then
+            { printf '\n--- adb reverse --list (device->host reverse channel armed) ---\n'; cat "$reverse_list"; } >> "$reverse_ev" 2>/dev/null
+            ab_pass_with_evidence "$reverse_desc" "$reverse_ev" || mark_fail
+        else
+            ab_fail "$reverse_desc" "adb reverse did not register/confirm (rc=$_rev_reg_rc; token '$_rev_remote' not in --list) — reverse channel could not form over the adb transport (fail-closed §11.4.68); evidence: $reverse_ev"; mark_fail
+        fi
+    fi
+fi
 
 log "done — evidence root: $EV_ROOT"
 exit "$OVERALL_FAIL"

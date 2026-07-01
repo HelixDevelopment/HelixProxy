@@ -283,5 +283,64 @@ else
     log 'NFS export configured but not mountable in this environment (no root / no mount) — SKIP'
 fi
 
+# ============================================================================
+# T2.3 REVERSE LEG (bidirectional_exposure.md §2) — NFS lock callback
+# (NLM `lockd` async GRANT / NSM `rpc.statd` SM_NOTIFY) reachability
+# server->client. This is a HOST-INITIATED INGRESS flow: the NFS SERVER opens a
+# NEW connection BACK to the client to deliver a blocking-lock GRANT or a reboot
+# SM_NOTIFY. It rides no prior outbound state and therefore needs BOTH the return
+# route AND an ingress-allowlist permit for the pinned callback port
+# (bidirectional_exposure.md §1.2/§3) — operator-gated (§11.4.122/§11.4.133).
+#
+# Autonomously observing an inbound callback requires either (a) a real listener
+# bound to the pinned callback port — which THIS test will NEVER open (constraint)
+# — or (b) an operator-supplied READ-ONLY observer confirming the server->client
+# callback arrived (an `ss`/`rpcinfo`/statd-notify-log wrapper). Observer contract:
+# rc 0 + non-empty output = the inbound callback was captured (PASS); an explicit
+# DENIED/REFUSED/BLOCKED token = the permitted callback was dropped (fail-closed
+# FAIL, §11.4.68); otherwise honest SKIP. SMB/CIFS has NO server->client callback
+# of this class — documented N/A below, NOT fabricated (§11.4.6). Because the
+# script already exited 0 at the bridge gate when the bridge is DOWN, this section
+# runs only on a genuinely-up bridge; it opens NO listener and touches NO
+# data-plane port (:53128/:51080).
+# ============================================================================
+nfs_rev_desc='NFS reverse leg — NLM lock GRANT / NSM SM_NOTIFY callback server->client (bidir §2)'
+NFS_CB_OBSERVE=${HELIX_VPN_NFS_CALLBACK_OBSERVE_CMD:-}
+NFS_CB_PORT=${HELIX_VPN_NFS_LOCKD_CALLBACK_PORT:-}
+if [ -z "$NFS_MOUNTED" ] && [ -z "$NFS_EXPORT" ]; then
+    ab_skip_with_reason "$nfs_rev_desc" feature_disabled_by_config
+    log 'NFS reverse leg: no NFS target configured — SKIP (not a PASS)'
+elif [ -z "$NFS_CB_OBSERVE" ]; then
+    ab_skip_with_reason "$nfs_rev_desc" topology_unsupported
+    log 'NFS reverse leg: HELIX_VPN_NFS_CALLBACK_OBSERVE_CMD unset — a server->client NLM/NSM callback is host-initiated ingress needing the pinned lockd/statd port + an ingress-allowlist permit + a return route; autonomous observation needs an operator-supplied read-only observer (this test opens NO listener) — SKIP (§11.4.6, operator-gated §11.4.122)'
+else
+    mkdir -p "$EV_ROOT/nfs" 2>/dev/null || true
+    nfs_rev_ev="$EV_ROOT/nfs/reverse_callback.evidence"
+    nfs_rev_out="$RT_TMPDIR/nfs_reverse_observe.out"
+    sh -c "$NFS_CB_OBSERVE" > "$nfs_rev_out" 2>"$EV_ROOT/nfs/reverse_observe.err"; _nfs_rev_rc=$?
+    {
+        printf 'check          : %s\n' "$nfs_rev_desc"
+        printf 'timestamp_utc  : %s\n' "$RT_TS"
+        printf 'direction      : server->client (host-initiated ingress; return-route + ingress-allowlist permit required)\n'
+        printf 'callback_port  : %s\n' "${NFS_CB_PORT:-<unpinned — operator must pin lockd/statd --port for a stable allowlist entry>}"
+        printf 'observer_rc    : %s\n' "$_nfs_rev_rc"
+        printf 'observer_bytes : %s\n' "$(wc -c < "$nfs_rev_out" 2>/dev/null | tr -d ' ')"
+        printf 'expected       : a captured inbound NLM GRANT / NSM SM_NOTIFY from the NFS server\n'
+    } > "$nfs_rev_ev" 2>/dev/null
+    if grep -Eqi 'DENIED|REFUSED|BLOCKED' "$nfs_rev_out" 2>/dev/null; then
+        ab_fail "$nfs_rev_desc" "observer reported the server->client callback DENIED/dropped — both-way path broken (fail-closed §11.4.68); evidence: $nfs_rev_ev"; mark_fail
+    elif [ "$_nfs_rev_rc" = 0 ] && [ -s "$nfs_rev_out" ]; then
+        { printf '\n--- observer output (inbound callback evidence) ---\n'; cat "$nfs_rev_out"; } >> "$nfs_rev_ev" 2>/dev/null
+        ab_pass_with_evidence "$nfs_rev_desc" "$nfs_rev_ev" || mark_fail
+    else
+        ab_skip_with_reason "$nfs_rev_desc" network_unreachable_external
+        log "NFS reverse leg: observer captured no inbound callback (rc=$_nfs_rev_rc) — the server->client leg needs an active blocking lock + the ingress-allowlisted callback port up (operator-gated) — SKIP (not a fake PASS)"
+    fi
+fi
+# SMB/CIFS reverse leg — DOCUMENTED N/A (§11.4.6): SMB is a single request/response
+# session over 445 with NO host-initiated server->client callback class; there is
+# no reverse leg to fabricate. The forward SMB round-trip is asserted by T2.1 above.
+log 'SMB/CIFS reverse leg: N/A (§11.4.6) — no host-initiated server->client callback for SMB; forward asserted by T2.1'
+
 log "done — evidence root: $EV_ROOT"
 exit "$OVERALL_FAIL"

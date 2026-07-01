@@ -306,5 +306,60 @@ else
     fi
 fi
 
+# ============================================================================
+# T6.4 REVERSE LEG (bidirectional_exposure.md §2) — Cast RECEIVER->CONTROLLER
+# status callback. CASTV2 is bidirectional: beyond the controller->receiver control
+# channel (T6.2/T6.3), the RECEIVER pushes status/feedback callbacks BACK toward
+# the controller — a HOST-INITIATED INGRESS flow (a NEW connection the receiver
+# opens toward the controller callback port on the proxy side) that rides no prior
+# outbound state and needs BOTH the return route AND an ingress-allowlist permit
+# for (Cast receiver VPN-host -> controller callback port) (bidir §1.2/§3,
+# operator-gated §11.4.122). If only controller->receiver is provisioned, Cast
+# degrades to fire-and-forget — the controller loses the state the receiver pushes.
+#
+# Autonomously observing the inbound receiver->controller callback needs either a
+# controller-side callback listener — which THIS test will NEVER open (constraint)
+# — or an operator-supplied READ-ONLY observer (a go-chromecast/catt receiver that
+# logs pushed status callbacks). Observer contract: rc 0 + non-empty output = a
+# real inbound callback was captured (PASS); an explicit DENIED/REFUSED/BLOCKED
+# token = the permitted callback was dropped (fail-closed FAIL, §11.4.68);
+# otherwise honest SKIP. This is DISTINCT from T6.3 liveness (which reads the
+# controller-side status twice); T6.4 asserts the receiver-INITIATED inbound
+# callback specifically. This section runs only on a genuinely-up bridge
+# (bridge-down already exited 0 at the gate); it opens NO listener and touches NO
+# data-plane port (:53128/:51080).
+# ============================================================================
+cast_rev_desc='Cast reverse leg — receiver->controller status callback (bidir §2)'
+CAST_CB_OBSERVE=${HELIX_VPN_CAST_CALLBACK_OBSERVE_CMD:-}
+if [ -z "$CAST_IP" ]; then
+    ab_skip_with_reason "$cast_rev_desc" feature_disabled_by_config
+    log 'Cast reverse leg: HELIX_VPN_CAST_IP unset — no cast device; SKIP (not a PASS)'
+elif [ -z "$CAST_CB_OBSERVE" ]; then
+    ab_skip_with_reason "$cast_rev_desc" topology_unsupported
+    log 'Cast reverse leg: HELIX_VPN_CAST_CALLBACK_OBSERVE_CMD unset — a receiver->controller status callback is host-initiated ingress needing an ingress-allowlist permit + a controller-side callback listener (this test opens NONE); supply an operator read-only observer to exercise it — SKIP (§11.4.6, operator-gated §11.4.122)'
+else
+    cast_rev_ev="$EV_ROOT/castv2/reverse_callback.evidence"
+    cast_rev_out="$CC_TMPDIR/cast_reverse_observe.out"
+    sh -c "$CAST_CB_OBSERVE" > "$cast_rev_out" 2>"$EV_ROOT/castv2/reverse_observe.err"; _cast_rev_rc=$?
+    {
+        printf 'check         : %s\n' "$cast_rev_desc"
+        printf 'timestamp_utc : %s\n' "$CC_TS"
+        printf 'direction     : receiver->controller (host-initiated ingress; return-route + ingress-allowlist permit required)\n'
+        printf 'cast_ip       : %s\n' "$CAST_IP"
+        printf 'observer_rc   : %s\n' "$_cast_rev_rc"
+        printf 'observer_bytes: %s\n' "$(wc -c < "$cast_rev_out" 2>/dev/null | tr -d ' ')"
+        printf 'expected      : a captured inbound status/feedback callback pushed by the receiver\n'
+    } > "$cast_rev_ev" 2>/dev/null
+    if grep -Eqi 'DENIED|REFUSED|BLOCKED' "$cast_rev_out" 2>/dev/null; then
+        ab_fail "$cast_rev_desc" "receiver->controller callback DENIED/dropped — both-way path broken (fail-closed §11.4.68); evidence: $cast_rev_ev"; mark_fail
+    elif [ "$_cast_rev_rc" = 0 ] && [ -s "$cast_rev_out" ]; then
+        { printf '\n--- observer output (inbound receiver->controller callback evidence) ---\n'; cat "$cast_rev_out"; } >> "$cast_rev_ev" 2>/dev/null
+        ab_pass_with_evidence "$cast_rev_desc" "$cast_rev_ev" || mark_fail
+    else
+        ab_skip_with_reason "$cast_rev_desc" network_unreachable_external
+        log "Cast reverse leg: observer captured no inbound callback (rc=$_cast_rev_rc) — needs media playing + the ingress-allowlisted callback port up (operator-gated) — SKIP (not a fake PASS)"
+    fi
+fi
+
 log "done — evidence root: $EV_ROOT"
 exit "$OVERALL_FAIL"

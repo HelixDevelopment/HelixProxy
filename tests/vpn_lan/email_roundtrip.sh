@@ -470,11 +470,42 @@ test_open_relay() {
     esac
 }
 
-# ---- run the four checks ----------------------------------------------------
+# ===========================================================================
+# T4.5 — REVERSE LEG: DOCUMENTED N/A (§11.4.6). Per bidirectional_exposure.md §2,
+# email submission (SMTP 465/587) and retrieval (IMAPS 993 / POP3S 995) are ALL
+# client->server: the client initiates every connection and the server only ever
+# REPLIES on that same connection (stateful return traffic, §1.2). There is NO
+# host-initiated server->client callback INTO the proxy side for this protocol
+# class — so there is NO reverse leg to provision and NONE to fabricate. This is
+# recorded as an HONEST N/A (§11.4.6), NOT a bogus both-way test. The forward
+# (client->server) direction is asserted by T4.2 (SMTP submission 250-accept) +
+# T4.1/T4.3 (IMAPS/POP3S retrieval). Server-to-server MX relay is a DIFFERENT hop
+# between mail servers, outside the proxy-side ingress surface; the open-relay
+# guard T4.4 already covers its abuse. Emitted as an honest SKIP (never PASS,
+# never FAIL) so it does not inflate the PASS count.
+# ===========================================================================
+test_reverse_leg_na() {
+    _desc='email_reverse_leg(client->server only — no host-initiated callback: N/A §11.4.6)'
+    _ev="$EVIDENCE_DIR/t4_5_reverse_leg_na.txt"
+    {
+        printf 'check         : %s\n' "$_desc"
+        printf 'timestamp_utc : %s\n' "$TS"
+        printf 'verdict       : N/A (documented, §11.4.6) — recorded as an honest SKIP\n'
+        printf 'reason        : SMTP submission + IMAPS/POP3S retrieval are client->server;\n'
+        printf '                the server replies ride the SAME connection (stateful return, §1.2).\n'
+        printf 'reverse_leg   : NONE — no host-initiated server->client callback into the proxy side.\n'
+        printf 'forward_proof : asserted by T4.2 (submission 250-accept) + T4.1/T4.3 (retrieval).\n'
+        printf 'note          : server-to-server MX relay is a different hop; abuse covered by T4.4.\n'
+    } > "$_ev" 2>/dev/null
+    skip_ev "$_desc" topology_unsupported
+}
+
+# ---- run the four checks + the documented reverse-leg N/A --------------------
 test_imaps
 test_smtp_send
 test_pop3s
 test_open_relay
+test_reverse_leg_na
 
 # ---- manifest (config only — NEVER credentials, §11.4.10) -------------------
 {
