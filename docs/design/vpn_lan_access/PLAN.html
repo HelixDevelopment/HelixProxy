@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>PLAN</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="vpn-lan-service-access--comprehensive-phased-plan">VPN-LAN
+Service Access — Comprehensive Phased Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:05:00Z <strong>Status:</strong> Planning (Phase-0 scaffold
+next) — feature workstream on branch
+<code>feature/vpn-aware-dynamic-routing</code> (§11.4.167)
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.172
+phased-planning doc + §11.4.167 big-work-item feature-workstream
+lifecycle for the VPN-LAN service-access feature.
+<strong>Companion:</strong> summary <a
+href="PLAN_Summary.md"><code>PLAN_Summary.md</code></a> · integration
+status <a href="Status.md"><code>Status.md</code></a> (created when ≥2
+phases land)</p>
+<hr />
+<h2 id="1-goal-operator-mandate-verbatim-intent">1. Goal (operator
+mandate, verbatim intent)</h2>
+<p>Make <strong>every mainstream service exposed on a VPN-internal
+network reachable and usable through helix_proxy</strong>, driven by the
+sibling <code>svord_toolkit</code> VPN bridge, and prove each one works
+with <strong>real captured evidence, no false results, no bluff</strong>
+(§11.4 / §11.4.69 / §11.4.107). Protocols in scope (operator-enumerated
+across four messages):</p>
+<ul>
+<li><strong>File shares:</strong> SMB / CIFS / NMB (NetBIOS), NFS</li>
+<li><strong>File transfer:</strong> FTP / FTPS, SFTP, WebDAV</li>
+<li><strong>Email:</strong> IMAP / IMAPS, SMTP / submission, POP3 /
+POP3S</li>
+<li><strong>Discovery:</strong> mDNS / DNS-SD (Bonjour), SSDP / UPnP,
+WS-Discovery, DIAL</li>
+<li><strong>Casting:</strong> Google Chromecast, Miracast</li>
+<li><strong>Device bridge:</strong> ADB (Android Debug Bridge) — access,
+debug, connect, <strong>flash</strong></li>
+<li>Everything mainstream; full documentation; full test coverage;
+containerized via the containers submodule (§11.4.76).</li>
+</ul>
+<p><strong>Hard constraints (operator, in force):</strong></p>
+<ol type="1">
+<li>Use the sibling <code>svord_toolkit</code> project's
+<code>svord-ssh-*</code> script(s) to connect to the remote network —
+but the connection-script name MUST be <strong>parametrized via an
+environment variable</strong> (decoupled §11.4.28), <strong>fully
+documented</strong>, <strong>NOT git-versioned</strong>, with a
+<strong><code>.env.example</code></strong> illustrating the bridge (in
+our case pointing at <code>svord_toolkit</code>'s
+<code>svord-ssh-*</code> script).</li>
+<li><strong>Do NOT change anything</strong> in
+<code>svord_toolkit</code> / <code>svord_factory</code> or on any remote
+connected host without an <strong>interactive question with
+options</strong> first (§11.4.66 / §11.4.122).</li>
+<li>Everything covered by <strong>all supported test types</strong>
+(§11.4.169) + <strong>Challenges</strong> (challenges submodule) +
+<strong>full HelixQA banks + autonomous HelixQA sessions</strong>
+(§11.4.27).</li>
+<li>Commit + push all submodules + main repo <strong>regularly to all
+upstreams</strong> (§2.1 / §11.4.113 no-force).</li>
+<li>Report when <strong>fully complete</strong>.</li>
+</ol>
+<hr />
+<h2
+id="2-architecture--the-one-line-routing-map-recon-derived-fact1146">2.
+Architecture — the one-line routing map (recon-derived,
+FACT/§11.4.6)</h2>
+<p>The VPN is <strong>L3-routed</strong> (WireGuard + L2TP/PPP over
+<code>ppp0</code>; reachable subnet <code>10.0.0.0/8</code>; svord host
+<code>10.6.100.221</code>). This single fact drives every protocol
+decision. SOCKS5/Squid is the WRONG primitive for mounts and discovery;
+an <strong>L3 routed gateway + scoped SSRF allowlist</strong> is
+correct.</p>
+<table>
+<thead>
+<tr>
+<th>Traffic class</th>
+<th>Correct primitive</th>
+<th>Protocols</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unicast TCP</td>
+<td><strong>ROUTE</strong> over the L3 VPN (HTTP-shaped also works
+through existing <strong>Squid</strong>)</td>
+<td>SMB/445, NFS/2049, FTP-control/21, SFTP/22, IMAP/993, SMTP/587,
+POP3/995, WebDAV (HTTP), Cast control 8008/8009, DIAL HTTP</td>
+</tr>
+<tr>
+<td>Unicast UDP (peer IP known)</td>
+<td><strong>ROUTE</strong> over the L3 VPN</td>
+<td>NFS aux, NMB/137-138 (unicast fallback)</td>
+</tr>
+<tr>
+<td>FTP data channel</td>
+<td><strong>ROUTE</strong> the server's pinned passive-port range
+(single caveat)</td>
+<td>FTP/FTPS passive</td>
+</tr>
+<tr>
+<td>Multicast <strong>discovery</strong></td>
+<td><strong>REFLECT</strong> on the remote (device-side) network —
+routers do not forward it across L3</td>
+<td>mDNS 5353, SSDP/UPnP 1900, WS-Discovery, DNS-SD, Chromecast/DIAL
+discovery</td>
+</tr>
+<tr>
+<td>L2 / Wi-Fi-Direct</td>
+<td><strong>STRUCTURALLY-IMPOSSIBLE</strong> over L3 VPN
+(§11.4.112)</td>
+<td><strong>Miracast</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb:</strong> unicast services route; HTTP-shaped
+services already work through Squid; multicast discovery needs a
+remote-side reflector; Wi-Fi-Direct/L2 is out of scope by physics.
+Deep-research citations recorded in §11 (per §11.4.150).</p>
+<hr />
+<h2
+id="3-the-env-var-bridge-contract-11428-decoupled-not-git-versioned">3.
+The env-var bridge contract (§11.4.28 decoupled, NOT git-versioned)</h2>
+<p>helix_proxy MUST NOT hardcode <code>svord_toolkit</code> anywhere. It
+reads a <strong>bridge contract</strong> from the environment (real
+values live in a gitignored <code>.env</code>; a tracked
+<code>.env.example</code> documents the shape). The bridge is 4
+operator-supplied hooks + a working dir:</p>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Meaning</th>
+<th>Example value (in <code>.env.example</code>, illustrative only)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELIX_SVORD_DIR</code></td>
+<td>Path to the sibling bridge project</td>
+<td><code>../svord_toolkit</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_CONNECT</code></td>
+<td>Command that brings the VPN up</td>
+<td><code>${HELIX_SVORD_DIR}/svord-ssh-connect</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_DISCONNECT</code></td>
+<td>Command that tears the VPN down</td>
+<td><code>${HELIX_SVORD_DIR}/svord-ssh-disconnect</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HEALTH</code></td>
+<td>Command/probe that reports reachability (exit 0 = up)</td>
+<td><code>${HELIX_SVORD_DIR}/svord-ssh-health</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_SUBNET</code></td>
+<td>The reachable remote subnet (for route + SSRF allowlist
+scoping)</td>
+<td><code>10.0.0.0/8</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HOST</code></td>
+<td>A known remote host for smoke reachability</td>
+<td><code>10.6.100.221</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rules:</strong> (a) <code>.env</code> is gitignored
+(§11.4.30) and never contains secrets in-tree (§11.4.10 — names/paths
+only); (b) <code>.env.example</code> is tracked and is the §11.4.77
+re-obtain mechanism (documents how to point the bridge at
+<code>svord_toolkit</code>); (c) helix_proxy invokes only these hooks —
+it never reaches into <code>svord_toolkit</code> internals and never
+modifies it (§11.4.122); (d) a <code>svord-doctor</code> preflight
+resolves + validates the bridge and, when the bridge is down, every
+downstream test <strong>honestly SKIPs</strong>
+(<code>network_unreachable_external</code> per §11.4.3 / §11.4.69) —
+never a fake PASS.</p>
+<hr />
+<h2
+id="4-security-reconciliation-must-land-before-any-egress-widening">4.
+Security reconciliation (must land BEFORE any egress widening)</h2>
+<p>Widening egress to the VPN subnet reopens SSRF surface. Reconcile per
+§11.4.120 (fix-breaks-its-own-gate) + OWASP SSRF Case-1, keeping the
+existing hardening intact:</p>
+<ol type="1">
+<li><strong>Keep the RFC1918 / link-local / loopback / metadata block as
+the floor</strong> (the <code>4626f05</code> Dante SSRF + Squid ACL work
+stays). Do NOT remove it.</li>
+<li><strong>Add a narrow allowlist carve-out</strong> for
+<code>HELIX_BRIDGE_SUBNET</code> only (Dante first-match top-down: the
+factory-subnet ALLOW rule sits ABOVE the broad internal-DENY; every
+other RFC1918 range stays denied). The S1/S3/S4 guards (now GREEN +
+wired §11.4.135) must stay GREEN after the carve-out — the S1 RED teeth
+prove a still-blocked target still denies.</li>
+<li><strong>Open-relay guard (email, §4-recon FACT):</strong> never
+expose anonymous CONNECT-to-:25. Route authenticated
+<strong>submission</strong> (587/465) to VPN clients; keep :25
+server-to-server behind the boundary. The SSRF allowlist must NOT make
+helix_proxy an anonymizing spam conduit.</li>
+<li><strong>STARTTLS-stripping caveat:</strong> prefer routing
+implicit-TLS ports (993/995/465, RFC 8314) over plaintext-upgradable
+STARTTLS ports where the choice exists.</li>
+<li>Every widening ships with a paired §1.1 mutation proving the
+allowlist has teeth (an out-of-allowlist target still denies).</li>
+</ol>
+<hr />
+<h2 id="5-phase-breakdown-tasks--subtasks--evidence">5. Phase breakdown
+(tasks → subtasks → evidence)</h2>
+<p>Each phase is a Parallel Work Unit (§11.4.58) with: RED-first test
+(§11.4.115), source patch, four-layer coverage (§11.4.4(b)), captured
+evidence dir under
+<code>qa-results/vpn_lan/&lt;phase&gt;/&lt;ts&gt;/</code>, honest-SKIP
+when bridge down (§11.4.3), independent review before commit
+(§11.4.142). <strong>No phase claims PASS without a real evidence
+path</strong> (§11.4.6).</p>
+<h3
+id="phase-0--bridge-scaffold--svord-doctor-preflight-foundation">Phase 0
+— Bridge scaffold + svord-doctor preflight
+<code>[foundation]</code></h3>
+<ul>
+<li><strong>T0.1</strong> Author <code>.env.example</code> with the §3
+contract (tracked, no secrets).</li>
+<li><strong>T0.2</strong> Author <code>tests/lib/svord_bridge.sh</code>
+— resolves the env vars, validates them, exposes <code>bridge_up</code>,
+<code>bridge_require</code> (exit 2 = OPERATOR-BLOCKED per §11.4.68),
+<code>bridge_subnet</code>, <code>bridge_host</code>.</li>
+<li><strong>T0.3</strong> Author <code>scripts/svord_doctor.sh</code> —
+preflight: env resolvable? hooks executable?
+<code>HELIX_BRIDGE_HEALTH</code> exit 0? remote host reachable? Emits a
+structured verdict + honest SKIP reason when down.</li>
+<li><strong>T0.4</strong> Companion docs (§11.4.18):
+<code>docs/scripts/svord_doctor.md</code>.</li>
+<li><strong>T0.5</strong> Gitignore <code>.env</code> (verify already
+covered by §11.4.30 rule).</li>
+<li><strong>Evidence:</strong> <code>svord_doctor.sh</code> run with
+bridge down ⇒ <code>SKIP:network_unreachable_external</code>; with a
+fake-up stub ⇒ <code>UP</code>. RED: doctor must SKIP (not PASS) when
+<code>HELIX_BRIDGE_HEALTH</code> is unset.</li>
+<li><strong>Autonomous without secrets:</strong> YES (doctor + SKIP path
+fully testable with a local stub bridge; the live connection is
+operator-gated).</li>
+</ul>
+<h3
+id="phase-1--l3-routed-gateway--ssrf-allowlist-reconciliation-security-critical">Phase
+1 — L3 routed gateway + SSRF allowlist reconciliation
+<code>[security-critical]</code></h3>
+<ul>
+<li><strong>T1.1</strong> Add the <code>HELIX_BRIDGE_SUBNET</code>
+allowlist carve-out to the Dante + Squid config (first-match ABOVE the
+internal-deny).</li>
+<li><strong>T1.2</strong> Preserve the RFC1918/metadata floor; re-run
+S1/S3/S4 guards — must stay GREEN.</li>
+<li><strong>T1.3</strong> Paired §1.1 mutation: an out-of-allowlist
+RFC1918 target still denies (<code>block(N)</code> /
+<code>TCP_DENIED</code>).</li>
+<li><strong>T1.4</strong> Route-injection: when the bridge is up, ensure
+the <code>10.0.0.0/8</code> route exists via <code>ppp0</code> (svord
+owns the route; helix_proxy only verifies reachability, never re-routes
+host tables autonomously — §11.4.133 target-safety).</li>
+<li><strong>Evidence:</strong> access.log
+<code>TCP_TUNNEL/HIER_DIRECT</code> to an allowlisted host (up) vs
+<code>TCP_DENIED/HIER_NONE</code> to a non-allowlisted RFC1918 host;
+Dante <code>block(N)</code> for the denied one. Honest SKIP when bridge
+down.</li>
+</ul>
+<h3 id="phase-2--smbcifsnmb--nfs-file-shares">Phase 2 — SMB/CIFS/NMB +
+NFS <code>[file-shares]</code></h3>
+<ul>
+<li><strong>T2.1</strong> SMB/CIFS mount + list + read + write-back-read
+round-trip against a VPN share (<code>smbclient</code> /
+<code>mount.cifs</code>). NMB name-resolution unicast fallback.</li>
+<li><strong>T2.2</strong> NFS mount + read + write round-trip
+(<code>mount -t nfs</code>).</li>
+<li><strong>T2.3</strong> Byte-integrity evidence: sha256 of a written
+file matches on read-back (real data, §11.4.5).</li>
+<li><strong>Evidence:</strong>
+<code>qa-results/vpn_lan/smb/&lt;ts&gt;/roundtrip.evidence</code> +
+<code>nfs/&lt;ts&gt;/</code>. Honest SKIP when bridge/share absent.</li>
+<li><strong>Note:</strong> mounts need L3 routing (Phase 1), NOT
+SOCKS5.</li>
+</ul>
+<h3 id="phase-3--ftpftpssftp--webdav-file-transfer">Phase 3 —
+FTP/FTPS/SFTP + WebDAV <code>[file-transfer]</code></h3>
+<ul>
+<li><strong>T3.1</strong> FTP passive round-trip (route 21 + pinned
+passive range; PASV must advertise the 10.x addr). FTPS explicit
+(<code>AUTH TLS</code>) + implicit (990).</li>
+<li><strong>T3.2</strong> SFTP round-trip (22) — the recommended modern
+path (single connection, routes/tunnels trivially).</li>
+<li><strong>T3.3</strong> WebDAV via <strong>existing Squid</strong>
+(PROPFIND <code>207</code> + MKCOL <code>201</code>) — the easiest, no
+new component; enable <code>extension_methods</code> if Squid is old;
+ensure the WebDAV origin's TLS port is in <code>SSL_Ports</code> for
+CONNECT.</li>
+<li><strong>Evidence:</strong> directory-listing content + 207/201 XML
+bodies; SFTP byte round-trip sha256. Honest SKIP when bridge
+absent.</li>
+</ul>
+<h3 id="phase-4--email-imapimaps-smtpsubmission-pop3pop3s-email">Phase 4
+— Email (IMAP/IMAPS, SMTP/submission, POP3/POP3S)
+<code>[email]</code></h3>
+<ul>
+<li><strong>T4.1</strong> IMAPS <code>LOGIN</code> + <code>LIST</code>
+mailbox content (993) via <code>openssl s_client</code> /
+<code>curl imaps://</code>.</li>
+<li><strong>T4.2</strong> SMTP submission authenticated send (587/465,
+<code>swaks</code>) — real message accepted (<code>250</code>).</li>
+<li><strong>T4.3</strong> POP3S retrieve (995).</li>
+<li><strong>T4.4</strong> <strong>Negative test (open-relay
+guard):</strong> an unauthenticated relay to an external domain MUST
+fail — proves helix_proxy is not an open relay (§4.3).</li>
+<li><strong>Evidence:</strong> mailbox LIST content + <code>250</code>
+accepted + the negative relay-refused proof. Honest SKIP when
+bridge/mail-server absent.</li>
+</ul>
+<h3
+id="phase-5--discovery-reflector-mdns--ssdp--ws-discovery--dns-sd-discovery">Phase
+5 — Discovery reflector (mDNS / SSDP / WS-Discovery / DNS-SD)
+<code>[discovery]</code></h3>
+<ul>
+<li><strong>T5.1</strong> Design the remote-side reflector (Avahi
+<code>enable-reflector=yes</code> for mDNS; smcroute/SSDP relay for
+1900) — <strong>containerized via the containers submodule</strong>
+(§11.4.76), deployed on the remote-subnet side.
+<strong>Operator-gated</strong> (remote-host change ⇒ §11.4.122
+interactive question BEFORE any remote deployment).</li>
+<li><strong>T5.2</strong> Client-side enumeration proof:
+<code>avahi-browse -at</code> / <code>gssdp-discover</code> surfaces a
+remote-site service through the reflector; the discovered LOCATION/SRV
+then reachable via a routed unicast probe.</li>
+<li><strong>Evidence:</strong> reflected service enumerated on the
+client side + unicast follow-up reachable. Honest SKIP when reflector
+not deployed (operator-gated).</li>
+</ul>
+<h3 id="phase-6--chromecast--dial-casting-casting">Phase 6 — Chromecast
+/ DIAL casting <code>[casting]</code></h3>
+<ul>
+<li><strong>T6.1</strong> Discovery via the Phase-5 reflector
+(<code>_googlecast._tcp</code> mDNS + DIAL SSDP
+<code>M-SEARCH</code>).</li>
+<li><strong>T6.2</strong> Control routed:
+<code>GET http://&lt;ip&gt;:8008/setup/eureka_info</code> (device name
+JSON) + CASTV2 status (8009 TLS) via
+<code>catt</code>/<code>go-chromecast</code>.</li>
+<li><strong>T6.3</strong> Liveness (§11.4.107): a cast <strong>status
+transition</strong> observed, not a single frame.</li>
+<li><strong>Evidence:</strong> eureka_info JSON <code>name</code> read +
+cast status transition. Honest SKIP when no cast device /
+reflector.</li>
+</ul>
+<h3
+id="phase-7--adb-over-vpn-access-debug-connect-flash-device-bridge">Phase
+7 — ADB over VPN (access, debug, connect, flash)
+<code>[device-bridge]</code></h3>
+<ul>
+<li><strong>T7.1</strong> Routed TCP 5555
+<code>adb connect 10.x:5555</code> — no proxy hop (recon 4).</li>
+<li><strong>T7.2</strong> Central adb server model (one adb server,
+multiple remote devices).</li>
+<li><strong>T7.3</strong> Debug: <code>adb shell</code> /
+<code>logcat</code> / <code>pull</code> / <code>push</code> round-trip
+evidence.</li>
+<li><strong>T7.4</strong> <strong>Flash:</strong> <code>fastboot</code>
+is USB-level → route via <strong><code>usbip</code></strong>
+(USB-over-IP) from a remote host with the device attached; network
+<code>fastboot</code> is honestly USB-bound (recon 4 FACT). Honest
+boundary documented (§11.4.6).</li>
+<li><strong>Evidence:</strong> <code>adb devices</code> shows the remote
+serial; <code>adb shell getprop</code> content; a <code>usbip</code>
+fastboot smoke (or honest SKIP + the documented USB-bound boundary).
+Operator-gated for any flash on a real device (§11.4.133
+target-hardware-safety + §11.4.122).</li>
+</ul>
+<h3
+id="phase-8--miracast-verdict-114112-structurally-impossible-honest-boundary">Phase
+8 — Miracast verdict (§11.4.112 structurally-impossible)
+<code>[honest-boundary]</code></h3>
+<ul>
+<li><strong>T8.1</strong> Record the <strong>Won't-fix:
+structurally-impossible</strong> classification with cited
+Wi-Fi-Alliance evidence (Miracast = Wi-Fi-Direct / L2, no IP hop for an
+L3 VPN to route — recon 5 FACT).</li>
+<li><strong>T8.2</strong> Offer the routable alternative: <strong>Google
+Cast / DIAL</strong> (Phase 6) as the drop-in "cast to remote display"
+capability, OR a remote-site Miracast receiver driven by something the
+VPN can reach.</li>
+<li><strong>Evidence:</strong> the cited spec text is the artifact; the
+positive capability lives in Phase 6. NO fake traversal test.</li>
+</ul>
+<h3 id="phase-9--full-documentation-docs">Phase 9 — Full documentation
+<code>[docs]</code></h3>
+<ul>
+<li>User guide, admin manual, per-protocol tutorials, FAQ, architecture
+diagrams (the §2 routing map + a sequence diagram per protocol class),
+SQL definitions (if a discovery/inventory DB lands), the bridge-setup
+guide. All §11.4.65 four-format-adjacent (HTML+PDF), §11.4.168 visually
+validated (no raw diagram source leaking into PDFs), §11.4.44 revision
+headers.</li>
+</ul>
+<h3
+id="phase-10--containerization-containers-submodule-11476-infra">Phase
+10 — Containerization (containers submodule §11.4.76)
+<code>[infra]</code></h3>
+<ul>
+<li>The reflector, the adb server, and any helper services boot
+<strong>on-demand via <code>submodules/containers</code></strong>
+<code>pkg/boot</code>/<code>pkg/compose</code>/<code>pkg/health</code>
+(rootless Podman §11.4.161) — no ad-hoc podman. Missing capability ⇒
+extend the submodule upstream (§11.4.74), never worked around.</li>
+</ul>
+<h3
+id="phase-11--full-test-coverage-114169--challenges--helixqa-verification">Phase
+11 — Full test coverage (§11.4.169) + Challenges + HelixQA
+<code>[verification]</code></h3>
+<ul>
+<li>Every phase's protocol gets: unit (parsers/config), integration
+(real service via bridge), e2e (full round-trip), full-automation
+(re-runnable, no manual step §11.4.98), security (SSRF allowlist teeth +
+open-relay guard), stress+chaos (§11.4.85), a <strong>Challenge</strong>
+entry (challenges submodule), and a <strong>HelixQA bank</strong> case
+(<code>tools/helixqa/banks/</code>) driven by an autonomous session.
+Bridge-down ⇒ honest SKIP across the board (§11.4.3), never a fake
+PASS.</li>
+</ul>
+<hr />
+<h2 id="6-test-evidence-strategy-autonomous-anti-bluff">6. Test-evidence
+strategy (autonomous, anti-bluff)</h2>
+<ul>
+<li><strong>Bridge-up path</strong> (operator supplies live svord
+connection + secrets): full round-trip evidence per protocol — real
+bytes, real mailbox content, real device serials, sha256 integrity.</li>
+<li><strong>Bridge-down path</strong> (default autonomous, no secrets):
+<code>svord-doctor</code> reports down ⇒ every protocol test
+<strong>SKIPs with <code>network_unreachable_external</code></strong>
+(§11.4.3 / §11.4.68 exit-2 OPERATOR-BLOCKED), the harness surfaces the
+SKIP honestly — <strong>never</strong> a metadata-only or
+absence-of-error PASS.</li>
+<li><strong>Local-stub path</strong> (autonomous, no live VPN): the
+config/parser/allowlist logic (Phase 1 SSRF teeth, Phase 0 doctor,
+WebDAV method handling) is provable against a <strong>local</strong>
+loopback service, so the security-critical logic is GREEN without the
+live VPN.</li>
+<li>Every PASS via <code>ab_pass_with_evidence</code> citing a real
+artifact (§11.4.69); every analyzer self-validated
+golden-good/golden-bad (§11.4.107(10)).</li>
+</ul>
+<hr />
+<h2 id="7-risk-register--danger-zones-114172">7. Risk register / danger
+zones (§11.4.172)</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Severity</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSRF allowlist widens egress → internal-network exposure</td>
+<td>HIGH</td>
+<td>§4 reconciliation: RFC1918 floor kept, narrow carve-out only, paired
+§1.1 teeth, S1/S3/S4 stay GREEN</td>
+</tr>
+<tr>
+<td>helix_proxy becomes an open mail relay</td>
+<td>HIGH</td>
+<td>§4.3 open-relay guard: authenticated submission only, never
+anonymous CONNECT-:25, negative test</td>
+</tr>
+<tr>
+<td>Modifying svord_toolkit / remote hosts</td>
+<td>HIGH</td>
+<td>§11.4.122 — interactive question with options BEFORE any change;
+bridge is invocation-only</td>
+</tr>
+<tr>
+<td>Flashing a real device bricks it</td>
+<td>HIGH</td>
+<td>§11.4.133 target-hardware-safety + operator-gated; usbip flash is
+operator-authorized only</td>
+</tr>
+<tr>
+<td>Multicast reflector deployed on remote host without asking</td>
+<td>MEDIUM</td>
+<td>Phase 5 operator-gated (§11.4.122); local-stub proof first</td>
+</tr>
+<tr>
+<td>Miracast mis-sold as "supported"</td>
+<td>MEDIUM</td>
+<td>§11.4.112 honest verdict; Cast offered as the real alternative</td>
+</tr>
+<tr>
+<td>Bridge-down tests fake-PASS</td>
+<td>HIGH</td>
+<td>§11.4.3 honest SKIP enforced by svord-doctor; §11.4.69 no
+fail-open-skip</td>
+</tr>
+<tr>
+<td>Secrets leak into git / .env template</td>
+<td>HIGH</td>
+<td>§11.4.10 — <code>.env</code> gitignored, <code>.env.example</code>
+names/paths only, pre-store leak audit §11.4.10.A</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-autonomous-vs-operator-gated-split-114101--114126">8.
+Autonomous vs operator-gated split (§11.4.101 / §11.4.126)</h2>
+<p><strong>Autonomous now (no operator input):</strong> Phase 0 (bridge
+scaffold + doctor + SKIP path), Phase 1 SSRF-allowlist logic + teeth
+against a local stub, Phase 8 Miracast verdict, Phase 9 docs, Phase 11
+test scaffolding with honest-SKIP, all parser/config unit tests.</p>
+<p><strong>Operator-gated (parked, §11.4.21):</strong> live svord
+connection (secrets + Mullvad + root sudoers), any remote-host reflector
+deployment (§11.4.122), any real-device flash (§11.4.133), the bridge-up
+round-trip evidence per protocol.</p>
+<p>The autonomous slate is dispatched in parallel per §11.4.103;
+operator-gated items are surfaced via §11.4.66 interactive options when
+reached, never silently blocking the loop.</p>
+<hr />
+<h2 id="9-sequencing">9. Sequencing</h2>
+<pre><code>Phase 0 (scaffold) ─┬─&gt; Phase 1 (routing+SSRF) ─┬─&gt; Phase 2 (SMB/NFS)
+                    │                            ├─&gt; Phase 3 (FTP/WebDAV)
+                    │                            ├─&gt; Phase 4 (email)
+                    │                            └─&gt; Phase 7 (ADB)
+                    ├─&gt; Phase 5 (reflector) ─────&gt; Phase 6 (Cast)
+                    ├─&gt; Phase 8 (Miracast verdict — independent)
+                    └─&gt; Phase 9/10/11 (docs/containers/tests — continuous)</code></pre>
+<p>Phase 0 + Phase 1 are the critical path (everything unicast depends
+on the routed gateway + reconciled SSRF). Phase 5 (reflector) is the
+critical path for Phase 6 (Cast). Phase 8 is independent.
+Docs/containers/tests run continuously alongside.</p>
+<hr />
+<h2 id="10-honest-boundary-1146">10. Honest boundary (§11.4.6)</h2>
+<p>This plan reflects the recon-derived architecture as of 2026-07-01.
+It guarantees a <strong>correct, security-reconciled,
+evidence-driven</strong> design — it does NOT guarantee live protocol
+success until the operator supplies the svord bridge connection (secrets
++ Mullvad + root sudoers). Until then the autonomous slate proves the
+logic against local stubs + honest-SKIPs the live paths (§11.4.3).
+Miracast is classified structurally-impossible (§11.4.112) with cited
+evidence — a durable but not eternal verdict (reopen requires NEW
+evidence the platform constraint changed, §11.4.34/§11.4.7). No phase is
+"done" until its runtime signature verifies with captured evidence
+(§11.4.108) and it crosses independent review (§11.4.142) + the
+§11.4.169 test-type matrix.</p>
+<hr />
+<h2 id="11-deep-research-citations-114150--multi-angle-cited">11.
+Deep-research citations (§11.4.150 — multi-angle, cited)</h2>
+<p>Recon streams (5) completed 2026-07-01, cited authoritative sources
+(access date 2026-07-01):</p>
+<ul>
+<li><strong>SMB/NFS/mDNS + routing gap:</strong> L3 route + scoped
+allowlist; multicast needs remote reflector (recon 1–3).</li>
+<li><strong>ADB over VPN:</strong> routed 5555 + central adb server;
+<code>usbip</code> for USB-level fastboot; network fastboot honestly
+USB-bound (recon 4).</li>
+<li><strong>FTP/WebDAV/email/Cast/Miracast (recon 5, full URLs in the
+recon report):</strong> FTP active/passive + FTPS ALG-blindness
+(slacksite, exavault, WinSCP, Wikipedia/FTPS); SFTP single-channel
+(sftptogo, SolarWinds); WebDAV = HTTP RFC 4918 + Squid
+<code>extension_methods</code>/<code>SSL_Ports</code> (rfc-editor,
+squid-cache wiki); email ports + STARTTLS + RFC 8314 + open-relay
+(smtpedia, mailgun, fastmail, threatmon); Chromecast CASTV2 8008/8009 +
+mDNS discovery (CR-Cast wiki, kiljan.org); DIAL = SSDP 1900 + HTTP (DIAL
+spec 1.6.4, williamboles, Amazon); <strong>Miracast = Wi-Fi-Direct/L2
+structurally-impossible</strong> (Wi-Fi Alliance Miracast Technical
+Overview, Wikipedia/Miracast, devopedia); multicast reflectors
+(spinetix, twisteroidambassador, mikrotik).</li>
+</ul>
+<p>Full URL list preserved in the recon-5 report + to be copied into the
+per-phase closure footers as each phase lands (§11.4.150
+<code>Deep-research &lt;date&gt;: &lt;urls&gt;</code>).</p>
+</body>
+</html>
