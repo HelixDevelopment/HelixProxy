@@ -65,7 +65,18 @@ EXCLUDE_PATHS=(
   "CLAUDE.md"
   "QWEN.md"
   "GEMINI.md"
-  "/docs/issues/fixed/BUGFIXES.md"
+  # Doc-ledger (justified non-host context): the bugfix ledger legitimately quotes
+  # the banned patterns when DOCUMENTING CONST-033 fixes (e.g. a §1.1 mutation
+  # example `systemctl suspend`). Extension-AGNOSTIC prefix so the §11.4.65 export
+  # siblings (.md / .html / .pdf) are ALL excluded — an explicit ".md" left the
+  # generated ".html" sibling scannable and tripped the scanner on its own fix
+  # documentation (BUGFIX-0011; same sibling-blindness class as HOST_POWER_MANAGEMENT.).
+  "/docs/issues/fixed/BUGFIXES."
+  # Doc-companion (§11.4.18) for the export-sibling regression guard — it DOCUMENTS
+  # the ban (quotes the banned pattern in prose); same doc class as
+  # HOST_POWER_MANAGEMENT. Extension-agnostic prefix covers .md/.html/.pdf. The
+  # guard SCRIPT itself is NOT excluded — its source is scanner-clean by construction.
+  "/docs/scripts/no_suspend_export_sibling_test."
   "/CHANGELOG.md"
   "/docs/superpowers/plans/"
   "anthropic-quickstarts/"

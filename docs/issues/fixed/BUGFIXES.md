@@ -848,3 +848,138 @@ rather than fabricating a PASS.
 
 Evidence: guard at `tests/regression/comprehensive_admin_topology_test.sh`;
 companion `docs/scripts/comprehensive_admin_topology_test.md`.
+
+---
+
+## BUGFIX-0011 — CONST-033 scanner false-FAIL: BUGFIXES ledger exclusion missed its `.html` export sibling (incomplete BUGFIX-0010)
+
+- **Type:** Bug (test-suite integrity — a §11.4.1 false-FAIL)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `scripts/host-power-management/check-no-suspend-calls.sh`
+  (EXCLUDE_PATHS), `tests/regression/no_suspend_export_sibling_test.sh` (NEW
+  §11.4.135 guard), `tests/run-tests.sh` (register the new guard),
+  `docs/scripts/no_suspend_export_sibling_test.md` (+ html/pdf)
+- **Workable item:** #39 (P12 iterate-to-GO — the §11.4.40 final-tree retest found it)
+
+### Symptom & root cause (FACT — §11.4.102, independently re-verified by the conductor)
+
+The §11.4.40 final-tree retest (run on the committed BUGFIX-0010 tree, `9ce8335`)
+reported `no_suspend_calls_challenge.sh` FAIL with exactly one hit:
+`docs/issues/fixed/BUGFIXES.html:1210` — the `systemctl suspend` literal inside the
+BUGFIX-0010 **verification block** (the ledger legitimately quotes the banned pattern
+when documenting the CONST-033 fix). ZERO hits anywhere in the shippable tree.
+
+Root cause: BUGFIX-0010 generalized the `HOST_POWER_MANAGEMENT.` exclusion to cover
+its `.html`/`.pdf` export siblings, but the **pre-existing** ledger entry
+`/docs/issues/fixed/BUGFIXES.md` still named the `.md` extension explicitly — so the
+`.md` source was excluded (filtering the line-828 hit) while the §11.4.65-mandated
+`.html` sibling generated from it was **not**. `.pdf` escapes only because grep's
+`-I` skips binary files. Same sibling-blindness class BUGFIX-0010 fixed for
+`HOST_POWER_MANAGEMENT.` — simply not generalized to the BUGFIXES ledger. An
+incomplete fix, caught by the retest exactly as §11.4.40 intends.
+
+### Fix (at source)
+
+`EXCLUDE_PATHS`: `/docs/issues/fixed/BUGFIXES.md` → `/docs/issues/fixed/BUGFIXES.`
+(extension-agnostic prefix covering `.md` + `.html` + `.pdf`), with a comment
+recording the sibling rationale. The scanner still catches a real invocation in any
+script and still trips on a **non-ledger** `.html` — the exclusion is
+BUGFIXES-specific, not "all `.html`".
+
+### Verification (captured, re-run by the conductor — §11.4.120 reconciliation + §1.1)
+
+```
+$ bash challenges/scripts/no_suspend_calls_challenge.sh          -> PASS (clean tree)
+$ printf '#!/bin/sh\nsystemctl suspend\n' > tests/_probe.sh
+$ bash scripts/host-power-management/check-no-suspend-calls.sh . -> exit 1, hit on _probe.sh
+    (still catches a REAL invocation — gate NOT neutered)
+$ (rogue non-ledger .html with the literal)                      -> exit 1, hit on rogue.html
+    (exclusion is BUGFIXES-specific, not "all html")
+# §1.1 mutation — revert exclusion to ".md"-only:
+$ (mutated) no_suspend_calls_challenge.sh                        -> exit 1, hit on BUGFIXES.html
+    (defect reproduced) ; restore byte-identical (md5 0c11a86…816db5 match) -> PASS
+$ tests/regression/no_suspend_export_sibling_test.sh            -> [PASS] GREEN (exit 0)
+$ RED_MODE=1 tests/regression/no_suspend_export_sibling_test.sh -> [PASS] RED reproduces (exit 0)
+```
+
+Honest boundary (§11.4.6): a test-suite-integrity fix making the scanner HONEST about
+its own fix-documentation; no proxy behaviour changes. The permanent §11.4.135 guard
+is fixture-driven, so it protects the sibling-exclusion invariant independently of the
+live ledger's future content.
+
+Evidence: guard at `tests/regression/no_suspend_export_sibling_test.sh`;
+companion `docs/scripts/no_suspend_export_sibling_test.md`.
+
+---
+
+## BUGFIX-0012 — `comprehensive-test.sh` false-FAIL on a third-party outage: external-site checks hard-FAILed instead of SKIPping when httpbin.org was down
+
+- **Type:** Bug (test-suite integrity — a §11.4.1 false-FAIL / §11.4.50 non-determinism / §11.4.98 non-re-runnable)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `tests/comprehensive-test.sh` (`_external_egress_verdict`
+  helper, the sites loop in `test_http_proxy`, the direct pre-probe in
+  `test_concurrent`), `tests/regression/external_egress_verdict_test.sh` (NEW
+  §11.4.135 guard), `tests/run-tests.sh` (register the new guard),
+  `docs/scripts/external_egress_verdict_test.md` (+ html/pdf)
+- **Workable item:** #39 (P12 iterate-to-GO — the §11.4.40 final-tree retest found it)
+
+### Symptom & root cause (FACT — §11.4.102, captured direct-vs-proxy probes)
+
+The §11.4.40 final-tree retest reported `comprehensive-test.sh` FAIL (33 pass / **2
+fail** / 8 skip). Both fails were the SAME cause — `httpbin.org` was externally
+**down**:
+
+- `Access https://httpbin.org/ip` — captured: DIRECT (no proxy) `curl https://httpbin.org/ip`
+  → HTTP `000`/`503` (host cannot reach it at all); PROXIED → `503` (the proxy's
+  honest upstream-unreachable). The working sibling `api.ipify.org` → `200` both
+  direct and proxied, proving the proxy's egress is fine.
+- `Concurrent connections (10): Success 0/10` — the concurrency test hammered
+  `https://httpbin.org/get`, all 10 failed for the same outage.
+
+Root cause: both call sites decided `proxy_http_code == 200 ? PASS : FAIL` with no
+direct-reachability distinction, so a **third-party outage** the proxy did not
+cause hard-FAILed the suite — a §11.4.1 false-FAIL that also makes the suite
+non-deterministic (§11.4.50: retest #1 PASSed when httpbin.org was up, retest #2
+FAILed when it was down) and not re-runnable (§11.4.98). The sibling
+`test_large_file()` already handled this exact class (its
+`network_unreachable_external` SKIP gate); the sites loop + concurrency test simply
+were not given the same treatment.
+
+### Fix (at source)
+
+New shared pure classifier `_external_egress_verdict(proxy_code, direct_code)`:
+`proxy 200 → PASS`; `proxy fails but direct 200 → FAIL` (the proxy cannot fetch a
+directly-reachable site — a REAL proxy defect, the anti-bluff catch preserved);
+`proxy fails and direct fails → SKIP` (external endpoint down — `network_unreachable_external`,
+§11.4.3). The sites loop now probes direct-reachability on a proxy miss and routes
+through the classifier; `test_concurrent` pre-probes direct-reachability and SKIPs a
+down endpoint (a real concurrency defect on a reachable endpoint still FAILs). Not
+fail-open: the proxy's egress is still proven every run by the reachable sibling
+(`api.ipify.org`) plus the earlier `www.google.com` PASSes.
+
+### Verification (captured, re-run by the conductor — §11.4.115 RED→GREEN + §1.1)
+
+```
+# helper truth table (unit):
+200,000 -> PASS   503,200 -> FAIL   503,000 -> SKIP   000,000 -> SKIP
+# live comprehensive-test.sh on the fixed tree (httpbin.org still down):
+  -> exit 0 : 33 pass / 0 fail / 10 skip
+  -> Access https://httpbin.org/ip  = SKIP (proxy=503 direct=503, network_unreachable_external)
+  -> Concurrent connections (10)    = SKIP (endpoint unreachable directly)
+  -> Access https://api.ipify.org   = PASS (proxy egress genuinely proven — not fail-open)
+# §11.4.135 guard:
+$ tests/regression/external_egress_verdict_test.sh            -> [PASS] GREEN (exit 0)
+$ RED_MODE=1 tests/regression/external_egress_verdict_test.sh -> [PASS] RED reproduces the false-FAIL (exit 0)
+# §1.1 paired mutation — revert the helper to proxy!=200=>FAIL:
+$ (mutated) external_egress_verdict_test.sh                   -> [FAIL] REGRESSION (exit 1) ; restore byte-identical (md5 match) -> PASS
+```
+
+Honest boundary (§11.4.6): a test-suite-integrity fix making the suite HONEST about
+third-party outages (SKIP, not FAIL) while STILL catching a real proxy egress defect
+(direct-reachable-but-proxy-fails → FAIL); no proxy behaviour changes. The proxy was
+verified genuinely working throughout (api.ipify.org 200 direct+proxied).
+
+Evidence: guard at `tests/regression/external_egress_verdict_test.sh`;
+companion `docs/scripts/external_egress_verdict_test.md`.

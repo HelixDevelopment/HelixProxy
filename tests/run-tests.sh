@@ -565,6 +565,46 @@ test_regression_guards() {
         test_result "BUGFIX-ADMIN-TOPOLOGY fail-open RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # BUGFIX-0011 (P12 final-retest finding) — GREEN guard: the CONST-033 scanner
+    # must exclude a documentation ledger's §11.4.65 EXPORT SIBLINGS (.html/.pdf),
+    # not just its .md, while STILL catching a real invocation (§11.4.68/§11.4.1).
+    if bash "$SCRIPT_DIR/regression/no_suspend_export_sibling_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0011 no-suspend export-sibling excluded (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0011 no-suspend export-sibling excluded (GREEN)" "FAIL" \
+            "run: bash tests/regression/no_suspend_export_sibling_test.sh"
+    fi
+
+    # BUGFIX-0011 — RED self-check: the pre-fix ".md"-only replica must trip on the
+    # ledger .html sibling (sibling-blind false-FAIL). RED that cannot reproduce is
+    # a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/no_suspend_export_sibling_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0011 no-suspend export-sibling RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0011 no-suspend export-sibling RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # BUGFIX-0012 (P12 final-retest finding) — GREEN guard: comprehensive-test.sh's
+    # _external_egress_verdict must SKIP a third-party outage (proxy+direct both fail)
+    # instead of a §11.4.1 false-FAIL, while still FAILing a real proxy defect
+    # (proxy fails but direct 200 — §11.4.68 not fail-open).
+    if bash "$SCRIPT_DIR/regression/external_egress_verdict_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0012 external-egress outage SKIP not FAIL (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0012 external-egress outage SKIP not FAIL (GREEN)" "FAIL" \
+            "run: bash tests/regression/external_egress_verdict_test.sh"
+    fi
+
+    # BUGFIX-0012 — RED self-check: the pre-fix (proxy!=200 => FAIL) replica must
+    # FAIL an external outage. RED that cannot reproduce is a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/external_egress_verdict_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0012 external-egress false-FAIL RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0012 external-egress false-FAIL RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################

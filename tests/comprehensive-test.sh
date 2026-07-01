@@ -351,6 +351,22 @@ test_ports() {
     _port_topology_check "$admin_port" "proxy-admin" "Admin port"
 }
 
+# _external_egress_verdict <proxy_http_code> <direct_http_code> -> PASS | FAIL | SKIP
+#
+# §11.4.3 / §11.4.68 / §11.4.1: classify an external-site fetch through the proxy so
+# a THIRD-PARTY OUTAGE never masquerades as a proxy defect (a false-FAIL), and a REAL
+# proxy defect is never masked as an outage (a false-PASS/SKIP):
+#   - proxy got 200                          -> PASS (proxy fetched it)
+#   - proxy failed BUT the host reaches it
+#     DIRECTLY (direct==200)                 -> FAIL (real proxy defect — the anti-bluff catch)
+#   - proxy failed AND direct also failed    -> SKIP (external endpoint down — not ours; §11.4.3)
+# Same discipline as test_large_file's faithful-relay / network_unreachable_external gate.
+_external_egress_verdict() {
+    if [ "$1" = "200" ]; then echo PASS
+    elif [ "$2" = "200" ]; then echo FAIL
+    else echo SKIP; fi
+}
+
 #######################################
 # Test: HTTP Proxy functionality
 #######################################
@@ -385,19 +401,32 @@ test_http_proxy() {
         test_result "HTTPS through HTTP proxy" "FAIL" "HTTP code: $response"
     fi
     
-    # Test various sites
+    # Test various sites. §11.4.3/§11.4.68: a proxy 200 is PASS; a proxy failure on a
+    # site the host reaches DIRECTLY is a real proxy defect (FAIL); a site unreachable
+    # BOTH via proxy AND directly is an external outage (SKIP — not a proxy defect).
     local sites=("https://httpbin.org/ip" "https://api.ipify.org")
     for site in "${sites[@]}"; do
         response=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 10 \
             --proxy "http://localhost:$port" \
             "$site" 2>/dev/null || echo "000")
-        
+
         if [[ "$response" == "200" ]]; then
             test_result "Access $site" "PASS"
-        else
-            test_result "Access $site" "FAIL" "HTTP code: $response"
+            continue
         fi
+        # proxy did not get 200 — is the site reachable DIRECTLY (host, no proxy)?
+        local direct
+        direct=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$site" 2>/dev/null || echo "000")
+        case "$(_external_egress_verdict "$response" "$direct")" in
+            FAIL)
+                test_result "Access $site" "FAIL" \
+                    "proxy=$response but direct=$direct — proxy cannot fetch a directly-reachable site (real defect)" ;;
+            *)
+                ab_skip_with_reason "access $site (proxy egress)" "network_unreachable_external" || true
+                test_result "Access $site" "SKIP" \
+                    "external site unreachable directly too (proxy=$response direct=$direct) — outage, not a proxy defect (§11.4.3)" ;;
+        esac
     done
 }
 
@@ -750,6 +779,20 @@ test_concurrent() {
     
     echo -e "  ${BLUE}Making 10 concurrent requests...${NC}"
 
+    # §11.4.3: if the endpoint is externally unreachable (a DIRECT host fetch fails),
+    # SKIP — a concurrency test against a down upstream measures the outage, not the
+    # proxy (same network_unreachable_external gate as test_large_file). A real proxy
+    # concurrency defect (endpoint up, proxy drops requests) still FAILs below.
+    local concurrent_url="https://httpbin.org/get"
+    local cc_direct
+    cc_direct=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$concurrent_url" 2>/dev/null || echo "000")
+    if [[ "$cc_direct" != "200" ]]; then
+        ab_skip_with_reason "concurrent 10x through proxy" "network_unreachable_external" || true
+        test_result "Concurrent connections (10)" "SKIP" \
+            "endpoint $concurrent_url unreachable directly (direct=$cc_direct) — external outage, not a proxy defect (§11.4.3)"
+        return
+    fi
+
     # §11.4.1 / §11.4.69: the old loop captured each background job's EXIT status
     # via `wait` (which emits no stdout), NEVER the HTTP code — the `-w
     # %{http_code}` output went to a discarded subshell stdout — so the
@@ -763,7 +806,7 @@ test_concurrent() {
     for i in $(seq 1 10); do
         ( curl -s --max-time 30 \
             --proxy "http://localhost:$port" \
-            "https://httpbin.org/get" \
+            "$concurrent_url" \
             -o /dev/null -w '%{http_code}' > "$tmpd/code.$i" 2>/dev/null ) &
     done
     wait
@@ -780,7 +823,7 @@ test_concurrent() {
 
     local concurrent_evidence="$EVIDENCE_DIR/concurrent.evidence"
     {
-        printf 'concurrent 10x GET https://httpbin.org/get through http://localhost:%s\n' "$port"
+        printf 'concurrent 10x GET %s through http://localhost:%s\n' "$concurrent_url" "$port"
         printf 'per-request http_code:'
         for i in $(seq 1 10); do printf ' %s' "$(cat "$tmpd/code.$i" 2>/dev/null)"; done
         printf '\nsuccess=%d/10 failed=%d\n' "$success" "$failed"
