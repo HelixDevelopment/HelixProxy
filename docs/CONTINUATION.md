@@ -1,8 +1,8 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 4
-**Last modified:** 2026-07-01T12:40:00Z
-**Status:** Active — the anti-bluff existing-suite sweep is COMPLETE (audit B1–B8 all remediated + guarded; BUGFIX-0014/0015/0016/0017/0018 landed; standing suite `run-tests.sh` = 61 run / 55 pass / 6 skip / 0 fail with every guard GREEN+RED registered). Let's Encrypt workstream (task #59) started: Phase 0 operator decisions + Phase 1 offline cert-analyzer + self-validation guard landed @ `2812f48`. LE Phase 2/3 (hermetic Caddy+Pebble issuance) + release-prep in flight via 3 background subagents. The LIVE *dynamic-VPN* data-plane proof (P10) + LE real-domain cutover remain operator-gated.
+**Revision:** 5
+**Last modified:** 2026-07-01T11:25:00Z
+**Status:** Active — anti-bluff existing-suite sweep COMPLETE (BUGFIX-0014…0018 landed + guarded). Let's Encrypt workstream (task #59): **Phase 0/1/2/3 DONE + committed** — a REAL hermetic DNS-01 certificate is issued by local Pebble and cert-analyzer-verified (re-runnable `deploy/letsencrypt/phase3_hermetic_issue.sh`, live-PASS Challenge, RED+GREEN-proven guard) @ `b2afa7d`. **Task #56 observability live-/metrics-scrape DONE + committed** (isolated trio, real Prometheus exposition proven) @ `401234e`. **LE Phase 5 (renewal/rotation) root-diagnosed but PENDING** — Pebble ≥2.8.0 `/set-renewal-info` works, but certmagic v0.21.3's persistent 6h ARI cache blocks a fast deterministic renewal; clean fix = Caddy ≥2.11.0 + libdns v1.0.0 provider port (feasibility research in flight, `docs/research/caddy_2110_ari_refetch_20260701/`). LE Phase 4 (staging token) + Phase 6 (prod cutover) + the LIVE dynamic-VPN P10 proof remain operator-gated. HEAD `cc58a0c`.
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
 **Plan:** `docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md` (Rev 1)
@@ -198,47 +198,36 @@ usability proof:
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `2812f48` (== `main` == all 3 remotes github/origin/upstream; integrate any
-   newer foreign commit per §11.4.71, no force §11.4.113).
-2. **Anti-bluff sweep — DONE.** Audit `docs/research/existing_test_bluffs_audit/`
-   B1–B8 all remediated in committed `comprehensive-test.sh`/`verify-proxy.sh`/
-   `final-verify.sh`/`run-tests.sh` (assert_egress_ip, assert_cache_hit,
-   per-request %{http_code}, ab_pass_with_evidence, honest SKIP bucket).
-   Standing guards registered in `run-tests.sh test_regression_guards()`:
-   BUGFIX-0014 (proxy_conn_verdict), 0015 (ddos_flood evidence), 0016 (benchmark
-   ratchet), 0018 (assert_egress_ip host-undeterminable fail-open + F-1 IP-shape),
-   LE cert-analyzer self-validation — each GREEN + `RED_MODE=1`. Full suite:
-   61 run / 55 pass / 6 skip / 0 fail. BUGFIX-0017 (comprehensive canaries) also
-   landed (reuses the 0014 classifier guard).
-3. **LE workstream (task #59) — IN FLIGHT.** Landed @ `2812f48`: Phase 0 decisions
-   (Caddy auto-HTTPS / DNS-01 / hermetic-first — `docs/design/letsencrypt/Status.md`)
-   + Phase 1 offline cert-analyzer `tests/letsencrypt/cert_analyzer.sh` (5 pure
-   now-seam functions, self-validated §11.4.107(10), guard
-   `cert_analyzer_selfvalidation_test.sh` GREEN+RED, §1.1 verified). 3 background
-   subagents running (authoring only — conductor is the single container-boot
-   owner §11.4.119): (A) hermetic Caddy+Pebble+DNS-01 research →
-   `docs/research/letsencrypt_hermetic_20260701/`; (B) Phase-2 infra config →
-   `deploy/letsencrypt/` (Caddyfile+compose+secret NAMES/volume via the containers
-   submodule, rootless); (C) release-prep audit + runbook → `docs/releases/`.
-   On each return: conductor reviews (§11.4.142), integrates, then boots the
-   hermetic Pebble+Caddy stack via `submodules/containers` (§11.4.76) to prove a
-   REAL cert issuance (Phase 3, anti-bluff core), asserting the result with the
-   cert-analyzer; Phase 5 renewal/rotation sim next. Phase 4 (LE-staging real
-   DNS-01 token §11.4.10) + Phase 6 (prod cutover, real domain) are OPERATOR-BLOCKED
-   — surface via §11.4.66 only at that boundary.
-4. **Two documented follow-up nits (non-blocking):** (i) F5 ddos_flood
-   crashed-vs-absent reason precision (needs an "observed-up-before" signal;
-   BUGFIX-0015 ledger). (ii) `_evidence_ip_shaped` accepts the long-form IPv6
-   `0:0:0:0:0:0:0:0` (unreachable as a fail-open — no caller emits it; re-review
-   informational note). Neither is a live bluff.
-5. **P10 dynamic-VPN data-plane proof + #56 observability** remain: fail-closed
-   half doable autonomously (boot dynamic stack, tunnel down → branded 503 + no
-   leak), real-VPN-egress half operator-gated on gluetun WireGuard creds (§11.4.66).
-   Booting reclaims `:53128` — single-owner (§11.4.119); free the running proxy first.
-6. **Release (§11.4.40/§11.4.113/§11.4.151):** after LE Phase 3 + full retest, cut
-   `helix_proxy-0.1.0-dev-0.0.2` via GitHub AND GitLab CLIs with a changelog (per
-   the release runbook stream C is drafting), FF-only merge onto latest `main`.
-7. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
+   `cc58a0c` (== `main` == all 3 remotes github/origin/upstream; integrate any
+   newer foreign commit per §11.4.71, no force §11.4.113). The single canonical
+   moment-valid resume file is `.remember/remember.md` (§11.4.131) — read it first.
+2. **Anti-bluff sweep + LE Phase 0–3 + task #56 — ALL DONE + committed.** LE
+   hermetic DNS-01 issuance is PROVEN (real cert from local Pebble, cert-analyzer-
+   verified, re-runnable `deploy/letsencrypt/phase3_hermetic_issue.sh` @ `b2afa7d`;
+   live-PASS Challenge `challenges/scripts/le_phase3_issuance_challenge.sh`; standing
+   guard `tests/letsencrypt/phase3_issuance_guard.sh` RED+GREEN, wired in
+   `run-tests.sh`). Task #56 observability live-/metrics-scrape PROVEN (isolated
+   trio `deploy/observability/compose.metrics.yml`, real Prometheus exposition @
+   `401234e`). CoreDNS SOA-front fixed certmagic zone-determination; the Pebble/Caddy
+   image-tag + `-strict` + `vv2.8.4` bugs were all found + fixed live.
+3. **LE Phase 5 (renewal/rotation) — ROOT-DIAGNOSED, PENDING.** Pebble ≥2.8.0
+   `/set-renewal-info` stores+serves a past ARI window (CONFIRMED), but certmagic
+   v0.21.3's persistent 6h ARI cache blocks a fast deterministic renewal (`/load`
+   + restart both read the cache). NEXT = the feasibility research
+   `docs/research/caddy_2110_ari_refetch_20260701/`: does certmagic ≥v0.25.1
+   re-fetch ARI on reload? GO ⇒ port the challtestsrv DNS provider to libdns v1.0.0
+   + rebuild the Caddy image at ≥2.11.0 + re-verify issuance+renewal. Detail in
+   `docs/research/pebble_set_renewal_info_20260701/` + `letsencrypt_renewal_20260701/`.
+   Phase 4 (LE-staging token §11.4.10) + Phase 6 (prod cutover) OPERATOR-BLOCKED.
+4. **P10 dynamic-VPN real-VPN-egress** remains operator-gated on gluetun WireGuard
+   creds (§11.4.66); the fail-closed half is autonomously doable (boot dynamic
+   stack, tunnel down → branded 503 + no leak) — booting reclaims `:53128`,
+   single-owner (§11.4.119), free the running proxy first.
+5. **Release (§11.4.40/§11.4.113/§11.4.151):** after LE Phase 5 (or an operator
+   decision to ship issuance-only) + a full retest, cut `helix_proxy-0.1.0-dev-0.0.2`
+   via GitHub AND GitLab CLIs (GitLab OPERATOR-BLOCKED — no GitLab remote) with the
+   `docs/releases/CHANGELOG_helix_proxy-0.1.0-dev-0.0.2.md` (Rev 2), FF-only onto `main`.
+6. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
    types (§11.4.169), paired §1.1 mutation, independent review → iterate-to-GO
    (§11.4.142/§11.4.125/§11.4.134), docs in sync (§11.4.60/§11.4.65/§11.4.106),
    operator resources untouched (§11.4.174: `wg0-mullvad`, `lava-*`, `whoami:58080`).

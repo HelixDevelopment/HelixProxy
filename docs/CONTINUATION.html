@@ -175,17 +175,24 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-07-01T12:40:00Z <strong>Status:</strong> Active — the anti-bluff
-existing-suite sweep is COMPLETE (audit B1–B8 all remediated + guarded;
-BUGFIX-0014/0015/0016/0017/0018 landed; standing suite
-<code>run-tests.sh</code> = 61 run / 55 pass / 6 skip / 0 fail with
-every guard GREEN+RED registered). Let's Encrypt workstream (task #59)
-started: Phase 0 operator decisions + Phase 1 offline cert-analyzer +
-self-validation guard landed @ <code>2812f48</code>. LE Phase 2/3
-(hermetic Caddy+Pebble issuance) + release-prep in flight via 3
-background subagents. The LIVE <em>dynamic-VPN</em> data-plane proof
-(P10) + LE real-domain cutover remain operator-gated.
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-07-01T11:25:00Z <strong>Status:</strong> Active — anti-bluff
+existing-suite sweep COMPLETE (BUGFIX-0014…0018 landed + guarded). Let's
+Encrypt workstream (task #59): <strong>Phase 0/1/2/3 DONE +
+committed</strong> — a REAL hermetic DNS-01 certificate is issued by
+local Pebble and cert-analyzer-verified (re-runnable
+<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code>, live-PASS
+Challenge, RED+GREEN-proven guard) @ <code>b2afa7d</code>. <strong>Task
+#56 observability live-/metrics-scrape DONE + committed</strong>
+(isolated trio, real Prometheus exposition proven) @
+<code>401234e</code>. <strong>LE Phase 5 (renewal/rotation)
+root-diagnosed but PENDING</strong> — Pebble ≥2.8.0
+<code>/set-renewal-info</code> works, but certmagic v0.21.3's persistent
+6h ARI cache blocks a fast deterministic renewal; clean fix = Caddy
+≥2.11.0 + libdns v1.0.0 provider port (feasibility research in flight,
+<code>docs/research/caddy_2110_ari_refetch_20260701/</code>). LE Phase 4
+(staging token) + Phase 6 (prod cutover) + the LIVE dynamic-VPN P10
+proof remain operator-gated. HEAD <code>cc58a0c</code>.
 <strong>Branch:</strong> <code>feature/vpn-aware-dynamic-routing</code>
 <strong>Spec:</strong>
 <code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>
@@ -659,62 +666,49 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <code>feature/vpn-aware-dynamic-routing</code>; confirm HEAD
-<code>2812f48</code> (== <code>main</code> == all 3 remotes
+<code>cc58a0c</code> (== <code>main</code> == all 3 remotes
 github/origin/upstream; integrate any newer foreign commit per §11.4.71,
-no force §11.4.113).</li>
-<li><strong>Anti-bluff sweep — DONE.</strong> Audit
-<code>docs/research/existing_test_bluffs_audit/</code> B1–B8 all
-remediated in committed
-<code>comprehensive-test.sh</code>/<code>verify-proxy.sh</code>/
-<code>final-verify.sh</code>/<code>run-tests.sh</code>
-(assert_egress_ip, assert_cache_hit, per-request %{http_code},
-ab_pass_with_evidence, honest SKIP bucket). Standing guards registered
-in <code>run-tests.sh test_regression_guards()</code>: BUGFIX-0014
-(proxy_conn_verdict), 0015 (ddos_flood evidence), 0016 (benchmark
-ratchet), 0018 (assert_egress_ip host-undeterminable fail-open + F-1
-IP-shape), LE cert-analyzer self-validation — each GREEN +
-<code>RED_MODE=1</code>. Full suite: 61 run / 55 pass / 6 skip / 0 fail.
-BUGFIX-0017 (comprehensive canaries) also landed (reuses the 0014
-classifier guard).</li>
-<li><strong>LE workstream (task #59) — IN FLIGHT.</strong> Landed @
-<code>2812f48</code>: Phase 0 decisions (Caddy auto-HTTPS / DNS-01 /
-hermetic-first — <code>docs/design/letsencrypt/Status.md</code>)
+no force §11.4.113). The single canonical moment-valid resume file is
+<code>.remember/remember.md</code> (§11.4.131) — read it first.</li>
+<li><strong>Anti-bluff sweep + LE Phase 0–3 + task #56 — ALL DONE +
+committed.</strong> LE hermetic DNS-01 issuance is PROVEN (real cert
+from local Pebble, cert-analyzer- verified, re-runnable
+<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> @
+<code>b2afa7d</code>; live-PASS Challenge
+<code>challenges/scripts/le_phase3_issuance_challenge.sh</code>;
+standing guard <code>tests/letsencrypt/phase3_issuance_guard.sh</code>
+RED+GREEN, wired in <code>run-tests.sh</code>). Task #56 observability
+live-/metrics-scrape PROVEN (isolated trio
+<code>deploy/observability/compose.metrics.yml</code>, real Prometheus
+exposition @ <code>401234e</code>). CoreDNS SOA-front fixed certmagic
+zone-determination; the Pebble/Caddy image-tag + <code>-strict</code> +
+<code>vv2.8.4</code> bugs were all found + fixed live.</li>
+<li><strong>LE Phase 5 (renewal/rotation) — ROOT-DIAGNOSED,
+PENDING.</strong> Pebble ≥2.8.0 <code>/set-renewal-info</code>
+stores+serves a past ARI window (CONFIRMED), but certmagic v0.21.3's
+persistent 6h ARI cache blocks a fast deterministic renewal
+(<code>/load</code>
 <ul>
-<li>Phase 1 offline cert-analyzer
-<code>tests/letsencrypt/cert_analyzer.sh</code> (5 pure now-seam
-functions, self-validated §11.4.107(10), guard
-<code>cert_analyzer_selfvalidation_test.sh</code> GREEN+RED, §1.1
-verified). 3 background subagents running (authoring only — conductor is
-the single container-boot owner §11.4.119): (A) hermetic
-Caddy+Pebble+DNS-01 research →
-<code>docs/research/letsencrypt_hermetic_20260701/</code>; (B) Phase-2
-infra config → <code>deploy/letsencrypt/</code>
-(Caddyfile+compose+secret NAMES/volume via the containers submodule,
-rootless); (C) release-prep audit + runbook →
-<code>docs/releases/</code>. On each return: conductor reviews
-(§11.4.142), integrates, then boots the hermetic Pebble+Caddy stack via
-<code>submodules/containers</code> (§11.4.76) to prove a REAL cert
-issuance (Phase 3, anti-bluff core), asserting the result with the
-cert-analyzer; Phase 5 renewal/rotation sim next. Phase 4 (LE-staging
-real DNS-01 token §11.4.10) + Phase 6 (prod cutover, real domain) are
-OPERATOR-BLOCKED — surface via §11.4.66 only at that boundary.</li>
+<li>restart both read the cache). NEXT = the feasibility research
+<code>docs/research/caddy_2110_ari_refetch_20260701/</code>: does
+certmagic ≥v0.25.1 re-fetch ARI on reload? GO ⇒ port the challtestsrv
+DNS provider to libdns v1.0.0</li>
+<li>rebuild the Caddy image at ≥2.11.0 + re-verify issuance+renewal.
+Detail in <code>docs/research/pebble_set_renewal_info_20260701/</code> +
+<code>letsencrypt_renewal_20260701/</code>. Phase 4 (LE-staging token
+§11.4.10) + Phase 6 (prod cutover) OPERATOR-BLOCKED.</li>
 </ul></li>
-<li><strong>Two documented follow-up nits (non-blocking):</strong> (i)
-F5 ddos_flood crashed-vs-absent reason precision (needs an
-"observed-up-before" signal; BUGFIX-0015 ledger). (ii)
-<code>_evidence_ip_shaped</code> accepts the long-form IPv6
-<code>0:0:0:0:0:0:0:0</code> (unreachable as a fail-open — no caller
-emits it; re-review informational note). Neither is a live bluff.</li>
-<li><strong>P10 dynamic-VPN data-plane proof + #56
-observability</strong> remain: fail-closed half doable autonomously
-(boot dynamic stack, tunnel down → branded 503 + no leak),
-real-VPN-egress half operator-gated on gluetun WireGuard creds
-(§11.4.66). Booting reclaims <code>:53128</code> — single-owner
-(§11.4.119); free the running proxy first.</li>
+<li><strong>P10 dynamic-VPN real-VPN-egress</strong> remains
+operator-gated on gluetun WireGuard creds (§11.4.66); the fail-closed
+half is autonomously doable (boot dynamic stack, tunnel down → branded
+503 + no leak) — booting reclaims <code>:53128</code>, single-owner
+(§11.4.119), free the running proxy first.</li>
 <li><strong>Release (§11.4.40/§11.4.113/§11.4.151):</strong> after LE
-Phase 3 + full retest, cut <code>helix_proxy-0.1.0-dev-0.0.2</code> via
-GitHub AND GitLab CLIs with a changelog (per the release runbook stream
-C is drafting), FF-only merge onto latest <code>main</code>.</li>
+Phase 5 (or an operator decision to ship issuance-only) + a full retest,
+cut <code>helix_proxy-0.1.0-dev-0.0.2</code> via GitHub AND GitLab CLIs
+(GitLab OPERATOR-BLOCKED — no GitLab remote) with the
+<code>docs/releases/CHANGELOG_helix_proxy-0.1.0-dev-0.0.2.md</code> (Rev
+2), FF-only onto <code>main</code>.</li>
 <li>Every change: TDD reproduce-first (§11.4.43/§11.4.115), all
 warranted test types (§11.4.169), paired §1.1 mutation, independent
 review → iterate-to-GO (§11.4.142/§11.4.125/§11.4.134), docs in sync
