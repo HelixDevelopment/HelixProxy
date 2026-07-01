@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>miracast_verdict</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="miracast-over-the-l3-routed-vpn--structural-impossibility-verdict">Miracast
+over the L3-Routed VPN — Structural-Impossibility Verdict</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T15:49:13Z <strong>Status:</strong> Won't-fix —
+structurally-impossible (§11.4.112) <strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.112
+structural-impossibility classification for the VPN-LAN service-access
+feature (Phase 8 of <a href="PLAN.md"><code>PLAN.md</code></a> §5).
+<strong>Feature workstream:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> (§11.4.167)
+<strong>Companion:</strong> plan <a
+href="PLAN.md"><code>PLAN.md</code></a> §2 routing map + §5 Phase 8 ·
+the positive casting capability is delivered by Phase 6 (Google Cast /
+DIAL).</p>
+<hr />
+<h2 id="1-verdict-statement">1. Verdict statement</h2>
+<p><strong>Miracast CANNOT traverse the helix_proxy L3-routed VPN. This
+is a structural impossibility of the standard — Miracast lives below IP
+entirely — NOT a missing, unimplemented, or hard-to-build
+feature.</strong> Per §11.4.112 the item is classified
+<strong><code>Won't-fix: structurally-impossible</code></strong> with
+the cited authoritative evidence recorded in §4 below. This is a durable
+verdict (not eternal): it is overturned only by NEW evidence that the
+platform constraint itself changed (§5), never by re-deriving the same
+impossibility.</p>
+<p>Miracast is therefore <strong>out of scope by physics</strong> for
+the routed-VPN traversal, exactly as recorded in <a
+href="PLAN.md"><code>PLAN.md</code></a> §2 (the "L2 / Wi-Fi-Direct"
+traffic class → <strong>STRUCTURALLY-IMPOSSIBLE over L3 VPN</strong>).
+The routable "cast to a remote display" capability the operator wants is
+delivered instead by <strong>Google Cast / DIAL</strong> (Phase 6),
+which is IP-based and works over the VPN with a remote-side discovery
+reflector (§3).</p>
+<hr />
+<h2 id="2-what-miracast-actually-is-fact-1146">2. What Miracast actually
+is (FACT, §11.4.6)</h2>
+<p>Miracast is a <strong>Wi-Fi Alliance</strong> certification program
+for wireless display, branded <strong>Wi-Fi CERTIFIED Miracast</strong>.
+It certifies the underlying <strong>Wi-Fi Display</strong> technical
+specification. Its defining architectural property (FACT):</p>
+<ul>
+<li>Miracast is a <strong>peer-to-peer</strong> wireless-display
+connection between a <strong>source</strong> (e.g. a phone/laptop) and a
+<strong>sink</strong> (e.g. a TV/receiver/dongle).</li>
+<li>Its transport substrate is <strong>Wi-Fi Direct</strong> (Wi-Fi
+Peer-to-Peer, built on IEEE 802.11). The two devices form a <strong>P2P
+group</strong> by negotiating directly over the radio — one device
+becomes the <strong>Group Owner</strong> (acting as a soft access
+point), the other joins as a P2P client — <strong>with no network
+infrastructure, no wireless access point, and no router between
+them.</strong></li>
+<li>Group formation happens at the <strong>link layer (Layer 2)</strong>
+via 802.11 P2P discovery + Group-Owner negotiation over the air, between
+two devices in <strong>radio (RF) proximity</strong>. Miracast then
+negotiates an RTSP session and streams H.264 video (RTP) <strong>inside
+that direct P2P group</strong>.</li>
+</ul>
+<p><strong>Honest nuance (FACT, not a contradiction):</strong> within
+the Wi-Fi Direct group, the Group Owner does run DHCP and the RTSP/RTP
+session does ride an IP link. But that IP link <strong>exists only on
+the direct radio association between the two physically co-located
+devices</strong> — it is a private, self-contained P2P group created by
+the 802.11 radios, <strong>not</strong> an infrastructure/routed
+network. There is no routable IP hop between the source and the sink for
+an external network to insert itself into; the source and the sink
+<strong>are</strong> the network.</p>
+<hr />
+<h2
+id="3-why-it-cannot-traverse-an-l3-vpn-the-l2-vs-ip-routing-argument-fact">3.
+WHY it cannot traverse an L3 VPN (the L2-vs-IP-routing argument,
+FACT)</h2>
+<p>The helix_proxy VPN is <strong>L3-routed</strong> (WireGuard +
+L2TP/PPP over <code>ppp0</code>; reachable subnet
+<code>10.0.0.0/8</code>; svord host <code>10.6.100.221</code>) — see <a
+href="PLAN.md"><code>PLAN.md</code></a> §2. A Layer-3 VPN does exactly
+one thing: it <strong>routes IP packets</strong> between IP subnets that
+are already reachable by IP routing. Everything helix_proxy can carry
+(SMB, NFS, FTP, SFTP, IMAP, SMTP, POP3, WebDAV, Cast control, DIAL, ADB)
+is a <strong>unicast IP</strong> service — an IP endpoint the router can
+forward a packet toward.</p>
+<p>Miracast has <strong>no such IP hop to route.</strong> Its substrate
+is a Wi-Fi Direct P2P radio association negotiated <strong>directly
+between two devices in RF proximity</strong> at the link layer. The
+mismatch is categorical:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Miracast requires</th>
+<th>What an L3 VPN provides</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1/L2 (radio)</td>
+<td>A direct 802.11 Wi-Fi Direct P2P group formed by the two devices'
+radios in RF proximity</td>
+<td><strong>Nothing</strong> — a VPN does not create radio
+associations</td>
+</tr>
+<tr>
+<td>L2 group formation</td>
+<td>P2P discovery + Group-Owner negotiation over the air</td>
+<td><strong>Nothing</strong> — cannot be synthesized across a
+tunnel</td>
+</tr>
+<tr>
+<td>L3 (IP)</td>
+<td>A private IP link confined <strong>inside</strong> the P2P
+group</td>
+<td>Routes IP packets <strong>between already-reachable subnets</strong>
+— but there is no inter-subnet IP hop in Miracast to route</td>
+</tr>
+</tbody>
+</table>
+<p>To "route Miracast over the VPN" the VPN would have to
+<strong>manufacture a Wi-Fi Direct radio association between a source
+and a sink that are not in RF proximity</strong> — i.e. create a
+physical-layer 802.11 P2P group across a routed tunnel. A VPN cannot do
+this; nothing at Layer 3 can. The source and sink must be the same radio
+group, and radio proximity is a physical precondition the tunnel cannot
+supply. <strong>Therefore Miracast traversal over the L3 VPN is
+structurally impossible — the impossibility is at the standard's
+physical/link substrate, below IP, where the VPN has no
+reach.</strong></p>
+<p>This is the recon-5 FACT recorded in <a
+href="PLAN.md"><code>PLAN.md</code></a> §11: <em>"Miracast =
+Wi-Fi-Direct/L2 structurally-impossible."</em></p>
+<hr />
+<h2 id="4-cited-authoritative-evidence-114112--11499-latest-source">4.
+Cited authoritative evidence (§11.4.112 + §11.4.99 latest-source)</h2>
+<p>The verdict rests on the published standard, not inference.
+Authoritative sources (access date <strong>2026-07-01</strong>):</p>
+<ol type="1">
+<li><p><strong>Wi-Fi Alliance — Wi-Fi CERTIFIED Miracast</strong> (the
+certifying body's own definition): Miracast is a peer-to-peer
+wireless-display standard built on <strong>Wi-Fi Direct</strong>,
+establishing a direct device-to-device connection <strong>without an
+access point / network infrastructure</strong>.
+<code>https://www.wi-fi.org/discover-wi-fi/miracast</code></p></li>
+<li><p><strong>Wikipedia — Miracast</strong> (technical overview +
+references to the Wi-Fi Display spec): Miracast forms a connection over
+<strong>Wi-Fi Direct</strong>; source and sink negotiate a
+<strong>peer-to-peer</strong> link; it is a screen-mirroring standard
+operating over a direct P2P association rather than an infrastructure
+network. <code>https://en.wikipedia.org/wiki/Miracast</code></p></li>
+<li><p><strong>Wikipedia — Wi-Fi Direct</strong> (the P2P substrate):
+Wi-Fi Direct (Wi-Fi Peer-to-Peer) lets devices connect <strong>directly,
+without a wireless access point / router</strong>; one device acts as a
+<strong>Group Owner</strong> functioning as a soft AP — a
+<strong>link-layer</strong> association negotiated by the devices
+themselves.
+<code>https://en.wikipedia.org/wiki/Wi-Fi_Direct</code></p></li>
+<li><p><strong>Devopedia — Wi-Fi Direct</strong> (independent technical
+corroboration): Wi-Fi Direct forms a <strong>P2P group</strong> via
+Group-Owner negotiation over 802.11, an infrastructure-less direct radio
+link between devices in proximity.
+<code>https://devopedia.org/wi-fi-direct</code></p></li>
+</ol>
+<p>Together these establish, as FACT, that Miracast's transport is a
+Wi-Fi Direct <strong>Layer-2 radio P2P group with no
+infrastructure/routed IP hop</strong> — the precise property that makes
+L3-VPN traversal structurally impossible (§3).</p>
+<hr />
+<h2 id="5-honest-boundary--what-is-possible-instead-1146--114112">5.
+Honest boundary + what IS possible instead (§11.4.6 / §11.4.112)</h2>
+<p><strong>What this verdict does and does not claim.</strong> It claims
+— with cited evidence — that <strong>routing/tunneling the Miracast
+protocol itself across the L3 VPN is impossible by the standard's
+design.</strong> It does <strong>not</strong> claim "casting to a remote
+display is impossible." A routable capability exists and is delivered
+elsewhere in this feature:</p>
+<ul>
+<li><p><strong>Google Cast / DIAL (Phase 6) — the routable drop-in
+alternative.</strong> Google Cast (CASTV2 control on
+<code>8008</code>/<code>8009</code>) and DIAL are
+<strong>IP-based</strong> application protocols. Their control planes
+route over the VPN as ordinary unicast TCP; only their
+<strong>discovery</strong> (mDNS <code>_googlecast._tcp</code> / SSDP
+<code>M-SEARCH</code>) is multicast and needs a <strong>remote-side
+reflector</strong> (Phase 5), because routers do not forward multicast
+across L3. This is the correct "cast to a remote display" path over the
+VPN — see <a href="PLAN.md"><code>PLAN.md</code></a> §2 (Cast control
+routes; discovery reflects) and §5 Phase 6.</p></li>
+<li><p><strong>Remote-site Miracast receiver (driven by something the
+VPN CAN reach).</strong> Miracast can still be used <strong>locally at
+the remote site</strong>: a Miracast sink physically co-located with a
+remote source forms its Wi-Fi Direct group locally (in RF proximity, as
+the standard requires), and helix_proxy reaches whatever
+<strong>IP-based</strong> control/orchestration drives that remote setup
+— never the Wi-Fi Direct radio link itself. The VPN carries the routable
+control; the Miracast radio association stays local to the remote site
+where physics allows it.</p></li>
+</ul>
+<p><strong>No fake traversal test exists or will be authored.</strong>
+Per Phase 8 (T8.2) the cited spec text in §4 <strong>is</strong> the
+artifact for this verdict; the positive, evidence-backed casting
+capability lives in Phase 6. Authoring a "Miracast-over-VPN" test that
+appears to pass would be a §11.4 / §11.4.107 bluff — there is nothing
+real to route, so any green result would be fabricated. The correct
+posture is this documented structural verdict + the Phase-6 routable
+alternative.</p>
+<hr />
+<h2 id="6-reopen-condition-11434--1147--114112">6. Reopen condition
+(§11.4.34 / §11.4.7 / §11.4.112)</h2>
+<p>This verdict is <strong>durable but not eternal.</strong> It may be
+reopened <strong>only</strong> on captured <strong>NEW evidence that the
+platform constraint itself changed</strong> — for example: a future
+Wi-Fi Alliance revision defining an infrastructure/routed Miracast
+transport; a standardized IP-tunneled Wi-Fi Display mode; or an
+OS/driver mechanism that presents a Miracast sink over routable IP
+rather than a Wi-Fi Direct radio group. A reopen MUST cite that new
+authoritative evidence per §11.4.7 (demotion requires positive evidence
+captured under the changed conditions) and §11.4.34 (reopen
+attribution). <strong>Re-deriving the same impossibility from the same
+unchanged standard is NOT a valid reopen</strong> (§11.4.112) — it
+merely repeats settled work. Until such new evidence exists, the
+classification stands and Miracast traversal is not re-attempted.</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>Wi-Fi Alliance — Wi-Fi CERTIFIED Miracast:
+<code>https://www.wi-fi.org/discover-wi-fi/miracast</code></li>
+<li>Wikipedia — Miracast:
+<code>https://en.wikipedia.org/wiki/Miracast</code></li>
+<li>Wikipedia — Wi-Fi Direct:
+<code>https://en.wikipedia.org/wiki/Wi-Fi_Direct</code></li>
+<li>Devopedia — Wi-Fi Direct:
+<code>https://devopedia.org/wi-fi-direct</code></li>
+</ul>
+<p><em>Access date for all sources: 2026-07-01. Verdict basis: the Wi-Fi
+Alliance Miracast standard is built on Wi-Fi Direct (Wi-Fi Peer-to-Peer,
+IEEE 802.11) — a link-layer, infrastructure-less, radio-proximity P2P
+association with no routable IP hop for an L3 VPN to carry (§3, FACT
+§11.4.6). Classification <code>Won't-fix: structurally-impossible</code>
+per §11.4.112.</em></p>
+</body>
+</html>
