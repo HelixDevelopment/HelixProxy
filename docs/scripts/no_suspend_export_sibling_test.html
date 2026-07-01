@@ -240,9 +240,9 @@
 <h1
 id="testsregressionno_suspend_export_sibling_testsh--operator-guide"><code>tests/regression/no_suspend_export_sibling_test.sh</code>
 — operator guide</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T06:30:00Z <strong>Status:</strong> Active standing regression
-guard (§11.4.135) for BUGFIX-0011.</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T07:10:00Z <strong>Status:</strong> Active standing regression
+guard (§11.4.135) for BUGFIX-0011 + BUGFIX-0013.</p>
 <blockquote>
 <p>Companion (§11.4.18) to the in-source documentation block at the top
 of the script. Sibling of
@@ -273,6 +273,21 @@ prefix <code>/docs/issues/fixed/BUGFIXES.</code> covers <code>.md</code>
 <strong>non-ledger</strong> <code>.html</code> and any <strong>real
 script invocation</strong> still trip the scanner (the gate is not
 neutered, §11.4.120).</p>
+<p><strong>BUGFIX-0013 (F4 from the §11.4.118 discovery sweep).</strong>
+The same sibling-blindness class remained on the <strong>governance
+carrier</strong> entries (<code>CLAUDE.md</code> /
+<code>AGENTS.md</code> / <code>QWEN.md</code> / <code>GEMINI.md</code> /
+<code>CONSTITUTION.md</code>) — these are the SOURCE of CONST-033 and
+legitimately quote the banned patterns, but the explicit
+<code>.md</code> left the §11.4.65 <code>CLAUDE.html</code> /
+<code>.pdf</code> export siblings scannable (reproduced against a
+<code>CLAUDE.html</code> fixture: the pre-fix scanner exits 1 on it).
+The fix makes those five entries extension-agnostic prefixes
+(<code>CLAUDE.</code>, <code>AGENTS.</code>, …). This guard's GREEN
+branch now additionally builds a <code>CLAUDE.html</code> governance
+sibling and asserts it too is excluded, so a regression back to
+<code>CLAUDE.md</code> makes the guard FAIL
+(<code>gov_flagged=yes</code>).</p>
 <p>It does <strong>not</strong> grep the source. It builds a throwaway
 fixture tree and drives the <strong>real</strong> scanner, so it is
 deterministic and independent of the live ledger's current content.</p>
@@ -364,10 +379,14 @@ path (§11.4.14).</li>
 <li><code>docs/issues/fixed/BUGFIXES.md</code> — BUGFIX-0011.</li>
 </ul>
 <h2 id="last-verified">Last verified</h2>
-<p>2026-07-01 — <code>sh -n</code> parse-clean; GREEN excludes the
-ledger <code>.html</code> sibling + catches the real script (exit 0);
-<code>RED_MODE=1</code> reproduces (exit 0); paired mutation (revert
-exclusion) makes GREEN FAIL (exit 1) then restores byte-identical;
-registered in <code>run-tests.sh</code>.</p>
+<p>2026-07-01 (Rev 2, BUGFIX-0013) — <code>sh -n</code> parse-clean;
+GREEN excludes the ledger <code>.html</code> <strong>and</strong> the
+governance <code>CLAUDE.html</code> export siblings + catches the real
+script (exit 0); <code>RED_MODE=1</code> reproduces (exit 0); paired
+mutation reverting <code>"CLAUDE."</code> → <code>"CLAUDE.md"</code> in
+the scanner makes GREEN FAIL with <code>gov_flagged=yes</code> (exit 1)
+then restores byte-identical (md5 verified); F4 defect reproduced
+against a <code>CLAUDE.html</code> fixture before the fix; registered in
+<code>run-tests.sh</code>.</p>
 </body>
 </html>

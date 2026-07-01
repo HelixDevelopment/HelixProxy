@@ -12,6 +12,9 @@
 #   scanner on its own fix documentation (§11.4.1 false-FAIL). The fix uses an
 #   extension-AGNOSTIC prefix ("/docs/issues/fixed/BUGFIXES.") so ALL siblings are
 #   excluded — while a NON-ledger .html and any real script invocation still trip.
+#   BUGFIX-0013 (F4, §11.4.118 sweep): the same class remained on the governance
+#   carriers (CLAUDE.md/AGENTS.md/QWEN.md/GEMINI.md/CONSTITUTION.md) — the GREEN
+#   branch now also asserts a CLAUDE.html governance sibling is excluded.
 #
 # What it actually does (fixture-driven — does NOT depend on the live ledger's
 # content, exercises the REAL scanner):
@@ -94,19 +97,25 @@ if [ "$RED_MODE" = "1" ]; then
             ;;
     esac
 else
-    # GREEN: add a REAL invocation the scanner MUST still catch, then assert the
-    # ledger .html is excluded while the real script is not.
+    # GREEN: add a REAL invocation the scanner MUST still catch, plus a GOVERNANCE
+    # export sibling (CLAUDE.html — F4 from the §11.4.118 sweep), then assert BOTH
+    # doc siblings are excluded while the real script is not.
     mkdir -p "$TMPROOT/scripts"
     printf '#!/bin/sh\n%s\n' "$BANNED" > "$TMPROOT/scripts/real_invocation.sh"
+    # F4: a governance-carrier export sibling (CLAUDE.<ext>) legitimately quoting the
+    # banned literal — MUST be excluded by the extension-agnostic "CLAUDE." prefix
+    # (an explicit "CLAUDE.md" left this generated .html sibling scannable).
+    printf '<p>%s</p>\n' "$BANNED" > "$TMPROOT/CLAUDE.html"
     out="$(bash "$SCANNER" "$TMPROOT" 2>&1)" && rc=0 || rc=$?
-    ledger_flagged=no; script_flagged=no
+    ledger_flagged=no; gov_flagged=no; script_flagged=no
     case "$out" in *docs/issues/fixed/BUGFIXES.html*) ledger_flagged=yes;; esac
+    case "$out" in *CLAUDE.html*)                     gov_flagged=yes;; esac
     case "$out" in *scripts/real_invocation.sh*)      script_flagged=yes;; esac
-    if [ "$ledger_flagged" = "no" ] && [ "$script_flagged" = "yes" ] && [ "$rc" -eq 1 ]; then
+    if [ "$ledger_flagged" = "no" ] && [ "$gov_flagged" = "no" ] && [ "$script_flagged" = "yes" ] && [ "$rc" -eq 1 ]; then
         verdict=PASS; exit_code=0
-        msg="GREEN: real scanner EXCLUDES the ledger .html export sibling AND still catches the real script invocation (rc=$rc)"
+        msg="GREEN: real scanner EXCLUDES the ledger .html AND governance CLAUDE.html export siblings AND still catches the real script (rc=$rc)"
     else
-        msg="REGRESSION: ledger_flagged=$ledger_flagged (want no) script_flagged=$script_flagged (want yes) rc=$rc (want 1) — sibling exclusion broke OR the gate was neutered (out=$out)"
+        msg="REGRESSION: ledger_flagged=$ledger_flagged (want no) gov_flagged=$gov_flagged (want no) script_flagged=$script_flagged (want yes) rc=$rc (want 1) — a doc-sibling exclusion broke OR the gate was neutered (out=$out)"
     fi
 fi
 

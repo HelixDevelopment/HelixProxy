@@ -59,12 +59,18 @@ EXCLUDE_PATHS=(
   "host_no_auto_suspend_challenge.sh"
   "no_suspend_calls_challenge.sh"
   "HOST_POWER_MANAGEMENT."
-  "CONSTITUTION.md"
-  "CONSTITUTION.json"
-  "AGENTS.md"
-  "CLAUDE.md"
-  "QWEN.md"
-  "GEMINI.md"
+  # Governance carriers legitimately quote the banned host-power patterns when
+  # DOCUMENTING CONST-033 (they ARE the source of the rule). Extension-AGNOSTIC
+  # prefixes so the §11.4.65 export siblings (.md / .html / .pdf) — and
+  # CONSTITUTION.json — are ALL excluded; explicit ".md" left the generated
+  # ".html"/".pdf" siblings scannable and would trip the scanner the moment those
+  # exports are produced (same sibling-blindness class as BUGFIX-0011; F4 from the
+  # §11.4.118 discovery sweep, reproduced against a CLAUDE.html fixture).
+  "CONSTITUTION."
+  "AGENTS."
+  "CLAUDE."
+  "QWEN."
+  "GEMINI."
   # Doc-ledger (justified non-host context): the bugfix ledger legitimately quotes
   # the banned patterns when DOCUMENTING CONST-033 fixes (e.g. a §1.1 mutation
   # example `systemctl suspend`). Extension-AGNOSTIC prefix so the §11.4.65 export

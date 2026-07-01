@@ -1395,5 +1395,67 @@ working throughout (api.ipify.org 200 direct+proxied).</p>
 <p>Evidence: guard at
 <code>tests/regression/external_egress_verdict_test.sh</code>; companion
 <code>docs/scripts/external_egress_verdict_test.md</code>.</p>
+<h2
+id="bugfix-0013--const-033-scanner-false-fail-governance-carrier-exclusions-claudemd-etc-missed-their-htmlpdf-export-siblings-f4-incomplete-bugfix-0011">BUGFIX-0013
+— CONST-033 scanner false-FAIL: governance-carrier exclusions
+(<code>CLAUDE.md</code> etc.) missed their
+<code>.html</code>/<code>.pdf</code> export siblings (F4, incomplete
+BUGFIX-0011)</h2>
+<ul>
+<li><strong>Type:</strong> Bug (test-suite integrity — a §11.4.1
+false-FAIL, latent; the export-sibling blind spot BUGFIX-0011 fixed for
+the ledger but not for the governance carriers)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong>
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code>
+(<code>EXCLUDE_PATHS</code> — the five governance entries),
+<code>tests/regression/no_suspend_export_sibling_test.sh</code> (GREEN
+branch extended with a governance-doc sibling case, §11.4.135),
+<code>docs/scripts/no_suspend_export_sibling_test.md</code> (companion,
+Rev 2), + <code>.html</code>/<code>.pdf</code>.</li>
+<li><strong>Discovered by:</strong> the §11.4.118 anti-bluff discovery
+sweep (finding F4, CONFIRMED-latent).</li>
+</ul>
+<p>Root cause: BUGFIX-0011 made the bug-ledger exclusion
+extension-agnostic (<code>/docs/issues/fixed/BUGFIXES.</code>) but the
+governance carriers — <code>CONSTITUTION.md</code>,
+<code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>QWEN.md</code>,
+<code>GEMINI.md</code> — stayed extension-specific. These files ARE the
+source of CONST-033 and legitimately quote the banned host-power
+literals (<code>pm-suspend</code>, <code>dbus-send … Suspend</code>,
+etc.). The moment §11.4.65 generates their
+<code>.html</code>/<code>.pdf</code> export siblings, the
+<code>.md</code>-only exclusion misses the sibling and the scanner
+false-FAILs on its own governance documentation — the identical
+sibling-blindness class as BUGFIX-0011, one layer over.</p>
+<p>Fix: make the five governance entries extension-agnostic prefixes
+(<code>CONSTITUTION.</code>, <code>AGENTS.</code>, <code>CLAUDE.</code>,
+<code>QWEN.</code>, <code>GEMINI.</code>) so <code>.md</code> +
+<code>.html</code> + <code>.pdf</code> (+ <code>.json</code>) are all
+excluded, while a <strong>non-governance</strong> file carrying a banned
+literal and any <strong>real script invocation</strong> still trip the
+scanner (gate not neutered, §11.4.120).</p>
+<h3
+id="verification-captured-114115-redgreen--11--114146-reproduce-first">Verification
+(captured, §11.4.115 RED→GREEN + §1.1 + §11.4.146 reproduce-first)</h3>
+<pre><code># reproduce-first (pre-fix scanner vs a CLAUDE.html governance sibling):
+$ bash check-no-suspend-calls.sh &lt;fixture-with-CLAUDE.html&gt;  -&gt; exit 1, CLAUDE.html listed (false-FAIL reproduced)
+# post-fix GREEN: CLAUDE.html + AGENTS.pdf excluded, a real scripts/real.sh still caught (exit 1 on real.sh only)
+# real challenge on the actual tree:
+$ bash challenges/scripts/no_suspend_calls_challenge.sh      -&gt; OK / PASS (no regression)
+# §11.4.135 guard (extended):
+$ tests/regression/no_suspend_export_sibling_test.sh            -&gt; [PASS] GREEN (excludes ledger + governance siblings)
+$ RED_MODE=1 tests/regression/no_suspend_export_sibling_test.sh -&gt; [PASS] RED reproduces the sibling-blind false-FAIL
+# §1.1 paired mutation — revert &quot;CLAUDE.&quot; -&gt; &quot;CLAUDE.md&quot; in the scanner:
+$ (mutated) no_suspend_export_sibling_test.sh                   -&gt; [FAIL] gov_flagged=yes (exit 1) ; restore byte-identical (md5 match) -&gt; PASS</code></pre>
+<p>Honest boundary (§11.4.6): a latent test-suite-integrity fix — the
+false-FAIL only fires once the governance-doc HTML/PDF exports exist; it
+changes NO product behaviour and the scanner still catches every real
+host-power invocation.</p>
+<p>Evidence: guard at
+<code>tests/regression/no_suspend_export_sibling_test.sh</code>;
+companion
+<code>docs/scripts/no_suspend_export_sibling_test.md</code>.</p>
 </body>
 </html>

@@ -983,3 +983,50 @@ verified genuinely working throughout (api.ipify.org 200 direct+proxied).
 
 Evidence: guard at `tests/regression/external_egress_verdict_test.sh`;
 companion `docs/scripts/external_egress_verdict_test.md`.
+
+## BUGFIX-0013 — CONST-033 scanner false-FAIL: governance-carrier exclusions (`CLAUDE.md` etc.) missed their `.html`/`.pdf` export siblings (F4, incomplete BUGFIX-0011)
+
+- **Type:** Bug (test-suite integrity — a §11.4.1 false-FAIL, latent; the export-sibling blind spot BUGFIX-0011 fixed for the ledger but not for the governance carriers)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `scripts/host-power-management/check-no-suspend-calls.sh`
+  (`EXCLUDE_PATHS` — the five governance entries), `tests/regression/no_suspend_export_sibling_test.sh`
+  (GREEN branch extended with a governance-doc sibling case, §11.4.135),
+  `docs/scripts/no_suspend_export_sibling_test.md` (companion, Rev 2), + `.html`/`.pdf`.
+- **Discovered by:** the §11.4.118 anti-bluff discovery sweep (finding F4, CONFIRMED-latent).
+
+Root cause: BUGFIX-0011 made the bug-ledger exclusion extension-agnostic
+(`/docs/issues/fixed/BUGFIXES.`) but the governance carriers — `CONSTITUTION.md`,
+`AGENTS.md`, `CLAUDE.md`, `QWEN.md`, `GEMINI.md` — stayed extension-specific. These
+files ARE the source of CONST-033 and legitimately quote the banned host-power
+literals (`pm-suspend`, `dbus-send … Suspend`, etc.). The moment §11.4.65 generates
+their `.html`/`.pdf` export siblings, the `.md`-only exclusion misses the sibling and
+the scanner false-FAILs on its own governance documentation — the identical
+sibling-blindness class as BUGFIX-0011, one layer over.
+
+Fix: make the five governance entries extension-agnostic prefixes (`CONSTITUTION.`,
+`AGENTS.`, `CLAUDE.`, `QWEN.`, `GEMINI.`) so `.md` + `.html` + `.pdf` (+ `.json`) are
+all excluded, while a **non-governance** file carrying a banned literal and any **real
+script invocation** still trip the scanner (gate not neutered, §11.4.120).
+
+### Verification (captured, §11.4.115 RED→GREEN + §1.1 + §11.4.146 reproduce-first)
+
+```
+# reproduce-first (pre-fix scanner vs a CLAUDE.html governance sibling):
+$ bash check-no-suspend-calls.sh <fixture-with-CLAUDE.html>  -> exit 1, CLAUDE.html listed (false-FAIL reproduced)
+# post-fix GREEN: CLAUDE.html + AGENTS.pdf excluded, a real scripts/real.sh still caught (exit 1 on real.sh only)
+# real challenge on the actual tree:
+$ bash challenges/scripts/no_suspend_calls_challenge.sh      -> OK / PASS (no regression)
+# §11.4.135 guard (extended):
+$ tests/regression/no_suspend_export_sibling_test.sh            -> [PASS] GREEN (excludes ledger + governance siblings)
+$ RED_MODE=1 tests/regression/no_suspend_export_sibling_test.sh -> [PASS] RED reproduces the sibling-blind false-FAIL
+# §1.1 paired mutation — revert "CLAUDE." -> "CLAUDE.md" in the scanner:
+$ (mutated) no_suspend_export_sibling_test.sh                   -> [FAIL] gov_flagged=yes (exit 1) ; restore byte-identical (md5 match) -> PASS
+```
+
+Honest boundary (§11.4.6): a latent test-suite-integrity fix — the false-FAIL only
+fires once the governance-doc HTML/PDF exports exist; it changes NO product behaviour
+and the scanner still catches every real host-power invocation.
+
+Evidence: guard at `tests/regression/no_suspend_export_sibling_test.sh`;
+companion `docs/scripts/no_suspend_export_sibling_test.md`.

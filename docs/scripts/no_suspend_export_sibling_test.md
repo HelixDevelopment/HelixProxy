@@ -1,8 +1,8 @@
 # `tests/regression/no_suspend_export_sibling_test.sh` — operator guide
 
-**Revision:** 1
-**Last modified:** 2026-07-01T06:30:00Z
-**Status:** Active standing regression guard (§11.4.135) for BUGFIX-0011.
+**Revision:** 2
+**Last modified:** 2026-07-01T07:10:00Z
+**Status:** Active standing regression guard (§11.4.135) for BUGFIX-0011 + BUGFIX-0013.
 
 > Companion (§11.4.18) to the in-source documentation block at the top of the
 > script. Sibling of `docs/scripts/comprehensive_admin_topology_test.md`.
@@ -27,6 +27,16 @@ The fix makes the exclusion **extension-agnostic** — the prefix
 `/docs/issues/fixed/BUGFIXES.` covers `.md` + `.html` + `.pdf` — while a
 **non-ledger** `.html` and any **real script invocation** still trip the scanner
 (the gate is not neutered, §11.4.120).
+
+**BUGFIX-0013 (F4 from the §11.4.118 discovery sweep).** The same sibling-blindness
+class remained on the **governance carrier** entries (`CLAUDE.md` / `AGENTS.md` /
+`QWEN.md` / `GEMINI.md` / `CONSTITUTION.md`) — these are the SOURCE of CONST-033 and
+legitimately quote the banned patterns, but the explicit `.md` left the §11.4.65
+`CLAUDE.html` / `.pdf` export siblings scannable (reproduced against a `CLAUDE.html`
+fixture: the pre-fix scanner exits 1 on it). The fix makes those five entries
+extension-agnostic prefixes (`CLAUDE.`, `AGENTS.`, …). This guard's GREEN branch now
+additionally builds a `CLAUDE.html` governance sibling and asserts it too is excluded,
+so a regression back to `CLAUDE.md` makes the guard FAIL (`gov_flagged=yes`).
 
 It does **not** grep the source. It builds a throwaway fixture tree and drives the
 **real** scanner, so it is deterministic and independent of the live ledger's
@@ -87,7 +97,9 @@ A `RED_MODE=1` run that cannot reproduce is a finding per §11.4.7, not a pass.
 
 ## Last verified
 
-2026-07-01 — `sh -n` parse-clean; GREEN excludes the ledger `.html` sibling +
-catches the real script (exit 0); `RED_MODE=1` reproduces (exit 0); paired
-mutation (revert exclusion) makes GREEN FAIL (exit 1) then restores byte-identical;
-registered in `run-tests.sh`.
+2026-07-01 (Rev 2, BUGFIX-0013) — `sh -n` parse-clean; GREEN excludes the ledger
+`.html` **and** the governance `CLAUDE.html` export siblings + catches the real
+script (exit 0); `RED_MODE=1` reproduces (exit 0); paired mutation reverting
+`"CLAUDE."` → `"CLAUDE.md"` in the scanner makes GREEN FAIL with `gov_flagged=yes`
+(exit 1) then restores byte-identical (md5 verified); F4 defect reproduced against a
+`CLAUDE.html` fixture before the fix; registered in `run-tests.sh`.
