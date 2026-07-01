@@ -238,59 +238,84 @@
 </head>
 <body>
 <h1 id="proxy_cache_challengesh">proxy_cache_challenge.sh</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T00:00:00Z <strong>Authority:</strong> Helix Constitution
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T14:45:00Z <strong>Authority:</strong> Helix Constitution
 §11.4.27 (Challenges), §11.4.69 (sink-side positive evidence), §11.4.107
 (forgeable-header discipline), §11.4.3 (honest SKIP), §11.4.68 (no
 fail-open)</p>
 <h2 id="overview">Overview</h2>
 <p>Anti-bluff Challenge that proves the <strong>live HTTP proxy</strong>
-(default <code>http://localhost:53128</code>) caches. A cacheable
-plain-HTTP URL is fetched <strong>twice</strong> through the proxy; the
+(default <code>http://localhost:53128</code>) caches. A
+<strong>reliably-cacheable</strong> plain-HTTP URL (default
+<code>http://ftp.debian.org/debian/README</code> — a Debian mirror
+README served with a cache-permitting <code>Cache-Control</code>) is
+fetched <strong>twice</strong> through the proxy; the
 <strong>authoritative</strong> proof is a Squid <code>TCP_*HIT</code>
 result code for that URL in the Squid <code>access.log</code>, asserted
 via <code>assert_cache_hit</code> from
 <code>tests/lib/evidence.sh</code>. An <code>X-Cache</code> header or an
 <code>Age</code> field alone is <strong>forgeable</strong> and is never
 accepted as the verdict — it is captured only as supplementary evidence.
-If the <code>access.log</code> is not reachable/readable, the challenge
-SKIPs with the closed-set reason <code>topology_unsupported</code>
-(§11.4.3); it never fakes a PASS.</p>
+The <code>access.log</code> is read <strong>inside the Squid
+container</strong> by default (<code>podman exec proxy-squid</code>,
+READ-ONLY) because the rootless-container log is owned by a subuid (mode
+<code>0640</code>) and is typically <strong>not</strong> host-readable;
+a host-readable path is the fallback. The log length is snapshotted
+<strong>before</strong> the fetches and only the
+<strong>appended</strong> lines are inspected (a stale HIT from an
+earlier run can never satisfy the gate — mirrors
+<code>tests/security/proxy_acl_security.sh</code> S4). If
+<strong>no</strong> log source is reachable (container exec fails
+<strong>and</strong> the host log is unreadable), the challenge SKIPs
+with the closed-set reason <code>topology_unsupported</code> (§11.4.3);
+it never fakes a PASS.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
-<li>The base proxy stack UP with the HTTP proxy on
-<code>53128</code>.</li>
+<li>The base proxy stack UP with the HTTP proxy on <code>53128</code>
+and the Squid container running (default name
+<code>proxy-squid</code>).</li>
 <li><code>curl</code>, <code>bash</code>, <code>awk</code>,
 <code>grep</code>; <code>tests/lib/evidence.sh</code> present
 (sourced).</li>
-<li>The authoritative branch additionally requires the Squid
-<code>access.log</code> to be <strong>readable</strong> by the running
-user. In the reference rootless-container topology the log is owned by a
-container subuid (mode <code>0640</code>) and is <strong>not</strong>
-readable by the host user — the challenge then honestly SKIPs.</li>
-<li>READ-ONLY: plain proxy client + a read of the access.log — never
-touches any container.</li>
+<li><code>podman</code> on <code>PATH</code> for the authoritative
+container-log read. If <code>podman</code> is absent or the container is
+down, the script falls back to the host log path and, if that too is
+unreadable, honestly SKIPs.</li>
+<li>READ-ONLY: a plain proxy client + a
+<code>podman exec … wc -l/tail</code> (or host-file) read of the
+access.log — <strong>never</strong> stops/starts/reconfigures any
+container.</li>
 </ul>
 <h2 id="usage">Usage</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/proxy_cache_challenge.sh</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># override the cache url / log path / evidence dir:</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">CACHE_URL</span><span class="op">=</span>http://example.com/ <span class="dt">\</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">SQUID_ACCESS_LOG</span><span class="op">=</span>/path/to/access.log <span class="dt">\</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">CHALLENGE_EVIDENCE_DIR</span><span class="op">=</span>/path/to/evidence <span class="dt">\</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bash</span> challenges/scripts/proxy_cache_challenge.sh</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># override the cache url / container / host log path / evidence dir:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">CACHE_URL</span><span class="op">=</span>http://ftp.debian.org/debian/README <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">SQUID_CONTAINER</span><span class="op">=</span>proxy-squid <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">SQUID_CONTAINER_LOG</span><span class="op">=</span>/var/log/squid/access.log <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="va">SQUID_ACCESS_LOG</span><span class="op">=</span>/path/to/host/access.log <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="va">CHALLENGE_EVIDENCE_DIR</span><span class="op">=</span>/path/to/evidence <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bash</span> challenges/scripts/proxy_cache_challenge.sh</span></code></pre></div>
 <p>Environment: <code>HTTP_PROXY_URL</code> (default
 <code>http://localhost:53128</code>), <code>CACHE_URL</code> (default
-<code>http://example.com/</code>), <code>SQUID_ACCESS_LOG</code>
-(override the resolved path), <code>LOG_DIR</code> (default
+<code>http://ftp.debian.org/debian/README</code>),
+<code>SQUID_CONTAINER</code> (default <code>proxy-squid</code> — the
+authoritative log is read here), <code>SQUID_CONTAINER_LOG</code>
+(default <code>/var/log/squid/access.log</code>),
+<code>SQUID_ACCESS_LOG</code> (override the resolved <strong>host
+fallback</strong> path), <code>LOG_DIR</code> (default
 <code>./logs</code>; the compose file maps container
 <code>/var/log/squid</code> here), <code>CHALLENGE_EVIDENCE_DIR</code>
 (default <code>qa-results/challenges/&lt;run-ts&gt;</code>),
 <code>CURL_MAX_TIME</code> (default <code>20</code>).</p>
 <h2 id="access-log-resolution">Access-log resolution</h2>
-<p><code>SQUID_ACCESS_LOG</code> → <code>$LOG_DIR/access.log</code>
-(from env) → <code>.env</code> <code>LOG_DIR</code> →
-<code>./logs/access.log</code> (the <code>docker-compose.yml</code>
-default mount).</p>
+<p>Authoritative source (preferred): read inside the container via
+<code>podman exec $SQUID_CONTAINER … $SQUID_CONTAINER_LOG</code>. Host
+fallback: <code>SQUID_ACCESS_LOG</code> →
+<code>$LOG_DIR/access.log</code> (from env) → <code>.env</code>
+<code>LOG_DIR</code> → <code>./logs/access.log</code> (the
+<code>docker-compose.yml</code> default mount). Whichever source is
+used, its length is snapshotted <strong>before</strong> the double-fetch
+and only the appended lines are asserted against.</p>
 <h2 id="exit-codes">Exit codes</h2>
 <table>
 <thead>
@@ -302,19 +327,22 @@ default mount).</p>
 <tbody>
 <tr>
 <td><code>0</code></td>
-<td>PASS — a Squid <code>TCP_*HIT</code> for the URL was found in a
-<strong>readable</strong> access.log.</td>
+<td>PASS — a Squid <code>TCP_*HIT</code> for the URL was found in the
+<strong>appended</strong> access.log lines this run produced (read via
+the container or host).</td>
 </tr>
 <tr>
 <td><code>1</code></td>
 <td>FAIL — proxy could not fetch the reachable URL, <strong>or</strong>
-a readable log showed no <code>TCP_*HIT</code> for a URL fetched
-twice.</td>
+the log showed <strong>no</strong> <code>TCP_*HIT</code> for a URL
+fetched twice (e.g. an uncacheable url — the legitimate negation of the
+gate).</td>
 </tr>
 <tr>
 <td><code>3</code></td>
-<td>SKIP — outage (URL unreachable) <strong>or</strong> the access.log
-is not readable (<code>topology_unsupported</code>, §11.4.3).</td>
+<td>SKIP — outage (URL unreachable) <strong>or</strong> no access.log
+source is reachable (container exec fails and host log unreadable —
+<code>topology_unsupported</code>, §11.4.3).</td>
 </tr>
 </tbody>
 </table>
@@ -323,19 +351,33 @@ is not readable (<code>topology_unsupported</code>, §11.4.3).</td>
 <li>The connectivity precondition uses <code>proxy_conn_verdict</code>
 so a site outage SKIPs while a proxy-broken-but-site-reachable-directly
 case FAILs.</li>
-<li><code>Via:</code> / <code>Age:</code> headers are logged as
-<strong>supplementary</strong> only; the verdict rests on the data-plane
+<li><code>Via:</code> / <code>Age:</code> / <code>X-Cache:</code>
+headers are logged as <strong>supplementary</strong> only (the origin's
+own Varnish <code>X-Cache: HIT</code> is meaningless for <em>Squid</em>
+caching); the verdict rests on the data-plane Squid
 <code>TCP_*HIT</code> result code, per §11.4.107.</li>
-<li>Unreadable log ⇒ honest <code>topology_unsupported</code> SKIP with
-the <code>ls -ln</code> ownership captured as the reason — never a
-fabricated cache PASS.</li>
+<li>The log length is snapshotted <strong>before</strong> the fetches;
+only appended lines are asserted, so a stale HIT can never produce a
+false PASS.</li>
+<li>Negation is real: an <strong>uncacheable</strong> url (e.g.
+<code>http://example.com/</code>, <code>http://code.jquery.com/…</code>)
+is fetched with <code>200</code> but logs <code>TCP_MISS</code> twice ⇒
+the challenge FAILs (exit 1), it does <strong>not</strong> rubber-stamp
+any double-fetch.</li>
+<li>No log source ⇒ honest <code>topology_unsupported</code> SKIP with
+the container name + host <code>ls -ln</code> ownership captured — never
+a fabricated cache PASS.</li>
 </ul>
 <h2 id="outputs">Outputs</h2>
 <p><code>&lt;evidence-dir&gt;/cache/cache_evidence.txt</code>
-(double-fetch codes, <code>Via</code>/<code>Age</code> headers,
-connectivity verdict, and either the <code>assert_cache_hit</code>
-verdict or the <code>ls -ln</code> unreadable-log evidence) plus the two
-raw header dumps.</p>
+(double-fetch codes, <code>Via</code>/<code>Age</code>/
+<code>X-Cache</code> headers, connectivity verdict, the log-source +
+snapshot metadata, and either the <code>assert_cache_hit</code> verdict
+with the appended <code>TCP_*</code> result codes or the no-log-source
+SKIP evidence),
+<code>&lt;evidence-dir&gt;/cache/access_appended.log</code> (the
+appended access.log lines this run inspected), plus the two raw header
+dumps.</p>
 <h2 id="related-scripts">Related scripts</h2>
 <ul>
 <li><code>proxy_forward_http_challenge.sh</code>,
@@ -344,9 +386,16 @@ raw header dumps.</p>
 <li><code>tests/lib/evidence.sh</code> — <code>assert_cache_hit</code>
 and the sourced helpers.</li>
 </ul>
-<p><strong>Last verified:</strong> 2026-07-01 (live run: precondition
-PASS, authoritative SKIP <code>topology_unsupported</code> — access.log
-owned by container subuid 100012, mode 0640, not readable by uid
-1000).</p>
+<p><strong>Last verified:</strong> 2026-07-01 (live runs vs Squid 6.13
+<code>proxy-squid</code>, cache_dir aufs + cache_mem 512 MB): (1)
+default <code>http://ftp.debian.org/debian/README</code> → precondition
+PASS, authoritative <code>TCP_MEM_HIT/200</code> in the container
+access.log appended lines → <strong>OVERALL=PASS (exit 0)</strong>; (2)
+negation <code>CACHE_URL=http://example.com/</code> →
+<code>200/200</code> but <code>TCP_MISS/200</code> twice →
+<strong>OVERALL=FAIL (exit 1)</strong>; (3) bogus
+<code>SQUID_CONTAINER</code> + unreadable host log → <strong>SKIP
+<code>topology_unsupported</code> (exit 3)</strong>. <code>sh -n</code>
++ <code>bash -n</code> clean.</p>
 </body>
 </html>
