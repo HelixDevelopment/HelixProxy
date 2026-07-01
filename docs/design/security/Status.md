@@ -1,8 +1,8 @@
 # Proxy Config Security Review — Status
 
-**Revision:** 1
-**Last modified:** 2026-07-01T13:35:00Z
-**Status:** Static config-security review of the proxy data plane (Squid forward proxy + Dante SOCKS5). 2 areas already HARDENED (Squid ACL chain, Squid TLS N/A-by-design); 4 Squid header/version-hygiene leaks were FIXED this round (`via`, `httpd_suppress_version_string`, `forwarded_for`, `visible_hostname`) — RED→GREEN proven (the `Via` leak is gone + the security test S3 gate now PASSes); 3 items are TRACKED-for-operator because the safe fix carries a connectivity risk requiring an operator decision (Squid `dns_nameservers` DNS-leak in static mode; Dante open-relay exposure; Dante SSRF/BIND exposure). One leak is CONFIRMED live (`via`); one is INFERRED from Squid defaults and fixed as defense-in-depth (`forwarded_for` / X-Forwarded-For) — the distinction is stated per §11.4.6, no guessing.
+**Revision:** 2
+**Last modified:** 2026-07-01T13:56:00Z
+**Status:** Static config-security review of the proxy data plane (Squid forward proxy + Dante SOCKS5). 2 areas already HARDENED (Squid ACL chain, Squid TLS N/A-by-design); 4 Squid header/version-hygiene leaks were FIXED this round (`via`, `httpd_suppress_version_string`, `forwarded_for`, `visible_hostname`) — RED→GREEN proven (the `Via` leak is gone + the security test S3 gate now PASSes); the Dante SSRF/BIND exposure was also FIXED this round (`command: connect` + `socks block` for link-local/loopback/RFC1918 — RED→GREEN proven, dante-log-confirmed, security-test S4 gate PASS); 2 items remain TRACKED-for-operator because the safe fix carries a connectivity risk requiring an operator decision (Squid `dns_nameservers` DNS-leak in static mode; Dante client-side open-relay — `socksmethod none` + `client pass from:0.0.0.0/0`). One leak is CONFIRMED live (`via`); one is INFERRED from Squid defaults and fixed as defense-in-depth (`forwarded_for` / X-Forwarded-For) — the distinction is stated per §11.4.6, no guessing.
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.45 integration-status doc for the proxy config-security workstream; §11.4.56 two-audience companion; findings presented as FACTs from a static review (§11.4.6), not re-derived.
 **Companion:** summary [`Status_Summary.md`](Status_Summary.md)
 
@@ -14,7 +14,6 @@ These three require an operator keep-vs-connectivity decision — the tightest f
 |---|---|---|
 | Squid `dns_nameservers 8.8.8.8` DNS-leak (static mode) | Re-pointing Squid DNS to the DoT dnsproxy loopback risks breaking name resolution if the dnsproxy is not reachable in that topology. Dynamic mode already mitigates via `never_direct`. | Operator confirms the dnsproxy loopback is reachable in static mode, then re-point `dns_nameservers` at it. |
 | Dante SOCKS5 open-relay (`socksmethod none` + `pass from:0.0.0.0/0`) | Restricting the client CIDR could cut off legitimate clients on the bridge network. | Operator supplies the trusted client CIDR; then narrow `client pass from:`. Safe subset (block terminators) applied now. |
-| Dante SSRF / BIND (`pass to:0.0.0.0/0`, no `command:`) | Blocking link-local + RFC1918 destinations and non-CONNECT commands could break intended internal routing. | Operator confirms no legitimate internal targets, then apply `command: connect` + `socks block` for link-local/RFC1918. |
 
 ## Findings (static review — §11.4.6 FACTs, not re-derived)
 
@@ -30,7 +29,7 @@ Areas: Squid non-intercepting forward proxy (HTTPS via CONNECT pass-through) + D
 | 6 | Squid — `visible_hostname` | `visible_hostname` absent → Squid falls back to the container id, leaking it on error pages / headers. | LOW | **FIXED** (`visible_hostname helix-proxy`) | applied; `via off` + this pin remove hostname disclosure |
 | 7 | Squid — `dns_nameservers` | `dns_nameservers 8.8.8.8` bypasses the DoT dnsproxy → DNS leak in **static** mode (dynamic mode mitigated by `never_direct`). | MED | **TRACKED-for-operator** | Re-point to dnsproxy loopback = connectivity risk (§11.4.101) |
 | 8 | Dante — SOCKS5 auth/client | `socksmethod none` + `client pass from:0.0.0.0/0` + `socks pass from:0.0.0.0/0` → open relay if `:51080` ever escapes the container bridge. | HIGH | **TRACKED** | Safe subset applied (block terminators); client-CIDR restriction = connectivity risk |
-| 9 | Dante — SOCKS5 egress | `socks pass to:0.0.0.0/0` with no `command:` restriction → SSRF to `169.254.169.254` (cloud metadata) / RFC1918, plus BIND allowed. | HIGH | **TRACKED** | Safe fix candidate: `command: connect` + `socks block` link-local/RFC1918 (OWASP SSRF) |
+| 9 | Dante — SOCKS5 egress | `socks pass to:0.0.0.0/0` with no `command:` restriction → SSRF to `169.254.169.254` (cloud metadata) / RFC1918, plus BIND allowed. | HIGH | **FIXED** (`command: connect` + `socks block` for 127/8, 169.254/16, 10/8, 172.16/12, 192.168/16) | RED (dante forwarded → curl rc=28 timeout) → GREEN (all 5 internal targets refused fast, code 000 ~0.01s; dante log `block(N) … <target>`; external control 204). Evidence `qa-results/security/socks_ssrf/red_*.txt` + `green_*.txt`; security-test S4 gate PASS. No public-egress regression. |
 
 ## Directives being applied this round (Squid, findings 3–6)
 

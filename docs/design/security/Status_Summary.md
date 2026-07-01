@@ -1,7 +1,7 @@
 # Proxy Config Security Review — Status Summary
 
-**Revision:** 1
-**Last modified:** 2026-07-01T13:35:00Z
+**Revision:** 2
+**Last modified:** 2026-07-01T13:56:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -66,7 +66,7 @@ Dante SOCKS5). Findings are FACTs from the review (§11.4.6). Status: **HARDENED
 | 6 | Squid `visible_hostname` | absent → container-id leak → **`visible_hostname helix-proxy`** | LOW | FIXED | Squid hostname-fallback (static) |
 | 7 | Squid `dns_nameservers` | `dns_nameservers 8.8.8.8` bypasses DoT dnsproxy → DNS leak in **static** mode (dynamic mitigated by `never_direct`) | MED | TRACKED (operator) | Re-point to dnsproxy loopback = connectivity risk (§11.4.101) |
 | 8 | Dante auth/client | `socksmethod none` + `client pass from:0.0.0.0/0` → open relay if `:51080` escapes the bridge | HIGH | TRACKED | Safe subset (block terminators) now; client-CIDR restriction = connectivity risk — `sockd.conf(5)` |
-| 9 | Dante egress | `socks pass to:0.0.0.0/0`, no `command:` → SSRF to `169.254.169.254`/RFC1918 + BIND | HIGH | TRACKED | Fix candidate: `command: connect` + `socks block` link-local/RFC1918 — `sockd.conf(5)`, OWASP SSRF |
+| 9 | Dante egress | `socks pass to:0.0.0.0/0`, no `command:` → SSRF to `169.254.169.254`/RFC1918 + BIND | HIGH | FIXED | `command: connect` + `socks block` for 127/8, 169.254/16, 10/8, 172.16/12, 192.168/16 — RED→GREEN (5 internal targets refused fast, dante-log `block(N)`, external 204); S4 gate PASS — `qa-results/security/socks_ssrf/` |
 
 **References:** squid-cache.org config docs (`via`, `httpd_suppress_version_string`,
 `forwarded_for`, `visible_hostname`, `dns_nameservers`, `never_direct`); Dante `sockd.conf(5)`;

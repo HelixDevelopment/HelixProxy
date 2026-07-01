@@ -249,6 +249,48 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# S4 — SOCKS5 SSRF hardening (§11.4.169 / §11.4.135 guard, §11.4.69 sink-side).
+# The SOCKS5 proxy MUST NOT forward a client CONNECT to internal / link-local /
+# loopback destinations. RED (pre-`socks block`): dante forwarded → curl timed
+# out (~MAX_TIME, rc 28). GREEN: dante blocks by ruleset → fast refusal (code
+# 000, sub-second) + a `block(...)` line in dante's own log. Heuristic is
+# rc-agnostic (code 000 AND elapsed < MAX_TIME/2), robust across curl versions.
+# ---------------------------------------------------------------------------
+S4_EV="$EVIDENCE_DIR/s4_socks_ssrf.evidence"
+SOCKS_URL=${SEC_SOCKS_URL:-socks5h://127.0.0.1:51080}
+SSRF_TARGET=${SEC_SSRF_TARGET:-169.254.169.254}
+socks_ctrl=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$MAX_TIME" -x "$SOCKS_URL" http://www.gstatic.com/generate_204 2>/dev/null || printf '000')
+if [ "$socks_ctrl" != "204" ]; then
+    printf '=== S4: SOCKS5 SSRF ===\nverdict=SKIP (SOCKS5 control probe=%s, not 204)\n' "$socks_ctrl" > "$S4_EV"
+    echo "[S4] SKIP SOCKS5 proxy not serving (control=$socks_ctrl) — SSRF gate not assertable"
+    ab_skip_with_reason "S4 SOCKS5 SSRF (proxy :51080 not serving / topology absent)" "topology_unsupported"
+    N_SKIP=$((N_SKIP + 1))
+else
+    ssrf_t0=$(date +%s.%N 2>/dev/null || date +%s)
+    ssrf_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$MAX_TIME" -x "$SOCKS_URL" "http://$SSRF_TARGET/" 2>/dev/null); ssrf_rc=$?
+    [ -n "$ssrf_code" ] || ssrf_code=000
+    ssrf_t1=$(date +%s.%N 2>/dev/null || date +%s)
+    ssrf_dt=$(awk -v a="$ssrf_t0" -v b="$ssrf_t1" 'BEGIN{printf "%.2f", b-a}')
+    blocked=no
+    if [ "$ssrf_code" = "000" ] && awk -v d="$ssrf_dt" -v m="$MAX_TIME" 'BEGIN{exit !(d < m/2)}'; then blocked=yes; fi
+    {
+        printf '=== S4: SOCKS5 SSRF hardening ===\n'
+        printf 'socks_url=%s control_204=%s\n' "$SOCKS_URL" "$socks_ctrl"
+        printf 'ssrf_target=%s code=%s curl_rc=%s elapsed=%ss\n' "$SSRF_TARGET" "$ssrf_code" "$ssrf_rc" "$ssrf_dt"
+        printf 'blocked=%s (fast+code000 => ruleset block; ~timeout => forwarded=SSRF)\n' "$blocked"
+    } > "$S4_EV"
+    if [ "$blocked" = "yes" ]; then
+        echo "[S4] PASS SOCKS5 SSRF blocked ($SSRF_TARGET refused fast, code=$ssrf_code ${ssrf_dt}s; external control 204)"
+        ab_pass_with_evidence "S4 SOCKS5 SSRF: internal $SSRF_TARGET blocked by ruleset (fast refusal), external control works" "$S4_EV"
+        N_PASS=$((N_PASS + 1))
+    else
+        echo "[S4] FAIL SOCKS5 forwarded CONNECT to $SSRF_TARGET (code=$ssrf_code rc=$ssrf_rc ${ssrf_dt}s) — SSRF possible"
+        _evidence_emit FAIL "S4 SOCKS5 SSRF" "[reason: SOCKS5 forwarded a CONNECT to internal $SSRF_TARGET (SSRF, §11.4.68/.169); add socks block rules; see $S4_EV]"
+        N_FAIL=$((N_FAIL + 1))
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # Aggregate — FAIL if any FAIL ; PASS if >=1 PASS and 0 FAIL ; else SKIP.
 # ---------------------------------------------------------------------------
 echo

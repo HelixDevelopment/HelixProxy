@@ -174,18 +174,22 @@
 <body>
 <h1 id="proxy-config-security-review--status">Proxy Config Security
 Review — Status</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T13:35:00Z <strong>Status:</strong> Static config-security
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T13:56:00Z <strong>Status:</strong> Static config-security
 review of the proxy data plane (Squid forward proxy + Dante SOCKS5). 2
 areas already HARDENED (Squid ACL chain, Squid TLS N/A-by-design); 4
 Squid header/version-hygiene leaks were FIXED this round
 (<code>via</code>, <code>httpd_suppress_version_string</code>,
 <code>forwarded_for</code>, <code>visible_hostname</code>) — RED→GREEN
 proven (the <code>Via</code> leak is gone + the security test S3 gate
-now PASSes); 3 items are TRACKED-for-operator because the safe fix
-carries a connectivity risk requiring an operator decision (Squid
-<code>dns_nameservers</code> DNS-leak in static mode; Dante open-relay
-exposure; Dante SSRF/BIND exposure). One leak is CONFIRMED live
+now PASSes); the Dante SSRF/BIND exposure was also FIXED this round
+(<code>command: connect</code> + <code>socks block</code> for
+link-local/loopback/RFC1918 — RED→GREEN proven, dante-log-confirmed,
+security-test S4 gate PASS); 2 items remain TRACKED-for-operator because
+the safe fix carries a connectivity risk requiring an operator decision
+(Squid <code>dns_nameservers</code> DNS-leak in static mode; Dante
+client-side open-relay — <code>socksmethod none</code> +
+<code>client pass from:0.0.0.0/0</code>). One leak is CONFIRMED live
 (<code>via</code>); one is INFERRED from Squid defaults and fixed as
 defense-in-depth (<code>forwarded_for</code> / X-Forwarded-For) — the
 distinction is stated per §11.4.6, no guessing.
@@ -229,15 +233,6 @@ bridge network.</td>
 <td>Operator supplies the trusted client CIDR; then narrow
 <code>client pass from:</code>. Safe subset (block terminators) applied
 now.</td>
-</tr>
-<tr>
-<td>Dante SSRF / BIND (<code>pass to:0.0.0.0/0</code>, no
-<code>command:</code>)</td>
-<td>Blocking link-local + RFC1918 destinations and non-CONNECT commands
-could break intended internal routing.</td>
-<td>Operator confirms no legitimate internal targets, then apply
-<code>command: connect</code> + <code>socks block</code> for
-link-local/RFC1918.</td>
 </tr>
 </tbody>
 </table>
@@ -357,9 +352,15 @@ connectivity risk</td>
 restriction → SSRF to <code>169.254.169.254</code> (cloud metadata) /
 RFC1918, plus BIND allowed.</td>
 <td>HIGH</td>
-<td><strong>TRACKED</strong></td>
-<td>Safe fix candidate: <code>command: connect</code> +
-<code>socks block</code> link-local/RFC1918 (OWASP SSRF)</td>
+<td><strong>FIXED</strong> (<code>command: connect</code> +
+<code>socks block</code> for 127/8, 169.254/16, 10/8, 172.16/12,
+192.168/16)</td>
+<td>RED (dante forwarded → curl rc=28 timeout) → GREEN (all 5 internal
+targets refused fast, code 000 ~0.01s; dante log
+<code>block(N) … &lt;target&gt;</code>; external control 204). Evidence
+<code>qa-results/security/socks_ssrf/red_*.txt</code> +
+<code>green_*.txt</code>; security-test S4 gate PASS. No public-egress
+regression.</td>
 </tr>
 </tbody>
 </table>

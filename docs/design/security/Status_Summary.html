@@ -174,8 +174,8 @@
 <body>
 <h1 id="proxy-config-security-review--status-summary">Proxy Config
 Security Review — Status Summary</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T13:35:00Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T13:56:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
@@ -340,10 +340,11 @@ connectivity risk — <code>sockd.conf(5)</code></td>
 <td><code>socks pass to:0.0.0.0/0</code>, no <code>command:</code> →
 SSRF to <code>169.254.169.254</code>/RFC1918 + BIND</td>
 <td>HIGH</td>
-<td>TRACKED</td>
-<td>Fix candidate: <code>command: connect</code> +
-<code>socks block</code> link-local/RFC1918 —
-<code>sockd.conf(5)</code>, OWASP SSRF</td>
+<td>FIXED</td>
+<td><code>command: connect</code> + <code>socks block</code> for 127/8,
+169.254/16, 10/8, 172.16/12, 192.168/16 — RED→GREEN (5 internal targets
+refused fast, dante-log <code>block(N)</code>, external 204); S4 gate
+PASS — <code>qa-results/security/socks_ssrf/</code></td>
 </tr>
 </tbody>
 </table>
