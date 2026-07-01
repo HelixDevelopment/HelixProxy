@@ -1,8 +1,8 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 7
-**Last modified:** 2026-07-01T14:52:00Z
-**Status:** Active — **§11.4.126 autonomous hardening loop** (operator: "keep hardening, don't tag yet"). **P10 VPN fail-closed = GREEN**: dynamic stack booted, tunnel DOWN → branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged, deterministic ×3 + RED-polarity; egress-half operator-gated SKIP (§11.4.21). **2 security fixes landed + VERIFIED DEPLOYED LIVE** (§11.4.108 runtime-signature): Squid header/version-hygiene (`via off`+`forwarded_for delete`+version-suppression — `Via` gone) `4f983ee`; Dante SOCKS5 SSRF (block link-local/loopback/RFC1918 + `command:connect`) `4626f05`. **Rev-7 hardening wave (5 commits):** `790c191` **S4 SSRF guard hardened** — the SOCKS-block verdict now requires dante's authoritative `block(N)` log line (§11.4.69), NOT elapsed-time (an independent §11.4.142 review found the timing-only discriminator bluff-capable on fast-refuse hosts); **security guard now WIRED into the standing suite** (`run-tests.sh test_security_guards`, §11.4.135, GREEN+RED-polarity, set-e-safe) — iterate-to-GO (§11.4.134); `487c918` **cache challenge authoritative** — reads Squid's own access.log via `podman exec` → real `TCP_MEM_HIT` (§11.4.69), no more SKIP-fallback (Squid caching proven genuine); `3755702` **control-plane unit coverage** store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% / healthd 61.3→67.6% (real error/fail-closed branches, race-clean, go.sum unchanged); `86126ac` README §11.4.57 doc-link section; `ad720ec` this file → Rev 6. **2 items TRACKED-for-operator** (connectivity-risk §11.4.101): Squid `dns_nameservers` DNS-leak (static mode); Dante client-side open-relay. **§11.4.169 matrix = 9 PASS / 2 honest SKIP** (`docs/design/hardening/Status.md` Rev 3). **LE issuance + renewal BOTH PROVEN** — autonomous scope COMPLETE; Phase 4/6 OPERATOR-BLOCKED (§11.4.10). HEAD `790c191` (== `main` == github/origin/upstream).
+**Revision:** 8
+**Last modified:** 2026-07-01T15:09:21Z
+**Status:** Active — **§11.4.126 autonomous hardening loop** (operator: "keep hardening, don't tag yet"). **P10 VPN fail-closed = GREEN**: dynamic stack booted, tunnel DOWN → branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged, deterministic ×3 + RED-polarity; egress-half operator-gated SKIP (§11.4.21). **2 security fixes landed + VERIFIED DEPLOYED LIVE** (§11.4.108 runtime-signature): Squid header/version-hygiene (`via off`+`forwarded_for delete`+version-suppression — `Via` gone) `4f983ee`; Dante SOCKS5 SSRF (block link-local/loopback/RFC1918 + `command:connect`) `4626f05`. **Rev-7 hardening wave (5 commits):** `790c191` **S4 SSRF guard hardened** — the SOCKS-block verdict now requires dante's authoritative `block(N)` log line (§11.4.69), NOT elapsed-time (an independent §11.4.142 review found the timing-only discriminator bluff-capable on fast-refuse hosts); **security guard now WIRED into the standing suite** (`run-tests.sh test_security_guards`, §11.4.135, GREEN+RED-polarity, set-e-safe) — iterate-to-GO (§11.4.134); `487c918` **cache challenge authoritative** — reads Squid's own access.log via `podman exec` → real `TCP_MEM_HIT` (§11.4.69), no more SKIP-fallback (Squid caching proven genuine); `3755702` **control-plane unit coverage** store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% / healthd 61.3→67.6% (real error/fail-closed branches, race-clean, go.sum unchanged); `86126ac` README §11.4.57 doc-link section; `ad720ec` this file → Rev 6. **2 items TRACKED-for-operator** (connectivity-risk §11.4.101): Squid `dns_nameservers` DNS-leak (static mode); Dante client-side open-relay. **§11.4.169 matrix = 9 PASS / 2 honest SKIP** (`docs/design/hardening/Status.md` Rev 3). **LE issuance + renewal BOTH PROVEN** — autonomous scope COMPLETE; Phase 4/6 OPERATOR-BLOCKED (§11.4.10). **Rev-8 increment (2 commits, subagent-driven §11.4.70 + conductor-reviewed pre-commit §11.4.142):** `017482a` closed the §11.4.18 companion-doc gap (16 of 61 scripts → `docs/scripts/<name>.md` + synced HTML+PDF, all 16 PDFs §11.4.168 leak-clean, library function-lists cross-checked against real source §11.4.6); `0e987f1` raised control-plane `internal/api` unit coverage 80.3→95.8% (real error/fail-closed/500/mTLS-bootstrap branches, race-clean, `go.mod`/`go.sum` unchanged). HEAD `0e987f1` (== `main` == github/origin/upstream).
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
 **Plan:** `docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md` (Rev 1)
@@ -74,7 +74,7 @@ deny topology) + P10 egress-half (gluetun creds).
 ## 2. Landed commits (newest first)
 
 **`main` FF-tracks HEAD (§11.4.113 FF-only), so `main..HEAD` is empty — HEAD ==
-`main` == github/origin/upstream == `790c191`.** The full feature-branch history
+`main` == github/origin/upstream == `0e987f1`.** The full feature-branch history
 since the original branch point is below; the historical table (numbered 1–28)
 is retained for the earlier construction wave.
 
@@ -82,6 +82,8 @@ is retained for the earlier construction wave.
 
 | Commit | Lane | Summary |
 |---|---|---|
+| `0e987f1` | control-plane | `internal/api` unit coverage 80.3→95.8% (real 404/400/500/502/fail-closed-TLS/metrics-suppression branches, race-clean, go.mod unchanged) — subagent-driven (§11.4.70), conductor-reviewed (§11.4.142) |
+| `017482a` | docs | 16 §11.4.18 companion docs (previously-undocumented test/challenge/lib scripts) + synced HTML+PDF, all §11.4.168 leak-clean, library fn-lists source-verified (§11.4.6) |
 | `790c191` | security | S4 SSRF guard → authoritative dante `block(N)` log-line discriminator (§11.4.69) + security guard wired into standing suite (§11.4.135) — independent-review-driven (§11.4.142/.134) |
 | `487c918` | challenge | proxy cache challenge → authoritative `TCP_*HIT` via container access.log (§11.4.69), no more SKIP-fallback (Squid caching proven genuine) |
 | `3755702` | control-plane | unit coverage store 64.5→98.2% / vpn 78.6→98.1% / api 69.6→80.3% / healthd 61.3→67.6% (real error/fail-closed branches, race-clean) |
@@ -229,7 +231,7 @@ Requires real gluetun WireGuard credentials (§11.4.21); still **unproven live**
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `790c191` (== `main` == all 3 remotes github/origin/upstream; integrate any
+   `0e987f1` (== `main` == all 3 remotes github/origin/upstream; integrate any
    newer foreign commit per §11.4.71, no force §11.4.113). The single canonical
    moment-valid resume file is `.remember/remember.md` (§11.4.131) — read it first.
 2. **Continue the §11.4.126 autonomous hardening loop** (operator: "keep
