@@ -174,8 +174,8 @@
 <body>
 <h1 id="lets-encrypt-https--phased-implementation-plan">Let's Encrypt
 HTTPS — Phased Implementation Plan</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T11:00:00Z <strong>Status:</strong> Draft — implementation
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T15:00:00Z <strong>Status:</strong> Draft — implementation
 plan for the design in <a
 href="LETSENCRYPT_HTTPS.md"><code>LETSENCRYPT_HTTPS.md</code></a>. Phase
 0 is BLOCKING on the OPERATOR INPUT REQUIRED decisions (design §9).
@@ -220,12 +220,16 @@ decisions (design §9: hostname, challenge type, staging/prod +
 <code>:443</code> reachability) and open the workable items.</p>
 <ul>
 <li><strong>Files:</strong> <code>docs/Issues.md</code> (+ summary)
-entries with ATM-NNN ids per §11.4.54; a
+entries with HXP-NNN ids per §11.4.54 (the project-derived ticket key
+resolves per §11.4.151 from <code>HELIX_RELEASE_PREFIX</code> in
+<code>.env</code>, else the lowercased root dir name
+<code>helix_proxy</code> → <code>HXP</code>; NOT the Atmosphere
+<code>ATM-</code> prefix); a
 <code>docs/design/letsencrypt/Status.md</code> +
 <code>Status_Summary.md</code> scaffold (§11.4.45/§11.4.56) marked
 PENDING.</li>
 <li><strong>Tests/guard:</strong> none (planning phase). Guard is
-documentary: the tracker entries exist with Type/Status/ATM-id
+documentary: the tracker entries exist with Type/Status/HXP-id
 (§11.4.148).</li>
 <li><strong>Evidence:</strong> the <code>AskUserQuestion</code> decision
 record captured in the tracker.</li>

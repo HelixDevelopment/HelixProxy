@@ -1,7 +1,7 @@
 # Let's Encrypt HTTPS — Phased Implementation Plan
 
-**Revision:** 1
-**Last modified:** 2026-07-01T11:00:00Z
+**Revision:** 2
+**Last modified:** 2026-07-01T15:00:00Z
 **Status:** Draft — implementation plan for the design in [`LETSENCRYPT_HTTPS.md`](LETSENCRYPT_HTTPS.md). Phase 0 is BLOCKING on the OPERATOR INPUT REQUIRED decisions (design §9).
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. Phases are PWU-sized (§11.4.58): each self-contained, each with files + tests + a §11.4.135 guard + a §1.1 mutation + captured evidence (§11.4.5/§11.4.69).
 **Companion design:** [`LETSENCRYPT_HTTPS.md`](LETSENCRYPT_HTTPS.md)
@@ -40,8 +40,8 @@ Phases 1–5 use **staging / Pebble only** — zero production rate-limit exposu
 
 **Goal:** resolve the three OPERATOR INPUT REQUIRED decisions (design §9: hostname, challenge type, staging/prod + `:443` reachability) and open the workable items.
 
-- **Files:** `docs/Issues.md` (+ summary) entries with ATM-NNN ids per §11.4.54; a `docs/design/letsencrypt/Status.md` + `Status_Summary.md` scaffold (§11.4.45/§11.4.56) marked PENDING.
-- **Tests/guard:** none (planning phase). Guard is documentary: the tracker entries exist with Type/Status/ATM-id (§11.4.148).
+- **Files:** `docs/Issues.md` (+ summary) entries with HXP-NNN ids per §11.4.54 (the project-derived ticket key resolves per §11.4.151 from `HELIX_RELEASE_PREFIX` in `.env`, else the lowercased root dir name `helix_proxy` → `HXP`; NOT the Atmosphere `ATM-` prefix); a `docs/design/letsencrypt/Status.md` + `Status_Summary.md` scaffold (§11.4.45/§11.4.56) marked PENDING.
+- **Tests/guard:** none (planning phase). Guard is documentary: the tracker entries exist with Type/Status/HXP-id (§11.4.148).
 - **Evidence:** the `AskUserQuestion` decision record captured in the tracker.
 - **Exit:** Decisions A/B/C answered. Decision B (DNS-01 vs HTTP-01) selects whether Phase 1 runs.
 - **Depends on:** nothing. **Blocks:** everything.
