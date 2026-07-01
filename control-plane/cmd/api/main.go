@@ -10,6 +10,11 @@
 // embedded key material (§11.4.10). The listen address is CONTROL_API_ADDR
 // (default :58080). The server fails closed: it refuses to start without its
 // backends and without a verified-client-cert TLS config.
+//
+// OPTIONAL plaintext metrics: when CONTROL_API_METRICS_ADDR is set, the server ALSO
+// exposes /metrics over plain HTTP on that SEPARATE address (Prometheus scrapers
+// rarely present a client cert). It serves ONLY /metrics — the mutating control
+// surface stays on the mTLS port. Empty ⇒ OFF (mTLS-only, zero behaviour change).
 package main
 
 import (
@@ -81,6 +86,11 @@ func run(addr string) error {
 		TLSCert:  os.Getenv("CONTROL_API_TLS_CERT"),
 		TLSKey:   os.Getenv("CONTROL_API_TLS_KEY"),
 		ClientCA: os.Getenv("CONTROL_API_TLS_CLIENT_CA"),
+		// Optional SEPARATE plaintext /metrics listener (Prometheus rarely does mTLS).
+		// Empty ⇒ OFF: the mTLS server is the only listener, zero behaviour change
+		// (§11.4.122). When set, /metrics is ALSO served over plain HTTP here, while
+		// the mutating control surface stays on the fail-closed mTLS port unchanged.
+		MetricsAddr: os.Getenv("CONTROL_API_METRICS_ADDR"),
 	}
 	srv := api.NewServer(cfg, pg, bus, pac.NewGenerator())
 

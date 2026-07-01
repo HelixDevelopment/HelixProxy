@@ -14,11 +14,21 @@ import "context"
 
 // Config holds the server's bind address + TLS settings. ClientCA enables the
 // mTLS client-cert verification required on the control-API (spec §12).
+//
+// MetricsAddr is the OPTIONAL separate plaintext listen address for the Prometheus
+// /metrics endpoint (CONTROL_API_METRICS_ADDR, e.g. "127.0.0.1:9090"). EMPTY is the
+// default and means the feature is OFF: the mTLS server is the only listener, with
+// ZERO behaviour change (§11.4.122). When set, a plain net/http server binds it and
+// serves ONLY /metrics — the mutating control surface stays on the fail-closed mTLS
+// port, unchanged. Its bind address is security-load-bearing: prefer a pod-internal
+// / loopback interface — a 0.0.0.0 bind exposes unauthenticated metrics to whatever
+// network can reach it (acceptable ONLY when that network is the trust boundary).
 type Config struct {
-	Addr     string
-	TLSCert  string
-	TLSKey   string
-	ClientCA string
+	Addr        string
+	TLSCert     string
+	TLSKey      string
+	ClientCA    string
+	MetricsAddr string
 }
 
 // Server is the control-API + admin-UI lifecycle contract.
