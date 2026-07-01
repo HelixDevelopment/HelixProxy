@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>architecture</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="vpn-lan-service-access--architecture-schemes--diagrams">VPN-LAN
+Service Access — Architecture, Schemes &amp; Diagrams</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:30:58Z <strong>Status:</strong> Design reference —
+architecture, topology &amp; data-flow diagrams for the VPN-LAN
+service-access feature (Phase 9 docs of <a
+href="PLAN.md"><code>PLAN.md</code></a> §5) <strong>Authority:</strong>
+Inherits <code>constitution/Constitution.md</code> per §11.4.35.
+Companion to <a href="PLAN.md"><code>PLAN.md</code></a> (§2 routing map,
+§3 bridge contract, §4 SSRF), <a
+href="reflector_design.md"><code>reflector_design.md</code></a> (Phase 5
+discovery), <a
+href="miracast_verdict.md"><code>miracast_verdict.md</code></a> (Phase 8
+verdict) and the operator setup guide <a
+href="../../guides/vpn_lan_bridge_setup.md"><code>../../guides/vpn_lan_bridge_setup.md</code></a>.
+This document is the "schemes, diagrams, graphs" deliverable — it does
+not restate the setup steps (those live in the guide) or the per-phase
+task breakdown (that lives in <code>PLAN.md</code>); it draws the
+pictures those documents describe in prose. <strong>Feature
+workstream:</strong> <code>feature/vpn-aware-dynamic-routing</code>
+(§11.4.167)</p>
+<hr />
+<h2 id="0-how-to-read-this-document">0. How to read this document</h2>
+<p>Every claim here is either grounded in the recon-derived FACTs
+recorded in <a href="PLAN.md"><code>PLAN.md</code></a> §2 / §11 and the
+cited standards in <a
+href="reflector_design.md"><code>reflector_design.md</code></a> / <a
+href="miracast_verdict.md"><code>miracast_verdict.md</code></a>, or
+explicitly marked <strong>INFERENCE</strong> (§11.4.6). Each diagram is
+drawn <strong>twice</strong> where the operator asked for both forms —
+once as an <strong>ASCII</strong> rendering (human-readable in the PDF
+export directly) and once as a <strong>mermaid</strong> source block
+(machine-renderable). Both carry the same content; neither is a
+raw-markup leak — the ASCII block <em>is</em> the diagram, and the
+mermaid block is its renderable twin (§11.4.168).</p>
+<p>The single fact that drives every decision below: <strong>the VPN is
+L3-routed</strong> (WireGuard + L2TP/PPP over <code>ppp0</code>;
+reachable subnet <code>10.0.0.0/8</code>; svord host
+<code>10.6.100.221</code>). A Layer-3 VPN routes unicast IP packets
+between reachable subnets — nothing more. That one property sorts every
+in-scope protocol into exactly one of four buckets (§2).</p>
+<hr />
+<h2
+id="1-system-topology--helix_proxy--svord-bridge--108-remote-subnet">1.
+System topology — helix_proxy ↔︎ svord bridge ↔︎ 10/8 remote subnet</h2>
+<p>The end-to-end picture: a helix_proxy-side client, the base proxy
+stack (Squid HTTP proxy + Dante SOCKS with the SSRF hardening), the
+<strong>env-var bridge contract</strong> that decouples helix_proxy from
+the sibling <code>svord_toolkit</code> project (§11.4.28), the L3 VPN
+link, and the remote <code>10.0.0.0/8</code> subnet where the target
+services live.</p>
+<h3 id="11-ascii-topology">1.1 ASCII topology</h3>
+<pre class="text"><code>        helix_proxy HOST                             |         REMOTE VPN-INTERNAL SUBNET
+                                                     |              10.0.0.0/8
+ ┌─────────────────────────────────────────────┐    |    ┌──────────────────────────────────┐
+ │  helix_proxy-side clients                    │    |    │  target services (unicast IP)    │
+ │  smbclient · mount.nfs · curl · sftp         │    |    │   SMB/445  NFS/2049  FTP/21       │
+ │  openssl s_client · adb · avahi-browse       │    |    │   SFTP/22  IMAPS/993  SMTP/587    │
+ └───────────────┬─────────────────────────────┘    |    │   POP3S/995  WebDAV(HTTP)         │
+                 │                                    |    │   Cast 8008/8009  ADB 5555       │
+       ┌─────────┴──────────┐                         |    │   host 10.6.100.221 (smoke)      │
+       │ base proxy stack   │  HTTP-shaped only       |    └────────────────┬─────────────────┘
+       │  Squid  (HTTP)     │  (WebDAV, HTTP origins) |                     │ unicast routes
+       │  Dante  (SOCKS)    │                          |                     │
+       │  + SSRF hardening  │                          |    ┌────────────────┴─────────────────┐
+       │  (RFC1918 floor +  │                          |    │  REFLECTOR host (Phase 5)         │
+       │   10/8 carve-out)  │                          |    │   Avahi enable-reflector (mDNS)  │
+       └─────────┬──────────┘                          |    │   SSDP/WS-D relay (1900/3702)     │
+                 │                                     |    │   224.0.0.251:5353               │
+   ┌─────────────┴───────────────┐                     |    │   239.255.255.250:1900,3702      │
+   │  ENV-VAR BRIDGE CONTRACT     │  invocation-only    |    └───────────────────────────────────┘
+   │  (§11.4.28, NOT git-versioned)│  (§11.4.122)        |             ▲ multicast is LOCAL to
+   │   HELIX_SVORD_DIR            │                      |             │ this subnet — routers do
+   │   HELIX_BRIDGE_CONNECT       │───► svord-ssh-connect|             │ NOT forward it across L3
+   │   HELIX_BRIDGE_DISCONNECT    │───► svord-ssh-disconn|             │ (reflector bridges it)
+   │   HELIX_BRIDGE_HEALTH (exit0)│───► svord-ssh-health │             │
+   │   HELIX_BRIDGE_SUBNET 10/8   │                      |    ┌────────┴──────────┐
+   │   HELIX_BRIDGE_HOST  10.6..  │                      |    │ Miracast sink      │  Wi-Fi Direct
+   └─────────────┬───────────────┘                      |    │ (L2 Wi-Fi-Direct)  │  L2 radio P2P —
+                 │ drives                                |    └───────────────────┘  NO IP hop for
+       ┌─────────┴──────────┐        L3 VPN link         |                            the VPN to route
+       │  svord_toolkit     │   WireGuard + L2TP/PPP     |                            (§11.4.112)
+       │  (sibling project) │═══════ ppp0 ══════════════▶|  routes 10.0.0.0/8 unicast IP only
+       │  svord-ssh-* hooks │   unicast IP, no multicast |
+       └────────────────────┘                            |</code></pre>
+<p><strong>Reading the picture:</strong> helix_proxy never touches
+<code>svord_toolkit</code> internals — it invokes only the four hook
+commands the contract names (<code>CONNECT</code> /
+<code>DISCONNECT</code> / <code>HEALTH</code> + the two data vars
+<code>SUBNET</code> / <code>HOST</code>), so the whole VPN mechanism is
+swappable by editing one <code>.env</code> (§11.4.28). Everything to the
+right of <code>ppp0</code> is reached by <strong>unicast IP
+routing</strong>; multicast (the reflector's job) is confined to the
+remote subnet by IP scoping rules; and Miracast's Wi-Fi-Direct radio
+group sits below IP entirely, where the VPN has no reach.</p>
+<h3 id="12-mermaid-topology-renderable-twin">1.2 Mermaid topology
+(renderable twin)</h3>
+<pre class="mermaid"><code>flowchart LR
+    subgraph HOST[&quot;helix_proxy host&quot;]
+        CL[&quot;clients: smbclient / nfs / curl /\nsftp / openssl / adb / avahi-browse&quot;]
+        PX[&quot;base proxy stack:\nSquid (HTTP) + Dante (SOCKS)\n+ SSRF hardening&quot;]
+        BR[&quot;ENV-VAR BRIDGE CONTRACT\n(§11.4.28, gitignored .env)\nHELIX_SVORD_DIR / BRIDGE_*&quot;]
+        SV[&quot;svord_toolkit\nsvord-ssh-connect/disconnect/health\n(invocation-only §11.4.122)&quot;]
+        CL --&gt; PX
+        PX --&gt; BR
+        BR --&gt;|drives| SV
+    end
+    SV ==&gt;|&quot;L3 VPN: WireGuard + L2TP/PPP (ppp0)\nunicast IP only, no multicast&quot;| RS
+    subgraph RS[&quot;remote subnet 10.0.0.0/8&quot;]
+        SVC[&quot;unicast services\nSMB NFS FTP SFTP IMAPS\nSMTP POP3S WebDAV Cast ADB&quot;]
+        RF[&quot;REFLECTOR host (Phase 5)\nAvahi enable-reflector (mDNS)\nSSDP/WS-D relay 1900/3702&quot;]
+        MC[&quot;Miracast sink\nWi-Fi Direct L2 radio P2P\nno routable IP hop (§11.4.112)&quot;]
+        RF -.-&gt;|&quot;bridges multicast\nlocal to this subnet&quot;| SVC
+    end
+    CL -. &quot;L2 radio proximity —\nVPN cannot reach&quot; .-&gt; MC</code></pre>
+<hr />
+<h2 id="2-per-protocol-routing-decision-table">2. Per-protocol routing
+decision table</h2>
+<p>Every in-scope protocol maps to exactly one of four
+<strong>primitives</strong>, decided by its traffic class (FACT, <a
+href="PLAN.md"><code>PLAN.md</code></a> §2). This is the master decision
+table — the "WHY" column is the load-bearing reason, not decoration.</p>
+<table>
+<thead>
+<tr>
+<th>Protocol / service</th>
+<th>Ports</th>
+<th>Traffic class</th>
+<th>Primitive</th>
+<th>WHY (the deciding fact)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SMB / CIFS</td>
+<td>445</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>A mount is a unicast IP service; SOCKS5/Squid is the wrong primitive
+for mounts. Route it over <code>ppp0</code>.</td>
+</tr>
+<tr>
+<td>NMB / NetBIOS name res.</td>
+<td>137–138</td>
+<td>Unicast UDP (fallback)</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>Broadcast/multicast NMB is not routed across L3; target the share by
+its <code>10.x</code> IP (unicast) rather than NetBIOS name.</td>
+</tr>
+<tr>
+<td>NFS</td>
+<td>2049 (+ aux)</td>
+<td>Unicast TCP/UDP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>Same as SMB — a routed mount, not a proxied one. Needs L3 routing,
+not SOCKS5.</td>
+</tr>
+<tr>
+<td>FTP control</td>
+<td>21</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>Control channel is a plain routed TCP connection.</td>
+</tr>
+<tr>
+<td>FTP/FTPS data (passive)</td>
+<td>pinned PASV range</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE (pinned range)</strong></td>
+<td>Passive data uses a separate port the server advertises; route the
+server's pinned passive-port range. FTPS encrypts the control channel so
+NAT/proxy ALGs cannot rewrite PASV — routing (not proxying) is the clean
+fit.</td>
+</tr>
+<tr>
+<td>SFTP</td>
+<td>22</td>
+<td>Unicast TCP (over SSH)</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>Single connection over SSH — routes/tunnels trivially; the
+recommended modern path.</td>
+</tr>
+<tr>
+<td>WebDAV</td>
+<td>HTTP(S)</td>
+<td>HTTP-shaped</td>
+<td><strong>SQUID-PROXY (existing)</strong></td>
+<td>WebDAV is HTTP (RFC 4918) — it already works through the
+<strong>existing Squid</strong>
+(<code>PROPFIND</code>/<code>MKCOL</code>); no new component.</td>
+</tr>
+<tr>
+<td>IMAP / IMAPS</td>
+<td>993</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>Implicit-TLS mail retrieval is a routed unicast connection (RFC 8314
+preferred over STARTTLS).</td>
+</tr>
+<tr>
+<td>SMTP submission</td>
+<td>587 / 465</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE (auth only)</strong></td>
+<td>Route <strong>authenticated</strong> submission to VPN clients;
+<strong>never</strong> expose anonymous CONNECT-to-:25 (open-relay
+guard, §4).</td>
+</tr>
+<tr>
+<td>POP3 / POP3S</td>
+<td>995</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>Implicit-TLS retrieval, routed unicast.</td>
+</tr>
+<tr>
+<td>Google Cast control</td>
+<td>8008 / 8009 (TLS)</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td><code>eureka_info</code> HTTP (8008) + CASTV2 (8009 TLS) are unicast
+— they route once the device's <code>10.x</code> IP is known.</td>
+</tr>
+<tr>
+<td>DIAL control</td>
+<td>HTTP</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td>DIAL control is plain unicast HTTP to the advertised
+<code>LOCATION</code>.</td>
+</tr>
+<tr>
+<td>ADB (connect/debug)</td>
+<td>5555</td>
+<td>Unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+<td><code>adb connect 10.x:5555</code> over the routed path — no proxy
+hop; central adb-server model.</td>
+</tr>
+<tr>
+<td>mDNS / DNS-SD</td>
+<td>224.0.0.251:5353</td>
+<td><strong>Multicast</strong> discovery</td>
+<td><strong>REMOTE-REFLECTOR</strong></td>
+<td>Link-local group (RFC 5771 Local Network Control Block); TTL-1,
+routers MUST NOT forward. Nothing for the VPN to route → reflect on the
+remote subnet.</td>
+</tr>
+<tr>
+<td>SSDP / UPnP</td>
+<td>239.255.255.250:1900</td>
+<td><strong>Multicast</strong> discovery</td>
+<td><strong>REMOTE-REFLECTOR</strong></td>
+<td>Administratively-scoped group (RFC 2365); tiny TTL, no
+multicast-routing state across the tunnel → reflect on the remote
+subnet.</td>
+</tr>
+<tr>
+<td>WS-Discovery</td>
+<td>239.255.255.250:3702</td>
+<td><strong>Multicast</strong> discovery</td>
+<td><strong>REMOTE-REFLECTOR</strong></td>
+<td>Same admin-scoped group as SSDP; SOAP-over-UDP discovery is
+subnet-local → reflect.</td>
+</tr>
+<tr>
+<td>Chromecast/DIAL discovery</td>
+<td>5353 / 1900</td>
+<td><strong>Multicast</strong> discovery</td>
+<td><strong>REMOTE-REFLECTOR</strong></td>
+<td>Cast discovery (<code>_googlecast._tcp</code> mDNS) + DIAL
+(<code>M-SEARCH</code>) are multicast; only discovery reflects — control
+then routes (rows above).</td>
+</tr>
+<tr>
+<td>ADB flash (<code>fastboot</code>)</td>
+<td>USB</td>
+<td>USB-level (not IP)</td>
+<td><strong>usbip (USB-over-IP)</strong></td>
+<td><code>fastboot</code> is a USB protocol, not a routable IP service;
+carry it via <code>usbip</code> from a remote host with the device
+attached — network fastboot is honestly USB-bound (§11.4.6).
+Operator-gated (§11.4.133).</td>
+</tr>
+<tr>
+<td><strong>Miracast</strong></td>
+<td>— (Wi-Fi Direct)</td>
+<td><strong>L2 radio P2P</strong></td>
+<td><strong>STRUCTURALLY-IMPOSSIBLE</strong></td>
+<td>Wi-Fi Direct forms a Layer-2 radio group between devices in RF
+proximity — no routable IP hop exists for an L3 VPN to carry
+(§11.4.112). Use Google Cast/DIAL instead.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>One-line rule of thumb</strong> (FACT, <a
+href="PLAN.md"><code>PLAN.md</code></a> §2): <em>unicast services route;
+HTTP-shaped services already work through Squid; multicast discovery
+needs a remote-side reflector; Wi-Fi-Direct / L2 is out of scope by
+physics.</em></p>
+<h3 id="21-primitive-selection-decision-tree-mermaid">2.1
+Primitive-selection decision tree (mermaid)</h3>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;a service on the 10/8 remote subnet&quot;] --&gt; B{&quot;Is it an IP service\n(has a routable address)?&quot;}
+    B -- No --&gt; M{&quot;Wi-Fi Direct /\nL2 radio?&quot;}
+    M -- Yes --&gt; MI[&quot;STRUCTURALLY-IMPOSSIBLE\nMiracast (§11.4.112)\nuse Google Cast instead&quot;]
+    M -- &quot;No (USB, e.g. fastboot)&quot; --&gt; UB[&quot;usbip (USB-over-IP)\noperator-gated §11.4.133&quot;]
+    B -- Yes --&gt; C{&quot;Is it multicast\ndiscovery?&quot;}
+    C -- Yes --&gt; RF[&quot;REMOTE-REFLECTOR\nmDNS/SSDP/WS-D\n(discovery only;\ncontrol then routes)&quot;]
+    C -- No --&gt; D{&quot;Is it HTTP-shaped?&quot;}
+    D -- Yes --&gt; SQ[&quot;SQUID-PROXY (existing)\nWebDAV, HTTP origins&quot;]
+    D -- No --&gt; RT[&quot;L3-ROUTE over ppp0\nSMB NFS FTP SFTP\nIMAPS SMTP POP3S\nCast/DIAL control ADB&quot;]</code></pre>
+<hr />
+<h2 id="3-data-flow-diagrams">3. Data-flow diagrams</h2>
+<h3 id="31-file-round-trip-smb--nfs--sftp--byte-integrity-path">3.1 File
+round-trip (SMB / NFS / SFTP — byte-integrity path)</h3>
+<p>The file-share and file-transfer tests all follow the same
+<strong>write → read-back → sha256</strong> integrity loop (FACT —
+<code>tests/vpn_lan/smb_nfs_roundtrip.sh</code>,
+<code>tests/vpn_lan/ftp_sftp_webdav.sh</code>). A PASS is emitted
+<strong>only</strong> when the source sha256 equals the read-back sha256
+(<code>integrity: MATCH</code>); anything else SKIPs or FAILs. The
+bridge gate runs first — bridge down ⇒ honest
+<code>SKIP:network_unreachable_external</code>, never a fake PASS.</p>
+<pre class="text"><code> test harness                bridge gate           L3 VPN            remote share
+ (smbclient/sftp/cp)         (svord_bridge.sh)      (ppp0)            (SMB/NFS/SFTP)
+      │                            │                  │                    │
+      │ 1. bridge_require ────────►│                  │                    │
+      │                            │ HELIX_BRIDGE_HEALTH exit 0?           │
+      │◄── down: SKIP + exit 0 ────┤ (else honest SKIP, never fake PASS)   │
+      │    up: proceed             │                  │                    │
+      │ 2. write known payload ───────────────────────┼───────────────────►│  PUT file
+      │    (random 16 KiB + header)                    │  routed unicast    │
+      │ 3. read the file back  ◄───────────────────────┼────────────────────┤  GET file
+      │ 4. sha256(src) == sha256(readback) ?           │                    │
+      │      MATCH  → PASS: &lt;desc&gt; [evidence: roundtrip.evidence]           │
+      │      MISMATCH → FAIL (bytes did not survive)                        │
+      │ 5. delete the remote file ─────────────────────┼───────────────────►│  DEL/rm
+      │    (cleanup, §11.4.14)                          │                    │
+      ▼                                                                     ▼
+ evidence: qa-results/vpn_lan/phase{2,3}/&lt;UTC-ts&gt;/{smb,nfs,sftp}/roundtrip.evidence
+           (src_sha256, readback_sha256, integrity: MATCH/MISMATCH)</code></pre>
+<pre class="mermaid"><code>sequenceDiagram
+    participant T as test harness
+    participant G as bridge gate (svord_bridge.sh)
+    participant V as L3 VPN (ppp0)
+    participant S as remote share
+    T-&gt;&gt;G: bridge_require
+    alt bridge down
+        G--&gt;&gt;T: SKIP:network_unreachable_external (exit 0)
+    else bridge up
+        G--&gt;&gt;T: proceed
+        T-&gt;&gt;V: write known payload (16 KiB + header)
+        V-&gt;&gt;S: PUT file (routed unicast)
+        T-&gt;&gt;V: read file back
+        V-&gt;&gt;S: GET file
+        S--&gt;&gt;T: bytes
+        T-&gt;&gt;T: sha256(src) == sha256(readback)?
+        Note over T: MATCH -&gt; PASS (evidence: roundtrip.evidence)&lt;br/&gt;MISMATCH -&gt; FAIL
+        T-&gt;&gt;S: delete remote file (cleanup §11.4.14)
+    end</code></pre>
+<h3 id="32-cast-control-flow-google-cast--dial">3.2 Cast control flow
+(Google Cast / DIAL)</h3>
+<p>Cast splits into <strong>discovery</strong> (multicast — needs the
+Phase-5 reflector) and <strong>control</strong> (unicast — routes
+directly). The test (FACT —
+<code>tests/vpn_lan/chromecast_dial.sh</code>) reads the device-identity
+JSON from <code>eureka_info</code> (8008) and observes a <strong>status
+transition</strong> on CASTV2 (8009 TLS) — a transition, not a single
+frozen frame, per §11.4.107.</p>
+<pre class="text"><code> discovery (multicast — reflected)           control (unicast — routed)
+ ┌───────────────────────────────┐           ┌──────────────────────────────────────┐
+ │ avahi-browse _googlecast._tcp │           │ GET http://&lt;cast-ip&gt;:8008/setup/      │
+ │  (or DIAL SSDP M-SEARCH)       │           │     eureka_info   ── routed over VPN ─┼──►
+ │        │                       │           │        │                             │
+ │        ▼ via REMOTE REFLECTOR  │           │        ▼ parse JSON &quot;name&quot; field     │
+ │  device + routable 10.x addr   │──────────►│   device identity captured (evidence)│
+ │  surfaced to helix_proxy client│  feeds IP │        │                             │
+ └───────────────────────────────┘           │        ▼ CASTV2 8009 (TLS) status read│
+   (Phase 5 — operator-gated;                 │   read #1 ─────► status A             │
+    SKIP:feature_disabled_by_config           │   read #2 ─────► status B             │
+    when no reflector deployed)               │   A != B  → liveness transition = PASS│
+                                              │   (single frozen frame is NOT proof)  │
+                                              └──────────────────────────────────────┘
+ evidence: qa-results/vpn_lan/phase6/&lt;UTC-ts&gt;/{discovery,eureka,castv2}/</code></pre>
+<pre class="mermaid"><code>sequenceDiagram
+    participant C as helix_proxy client
+    participant R as remote reflector (Phase 5)
+    participant D as Cast device (10.x)
+    Note over C,R: DISCOVERY (multicast — reflected)
+    C-&gt;&gt;R: avahi-browse _googlecast._tcp / DIAL M-SEARCH
+    R--&gt;&gt;C: device + routable 10.x address
+    Note over C,D: CONTROL (unicast — routed over VPN)
+    C-&gt;&gt;D: GET :8008/setup/eureka_info
+    D--&gt;&gt;C: JSON name (device identity = evidence)
+    C-&gt;&gt;D: CASTV2 :8009 TLS status read #1
+    D--&gt;&gt;C: status A
+    C-&gt;&gt;D: CASTV2 :8009 TLS status read #2
+    D--&gt;&gt;C: status B
+    Note over C: A != B -&gt; liveness transition = PASS (§11.4.107)&lt;br/&gt;single frozen frame is NOT proof</code></pre>
+<hr />
+<h2 id="4-ssrf-allowlist-trust-boundary-diagram">4. SSRF-allowlist
+trust-boundary diagram</h2>
+<p>Widening egress to the VPN subnet reopens SSRF surface, so the
+carve-out is added <strong>without</strong> removing the existing
+hardening (FACT, <a href="PLAN.md"><code>PLAN.md</code></a> §4). The
+Dante ACL is <strong>first-match, top-down</strong>: the narrow
+<code>HELIX_BRIDGE_SUBNET</code> ALLOW rule sits <strong>above</strong>
+the broad internal-DENY, so exactly that one subnet is reachable and
+every other RFC1918 range stays blocked. The floor (RFC1918 / link-local
+/ loopback / cloud-metadata block) is the pre-existing
+<code>4626f05</code> Dante SSRF</p>
+<ul>
+<li>Squid ACL hardening and is <strong>kept intact</strong>.</li>
+</ul>
+<h3 id="41-ascii-trust-boundary--first-match-order">4.1 ASCII trust
+boundary + first-match order</h3>
+<pre class="text"><code>                        egress request target
+                               │
+                               ▼
+        ┌─────────────────────────────────────────────────────┐
+        │   Dante ACL — FIRST-MATCH, TOP-DOWN (order matters)  │
+        │                                                     │
+        │   (1) ALLOW  HELIX_BRIDGE_SUBNET  (e.g. 10.0.0.0/8) │◄── narrow carve-out
+        │        │  match → ROUTE over ppp0 to the VPN         │    (the width of the hole:
+        │        ▼                                             │     keep it as tight as
+        │   (2) DENY   RFC1918 / link-local / loopback /       │     the deployment allows)
+        │        │     169.254.0.0/16 / 127/8 / metadata       │◄── the FLOOR (kept intact,
+        │        │     169.254.169.254 (cloud metadata)        │     4626f05 hardening)
+        │        ▼  match → BLOCK (Dante block(N) / TCP_DENIED)│
+        │   (3) ALLOW  public internet (unchanged base policy) │
+        └─────────────────────────────────────────────────────┘
+                               │
+             ┌─────────────────┴──────────────────┐
+             ▼                                     ▼
+   TRUSTED (routed):                     BLOCKED (still denied):
+   ● 10.0.0.0/8 VPN subnet only          ● every OTHER RFC1918 range
+     (the allowlisted carve-out)           192.168/16, 172.16/12, other 10-nets
+                                          ● link-local 169.254/16
+   Email extra guard (§4.3):             ● loopback 127/8
+   ● authenticated submission 587/465    ● cloud metadata 169.254.169.254
+     routed to VPN clients               ────────────────────────────────
+   ● NEVER anonymous CONNECT-to-:25      A paired §1.1 mutation proves the
+     (no open-relay / spam conduit)      allowlist has TEETH: an out-of-allowlist
+   ● prefer implicit-TLS 993/995/465     RFC1918 target STILL denies. The S1/S3/S4
+     over STARTTLS (RFC 8314)            guards stay GREEN after the carve-out.</code></pre>
+<h3 id="42-trust-boundary-decision-mermaid">4.2 Trust-boundary decision
+(mermaid)</h3>
+<pre class="mermaid"><code>flowchart TD
+    REQ[&quot;egress request target&quot;] --&gt; R1{&quot;in HELIX_BRIDGE_SUBNET\n(e.g. 10.0.0.0/8)?&quot;}
+    R1 -- Yes --&gt; ALLOW[&quot;ROUTE over ppp0\n(TRUSTED — the narrow carve-out)&quot;]
+    R1 -- No --&gt; R2{&quot;RFC1918 / link-local /\nloopback / metadata?&quot;}
+    R2 -- Yes --&gt; DENY[&quot;BLOCK\nDante block(N) / TCP_DENIED\n(the FLOOR — kept intact)&quot;]
+    R2 -- No --&gt; PUB[&quot;ALLOW public internet\n(unchanged base policy)&quot;]
+    ALLOW --&gt; MUT[&quot;paired §1.1 mutation:\nan out-of-allowlist RFC1918 target\nMUST still deny (teeth)&quot;]
+    DENY --&gt; MUT</code></pre>
+<p><strong>The invariant this diagram encodes (FACT, <a
+href="PLAN.md"><code>PLAN.md</code></a> §4):</strong> the carve-out is
+the <em>only</em> new hole, it is exactly one subnet wide, it sits above
+the deny in first-match order, and every widening ships with a mutation
+proving an out-of-allowlist target still denies — so the allowlist can
+never silently drift permissive. The email open-relay guard is a second,
+orthogonal boundary on the same egress path: authenticated submission is
+routed, anonymous CONNECT-to-:25 is never exposed, so the SSRF carve-out
+cannot turn helix_proxy into an anonymizing spam conduit.</p>
+<hr />
+<h2 id="5-honest-boundaries-encoded-in-the-architecture-1146">5. Honest
+boundaries encoded in the architecture (§11.4.6)</h2>
+<ul>
+<li><strong>Multicast never crosses L3.</strong> The reflector is not an
+optimization — it is <em>required</em> because link-local
+(<code>224.0.0.251</code>, RFC 5771) and administratively-scoped
+(<code>239.255.255.250</code>, RFC 2365) groups are subnet-local by
+standard mandate. See <a
+href="reflector_design.md"><code>reflector_design.md</code></a> §2 for
+the full routing argument.</li>
+<li><strong>Miracast has no IP hop.</strong> Its Wi-Fi-Direct L2 radio
+group sits below IP; the VPN cannot manufacture a radio association.
+Classified <code>Won't-fix: structurally-impossible</code> (§11.4.112) —
+see <a href="miracast_verdict.md"><code>miracast_verdict.md</code></a>.
+The routable alternative is Google Cast/DIAL (§3.2).</li>
+<li><strong>Network <code>fastboot</code> is USB-bound.</strong>
+<code>fastboot</code> is a USB protocol; the routable path is
+<code>usbip</code>. Flashing a real device is operator-gated
+(§11.4.133).</li>
+<li><strong>Bridge-down ⇒ honest SKIP.</strong> Every diagram's data
+flow begins with the bridge gate; when the VPN is down the live paths
+<strong>SKIP</strong> (<code>network_unreachable_external</code>, exit
+2), never fake-PASS. The architecture is provable against local stubs
+for the security-critical logic (SSRF teeth, the doctor), and honestly
+SKIPs the live protocol paths until the operator supplies the svord
+connection (<a href="PLAN.md"><code>PLAN.md</code></a> §6 / §8).</li>
+<li><strong>INFERENCE items</strong> — the specific SSDP-relay binary
+(§4.1 of <code>reflector_design.md</code>) is a deployment-time choice,
+not asserted here. The diagrams show the <em>requirement</em> (an
+SSDP-aware relay that rewrites <code>LOCATION</code> to a routable
+<code>10.x</code>), not a pinned tool.</li>
+</ul>
+<hr />
+<h2 id="sources">Sources</h2>
+<ul>
+<li><a href="PLAN.md"><code>PLAN.md</code></a> — §2 routing map (the
+four traffic classes → four primitives), §3 env-var bridge contract, §4
+SSRF reconciliation, §5 per-phase protocol coverage, §11 deep-research
+citations.</li>
+<li><a href="reflector_design.md"><code>reflector_design.md</code></a> —
+the multicast-does-not-cross-L3 argument (RFC 6762/6763/5771/2365, Avahi
+<code>enable-reflector</code>) drawn in §1/§2/§3.2 here.</li>
+<li><a href="miracast_verdict.md"><code>miracast_verdict.md</code></a> —
+the §11.4.112 structural-impossibility verdict (Wi-Fi Alliance / Wi-Fi
+Direct) behind the Miracast row of §2 and §5.</li>
+<li><a
+href="../../guides/vpn_lan_bridge_setup.md"><code>../../guides/vpn_lan_bridge_setup.md</code></a>
+— the operator setup guide (the <code>.env</code> contract, doctor
+verdicts) these diagrams illustrate.</li>
+<li>Test scripts (the data-flow FACTs of §3):
+<code>tests/vpn_lan/smb_nfs_roundtrip.sh</code>,
+<code>tests/vpn_lan/ftp_sftp_webdav.sh</code>,
+<code>tests/vpn_lan/chromecast_dial.sh</code>,
+<code>tests/vpn_lan/discovery_reflect.sh</code>,
+<code>tests/vpn_lan/adb_over_vpn.sh</code>,
+<code>tests/vpn_lan/email_roundtrip.sh</code>,
+<code>tests/lib/svord_bridge.sh</code>.</li>
+</ul>
+</body>
+</html>
