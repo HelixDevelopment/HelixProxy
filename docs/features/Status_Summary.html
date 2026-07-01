@@ -174,8 +174,8 @@
 <body>
 <h1 id="helix_proxy--feature-status-summary">helix_proxy — Feature
 Status Summary</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T12:30:00Z <strong>Authority:</strong> §11.4.56 two-audience
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T14:15:00Z <strong>Authority:</strong> §11.4.56 two-audience
 companion to <a href="Status.md"><code>Status.md</code></a>. Inherits
 <code>constitution/Constitution.md</code> per §11.4.35.</p>
 <hr />
@@ -204,6 +204,14 @@ which ports are open, and whether connections succeed.</li>
 validate our future auto-HTTPS certificates already passes its full
 self-test (37/37) and is deliberately built so it cannot rubber-stamp a
 bad certificate.</li>
+<li><strong>Automatic-HTTPS certificate issuance works (in a
+self-contained test).</strong> The system can now obtain a real HTTPS
+certificate automatically, end-to-end, using our own custom-built
+certificate server standing in for Let's Encrypt. We proved the issued
+certificate is genuine and correctly chained — and there is a live check
+plus a permanent guard test that re-runs to make sure it keeps working.
+(Issuing against a <em>real public</em> domain still needs your go-ahead
+— see below.)</li>
 </ul>
 <p><strong>What's built but not switched on yet (in
 progress):</strong></p>
@@ -217,9 +225,11 @@ admin page you see today is still a temporary placeholder.</li>
 <li><strong>Username/password protection</strong> on the proxy and
 <strong>live dashboards/metrics</strong> — designed and partially
 tested, not switched on.</li>
-<li><strong>Automatic HTTPS certificates (Let's Encrypt)</strong> — the
-checker is done; actually issuing and renewing certificates is the next
-step.</li>
+<li><strong>Automatic-HTTPS certificate <em>renewal</em></strong> —
+issuing a fresh certificate is proven; automatically <em>renewing</em>
+one before it expires is the next step. We already diagnosed exactly why
+our test certificate server won't renew yet (it needs a newer version)
+and know the fix.</li>
 </ul>
 <p><strong>What needs a decision or action from you
 (operator):</strong></p>
@@ -232,23 +242,32 @@ you to choose a DNS provider, supply a scoped API token, and authorise
 go-live for the real domain.</li>
 </ul>
 <p><strong>Bottom line:</strong> the core proxy (forward HTTP, HTTPS,
-SOCKS5, caching) is working and evidence-backed. The advanced
-VPN-routing/admin/metrics layer and real HTTPS issuance are still being
-wired in. Nothing is claimed "done" without a real captured proof behind
-it.</p>
+SOCKS5, caching) is working and evidence-backed, and automatic HTTPS
+certificate <em>issuance</em> is now proven in a self-contained test.
+The advanced VPN-routing/admin/metrics layer, HTTPS certificate
+<em>renewal</em>, and real-domain go-live are still being wired in.
+Nothing is claimed "done" without a real captured proof behind it.</p>
 <hr />
 <h2 id="page-2--for-software-engineers">Page 2 — For software
 engineers</h2>
 <p><strong>Scope.</strong> Reconciled against branch
-<code>feature/vpn-aware-dynamic-routing</code> @ <code>bf38c35</code>.
+<code>feature/vpn-aware-dynamic-routing</code> @ <code>2f1e49d</code>
+(LE issuance <code>b2afa7d</code>, Challenge <code>022b78d</code>, guard
+<code>d2042ac</code>, renewal research
+<code>6349c0e</code>+<code>7c6b69f</code>+<code>2f1e49d</code>).
 Deployed stack = <code>docker-compose.yml</code> (Squid
 <code>:53128</code>, Dante <code>:51080</code>, <code>proxy-admin</code>
 = <code>traefik/whoami</code> placeholder <code>:58080</code>,
 <code>proxy-vpn</code> observed Stopped). Control-plane = separate Go
 module <code>digital.vasic.helixproxy/controlplane</code>, not yet in
-the byte path.</p>
-<p><strong>Tally:</strong> 9 PASS-with-evidence · 10 PENDING · 3
-OPERATOR-BLOCKED. No FAIL; no metadata-only PASS.</p>
+the byte path. LE hermetic issuance stack =
+<code>deploy/letsencrypt/</code> (custom
+<code>caddy-challtestsrv:2.8.4</code> image + Pebble), separate from the
+production data-plane compose.</p>
+<p><strong>Tally:</strong> 10 PASS-with-evidence · 9 PENDING · 3
+OPERATOR-BLOCKED. No FAIL; no metadata-only PASS. Change since Rev 1: LE
+hermetic DNS-01 issuance (Phase 2/3) flipped PENDING→PASS; LE renewal
+(Phase 5) remains PENDING.</p>
 <p><strong>PASS-with-evidence (deployed data plane + LE Phase
 1):</strong></p>
 <table>
@@ -299,9 +318,20 @@ OPERATOR-BLOCKED. No FAIL; no metadata-only PASS.</p>
 (placeholder-qualified)</td>
 </tr>
 <tr>
-<td>LE cert-analyzer</td>
+<td>LE cert-analyzer (Phase 1)</td>
 <td><code>qa-results/regression/cert_analyzer_selfvalidation/*</code>
 (37/37 + §1.1 RED→GREEN)</td>
+</tr>
+<tr>
+<td>LE hermetic DNS-01 issuance (Phase 2/3)</td>
+<td><code>qa-results/letsencrypt/phase3_issuance/20260701T103719Z/cert_analyzer_verdicts.txt</code>
+(5/5 PASS, leaf→per-run Pebble CA) + <code>caddy_issuance.log</code>
+(<code>certificate obtained successfully</code>); guard
+<code>qa-results/regression/phase3_issuance_guard/*</code>
+(<code>verdict: PASS</code>) + RED
+<code>qa-results/regression/phase3_guard_red/*</code>; image
+<code>qa-results/letsencrypt/build/caddy_image_build_20260701T091028Z.log</code>
+(<code>dns.providers.challtestsrv present</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -320,8 +350,13 @@ generation (<code>internal/pac</code> golden); proxy auth
 <code>407</code> / ACL deny-path (<code>auth_407</code> analyzer
 self-validated at fixture level only); observability/metrics
 (<code>config/prometheus/prometheus.yml</code> is an explicit
-NOT-YET-LIVE PLAN, targets absent); LE issuance/renewal Phases 2/3/5.
-Live stress/chaos/ddos/benchmark/memory/concurrency runs SKIP
+NOT-YET-LIVE PLAN, targets absent); LE <strong>renewal/rotation Phase
+5</strong> — diagnosed only, not yet produced
+(<code>docs/research/letsencrypt_renewal_20260701/ANALYSIS.md</code> Rev
+3 §11.4.138: ARI on Pebble 2.6.0 dominates
+<code>renewal_window_ratio</code>, <code>/set-renewal-info/</code>
+absent until v2.8.0 PR #501 → needs a Pebble ≥2.8.0 bump). Live
+stress/chaos/ddos/benchmark/memory/concurrency runs SKIP
 (<code>suite_results.txt</code>: <code>PASS=0 SKIP=6 FAIL=0</code>) —
 dynamic stack (P10) not deployed; analyzers self-validated + RED
 regression guards (<code>ddos_flood_evidence</code>,
@@ -347,9 +382,13 @@ helix_proxy is headless; proof is captured status codes +
 <code>Via:</code> headers + <code>access.log</code>
 <code>TCP_*HIT</code>.</p>
 <p><strong>Cross-refs:</strong> control-plane
-<code>control-plane/README.md</code>; LE
-<code>docs/design/letsencrypt/Status.md</code>; HelixQA bank
-<code>tools/helixqa/banks/proxy.yaml</code>; challenge bank
-<code>challenges/scripts/run_proxy_challenges.sh</code>.</p>
+<code>control-plane/README.md</code>; LE design
+<code>docs/design/letsencrypt/Status.md</code>; LE hermetic issuance
+<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> +
+<code>deploy/letsencrypt/README.md</code>; LE renewal diagnosis
+<code>docs/research/letsencrypt_renewal_20260701/ANALYSIS.md</code>;
+HelixQA bank <code>tools/helixqa/banks/proxy.yaml</code>; challenge bank
+<code>challenges/scripts/run_proxy_challenges.sh</code> (+
+<code>challenges/scripts/le_phase3_issuance_challenge.sh</code>).</p>
 </body>
 </html>

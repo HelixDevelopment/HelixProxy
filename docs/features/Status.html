@@ -173,24 +173,33 @@
 </head>
 <body>
 <h1 id="helix_proxy--feature-status">helix_proxy — Feature Status</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T12:30:00Z <strong>Status:</strong> Data plane (Squid
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T14:15:00Z <strong>Status:</strong> Data plane (Squid
 HTTP/HTTPS forward + Dante SOCKS5 + Squid caching) is deployed,
 end-user-reachable, and PASS with captured evidence. The VPN-aware
 control-plane (dynamic routing / control API / health publisher /
 breaker / ACL-helper / PAC / metrics) is a separate Go module —
 component-tested (unit/integration GREEN + §1.1 mutations) but NOT yet
 wired into the running data plane, therefore PENDING at the end-user
-layer. Let's Encrypt HTTPS is Phase-1 (cert-analyzer) PASS;
-issuance/renewal PENDING; staging/production cutover OPERATOR-BLOCKED.
-<strong>Authority:</strong> Inherits
+layer. Let's Encrypt HTTPS: Phase-1 cert-analyzer PASS
+<strong>and</strong> Phase-2/3 hermetic DNS-01 issuance now
+<strong>PASS</strong> (re-runnable end-to-end via a custom
+DNS-module-linked Caddy image + Pebble, live Challenge + standing
+regression guard, cert chains to the per-run Pebble CA); Phase-5
+renewal/rotation is <strong>PENDING</strong> (diagnosed — ARI on Pebble
+2.6.0 blocks in-process renewal; needs Pebble ≥2.8.0
+<code>/set-renewal-info/</code>); staging/production cutover (Phase 4/6)
+OPERATOR-BLOCKED. <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. This is the
 §11.4.153 per-feature Status set (companion §11.4.56 two-audience <a
 href="Status_Summary.md"><code>Status_Summary.md</code></a>). Every row
 is reconciled against real code + committed tests/challenges/evidence;
 no metadata-only PASS (§11.4 / §11.4.1 / §11.4.6). <strong>Repo
 anchor:</strong> branch <code>feature/vpn-aware-dynamic-routing</code>,
-HEAD <code>bf38c35</code> at authoring time.</p>
+HEAD <code>2f1e49d</code> at authoring time (LE issuance
+<code>b2afa7d</code>, Challenge <code>022b78d</code>, guard
+<code>d2042ac</code>, renewal research
+<code>6349c0e</code>+<code>7c6b69f</code>+<code>2f1e49d</code>).</p>
 <hr />
 <h2
 id="operator-blocked--operator-gated-items-read-first--11445-o1-surface">Operator-blocked
@@ -639,28 +648,57 @@ mutation</td>
 <code>qa-results/letsencrypt/cert-analyzer/*</code></td>
 </tr>
 <tr>
-<td>Caddy (custom image)</td>
-<td>Auto-HTTPS terminator + DNS-01 ACME client (chosen client)</td>
+<td>Custom Caddy image + Pebble</td>
+<td><strong>Hermetic DNS-01 ACME issuance (Phase 2/3)</strong> — custom
+<code>caddy-challtestsrv</code> image issues a real leaf from a per-boot
+Pebble CA over DNS-01, end-to-end</td>
 <td>TLS</td>
-<td><code>config/caddy/Caddyfile</code></td>
-<td>NO — image/service not built/wired yet</td>
-<td>—</td>
-<td>design decisions captured (Phase 0)</td>
-<td><strong>PENDING</strong></td>
-<td><code>docs/design/letsencrypt/Status.md</code> (Phase 1/2/3
-rows)</td>
+<td><code>deploy/letsencrypt/phase3_hermetic_issue.sh</code>
+(re-runnable); <code>deploy/letsencrypt/build.sh</code> +
+<code>Dockerfile.caddy</code> + <code>caddy-challtestsrv-dns/</code>;
+<code>deploy/letsencrypt/Caddyfile</code></td>
+<td>YES (hermetic issuance stack — proves the issuance capability
+end-to-end; production <code>docker-compose.yml</code> cutover is Phase
+6)</td>
+<td>Real ACME DNS-01 → Caddy
+<code>certificate obtained successfully</code>; served leaf chains to
+THIS-RUN Pebble CA; SAN + negative-SAN + not-expired all PASS. Custom
+image DNS-module-linked, anti-bluff-verified
+(<code>caddy list-modules</code> →
+<code>dns.providers.challtestsrv present</code>)</td>
+<td>live Challenge (<code>le_phase3_issuance_challenge.sh</code>) +
+standing §11.4.135/§11.4.115 regression guard
+(<code>phase3_issuance_guard.sh</code>, RED+GREEN, wired in
+<code>tests/run-tests.sh</code>) + cert-analyzer verdicts</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/letsencrypt/phase3_issuance/20260701T103719Z/cert_analyzer_verdicts.txt</code>
+(5/5 PASS) + <code>caddy_issuance.log</code> +
+<code>served_leaf.pem</code>; guard:
+<code>qa-results/regression/phase3_issuance_guard/*</code>
+(<code>verdict: PASS</code>) +
+<code>qa-results/regression/phase3_guard_red/*</code> (RED reproduced);
+image build:
+<code>qa-results/letsencrypt/build/caddy_image_build_20260701T091028Z.log</code>
+(<code>dns.providers.challtestsrv present</code>)</td>
 </tr>
 <tr>
 <td>Caddy + Pebble</td>
-<td>Hermetic local-ACME issuance (Phase 3) + renewal/rotation (Phase
-5)</td>
+<td>Renewal / rotation (Phase 5) — in-process cert renewal +
+zero-downtime hot-swap</td>
 <td>TLS</td>
-<td>(design) <code>docs/design/LETSENCRYPT_HTTPS.md</code> §Pebble</td>
-<td>NO</td>
+<td>(diagnosed)
+<code>docs/research/letsencrypt_renewal_20260701/ANALYSIS.md</code> (Rev
+3, §11.4.138 live findings)</td>
+<td>NO — not yet produced</td>
 <td>—</td>
-<td>authored plan; analyzer ready to assert the result</td>
+<td>deep-research diagnosis only (root cause proven, not a working
+rotation yet)</td>
 <td><strong>PENDING</strong></td>
-<td><code>docs/design/letsencrypt/Status.md</code> (Phase 3/5)</td>
+<td><code>docs/research/letsencrypt_renewal_20260701/ANALYSIS.md</code>
+— LIVE-CONFIRMED: ARI on Pebble 2.6.0 dominates
+<code>renewal_window_ratio</code>; <code>/set-renewal-info/</code>
+absent in v2.6.0 (added v2.8.0 PR #501) → needs a Pebble ≥2.8.0 bump for
+the rotation test</td>
 </tr>
 <tr>
 <td>LE staging / production</td>
@@ -952,16 +990,31 @@ comprehensive PASS via container</td>
 <td><strong>PASS</strong></td>
 </tr>
 <tr>
-<td>LE issuance/renewal (Phase 2/3/5)</td>
+<td>LE hermetic DNS-01 issuance (Phase 2/3)</td>
+<td><strong>PASS</strong> (cert-analyzer verdicts)</td>
+<td><strong>PASS</strong> (guard GREEN, wired in
+<code>run-tests.sh</code>)</td>
+<td><strong>PASS</strong> (hermetic end-to-end DNS-01 issuance)</td>
+<td><strong>PASS</strong>
+(<code>le_phase3_issuance_challenge.sh</code>)</td>
+<td>SKIP (harness build)</td>
+<td><strong>PASS</strong> (leaf→per-run Pebble CA + SAN +
+negative-SAN)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>LE renewal / rotation (Phase 5)</td>
 <td>PENDING</td>
 <td>PENDING</td>
-<td>PENDING</td>
+<td>PENDING (ARI-blocked on Pebble 2.6.0)</td>
 <td>PENDING</td>
 <td>N/A</td>
 <td>PENDING</td>
 <td>N/A</td>
 <td>N/A</td>
-<td><strong>PENDING</strong></td>
+<td><strong>PENDING</strong> (diagnosed — needs Pebble ≥2.8.0)</td>
 </tr>
 <tr>
 <td>LE staging/production (Phase 4/6)</td>
@@ -1054,15 +1107,21 @@ from comprehensive-test's container-side snapshot instead.</li>
 <h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
 <p>Only the <strong>deployed Squid + Dante data plane</strong> (HTTP
 forward, HTTPS CONNECT, SOCKS5, SOCKS5-over-HTTPS, caching, cache admin,
-ACL allow-path, <code>./status</code>, admin reachability) and the
-<strong>LE Phase-1 cert-analyzer</strong> are PASS with committed
-captured evidence. Everything in §B (control-plane routing / API /
-health / breaker / ACL-helper / PAC / metrics, and proxy auth) is
+ACL allow-path, <code>./status</code>, admin reachability), the
+<strong>LE Phase-1 cert-analyzer</strong>, and the <strong>LE Phase-2/3
+hermetic DNS-01 issuance</strong> (re-runnable, live Challenge +
+standing guard, cert chains to the per-run Pebble CA) are PASS with
+committed captured evidence. Everything in §B (control-plane routing /
+API / health / breaker / ACL-helper / PAC / metrics, and proxy auth) is
 <strong>component-tested but not wired into the running stack</strong> —
-honestly PENDING, never a metadata-only PASS. The LE issuance/renewal
-path is PENDING; LE staging/production and the real VPN egress proof are
-OPERATOR-BLOCKED. Feature tally: <strong>9 PASS-with-evidence, 10
-PENDING, 3 OPERATOR-BLOCKED</strong> (LE Phase 4, LE Phase 6, real VPN
-egress proof).</p>
+honestly PENDING, never a metadata-only PASS. The LE
+<strong>renewal/rotation (Phase 5)</strong> path is PENDING — diagnosed,
+not yet produced (ARI on Pebble 2.6.0 blocks in-process renewal; needs
+Pebble ≥2.8.0). LE staging/production (Phase 4/6) and the real VPN
+egress proof are OPERATOR-BLOCKED. Feature tally: <strong>10
+PASS-with-evidence, 9 PENDING, 3 OPERATOR-BLOCKED</strong> (LE Phase 4,
+LE Phase 6, real VPN egress proof). Change since Rev 1: LE hermetic
+DNS-01 issuance flipped PENDING→PASS (the custom DNS-module-linked Caddy
+image is now built + proven end-to-end); LE renewal remains PENDING.</p>
 </body>
 </html>
