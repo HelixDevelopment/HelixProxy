@@ -432,4 +432,8 @@ rather than fabricated.
 | Security Status Summary | 2026-07-01T14:48:00Z | 3 | [md](docs/design/security/Status_Summary.md) | [html](docs/design/security/Status_Summary.html) | [pdf](docs/design/security/Status_Summary.pdf) |
 | Let's Encrypt Status | 2026-07-01T11:42:00Z | 3 | [md](docs/design/letsencrypt/Status.md) | [html](docs/design/letsencrypt/Status.html) | [pdf](docs/design/letsencrypt/Status.pdf) |
 | Let's Encrypt Status Summary | 2026-07-01T11:42:00Z | 3 | [md](docs/design/letsencrypt/Status_Summary.md) | [html](docs/design/letsencrypt/Status_Summary.html) | [pdf](docs/design/letsencrypt/Status_Summary.pdf) |
+| VPN-LAN Integration Status | 2026-07-01T19:05:00Z | 3 | [md](docs/design/vpn_lan_access/Status.md) | [html](docs/design/vpn_lan_access/Status.html) | [pdf](docs/design/vpn_lan_access/Status.pdf) |
+| VPN-LAN Integration Status Summary | 2026-07-01T19:05:00Z | 3 | [md](docs/design/vpn_lan_access/Status_Summary.md) | [html](docs/design/vpn_lan_access/Status_Summary.html) | [pdf](docs/design/vpn_lan_access/Status_Summary.pdf) |
+| VPN-LAN Feature Status | 2026-07-01T19:15:00Z | 2 | [md](docs/features/vpn_lan/Status.md) | [html](docs/features/vpn_lan/Status.html) | [pdf](docs/features/vpn_lan/Status.pdf) |
+| VPN-LAN Feature Status Summary | 2026-07-01T19:15:00Z | 2 | [md](docs/features/vpn_lan/Status_Summary.md) | [html](docs/features/vpn_lan/Status_Summary.html) | [pdf](docs/features/vpn_lan/Status_Summary.pdf) |
 <!-- doc-link-section:end -->
