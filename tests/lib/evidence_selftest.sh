@@ -106,6 +106,38 @@ run_case 1 "assert_egress_ip: egress==host (the §15 bluff) -> FAIL (negative)" 
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_empty.ip"
 run_case 1 "assert_egress_ip: no egress observed -> FAIL (negative)" \
     assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "203.0.113.45"
+
+# --- assert_egress_ip F7 fail-open guard (§11.4.68) -------------------------
+# When the host's real IP is UNKNOWN or empty (the caller's `curl ifconfig.me
+# || echo "unknown"` / `|| true` fallback fired) the egress!=host HALF of the
+# proof cannot be evaluated — comparing egress against "unknown"/"" trivially
+# satisfies "different" and could fake-PASS a NO-VPN (egress==host) case. The
+# guard returns exit-2 OPERATOR-BLOCKED (never a return-0 SKIP-as-PASS); a
+# definitively-wrong exit is still a provable FAIL(1).
+export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_vpn.ip"
+run_case 2 "assert_egress_ip: host UNKNOWN + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F7)" \
+    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "unknown"
+run_case 2 "assert_egress_ip: host EMPTY + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F7)" \
+    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" ""
+run_case 1 "assert_egress_ip: host UNKNOWN + WRONG exit -> FAIL(1) (provable defect survives the F7 guard)" \
+    assert_egress_ip "http://127.0.0.1:53128" "1.2.3.4" "unknown"
+export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_host.ip"
+run_case 2 "assert_egress_ip: HIDDEN §15 bluff — egress==host but host reported UNKNOWN -> OPERATOR-BLOCKED(2), NOT fake-PASS (F7)" \
+    assert_egress_ip "http://127.0.0.1:53128" "203.0.113.45" "unknown"
+# --- F-1 hardening: non-empty, non-"unknown" GARBAGE host_real is exactly as
+# unverifiable as empty/unknown (a `curl -s` 200 can echo a captive-portal / rate-limit
+# HTML body, or a non-public sentinel like 0.0.0.0) — it MUST take the same exit-2
+# OPERATOR-BLOCKED branch, never fall through to a fake-PASS on the collapsed !=host half.
+export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_vpn.ip"
+run_case 2 "assert_egress_ip: host GARBAGE (HTML body) + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F-1)" \
+    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "<html>captive portal login</html>"
+run_case 2 "assert_egress_ip: host 0.0.0.0 sentinel + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F-1)" \
+    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "0.0.0.0"
+run_case 1 "assert_egress_ip: host GARBAGE + WRONG exit -> FAIL(1) (provable defect survives the F-1 guard)" \
+    assert_egress_ip "http://127.0.0.1:53128" "1.2.3.4" "not-an-ip"
+export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_host.ip"
+run_case 2 "assert_egress_ip: HIDDEN §15 bluff — egress==host but host reported as 0.0.0.0 sentinel -> OPERATOR-BLOCKED(2), NOT fake-PASS (F-1)" \
+    assert_egress_ip "http://127.0.0.1:53128" "203.0.113.45" "0.0.0.0"
 unset EVIDENCE_OBSERVED_IP_FILE
 
 # --- assert_cache_hit -------------------------------------------------------

@@ -1258,3 +1258,70 @@ not change proxy behaviour.
 
 Evidence: conductor smoke `qa-results/regression/comprehensive_f1_conductor_smoke/`;
 classifier guard `tests/regression/proxy_conn_verdict_test.sh` (BUGFIX-0014).
+
+---
+
+## BUGFIX-0018 — assert_egress_ip fail-opens the VPN-routing §15 proof when the host's real IP is undeterminable (F7 + F-1)
+
+- **Type:** Bug (anti-bluff library fail-open — Helix Constitution §11.4.68: the hardest-to-fake VPN-routing proof loses half its assertion, so a NO-VPN case can fake-PASS)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `tests/lib/evidence.sh` (`assert_egress_ip` host-undeterminable
+  guard + new `_evidence_ip_shaped` validator), `tests/lib/evidence_selftest.sh`
+  (F7 + F-1 cases, now 45), `tests/regression/assert_egress_ip_host_unknown_test.sh`
+  (new §11.4.135 guard), `docs/scripts/assert_egress_ip_host_unknown_test.md` (companion),
+  `tests/run-tests.sh` (registers this guard + closes the F5/F6 registration gap — see
+  note below), + `.html`/`.pdf`.
+- **Discovered by:** the §11.4.118 anti-bluff discovery sweep (finding F7, CONFIRMED);
+  F-1 by the independent §11.4.142 review of the F7 fix (GO + hardening finding).
+
+Root cause: `assert_egress_ip` proves VPN routing with TWO independent halves —
+`egress == expected_exit` AND `egress != host_real` (design §15: an egress that equals
+the host's real IP means traffic was NOT routed via any VPN). Callers learn `host_real`
+via `curl ifconfig.me || echo "unknown"` (verify-proxy / final-verify / comprehensive-test)
+or `|| true` (real_vpn_egress_proof). When that IP-echo was unreachable, `host_real`
+became the literal `"unknown"` / `""`. Comparing the observed egress against
+`"unknown"`/`""` trivially satisfies "different", silently COLLAPSING the `!=host` half —
+so a genuine `egress == host` (NO-VPN §15 bluff) could still PASS. A §11.4.68 fail-open:
+the anti-VPN-bluff check losing half its assertion the moment the host IP is unknown.
+
+Fix (F7): when `host_real` is undeterminable the `!=host` half is UNVERIFIABLE, so the
+call returns exit-2 OPERATOR-BLOCKED (§11.4.69 reason `network_unreachable_external`) —
+NEVER a fail-open PASS/SKIP-as-PASS. A definitively-wrong exit is still a provable defect
+and FAILs(1); a fully-known correctly-routed case still PASSes(0). Hardening (F-1, from
+the review): `host_real` is validated to be IP-SHAPED (`_evidence_ip_shaped` — IPv4 with
+0–255 octets or an IPv6 hex:colon form) rather than deny-listing the two literal sentinels
+`""`/`"unknown"`. A non-empty, non-`"unknown"` garbage value (a captive-portal / rate-limit
+HTML body a `curl -s` 200 can echo) or a non-public sentinel (`0.0.0.0`, `127.x`, `::`,
+`::1`) is exactly as unverifiable as an empty one and takes the same exit-2 branch —
+closing the residual window where garbage `host_real` could re-collapse the `!=host` half.
+F-1 is a strict superset: every prior F7 case behaves identically; only garbage/sentinel
+routing is newly closed.
+
+### Verification (captured, F7 independently reviewed §11.4.142 → GO; F-1 conductor-verified)
+
+```
+$ sh tests/lib/evidence_selftest.sh                                  -> tests=45 passed=45 failed=0 (F7 + F-1 cases green)
+$ bash tests/regression/assert_egress_ip_host_unknown_test.sh        -> [PASS] GREEN (unknown/empty/garbage/sentinel => OPERATOR-BLOCKED-2; wrong-exit FAIL; genuine PASS kept)
+$ RED_MODE=1 tests/regression/assert_egress_ip_host_unknown_test.sh  -> [PASS] RED reproduces the pre-fix fail-open (egress==host, host "unknown" -> rc0 PASS)
+# §1.1 paired mutation (return 2 -> return 0 in the unverifiable-host branch):
+$ (mutated) assert_egress_ip_host_unknown_test.sh                    -> [FAIL] "fail-open re-opened" (real rc mismatch) ; restore byte-identical (md5 976cb15…d176d) -> PASS
+# standing suite (data plane up): tests/run-tests.sh                 -> 59 run / 53 pass / 6 skip / 0 fail; BUGFIX-0018 GREEN+RED both PASS
+# no fail-open at any of the 5 callers (review-verified): exit-2 -> test_fail / _record FAIL / verbatim rc — never a PASS.
+```
+
+Note (§11.4.135 registration-gap closure): the F5 (`ddos_flood_evidence_test`) and F6
+(`benchmark_baseline_ratchet_test`) standing guards, committed with BUGFIX-0015/0016,
+were present on disk but NOT wired into `run-tests.sh`'s `test_regression_guards()`, so
+they never ran on a build — a live §11.4.135 gap this conductor audit surfaced. This
+change registers F5, F6 AND F7 (each GREEN + `RED_MODE=1`) into the standing suite; the
+full-suite run above proves all three execute and gate.
+
+Honest boundary (§11.4.6): an anti-bluff-library fix — it closes a fail-open in the
+hardest-to-fake routing proof and its standing-guard wiring. It does not change proxy
+behaviour. The genuine-PASS path (fully-known, correctly-routed egress) is preserved and
+guarded so the fix cannot over-block into false-FAILs (§11.4.1).
+
+Evidence: guard `tests/regression/assert_egress_ip_host_unknown_test.sh`; companion
+`docs/scripts/assert_egress_ip_host_unknown_test.md`; unit cases
+`tests/lib/evidence_selftest.sh` (F7 + F-1 block).

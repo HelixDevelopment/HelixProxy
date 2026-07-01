@@ -283,11 +283,48 @@ wg_transfer_delta() {
     return 1
 }
 
+# _evidence_ip_shaped <value>
+# Returns 0 iff <value> is a syntactically-plausible, non-sentinel public host IP
+# (IPv4 with 0-255 octets, or an IPv6 hex:colon form) — used to decide whether a
+# host_real_ip value is TRUSTWORTHY enough to evaluate the egress!=host half of the
+# §15 proof. Rejects "", "unknown", any non-IP garbage (a captive-portal / rate-limit
+# HTML body a `curl -s` 200 can return), and the unspecified/loopback sentinels
+# (0.0.0.0, 127.x, ::, ::1) which are never a real public host IP. Purely portable
+# POSIX sh (case + grep) — no bash regex. (finding F7 F-1 hardening §11.4.68.)
+_evidence_ip_shaped() {
+    _eis=$1
+    case "$_eis" in
+        ""|unknown|0.0.0.0|127.*|::|::1) return 1 ;;
+    esac
+    # IPv4: four 1-3 digit octets, each validated 0-255.
+    if printf '%s' "$_eis" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'; then
+        _eis_oldifs=$IFS; IFS=.
+        # shellcheck disable=SC2086
+        set -- $_eis
+        IFS=$_eis_oldifs
+        for _eis_o in "$@"; do
+            { [ "$_eis_o" -ge 0 ] && [ "$_eis_o" -le 255 ]; } 2>/dev/null || return 1
+        done
+        return 0
+    fi
+    # IPv6: at least one ':' and only hex digits + colons (shape, not full RFC 4291).
+    if printf '%s' "$_eis" | grep -Eq '^[0-9A-Fa-f:]+$' && [ "${_eis#*:}" != "$_eis" ]; then
+        return 0
+    fi
+    return 1
+}
+
 # assert_egress_ip <proxy_url> <expected_exit_ip> <host_real_ip>
 # THE decisive, hardest-to-fake proof (design §15 fix). The egress IP observed
 # THROUGH the proxy must equal the expected VPN exit AND differ from the host's
 # real IP. A 200 OK is NOT proof of routing; egress==host is the §15 bluff
 # (`host_ip == proxy_ip` PASSing with NO VPN) and FAILS here.
+# If <host_real_ip> is UNKNOWN or empty (the caller's `curl ifconfig.me ||
+# echo "unknown"` / `|| true` fallback fired — the external IP-echo used to learn
+# the host IP was unreachable) the egress!=host HALF of the proof is UNVERIFIABLE:
+# a definitively-wrong exit still FAILs, but an otherwise-"good-looking" result
+# returns exit-2 OPERATOR-BLOCKED — NEVER a fail-open PASS/SKIP-as-PASS
+# (§11.4.68; design §15). See tests/regression/assert_egress_ip_host_unknown_test.sh.
 assert_egress_ip() {
     proxy_url=$1
     expected_exit=$2
@@ -296,6 +333,28 @@ assert_egress_ip() {
     if [ -z "$observed" ]; then
         _evidence_emit FAIL "assert_egress_ip" "[reason: no egress IP observed through $proxy_url]"
         return 1
+    fi
+    # §11.4.68 fail-open guard (finding F7 + F-1 hardening). The proof has TWO
+    # independent halves: egress==expected_exit AND egress!=host_real. When the host's
+    # real IP is not a TRUSTWORTHY public IP — empty, the literal "unknown", or any
+    # non-IP garbage a `curl -s` 200 can return (captive-portal / rate-limit HTML), or
+    # an unspecified/loopback sentinel — the second half CANNOT be evaluated: comparing
+    # egress against a non-IP value trivially satisfies "different", silently collapsing
+    # that half so an egress==host (NO-VPN) case could fake-PASS. We must NEVER PASS on
+    # the strength of an unverifiable half. A definitively-wrong exit is still a provable
+    # defect and FAILs; otherwise this is host-IP-undeterminable => exit-2
+    # OPERATOR-BLOCKED (§11.4.68 cross-ref), citing the §11.4.69 closed-set reason
+    # network_unreachable_external so a rerun once the host public IP is known can
+    # complete the proof. NOT a return-0 SKIP (that IS the fail-open §11.4.68 forbids).
+    # F-1: validate host_real is IP-SHAPED rather than deny-listing two sentinels —
+    # a non-IP host_real is exactly as unverifiable as an empty one.
+    if ! _evidence_ip_shaped "$host_real"; then
+        if [ "$observed" != "$expected_exit" ]; then
+            _evidence_emit FAIL "assert_egress_ip" "[reason: egress IP $observed != expected exit $expected_exit (host real IP unknown/not-IP-shaped — wrong exit is a provable defect)]"
+            return 1
+        fi
+        _evidence_emit OPERATOR-BLOCKED "assert_egress_ip" "[reason: host real IP unknown/empty/not-IP-shaped ('$host_real') — cannot prove egress!=host (§15/§11.4.68); egress==expected exit $expected_exit but the !=host half is UNVERIFIABLE; §11.4.69 reason network_unreachable_external — rerun once the host public IP is determinable]"
+        return 2
     fi
     if [ "$observed" = "$host_real" ]; then
         _evidence_emit FAIL "assert_egress_ip" "[reason: egress IP $observed == host real IP — traffic NOT routed via VPN (§15 bluff)]"

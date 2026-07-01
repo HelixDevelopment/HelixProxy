@@ -628,6 +628,56 @@ test_regression_guards() {
         test_result "BUGFIX-0014 proxy-conn-verdict false-FAIL RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # BUGFIX-0015 (discovery-sweep F5) — GREEN guard: ddos_flood_suite must only
+    # score "survived the flood" when a flood ACTUALLY occurred (flood_total>0 AND
+    # flood_responses>0), never a §11.4.1 no-proof PASS. Pure classifier, no network.
+    if bash "$SCRIPT_DIR/regression/ddos_flood_evidence_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0015 ddos-flood survival requires real flood evidence (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0015 ddos-flood survival requires real flood evidence (GREEN)" "FAIL" \
+            "run: bash tests/regression/ddos_flood_evidence_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/ddos_flood_evidence_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0015 ddos-flood no-proof PASS RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0015 ddos-flood no-proof PASS RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # BUGFIX-0016 (discovery-sweep F6) — GREEN guard: benchmark ratchet must compare
+    # against a persistent COMMITTED baseline (seed+SKIP on absent, FAIL on regression
+    # beyond tolerance), never a §11.4.169(13)/§11.4.1 budget-only always-PASS. No network.
+    if bash "$SCRIPT_DIR/regression/benchmark_baseline_ratchet_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0016 benchmark ratchet compares vs persistent baseline (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0016 benchmark ratchet compares vs persistent baseline (GREEN)" "FAIL" \
+            "run: bash tests/regression/benchmark_baseline_ratchet_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/benchmark_baseline_ratchet_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0016 benchmark budget-only bluff RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0016 benchmark budget-only bluff RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # BUGFIX-0018 (discovery-sweep F7 + F-1) — GREEN guard: evidence.sh
+    # assert_egress_ip must NOT fake-PASS the VPN-routing §15 proof when the host's
+    # real IP is unknown/empty/garbage/sentinel (the egress!=host half is then
+    # UNVERIFIABLE) — it returns exit-2 OPERATOR-BLOCKED, never a §11.4.68 fail-open;
+    # a definitively-wrong exit still FAILs, a genuine egress==exit&&!=host still PASSes.
+    if bash "$SCRIPT_DIR/regression/assert_egress_ip_host_unknown_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0018 assert-egress host-unknown fail-open closed (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0018 assert-egress host-unknown fail-open closed (GREEN)" "FAIL" \
+            "run: bash tests/regression/assert_egress_ip_host_unknown_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/assert_egress_ip_host_unknown_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0018 assert-egress fail-open RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0018 assert-egress fail-open RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################
