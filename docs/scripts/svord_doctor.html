@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>svord_doctor</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="svord_doctorsh--vpn-lan-svord-bridge-preflight-doctor">svord_doctor.sh
+— VPN-LAN svord bridge preflight doctor</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:00:00Z <strong>Companion to:</strong> <a
+href="../../scripts/svord_doctor.sh"><code>scripts/svord_doctor.sh</code></a>
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35 · §11.4.18
+script-documentation mandate.</p>
+<h2 id="overview">Overview</h2>
+<p><code>svord_doctor.sh</code> is the Phase-0 preflight for the VPN-LAN
+service-access feature (design: <a
+href="../design/vpn_lan_access/PLAN.md"><code>docs/design/vpn_lan_access/PLAN.md</code></a>
+§3 + §5). It resolves the env-var <strong>bridge contract</strong> that
+decouples helix_proxy from the sibling <code>svord_toolkit</code> VPN
+bridge (§11.4.28) and emits a single machine-parseable verdict telling
+every downstream VPN-LAN test whether the bridge is <strong>UP</strong>,
+<strong>DOWN</strong> (operator-blocked), or
+<strong>MISCONFIGURED</strong>.</p>
+<p>The doctor never fakes an UP verdict (§11.4.6): a
+<code>BRIDGE: UP</code> requires the operator-supplied health probe to
+exit 0 <strong>and</strong> the remote host to answer a smoke probe.
+When the bridge is down or unreachable, downstream tests must honestly
+SKIP with <code>network_unreachable_external</code> (§11.4.3 / §11.4.68
+/ §11.4.69) — a fake PASS is forbidden.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><p>POSIX <code>sh</code> (validated under <code>sh -n</code> and
+<code>bash -n</code>, §11.4.67).</p></li>
+<li><p><a
+href="../../tests/lib/svord_bridge.sh"><code>tests/lib/svord_bridge.sh</code></a>
+— the contract library the doctor sources.</p></li>
+<li><p><code>ping</code> (preferred) or <code>nc</code> for the
+remote-host smoke probe.</p></li>
+<li><p>The 6 bridge-contract environment variables set (PLAN.md §3).
+Real values live in a <strong>gitignored</strong> <code>.env</code>; the
+tracked <a href="../../.env.example"><code>.env.example</code></a>
+documents the shape (names + illustrative paths only — no secrets,
+§11.4.10).</p>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELIX_SVORD_DIR</code></td>
+<td>Path to the sibling bridge project</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_CONNECT</code></td>
+<td>Command that brings the VPN up</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_DISCONNECT</code></td>
+<td>Command that tears the VPN down</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HEALTH</code></td>
+<td>Health probe (exit 0 == up) — authoritative signal</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_SUBNET</code></td>
+<td>Reachable remote subnet (CIDR)</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HOST</code></td>
+<td>Known remote host for smoke reachability</td>
+</tr>
+</tbody>
+</table></li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Point the bridge at your svord_toolkit checkout (once):</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.example .env          <span class="co"># .env is gitignored — never commit it</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">$EDITOR</span> .env                  <span class="co"># fill in real HELIX_* values</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Source .env into the environment and run the doctor:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-a</span><span class="kw">;</span> <span class="bu">.</span> ./.env<span class="kw">;</span> <span class="bu">set</span> +a</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/svord_doctor.sh</span><span class="kw">;</span> <span class="bu">echo</span> <span class="st">&quot;exit=</span><span class="va">$?</span><span class="st">&quot;</span></span></code></pre></div>
+<p>Optional override (used by tests):
+<code>SVORD_BRIDGE_LIB=/path/to/svord_bridge.sh</code>.</p>
+<h3 id="verdicts--exit-codes">Verdicts + exit codes</h3>
+<p>The final line always matches <code>^BRIDGE: </code>; parse it,
+ignore the <code>svord-doctor:</code> diagnostic lines above it.</p>
+<table>
+<thead>
+<tr>
+<th>Verdict line</th>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BRIDGE: UP</code></td>
+<td>0</td>
+<td>Contract resolved, hooks executable, health exit 0, host
+reachable</td>
+</tr>
+<tr>
+<td><code>BRIDGE: SKIP:network_unreachable_external</code></td>
+<td>2</td>
+<td>Bridge down / host unreachable — OPERATOR-BLOCKED (§11.4.68)</td>
+</tr>
+<tr>
+<td><code>BRIDGE: SKIP:host_probe_unavailable</code></td>
+<td>2</td>
+<td>No <code>ping</code>/<code>nc</code> present — reachability cannot
+be confirmed (honest, not UP)</td>
+</tr>
+<tr>
+<td><code>BRIDGE: MISCONFIGURED:env_unset</code></td>
+<td>3</td>
+<td>One or more contract vars unset/empty</td>
+</tr>
+<tr>
+<td><code>BRIDGE: MISCONFIGURED:hook_not_executable:&lt;vars&gt;</code></td>
+<td>3</td>
+<td>A hook's first-token path is missing / not executable</td>
+</tr>
+<tr>
+<td><code>BRIDGE: MISCONFIGURED:bridge_lib_missing</code></td>
+<td>3</td>
+<td><code>svord_bridge.sh</code> not found</td>
+</tr>
+</tbody>
+</table>
+<p>Downstream test harness convention: exit <code>0</code> → run the
+live path; exit <code>2</code> → SKIP with
+<code>network_unreachable_external</code>; exit <code>3</code> →
+SKIP/FAIL as a configuration error (fix the contract first).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Contract unset</strong> →
+<code>MISCONFIGURED:env_unset</code> (exit 3), NOT UP. The doctor lists
+exactly which vars are unset on the <code>svord-doctor:</code>
+diagnostic lines.</li>
+<li><strong>Hook path not executable</strong> →
+<code>MISCONFIGURED:hook_not_executable:&lt;vars&gt;</code> (exit 3).
+Only the first whitespace token of each hook command is checked, so
+hooks may carry arguments (e.g.
+<code>.../svord-ssh-health --quiet</code>).</li>
+<li><strong>Unexpanded <code>${VAR}</code> in a hook value</strong> →
+treated as a literal path; if it does not resolve to an existing file
+the doctor reports misconfigured. Source your <code>.env</code> with
+<code>set -a</code> so the shell expands the values first. The doctor
+never <code>eval</code>s hook contents (injection-safe, §11.4.10).</li>
+<li><strong>Health probe exits non-zero</strong> →
+<code>SKIP:network_unreachable_external</code> (exit 2). This is the
+authoritative down signal; the host probe is not reached.</li>
+<li><strong>Host unreachable but health up</strong> →
+<code>SKIP:network_unreachable_external</code> (exit 2). ICMP-filtered
+hosts fall back to a TCP probe (<code>nc</code>) before being declared
+down.</li>
+<li><strong>Neither <code>ping</code> nor <code>nc</code>
+present</strong> → <code>SKIP:host_probe_unavailable</code> (exit 2) —
+the doctor refuses to claim UP it cannot confirm (§11.4.6).</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Resolve + source <code>tests/lib/svord_bridge.sh</code>
+(<code>SVORD_BRIDGE_LIB</code> override).</li>
+<li><code>bridge_load</code> — every one of the 6 contract vars set +
+non-empty, else <code>MISCONFIGURED:env_unset</code> (3).</li>
+<li>For <code>HELIX_BRIDGE_CONNECT</code> / <code>_DISCONNECT</code> /
+<code>_HEALTH</code>: first token must be an existing, executable file,
+else <code>MISCONFIGURED:hook_not_executable</code> (3).</li>
+<li><code>bridge_up</code> — run <code>HELIX_BRIDGE_HEALTH</code>;
+non-zero → <code>SKIP:network_unreachable_external</code> (2).</li>
+<li>Smoke-probe <code>HELIX_BRIDGE_HOST</code>
+(<code>ping -c1 -W1</code>, TCP fallback) → unreachable
+<code>SKIP:network_unreachable_external</code> (2); no probe tool
+<code>SKIP:host_probe_unavailable</code> (2).</li>
+<li>Otherwise <code>BRIDGE: UP</code> (0).</li>
+</ol>
+<p>The doctor is <strong>invocation-only</strong>: it runs the
+operator's hooks and one smoke probe, writes nothing, and modifies
+neither the bridge project nor any remote host (§11.4.122).</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><a
+href="../../tests/lib/svord_bridge.sh"><code>tests/lib/svord_bridge.sh</code></a>
+— the sourceable contract library (<code>bridge_load</code>,
+<code>bridge_up</code>, <code>bridge_require</code>,
+<code>bridge_subnet</code>, <code>bridge_host</code>).</li>
+<li><a href="../../.env.example"><code>.env.example</code></a> — the
+tracked contract template (§3).</li>
+<li><a
+href="../design/vpn_lan_access/PLAN.md"><code>docs/design/vpn_lan_access/PLAN.md</code></a>
+— the feature design (§3 contract, §5 Phase 0).</li>
+</ul>
+<h2 id="anti-bluff-evidence">Anti-bluff evidence</h2>
+<p>Phase-0 discrimination proof (same local stub bridge, only the health
+exit code differs → verdict flips UP ↔︎ SKIP) captured under
+<code>qa-results/vpn_lan/phase0/&lt;UTC-ts&gt;/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Verdict</th>
+<th>Exit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>contract UNSET</td>
+<td><code>MISCONFIGURED:env_unset</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>stub health exit 0, host <code>127.0.0.1</code></td>
+<td><code>UP</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td>stub health exit 1 (RED teeth)</td>
+<td><code>SKIP:network_unreachable_external</code></td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="last-verified-date">Last verified date</h2>
+<p>2026-07-01 — <code>sh -n</code> + <code>bash -n</code> PASS;
+3-verdict discrimination proof + lib primitive proof captured under
+<code>qa-results/vpn_lan/phase0/20260701T155245Z/</code>.</p>
+</body>
+</html>
