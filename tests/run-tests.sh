@@ -678,6 +678,24 @@ test_regression_guards() {
         test_result "BUGFIX-0018 assert-egress fail-open RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # Let's Encrypt Phase 1 (task #59) — GREEN guard: the offline cert-analyzer
+    # (tests/letsencrypt/cert_analyzer.sh) must be self-validating (§11.4.107(10)) —
+    # it ACCEPTS every golden-GOOD property and REJECTS every golden-BAD (expired /
+    # wrong-CA / wrong-host / SAN-substring / not-due). No network. RED reproduces the
+    # naive presence-only + SAN-substring bluffs the real analyzer closes.
+    if bash "$SCRIPT_DIR/regression/cert_analyzer_selfvalidation_test.sh" >/dev/null 2>&1; then
+        test_result "LE cert-analyzer self-validation (golden-good/bad, GREEN)" "PASS"
+    else
+        test_result "LE cert-analyzer self-validation (golden-good/bad, GREEN)" "FAIL" \
+            "run: bash tests/regression/cert_analyzer_selfvalidation_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/cert_analyzer_selfvalidation_test.sh" >/dev/null 2>&1; then
+        test_result "LE cert-analyzer bluff-analyzer RED reproduces" "PASS"
+    else
+        test_result "LE cert-analyzer bluff-analyzer RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################

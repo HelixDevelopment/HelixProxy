@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>cert_analyzer_selfvalidation_test</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="cert_analyzer_selfvalidation_testsh">cert_analyzer_selfvalidation_test.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z</p>
+<p>Standing §11.4.135 regression guard for the Let's Encrypt Phase 3
+cert-chain / expiry analyzer. It proves
+<code>tests/letsencrypt/cert_analyzer.sh</code> is a
+<strong>self-validated analyzer</strong> (§11.4.107(10)): it ACCEPTS
+every golden-GOOD certificate property AND REJECTS every golden-BAD one
+(expired / wrong-CA / wrong-host / substring-not-a-match). An analyzer
+that accepts its golden-bad fixture is a bluff gate — it would report
+"cert OK" for a broken or wrong certificate, the §11.4 PASS-bluff at the
+certificate-validation layer. The guard is
+client-AND-challenge-AGNOSTIC: it validates a resulting cert regardless
+of how it was obtained (Caddy / lego / certbot / Pebble / LE staging /
+LE prod), so it does not depend on the pending operator decisions
+(design §9: DNS-01 vs HTTP-01, Caddy vs lego).</p>
+<h2 id="overview">Overview</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Path</td>
+<td><code>tests/regression/cert_analyzer_selfvalidation_test.sh</code></td>
+</tr>
+<tr>
+<td>Under test</td>
+<td><code>tests/letsencrypt/cert_analyzer.sh</code>
+(<code>cert_not_expired</code> / <code>cert_days_remaining</code> /
+<code>cert_san_matches</code> / <code>cert_chain_roots_in</code> /
+<code>cert_renewal_due</code>)</td>
+</tr>
+<tr>
+<td>Fixtures</td>
+<td><code>tests/letsencrypt/fixtures/*.pem</code> (generated by
+<code>gen_fixtures.sh</code>)</td>
+</tr>
+<tr>
+<td>Kind</td>
+<td>Hermetic self-validation guard — <strong>no network, no ACME, no
+container boot</strong></td>
+</tr>
+<tr>
+<td>Anti-bluff anchors</td>
+<td>§11.4.107(10), §11.4.50, §11.4.115, §11.4.135, §1.1</td>
+</tr>
+<tr>
+<td>Exit codes</td>
+<td><code>0</code> = PASS, <code>1</code> = FAIL</td>
+</tr>
+</tbody>
+</table>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>POSIX <code>sh</code>, plus <code>openssl</code>, GNU
+<code>date -d</code>, <code>awk</code>/<code>sed</code>/<code>tr</code>,
+<code>mktemp</code> on <code>PATH</code>.</li>
+<li>The golden fixtures under <code>tests/letsencrypt/fixtures/</code> —
+the guard self-bootstraps them via <code>gen_fixtures.sh</code> when the
+tracked <code>*.pem</code> set is absent (§11.4.77 regeneration
+mechanism).</li>
+<li>No live service, no ACME endpoint, no credentials are required — the
+guard is entirely offline and deterministic via a pinned "now" epoch
+(<code>2026-07-01T12:00:00Z</code>), matching the FIXED validity windows
+baked into the fixtures (§11.4.50).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GREEN standing guard (default): asserts the real analyzer accepts golden-good</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># and rejects every golden-bad.</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">tests/regression/cert_analyzer_selfvalidation_test.sh</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># RED reproduction (§11.4.115): asserts the pre-fix naive analyzers (presence-</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># only, ignoring expiry; SAN substring match) WRONGLY accept a golden-bad — the</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># bluffs the real analyzer closes.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="ex">tests/regression/cert_analyzer_selfvalidation_test.sh</span></span></code></pre></div>
+<p>Run under the mandated host caps:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 tests/regression/cert_analyzer_selfvalidation_test.sh</span></code></pre></div>
+<h2 id="what-it-asserts">What it asserts</h2>
+<p>The guard sources the REAL analyzer and the golden fixtures, pins
+<code>now = 2026-07-01T12:00:00Z</code>, and asserts the full
+accept/reject matrix:</p>
+<table>
+<thead>
+<tr>
+<th>Fixture / call</th>
+<th>Property</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cert_not_expired good_leaf @now</code></td>
+<td>inside validity window</td>
+<td>ACCEPT</td>
+</tr>
+<tr>
+<td><code>cert_san_matches good_leaf proxy.test</code></td>
+<td>exact SAN token</td>
+<td>ACCEPT</td>
+</tr>
+<tr>
+<td><code>cert_chain_roots_in good_leaf test_ca</code></td>
+<td>issued by expected CA</td>
+<td>ACCEPT</td>
+</tr>
+<tr>
+<td><code>cert_renewal_due nearexpiry_leaf 30 @now</code></td>
+<td>~4d left ≤ 30d threshold</td>
+<td>ACCEPT (due)</td>
+</tr>
+<tr>
+<td><code>cert_not_expired expired_leaf @now</code></td>
+<td>NotAfter in the past</td>
+<td><strong>REJECT</strong></td>
+</tr>
+<tr>
+<td><code>cert_chain_roots_in wrongca_leaf test_ca</code></td>
+<td>signed by a different CA</td>
+<td><strong>REJECT</strong></td>
+</tr>
+<tr>
+<td><code>cert_san_matches otherhost_leaf proxy.test</code></td>
+<td>SAN is <code>other.test</code></td>
+<td><strong>REJECT</strong></td>
+</tr>
+<tr>
+<td><code>cert_san_matches good_leaf oxy.test</code></td>
+<td>substring, not a token</td>
+<td><strong>REJECT</strong></td>
+</tr>
+<tr>
+<td><code>cert_renewal_due good_leaf 30 @now</code></td>
+<td>~59d left &gt; 30d threshold</td>
+<td><strong>REJECT</strong> (not due)</td>
+</tr>
+</tbody>
+</table>
+<p>The decisive anti-bluff assertions are the five REJECT rows: any
+change that lets a golden-bad property be ACCEPTED flips the guard to
+<code>FAIL</code> with a real assertion mismatch
+(<code>MISMATCH(reject): … analyzer ACCEPTED a golden-bad (BLUFF)</code>)
+— not a parse error.</p>
+<p><code>RED_MODE=1</code> runs faithful pre-fix replicas — a
+"presence-only" checker that skips the expiry gate, and a SAN
+<strong>substring</strong> matcher — against the golden-bad inputs and
+asserts they ACCEPT them (the expired leaf; <code>oxy.test</code> vs
+<code>proxy.test</code>), reproducing the two classic bluffs the real
+analyzer closes.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Absent / unparseable PEM</strong> → the analyzer returns
+<code>2</code>; the guard treats non-zero as REJECT (no false-PASS on a
+missing cert).</li>
+<li><strong>Issuance vs expiry orthogonality</strong> —
+<code>cert_chain_roots_in</code> uses
+<code>openssl verify -no_check_time</code>, so an
+expired-but-correctly-issued cert still roots in its CA (chain ACCEPT)
+while <code>cert_not_expired</code> REJECTs it. The two concerns never
+mask each other.</li>
+<li><strong>Wildcard SAN</strong> — <code>*.proxy.test</code> covers
+exactly one extra left label (<code>a.proxy.test</code>) but not the
+apex (<code>proxy.test</code>) nor two labels
+(<code>a.b.proxy.test</code>); exercised by the unit selftest, not this
+guard.</li>
+<li><strong>RED cannot reproduce</strong> → the guard reports a §11.4.7
+finding rather than a false PASS.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Resolve <code>REPO_ROOT</code> from the script location; create the
+gitignored evidence dir
+<code>qa-results/regression/cert_analyzer_selfvalidation/</code>.</li>
+<li>Bootstrap the golden fixtures if absent
+(<code>gen_fixtures.sh</code>).</li>
+<li>Source the REAL <code>cert_analyzer.sh</code> (never re-implement
+the functions).</li>
+<li>Pin <code>now</code> to a fixed epoch and, per
+<code>RED_MODE</code>, either drive the real analyzer across the
+accept/reject matrix (GREEN) or drive the naive pre-fix replicas against
+the golden-bad inputs (RED).</li>
+<li>Write a structured evidence file; print a single
+<code>[PASS|FAIL]</code> verdict line + the evidence path; exit
+<code>0</code>/<code>1</code>.</li>
+</ol>
+<h2 id="11-paired-mutation-proof">§1.1 paired-mutation proof</h2>
+<p>Mutate <code>cert_not_expired()</code> in
+<code>cert_analyzer.sh</code> so it always returns <code>0</code>
+(accepts an expired cert). The GREEN guard then FAILs on
+<code>MISMATCH(reject): not_expired expired -&gt; analyzer ACCEPTED a golden-bad (BLUFF)</code>
+(a real assertion mismatch, exit <code>1</code>). Restore the library
+byte-identical (md5 match) and the GREEN guard PASSes again. This proves
+the guard is not a bluff gate.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>tests/letsencrypt/cert_analyzer.sh</code> — the analyzer this
+guards.</li>
+<li><code>tests/letsencrypt/cert_analyzer_selftest.sh</code> — the TAP
+unit self-validation matrix (37 cases) driving every function against
+golden-good + golden-bad.</li>
+<li><code>tests/letsencrypt/fixtures/gen_fixtures.sh</code> — the
+hermetic openssl fixture generator (§11.4.77).</li>
+<li><code>tests/lib/evidence.sh</code> — canonical
+<code>ab_pass_with_evidence</code> / <code>ab_skip_with_reason</code>
+(the house anti-bluff style this follows).</li>
+<li><code>docs/design/LETSENCRYPT_HTTPS.md</code> §6 +
+<code>LETSENCRYPT_HTTPS_PLAN.md</code> Phase 3 — the design + plan that
+specify this analyzer.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — GREEN PASS (37/37 unit selftest + guard),
+<code>RED_MODE=1</code> PASS (reproduction), and the §1.1
+mutation→FAIL→restore(md5-match
+<code>a06e0f89ee9993fe5de368be852e4eff</code>) cycle captured
+hermetically (no network, no ACME, no container boot).</p>
+</body>
+</html>

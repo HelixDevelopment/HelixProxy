@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="lets-encrypt-https--integration-status">Let's Encrypt HTTPS —
+Integration Status</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T12:15:00Z <strong>Status:</strong> In progress — Phase 1
+cert-analyzer landed; issuance/renewal phases pending. Production
+cutover OPERATOR-BLOCKED (design §9 real-domain gate).
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
+integration-status doc for the Let's Encrypt HTTPS workstream (task
+#59). <strong>Companion:</strong> design <a
+href="../LETSENCRYPT_HTTPS.md"><code>../LETSENCRYPT_HTTPS.md</code></a>
+· plan <a
+href="../LETSENCRYPT_HTTPS_PLAN.md"><code>../LETSENCRYPT_HTTPS_PLAN.md</code></a>
+· summary <a
+href="Status_Summary.md"><code>Status_Summary.md</code></a></p>
+<h2
+id="operator-blocked-items-read-first--11445-o1-surface">Operator-blocked
+items (read first — §11.4.45 O(1) surface)</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why blocked</th>
+<th>Unblock condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phase 4 — LE <strong>staging</strong> end-to-end (real DNS-01)</td>
+<td>Needs a real DNS provider + an API token stored as a Podman secret
+(§11.4.10 — value never in git/<code>.env</code>). Operator chose
+<em>defer real domain</em> (Phase 0).</td>
+<td>Operator provides the DNS provider name + a scoped API token, and
+names a test hostname.</td>
+</tr>
+<tr>
+<td>Phase 6 — <strong>production</strong> cutover</td>
+<td>Real public domain, real DNS-01 for that domain, single
+operator-gated go-live (design §9).</td>
+<td>Operator authorises the go-live with the real domain + token + host
+firewall opening.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="operator-decisions-captured-phase-0--11466">Operator decisions
+captured (Phase 0 — §11.4.66)</h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Choice</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TLS client / terminator</td>
+<td><strong>Caddy auto-HTTPS</strong> (in-process ACME client +
+terminator; no cron/CI/hook renewal — §11.4.156)</td>
+<td>2026-07-01</td>
+</tr>
+<tr>
+<td>ACME challenge type</td>
+<td><strong>DNS-01</strong> (works without inbound :80/:443 to the
+host)</td>
+<td>2026-07-01</td>
+</tr>
+<tr>
+<td>Rollout order</td>
+<td><strong>Hermetic (Pebble) + LE-staging first; defer real
+domain</strong> — prod is one later operator-gated cutover</td>
+<td>2026-07-01</td>
+</tr>
+</tbody>
+</table>
+<h2 id="phase-status-captured-evidence-driven--114511469">Phase status
+(captured-evidence-driven — §11.4.5/§11.4.69)</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Scope</th>
+<th>Validation</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 — Operator decisions + scaffolding</td>
+<td>Capture the 3 design §9 decisions; scaffold the plan</td>
+<td>PASS</td>
+<td>decisions table above; committed <code>LETSENCRYPT_HTTPS.md</code> +
+<code>_PLAN.md</code> @ fddd25c</td>
+</tr>
+<tr>
+<td>1 — Cert-analyzer (client/challenge-agnostic)</td>
+<td>Pure offline analyzer over a resulting PEM
+(<code>cert_not_expired</code> / <code>cert_days_remaining</code> /
+<code>cert_san_matches</code> / <code>cert_chain_roots_in</code> /
+<code>cert_renewal_due</code>) + golden-good/golden-bad self-validation
+(§11.4.107(10))</td>
+<td>PASS</td>
+<td>selftest 37/37; guard GREEN+RED PASS; §1.1 mutation (SAN
+exact→substring) → guard FAIL, restore byte-identical md5
+<code>a06e0f89…</code>;
+<code>qa-results/letsencrypt/cert-analyzer/</code> +
+<code>qa-results/regression/cert_analyzer_selfvalidation/</code></td>
+</tr>
+<tr>
+<td>1 — Custom Caddy image w/ DNS-01 provider module</td>
+<td>Build a Caddy image bundling the chosen DNS provider plugin (via the
+<code>containers</code> submodule, rootless — §11.4.76/.161)</td>
+<td>PENDING</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2 — Compose service + Podman secret + cert volume</td>
+<td>Wire Caddy service + secret NAME/PATH (no value) + persistent cert
+volume; no real issuance yet</td>
+<td>PENDING</td>
+<td>—</td>
+</tr>
+<tr>
+<td>3 — Hermetic local-ACME with Pebble (anti-bluff core)</td>
+<td>Caddy issues a real cert against a local Pebble ACME server, fully
+offline/hermetic; cert-analyzer asserts the result</td>
+<td>PENDING</td>
+<td>—</td>
+</tr>
+<tr>
+<td>4 — LE <strong>staging</strong> end-to-end (real DNS-01)</td>
+<td>Real LE staging endpoint + real DNS-01</td>
+<td>OPERATOR-BLOCKED</td>
+<td>needs DNS provider + token (§11.4.10)</td>
+</tr>
+<tr>
+<td>5 — Renewal + rotation simulation (zero-downtime)</td>
+<td>Force near-expiry → observe Caddy renew → analyzer confirms new
+cert; no downtime</td>
+<td>PENDING</td>
+<td>—</td>
+</tr>
+<tr>
+<td>6 — Production cutover + rollback runbook</td>
+<td>Real domain go-live</td>
+<td>OPERATOR-BLOCKED</td>
+<td>operator go-live gate (design §9)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
+<p>Only Phase 0 and the Phase-1 <strong>cert-analyzer</strong> are DONE
+with captured evidence. The analyzer validates a resulting certificate
+regardless of how it was obtained, so it is ready to assert the output
+of Phases 3–6 the moment those land. No issuance, renewal, or rotation
+path has been exercised yet — those rows are honestly PENDING /
+OPERATOR-BLOCKED, never a metadata-only PASS (§11.4 / §11.4.1). The
+hermetic Pebble path (Phase 3) is the next autonomous target; the
+real-domain paths (4, 6) wait on the operator gate.</p>
+</body>
+</html>

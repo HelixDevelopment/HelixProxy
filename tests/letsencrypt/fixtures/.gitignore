@@ -1,0 +1,9 @@
+# §11.4.10 / §11.4.30 — ephemeral throwaway TEST key material is NOT tracked.
+# gen_fixtures.sh regenerates everything on demand (§11.4.77 regen mechanism);
+# only the PUBLIC *.pem certificates are committed as the golden fixtures.
+*.key
+*.csr
+*.srl
+# Intermediate wrong-issuer CA scaffolding: only the wrongca_leaf.pem it signs
+# is a tracked fixture; the CA cert itself is regenerable scaffolding.
+wrong_ca.pem
