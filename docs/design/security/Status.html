@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="proxy-config-security-review--status">Proxy Config Security
+Review — Status</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T13:35:00Z <strong>Status:</strong> Static config-security
+review of the proxy data plane (Squid forward proxy + Dante SOCKS5). 2
+areas already HARDENED (Squid ACL chain, Squid TLS N/A-by-design); 4
+Squid header/version-hygiene leaks were FIXED this round
+(<code>via</code>, <code>httpd_suppress_version_string</code>,
+<code>forwarded_for</code>, <code>visible_hostname</code>) — RED→GREEN
+proven (the <code>Via</code> leak is gone + the security test S3 gate
+now PASSes); 3 items are TRACKED-for-operator because the safe fix
+carries a connectivity risk requiring an operator decision (Squid
+<code>dns_nameservers</code> DNS-leak in static mode; Dante open-relay
+exposure; Dante SSRF/BIND exposure). One leak is CONFIRMED live
+(<code>via</code>); one is INFERRED from Squid defaults and fixed as
+defense-in-depth (<code>forwarded_for</code> / X-Forwarded-For) — the
+distinction is stated per §11.4.6, no guessing.
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
+integration-status doc for the proxy config-security workstream;
+§11.4.56 two-audience companion; findings presented as FACTs from a
+static review (§11.4.6), not re-derived. <strong>Companion:</strong>
+summary <a
+href="Status_Summary.md"><code>Status_Summary.md</code></a></p>
+<h2
+id="operator-blocked--pending-items-read-first--11445-o1-surface">Operator-blocked
+/ pending items (read first — §11.4.45 O(1) surface)</h2>
+<p>These three require an operator keep-vs-connectivity decision — the
+tightest fix would break egress connectivity, so the safe subset is
+applied now and the full restriction is TRACKED (§11.4.101 — do not
+autonomously take a connectivity-breaking action).</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why it needs an operator decision</th>
+<th>Unblock condition / safe fix candidate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Squid <code>dns_nameservers 8.8.8.8</code> DNS-leak (static
+mode)</td>
+<td>Re-pointing Squid DNS to the DoT dnsproxy loopback risks breaking
+name resolution if the dnsproxy is not reachable in that topology.
+Dynamic mode already mitigates via <code>never_direct</code>.</td>
+<td>Operator confirms the dnsproxy loopback is reachable in static mode,
+then re-point <code>dns_nameservers</code> at it.</td>
+</tr>
+<tr>
+<td>Dante SOCKS5 open-relay (<code>socksmethod none</code> +
+<code>pass from:0.0.0.0/0</code>)</td>
+<td>Restricting the client CIDR could cut off legitimate clients on the
+bridge network.</td>
+<td>Operator supplies the trusted client CIDR; then narrow
+<code>client pass from:</code>. Safe subset (block terminators) applied
+now.</td>
+</tr>
+<tr>
+<td>Dante SSRF / BIND (<code>pass to:0.0.0.0/0</code>, no
+<code>command:</code>)</td>
+<td>Blocking link-local + RFC1918 destinations and non-CONNECT commands
+could break intended internal routing.</td>
+<td>Operator confirms no legitimate internal targets, then apply
+<code>command: connect</code> + <code>socks block</code> for
+link-local/RFC1918.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="findings-static-review--1146-facts-not-re-derived">Findings
+(static review — §11.4.6 FACTs, not re-derived)</h2>
+<p>Areas: Squid non-intercepting forward proxy (HTTPS via CONNECT
+pass-through) + Dante SOCKS5. Severity per user-facing leak/exposure
+impact. Status vocabulary: <strong>HARDENED</strong> (already safe) ·
+<strong>FIXED</strong> (applied + verified this round) ·
+<strong>TRACKED</strong> (operator decision required, §11.4.101).</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Area</th>
+<th>Finding</th>
+<th>Severity</th>
+<th>Status</th>
+<th>Evidence / ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Squid — ACL chain</td>
+<td>CONNECT locked to 443 via <code>deny CONNECT !SSL_ports</code>;
+explicit <code>http_access deny all</code> terminator; cache manager
+localhost-only; fail-closed dynamic profile.</td>
+<td>—</td>
+<td><strong>HARDENED</strong></td>
+<td>Config ACL chain (static review)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Squid — TLS</td>
+<td>Non-intercepting forward proxy: HTTPS passes through via CONNECT; no
+<code>https_port</code> / <code>ssl_bump</code> interception surface by
+design.</td>
+<td>—</td>
+<td><strong>HARDENED (N/A)</strong></td>
+<td>By-design: no TLS-intercept surface</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Squid — <code>via</code> header</td>
+<td><code>via on</code> leaks
+<code>Via: 1.1 proxy-squid (squid/6.13)</code> — exposes internal
+hostname + Squid version.</td>
+<td>MED</td>
+<td><strong>FIXED</strong> (<code>via off</code>)</td>
+<td>RED <strong>CONFIRMED live</strong>
+<code>qa-results/security/header_hygiene/red_20260701T133222Z.txt</code>
+→ GREEN <code>qa-results/security/header_hygiene/green_*.txt</code> (Via
+now <code>&lt;none&gt;</code>); security-test S3 gate PASS</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Squid — version string</td>
+<td><code>httpd_suppress_version_string off</code> leaks the Squid
+version on generated ERR pages, incl. <code>ERR_TUNNEL_DOWN</code>.</td>
+<td>MED</td>
+<td><strong>FIXED</strong>
+(<code>httpd_suppress_version_string on</code>)</td>
+<td>GREEN-verified — no <code>squid/VER</code> on the error page
+(<code>green_*.txt</code>)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Squid — <code>forwarded_for</code></td>
+<td>Default <code>forwarded_for</code> emits
+<code>X-Forwarded-For:</code> with the client LAN IP on plain-HTTP
+requests — privacy-defeating for a VPN proxy whose purpose is to hide
+the client.</td>
+<td>HIGH</td>
+<td><strong>FIXED</strong> (<code>forwarded_for delete</code>)</td>
+<td><strong>INFERRED</strong> from Squid defaults — NOT reproduced (echo
+endpoint unreachable); applied as safe defense-in-depth (§11.4.6), data
+plane healthy post-apply</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Squid — <code>visible_hostname</code></td>
+<td><code>visible_hostname</code> absent → Squid falls back to the
+container id, leaking it on error pages / headers.</td>
+<td>LOW</td>
+<td><strong>FIXED</strong>
+(<code>visible_hostname helix-proxy</code>)</td>
+<td>applied; <code>via off</code> + this pin remove hostname
+disclosure</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Squid — <code>dns_nameservers</code></td>
+<td><code>dns_nameservers 8.8.8.8</code> bypasses the DoT dnsproxy → DNS
+leak in <strong>static</strong> mode (dynamic mode mitigated by
+<code>never_direct</code>).</td>
+<td>MED</td>
+<td><strong>TRACKED-for-operator</strong></td>
+<td>Re-point to dnsproxy loopback = connectivity risk (§11.4.101)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Dante — SOCKS5 auth/client</td>
+<td><code>socksmethod none</code> +
+<code>client pass from:0.0.0.0/0</code> +
+<code>socks pass from:0.0.0.0/0</code> → open relay if
+<code>:51080</code> ever escapes the container bridge.</td>
+<td>HIGH</td>
+<td><strong>TRACKED</strong></td>
+<td>Safe subset applied (block terminators); client-CIDR restriction =
+connectivity risk</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Dante — SOCKS5 egress</td>
+<td><code>socks pass to:0.0.0.0/0</code> with no <code>command:</code>
+restriction → SSRF to <code>169.254.169.254</code> (cloud metadata) /
+RFC1918, plus BIND allowed.</td>
+<td>HIGH</td>
+<td><strong>TRACKED</strong></td>
+<td>Safe fix candidate: <code>command: connect</code> +
+<code>socks block</code> link-local/RFC1918 (OWASP SSRF)</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="directives-being-applied-this-round-squid-findings-36">Directives
+being applied this round (Squid, findings 3–6)</h2>
+<p>Four one-line hardening directives land this round; all are pure
+header/version-hygiene with no connectivity impact:</p>
+<ul>
+<li><code>via off</code> — suppress the <code>Via</code> header (finding
+3, CONFIRMED live).</li>
+<li><code>httpd_suppress_version_string on</code> — strip the Squid
+version from ERR pages (finding 4).</li>
+<li><code>forwarded_for delete</code> — drop
+<code>X-Forwarded-For</code> so the client IP is not disclosed on plain
+HTTP (finding 5, INFERRED — defense-in-depth).</li>
+<li><code>visible_hostname helix-proxy</code> — pin a neutral hostname
+instead of the container id (finding 6).</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li>Squid directive semantics: squid-cache.org configuration
+documentation (<code>via</code>,
+<code>httpd_suppress_version_string</code>, <code>forwarded_for</code>,
+<code>visible_hostname</code>, <code>dns_nameservers</code>,
+<code>never_direct</code>).</li>
+<li>Dante SOCKS5 rule semantics: <code>sockd.conf(5)</code>
+(<code>socksmethod</code>, <code>client pass/block</code>,
+<code>socks pass/block</code>, <code>command:</code>,
+<code>from:</code>/<code>to:</code>).</li>
+<li>SSRF exposure class (finding 9): OWASP Server-Side Request Forgery
+(SSRF) guidance — link-local metadata (<code>169.254.169.254</code>) +
+RFC1918 destination filtering.</li>
+</ul>
+<h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
+<p>This is a <strong>static configuration</strong> review of the proxy
+data plane, presented as FACTs (not re-derived here). Exactly one leak
+is <strong>CONFIRMED</strong> against live captured evidence — the
+<code>via</code> header
+(<code>qa-results/security/header_hygiene/red_20260701T133222Z.txt</code>).
+The <code>forwarded_for</code> / X-Forwarded-For finding is
+<strong>INFERRED</strong> from Squid's documented defaults and was
+<strong>not reproduced</strong> (the echo endpoint that would show the
+reflected header was unreachable at review time); it is fixed as safe
+defense-in-depth, and this uncertainty is stated rather than asserted as
+confirmed. Findings 3–6 are being FIXED this round; findings 7–9 are
+TRACKED because the tightest fix would risk breaking connectivity and
+therefore needs an explicit operator keep-vs-restrict decision
+(§11.4.101). This review does not substitute for a live
+ACL-deny-does-not-leak test (see the hardening workstream's honest
+security SKIP) nor for the §11.4.40 full-suite retest before a release
+tag.</p>
+</body>
+</html>

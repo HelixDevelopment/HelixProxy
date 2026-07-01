@@ -215,6 +215,40 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# S3 — Via/version info-leak hygiene (§11.4.169 / §11.4.135 regression guard,
+# §11.4.138 — the pre-`via off` config leaked `Via: 1.1 proxy-squid (squid/6.13)`,
+# the internal hostname + Squid version, incl. on the branded ERR pages). This
+# gate is the standing GREEN guard after the fix; it would FAIL a regression.
+# Robust: reads the proxy's OWN response header, no external echo body needed.
+# ---------------------------------------------------------------------------
+S3_EV="$EVIDENCE_DIR/s3_via_hygiene.evidence"
+VIA_TARGET=${SEC_VIA_TARGET:-http://www.gstatic.com/generate_204}
+via_hdrs=$(curl -sI --max-time "$MAX_TIME" -x "$PROXY_URL" "${VIA_TARGET}?cb=$$" 2>/dev/null)
+via_line=$(printf '%s\n' "$via_hdrs" | grep -iE '^Via:' | head -1 | tr -d '\r')
+{
+    printf '=== S3: Via/version info-leak hygiene ===\n'
+    printf 'via_target=%s\n' "$VIA_TARGET"
+    printf 'response_first_line=%s\n' "$(printf '%s\n' "$via_hdrs" | head -1 | tr -d '\r')"
+    printf 'via_header=%s (MUST be empty — expect via off)\n' "${via_line:-<none>}"
+} > "$S3_EV"
+if [ -z "$via_hdrs" ]; then
+    printf 'verdict=SKIP:network_unreachable_external (no proxy response to sample Via)\n' >> "$S3_EV"
+    echo "[S3] SKIP no proxy response to sample Via header (target unreachable via proxy)"
+    ab_skip_with_reason "S3 Via hygiene (target unreachable via proxy)" "network_unreachable_external"
+    N_SKIP=$((N_SKIP + 1))
+elif [ -z "$via_line" ]; then
+    printf 'verdict=PASS (no Via header — no hostname/version leak)\n' >> "$S3_EV"
+    echo "[S3] PASS no Via header emitted (no internal-hostname/Squid-version leak)"
+    ab_pass_with_evidence "S3 Via hygiene: proxy emits no Via/version header (via off applied)" "$S3_EV"
+    N_PASS=$((N_PASS + 1))
+else
+    printf 'verdict=FAIL (Via header leaks hostname/version: %s)\n' "$via_line" >> "$S3_EV"
+    echo "[S3] FAIL Via header leaks internal hostname + version: $via_line"
+    _evidence_emit FAIL "S3 Via hygiene" "[reason: proxy emits '$via_line' — internal hostname + Squid version leak (§11.4.68/§11.4.169); set 'via off'; see $S3_EV]"
+    N_FAIL=$((N_FAIL + 1))
+fi
+
+# ---------------------------------------------------------------------------
 # Aggregate — FAIL if any FAIL ; PASS if >=1 PASS and 0 FAIL ; else SKIP.
 # ---------------------------------------------------------------------------
 echo
