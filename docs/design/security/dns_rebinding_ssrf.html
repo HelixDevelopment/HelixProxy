@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>DNS-Rebinding / TOCTOU SSRF</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">DNS-Rebinding / TOCTOU SSRF</h1>
+</header>
+<h1
+id="dns-rebinding-toctou-ssrf-gap-analysis-resolved-ip-recheck-design">DNS-Rebinding
+/ TOCTOU SSRF — Gap Analysis + Resolved-IP Recheck Design</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T17:18:18Z <strong>Status:</strong> Design + autonomous
+gap-demonstration. The static SSRF floor (Squid <code>http_access</code>
+host/dest ACL + Dante first-match <code>socks pass/block</code> ACL)
+does NOT cover the DNS-rebinding / TOCTOU sub-class of SSRF. This
+document (a) proves the gap in policy logic autonomously via the
+local-stub test, and (b) designs the fix — a post-DNS resolved-IP
+recheck (Stripe smokescreen, the survey’s #1 recommendation).
+INCORPORATING smokescreen onto the live egress path is operator-gated
+(§11.4.122); NOTHING here mutates the data-plane.
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
+integration-status-class design doc for the proxy security workstream;
+findings presented as FACTs from a static review + a modelled local-stub
+proof (§11.4.6), deductions the sources do not directly state marked
+<strong>INFERENCE</strong>. <strong>Feature workstream:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> (§11.4.167)
+<strong>Companion:</strong> survey <a
+href="../../research/vpn_lan_opensource_survey_20260701/SURVEY.md"><code>../../research/vpn_lan_opensource_survey_20260701/SURVEY.md</code></a>
+§4 (smokescreen = rec #1) · proxy security <a
+href="Status.md"><code>Status.md</code></a> findings #8/#9 (the Dante
+SSRF floor this doc extends) · local proof <a
+href="../../../tests/security/dns_rebinding_ssrf_gap.sh"><code>../../../tests/security/dns_rebinding_ssrf_gap.sh</code></a>
+· sibling carve-out teeth <a
+href="../../../tests/vpn_lan/ssrf_carveout_teeth.sh"><code>../../../tests/vpn_lan/ssrf_carveout_teeth.sh</code></a>
+· the audited floor <code>config/dante/sockd.conf</code> +
+<code>config/squid/squid.conf</code> (READ-ONLY).</p>
+<hr />
+<h2 id="what-the-dns-rebinding-toctou-ssrf-class-is-fact-11.4.6">1. What
+the DNS-rebinding / TOCTOU SSRF class is (FACT, §11.4.6)</h2>
+<p>Server-Side Request Forgery (SSRF) is the class where an attacker
+steers a server (here: our forward/egress proxy) into making a request
+to a destination the attacker chooses — most dangerously an
+<strong>internal</strong> destination the proxy can reach but the
+attacker cannot: cloud-metadata (<code>169.254.169.254</code>), loopback
+(<code>127.0.0.1</code>), or RFC1918 private hosts (<code>10.x</code>,
+<code>172.16–31.x</code>, <code>192.168.x</code>).</p>
+<p>The <strong>DNS-rebinding / TOCTOU</strong> sub-class defeats an
+allowlist that validates the <strong>requested destination</strong> (the
+hostname, or the IP it resolves to <em>at the moment the ACL is
+evaluated</em>) but does <strong>not</strong> re-validate the
+<strong>actual IP the proxy finally connects to</strong>. It exploits
+the time gap between <em>check</em> and <em>use</em> (TOCTOU =
+Time-Of-Check to Time-Of-Use):</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Event</th>
+<th>What the name resolves to</th>
+<th>What the ACL sees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Check</strong></td>
+<td>proxy evaluates its allowlist for
+<code>rebind.evil.example</code></td>
+<td>a <strong>public</strong> IP (e.g. <code>1.2.3.4</code>)</td>
+<td>“host allowed / IP public → PERMIT”</td>
+</tr>
+<tr>
+<td><strong>Use</strong></td>
+<td>proxy opens the connection moments later</td>
+<td>attacker’s short-TTL DNS now returns an <strong>internal</strong> IP
+(<code>169.254.169.254</code>)</td>
+<td><em>not re-checked</em> — proxy dials the internal IP</td>
+</tr>
+</tbody>
+</table>
+<p>The attacker controls the authoritative DNS for their own hostname
+with a very short TTL, so the record flips between the check and the
+connect. The result is a connection to an internal address that the
+static allowlist believed it had vetted. This is precisely the class the
+OWASP SSRF prevention guidance calls out (“resolve the hostname and
+validate the resulting IP address” — because a name-or-check-time-IP
+allowlist is insufficient) and the “DNS rebinding” attack literature
+documents.</p>
+<hr />
+<h2 id="why-our-static-hostdest-acl-misses-it-fact-11.4.6-the-gap">2.
+Why our static host/dest ACL misses it (FACT, §11.4.6 — the gap)</h2>
+<p>Our current SSRF floor is two static, first-match,
+<strong>destination-matching</strong> ACL sets — neither re-resolves +
+re-validates the connect-time IP:</p>
+<ul>
+<li><strong>Dante SOCKS</strong> (<code>config/dante/sockd.conf</code>,
+this-doc-cited lines 29–56): ordered
+<code>socks block { … to: &lt;cidr&gt; }</code> rules for
+<code>127.0.0.0/8</code>, <code>169.254.0.0/16</code>,
+<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>,
+<code>192.168.0.0/16</code>, then a final
+<code>socks pass { to: 0.0.0.0/0 command: connect }</code>.
+First-match-wins on the <strong>requested destination</strong>. This is
+a strong floor for a <em>directly-specified</em> internal destination —
+it is exactly what <code>ssrf_carveout_teeth.sh</code> proves — but the
+block match is evaluated against the destination as presented, at
+rule-eval time; it is not a post-resolution re-check of the socket’s
+final peer IP.</li>
+<li><strong>Squid HTTP-CONNECT</strong>
+(<code>config/squid/squid.conf</code>, lines 22–55):
+<code>acl localnet</code>
+<ul>
+<li><code>http_access</code> chain matches on the request’s host/dest.
+For a CONNECT to a hostname, Squid’s allow/deny decision keys on the
+requested authority, not on a re-validation of the IP the outbound
+socket ultimately connects to after DNS.</li>
+</ul></li>
+</ul>
+<p><strong>The gap (FACT):</strong> both floors match on the
+<strong>requested host/dest</strong>. A hostname that resolves to a
+public IP at ACL-check time and then re-resolves to an internal IP at
+connect time is not caught, because <strong>neither floor re-checks the
+actual connect-time resolved IP against the internal/metadata deny
+ranges</strong>. This is the survey’s §4 finding: <em>“smokescreen adds
+the one thing Squid ACLs miss — post-DNS IP re-check that defeats
+DNS-rebinding / TOCTOU.”</em></p>
+<p><strong>Honest boundary (§11.4.6):</strong> this is a gap in
+<strong>policy logic</strong>, demonstrated on a modelled two-phase
+resolve. It is <strong>NOT</strong> a claim that helix_proxy is
+currently being exploited — no real rebinding request has been issued
+against the live proxy, and the exposure is bounded by the fact that the
+egress carve-out for the <code>10/8</code> VPN subnet is itself
+operator-gated + not yet opened. The point is structural: <em>were the
+carve-out opened with the current match-on-host/dest logic, the
+rebinding class would not be covered.</em></p>
+<h3 id="autonomous-proof-of-the-gap-local-stub-no-live-proxy">2.1
+Autonomous proof of the gap (local-stub, no live proxy)</h3>
+<p><code>tests/security/dns_rebinding_ssrf_gap.sh</code> demonstrates
+the gap deterministically <strong>without attacking anything</strong> —
+it exercises the DECISION LOGIC of two egress policies (in the exact
+anti-bluff style of <code>ssrf_carveout_teeth.sh</code>) against a
+modelled two-phase DNS resolve. It never opens a socket, never resolves
+a real name, never touches the data-plane. Two policies (illustrative
+pseudocode):</p>
+<pre><code># models our CURRENT static floor — decision on requested host/dest ONLY
+policy_hostname_only(host_allowed, connect_ip):
+    return PERMIT if host_allowed else DENY   # connect_ip never re-checked
+
+# models smokescreen — host gate AND post-DNS re-validation of the ACTUAL peer IP
+policy_resolved_recheck(host_allowed, connect_ip):
+    if not host_allowed:            return DENY
+    if is_internal(connect_ip):     return DENY   # deny-floor re-check
+    return PERMIT</code></pre>
+<p>Modelled scenarios (a name resolving public at check time, internal
+at connect time) and the captured verdicts:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>check-time IP</th>
+<th>connect-time IP</th>
+<th><code>hostname_only</code></th>
+<th><code>resolved_recheck</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>benign public (control)</td>
+<td><code>93.184.216.34</code></td>
+<td><code>93.184.216.34</code></td>
+<td>permit</td>
+<td><strong>permit</strong> (no over-block)</td>
+</tr>
+<tr>
+<td>rebind → metadata</td>
+<td><code>1.2.3.4</code></td>
+<td><code>169.254.169.254</code></td>
+<td><strong>permit (GAP)</strong></td>
+<td><strong>deny (FIX)</strong></td>
+</tr>
+<tr>
+<td>rebind → loopback</td>
+<td><code>1.2.3.4</code></td>
+<td><code>127.0.0.1</code></td>
+<td><strong>permit (GAP)</strong></td>
+<td><strong>deny (FIX)</strong></td>
+</tr>
+<tr>
+<td>rebind → RFC1918 <code>10.x</code></td>
+<td><code>1.2.3.4</code></td>
+<td><code>10.6.100.221</code></td>
+<td><strong>permit (GAP)</strong></td>
+<td><strong>deny (FIX)</strong></td>
+</tr>
+<tr>
+<td>disallowed host (control)</td>
+<td><code>5.6.7.8</code></td>
+<td><code>5.6.7.8</code></td>
+<td>deny</td>
+<td>deny</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>T1 (RED evidence the gap is real):</strong> under
+<code>hostname_only</code>, every rebinding target is
+<strong>permitted</strong> — the proxy would then dial the internal
+connect-time IP. Evidence:
+<code>qa-results/security/dns_rebinding/&lt;ts&gt;/t1_gap_hostname_only.evidence</code>.</li>
+<li><strong>T2 (the fix works):</strong> under
+<code>resolved_recheck</code>, every rebinding target is
+<strong>denied</strong>, while the benign stable-public host is still
+permitted (no over-block). Evidence:
+<code>…/t2_fix_resolved_recheck.evidence</code>.</li>
+<li><strong>§1.1 paired mutation (<code>REBIND_MUT=1</code>):</strong>
+weakens the recheck to re-validate the <em>check-time</em> IP (the
+wrong, public one) instead of the connect-time IP — the exact TOCTOU
+regression — and asserts the fix teeth then <strong>FAIL</strong> (exit
+1). A teeth test whose fix assertion passes regardless of the recheck
+would be a bluff gate (§11.4.107(10)); this proves the T2 teeth
+genuinely depend on the connect-time re-check. Evidence:
+<code>…/mutation.evidence</code>.</li>
+</ul>
+<p>The check-time IP for the rebinding scenarios is deliberately
+<strong>public</strong> (<code>1.2.3.4</code>): this shows that even a
+static ACL that <em>did</em> validate the check-time resolved IP would
+still permit the rebinding target — <strong>only re-checking the actual
+connect-time IP catches it</strong>. (<strong>INFERENCE</strong>,
+§11.4.6: our floor matches on host/dest and does not perform even the
+weaker check-time-IP validation, so it is a superset of the vulnerable
+behaviour the test models.)</p>
+<hr />
+<h2 id="how-stripe-smokescreen-closes-it-fact-11.4.150-multi-angle">3.
+How Stripe smokescreen closes it (FACT, §11.4.150 multi-angle)</h2>
+<p><strong>smokescreen</strong> (Stripe, MIT, Go) is an
+HTTP-<code>CONNECT</code> egress proxy purpose-built for this class. Per
+its README (source cited below), for every outbound request it: (1)
+checks the requested host against an <strong>allowlist /
+denylist</strong> with <code>open</code> / <code>report</code> /
+<code>enforce</code> modes; (2) <strong>resolves the hostname and
+re-validates the resulting IP</strong> against a configurable set of
+internal/deny ranges <em>after</em> DNS, blocking non-routable / private
+/ link-local / metadata IPs; and (3) re-checks the IP the connection
+actually lands on — closing the TOCTOU window a static host/dest
+allowlist leaves open. That post-DNS resolved-IP recheck is the exact
+mechanism our floor lacks (§2), and it is the property the OWASP SSRF
+prevention guidance prescribes (“validate the resolved IP, not just the
+hostname”). The internal ranges are the standard non-routable blocks —
+RFC 1918 private space and RFC 3927 link-local
+(<code>169.254.0.0/16</code>, which contains the
+<code>169.254.169.254</code> cloud-metadata endpoint).</p>
+<p><strong>Deny-floor parity (FACT):</strong> the deny-floor the
+design’s recheck re-validates against — <code>0.0.0.0/8</code>,
+<code>10.0.0.0/8</code>, <code>100.64.0.0/10</code>,
+<code>127.0.0.0/8</code>, <code>169.254.0.0/16</code>,
+<code>172.16.0.0/12</code>, <code>192.168.0.0/16</code> — mirrors the
+shipped Dante floor (<code>config/dante/sockd.conf</code>) plus
+this-host + CGNAT, so the recheck is a <strong>post-DNS re-application
+of the same ranges we already block statically</strong>, not a new
+policy surface to reason about.</p>
+<hr />
+<h2 id="integration-seam-for-helix_proxy-design-11.4.6">4. Integration
+seam for helix_proxy (design, §11.4.6)</h2>
+<p>The recheck belongs on the <strong>HTTP(S)-CONNECT egress
+path</strong> only — smokescreen is an HTTP-CONNECT proxy and covers
+HTTP(S) egress; it is not an L3/SOCKS router.</p>
+<pre><code>HTTP(S) client ──CONNECT──▶ [ Squid :53128 ] ──▶ [ smokescreen (recheck) ] ──▶ public egress
+                                                      │ post-DNS resolved-IP re-validation
+                                                      │ against the internal/metadata deny floor
+                                                      ▼
+                                              DENY on internal connect-time IP
+                                              (defeats DNS-rebinding / TOCTOU)
+
+L3-routed protocols (SMB / NFS / FTP / SFTP / IMAP / SMTP / POP3 / WebDAV /
+Cast-control / DIAL / ADB)  ──▶ [ Dante :51080 SOCKS first-match ACL + host firewall ]
+                                              (unchanged — smokescreen is HTTP-only)</code></pre>
+<ul>
+<li><strong>Placement (INFERENCE, §11.4.6 — to be pinned at
+prototype):</strong> smokescreen sits on the HTTP-CONNECT egress
+carve-out, either <strong>behind</strong> Squid (Squid forwards upstream
+through smokescreen via <code>cache_peer</code>, so the resolved-IP
+recheck is the last hop before egress) or <strong>beside</strong> Squid
+(HTTP(S) egress is pointed at smokescreen directly for the
+<code>10/8</code> carve-out). Exactly which of the two is the cleanest
+fit for our <code>never_direct</code> / dynamic-vs-static Squid profile
+is a prototype-time decision, not asserted here.</li>
+<li><strong>Config injection (§11.4.28):</strong> the allowlist +
+deny-floor are injected from the project’s
+<code>HELIX_BRIDGE_SUBNET</code> / floor config at boot, never hardcoded
+into the image — decoupled + reusable.</li>
+<li><strong>Rollout safety:</strong> smokescreen’s <code>report</code>
+mode logs what <em>would</em> be denied without enforcing, so the
+carve-out can be validated in report mode first, then flipped to
+<code>enforce</code> — mirroring the RED→GREEN discipline the proxy
+security Status doc already uses.</li>
+<li><strong>Honest boundary (§11.4.6):</strong> smokescreen protects
+<strong>only</strong> the HTTP(S) CONNECT path. The L3-routed protocols
+(SMB/NFS/FTP/mail/ADB/Cast-control) are not HTTP and stay governed by
+the Dante first-match ACL + a host-level firewall (nftables) —
+smokescreen is a <strong>complement to</strong> the floor, never a
+replacement for it.</li>
+</ul>
+<hr />
+<h2 id="catalogue-check-11.4.74-reuse-not-reimplement">5.
+Catalogue-check (§11.4.74) — reuse, not reimplement</h2>
+<ul>
+<li><strong>Ownership:</strong> smokescreen is <strong>not</strong> in
+our orgs (<code>vasic-digital</code> / <code>HelixDevelopment</code>) —
+it is external (Stripe, MIT). Per §11.4.74 the verdict is
+<strong>external reuse</strong>, not a git submodule of third-party
+code.</li>
+<li><strong>How consumed:</strong> as a <strong>deployed rootless-Podman
+daemon</strong> booted via the containers submodule (§11.4.76, rootless
+§11.4.161), config-injected + decoupled (§11.4.28) — the same pattern
+the survey prescribes for every external tool. No new git dependency is
+added to helix_proxy; no new Git remote.</li>
+<li><strong>Reuse vs extend (INFERENCE, §11.4.6):</strong> smokescreen
+covers the required post-DNS resolved-IP recheck out of the box, so this
+is a <strong>reuse</strong> (≥80% fit), not an extend-upstream — pending
+the prototype confirming its allowlist/deny config models our
+<code>HELIX_BRIDGE_SUBNET</code> carve-out exactly.</li>
+</ul>
+<hr />
+<h2 id="honest-boundary-scope-of-this-deliverable-11.4.6-11.4.122">6.
+Honest boundary + scope of this deliverable (§11.4.6 / §11.4.122)</h2>
+<p>This document is a <strong>DESIGN + a gap-demonstration</strong>, not
+an incorporation:</p>
+<ol type="1">
+<li><strong>The gap + the fix logic are proven autonomously NOW</strong>
+— <code>dns_rebinding_ssrf_gap.sh</code> demonstrates, with captured
+evidence and a paired §1.1 mutation, that a host/dest-only policy misses
+the rebinding class and a resolved-IP recheck closes it. No live VPN, no
+live proxy, no real SSRF, no data-plane mutation.</li>
+<li><strong>Actually deploying smokescreen is operator-gated
+(§11.4.122).</strong> Standing up the daemon on the HTTP-CONNECT egress
+path, and opening the <code>10/8</code> carve-out it would guard,
+changes what the running System exposes — that is an operator
+keep-vs-connectivity decision (mirrors Status.md findings #7/#8),
+surfaced via §11.4.66, never adopted silently. Opening the carve-out
+before the recheck is in place would itself be an SSRF regression
+(§11.4.101 / §11.4.133), so the ordering is: recheck design (this doc) →
+operator approval → deploy recheck + open carve-out together.</li>
+<li><strong>No claim of current exploitation.</strong> The exposure is
+structural and conditional on the carve-out being opened with
+match-on-host/dest logic; the local-stub proves the <em>logic</em>, and
+this doc records the fix so the carve-out is never opened without
+it.</li>
+</ol>
+<p><strong>Next step (per survey §7 step 1):</strong> prototype
+smokescreen in <code>report</code> mode on a local-stub HTTP-CONNECT
+target that re-resolves to an internal IP, confirm <code>enforce</code>
+denies it, and ship a paired §1.1 mutation (an out-of-allowlist resolved
+IP still denies) — the autonomous slice — before proposing the
+operator-gated live deployment.</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li><strong>smokescreen</strong> (Stripe, MIT, Go — HTTP-CONNECT egress
+proxy; hostname allow/report/enforce + <strong>post-DNS resolved-IP
+re-check</strong> against internal/deny ranges):
+https://github.com/stripe/smokescreen · README:
+https://github.com/stripe/smokescreen/blob/master/README.md</li>
+<li><strong>Practical smokescreen — sanitizing outbound web
+requests</strong> (Fly.io — the DNS-rebinding / post-resolution IP
+re-check rationale in operational detail):
+https://fly.io/blog/practical-smokescreen-sanitizing-your-outbound-web-requests/</li>
+<li><strong>OWASP — Server-Side Request Forgery Prevention Cheat
+Sheet</strong> (validate the <strong>resolved IP</strong>, not just the
+hostname; deny internal/metadata ranges):
+https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html</li>
+<li><strong>SSRF attacks + DNS rebinding background</strong> (the
+check-vs-use / TOCTOU mechanism):
+https://goteleport.com/blog/ssrf-attacks/</li>
+<li><strong>RFC 1918 — Address Allocation for Private Internets</strong>
+(the private ranges <code>10/8</code>, <code>172.16/12</code>,
+<code>192.168/16</code> the recheck denies):
+https://www.rfc-editor.org/rfc/rfc1918</li>
+<li><strong>RFC 3927 — Dynamic Configuration of IPv4 Link-Local
+Addresses</strong> (<code>169.254.0.0/16</code>, which contains the
+<code>169.254.169.254</code> cloud-metadata endpoint):
+https://www.rfc-editor.org/rfc/rfc3927</li>
+<li>Companion survey (rec #1 = smokescreen):
+<code>docs/research/vpn_lan_opensource_survey_20260701/SURVEY.md</code>
+§4 + §7</li>
+</ul>
+<p><em>Access date for all sources: 2026-07-01 (§11.4.99). FACT items
+(smokescreen’s post-DNS resolved-IP recheck, the OWASP
+resolve-and-validate guidance, the RFC 1918 / RFC 3927 ranges, and the
+modelled local-stub verdicts captured under
+<code>qa-results/security/dns_rebinding/</code>) are grounded in the
+cited sources + the test’s captured evidence. Items explicitly marked
+<strong>INFERENCE</strong> (§11.4.6) — the Squid behind-vs-beside
+placement, the reuse-vs-extend verdict, and the exact config mapping to
+<code>HELIX_BRIDGE_SUBNET</code> — are prototype-time determinations to
+be proven before being asserted as settled, never claimed here as
+decided. Deep-research (§11.4.150), multi-angle: mechanism
+(OWASP/DNS-rebinding), tool (smokescreen README + Fly.io operational
+write-up), standards (RFC 1918/3927), integration (our Squid/Dante
+floor).</em></p>
+</body>
+</html>
