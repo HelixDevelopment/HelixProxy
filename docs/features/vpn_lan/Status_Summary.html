@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status_Summary</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -175,12 +179,18 @@
 <h1
 id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
 — VPN-LAN Service Access Feature Status Summary</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T17:10:00Z <strong>Status:</strong> Companion two-audience
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T19:15:00Z <strong>Status:</strong> Companion two-audience
 summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
 Page 1 is plain-language for the operator and stakeholders; Page 2 is
-the engineer phase matrix with commit refs and §-anchors.
-<strong>Authority:</strong> Inherits
+the engineer phase matrix with commit refs and §-anchors. <strong>Rev
+2:</strong> feature COMPLETE (Phases 0-12 on <code>main</code>) —
+Phase-12 bidirectional (design + ingress teeth + both-way reverse-leg
+assertions in all 5 protocol tests) + the §11.4.135 autonomous suite
+battery (stress+chaos / benchmark+memory / concurrency+load /
+DNS-rebinding gap) are all GREEN; the data-plane is env-blocked on a
+host rootless-podman aardvark-dns failure (operator-actionable, not a
+code defect). <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.153
 feature Status set for the VPN-LAN service-access workstream
 (<code>feature/vpn-aware-dynamic-routing</code>, §11.4.167).</p>

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -174,18 +178,31 @@
 <body>
 <h1 id="helix_proxy--vpn-lan-service-access-feature-status">helix_proxy
 — VPN-LAN Service Access Feature Status</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T17:10:00Z <strong>Status:</strong> Anti-bluff bridge scaffold
-+ preflight doctor + operator guide + Challenge runner are PROVEN NOW
-(autonomously, no live VPN); every live protocol round-trip
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T19:15:00Z <strong>Status:</strong> Feature COMPLETE (Phases
+0-12 on <code>main</code>). Anti-bluff bridge scaffold + preflight
+doctor + operator guide + Challenge runner + <strong>Phase-1 SSRF
+carve-out teeth</strong> + <strong>Phase-12 bidirectional
+ingress-allowlist teeth</strong> + the <strong>§11.4.135 autonomous
+battery</strong> (stress+chaos, benchmark+memory, concurrency+load,
+DNS-rebinding gap) are PROVEN NOW (autonomously, no live VPN, no podman)
+and wired GREEN into the standing suite. Every live protocol round-trip
 (SMB/NFS/FTP/SFTP/WebDAV/email/Cast/DIAL/ADB) is AUTHORED with real
-byte-integrity / sink-side evidence gating and honestly SKIPs while the
-svord bridge is down (§11.4.3) — never a fake PASS; Miracast is
-Won't-fix structurally-impossible (§11.4.112). The svord bridge (secrets
-+ Mullvad + root/sudo), the multicast-reflector remote deployment, and
-any real-device flash are operator-gated. <strong>Authority:</strong>
-Inherits <code>constitution/Constitution.md</code> per §11.4.35. This is
-the §11.4.153 per-feature Status set (companion §11.4.56 two-audience <a
+byte-integrity / sink-side evidence gating <strong>plus a Phase-12
+both-way reverse-leg assertion</strong> (NFS NLM/NSM callback, FTP
+active, Cast callback, adb reverse, email N/A §11.4.6) and honestly
+SKIPs while the svord bridge is down (§11.4.3) — never a fake PASS;
+Miracast is Won't-fix structurally-impossible (§11.4.112).
+Operator-gated: the svord bridge (secrets + Mullvad + root/sudo) →
+unlocks all live round-trips BOTH directions; the multicast-reflector
+remote deployment; any real-device flash. <strong>⚠️ Data-plane
+env-block (operator-actionable, NOT a code defect):</strong> host
+rootless-podman <code>aardvark-dns</code> cannot bind netavark
+<code>:53</code> → <code>:53128</code>/<code>:51080</code> don't serve +
+<code>./start</code> fails; the standing suite honestly reports this (3
+env FAILs) rather than hanging. <strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. This is the
+§11.4.153 per-feature Status set (companion §11.4.56 two-audience <a
 href="Status_Summary.md"><code>Status_Summary.md</code></a>) for the
 VPN-LAN service-access feature workstream
 (<code>feature/vpn-aware-dynamic-routing</code>, §11.4.167). Every row
@@ -202,15 +219,20 @@ href="../../design/vpn_lan_access/miracast_verdict.md"><code>../../design/vpn_la
 href="../../design/vpn_lan_access/reflector_design.md"><code>../../design/vpn_lan_access/reflector_design.md</code></a>
 · operator guide <a
 href="../../guides/vpn_lan_bridge_setup.md"><code>../../guides/vpn_lan_bridge_setup.md</code></a>.
-<strong>Repo anchor:</strong> branch
-<code>feature/vpn-aware-dynamic-routing</code>, HEAD
-<code>89f73b7</code> at authoring time. Landing commits: bridge scaffold
-<code>d781002</code> + standing-suite wiring <code>5c28f56</code>; Phase
-2/3 file protocols <code>182e80a</code>; Phase 4 email
-<code>2f31460</code>; Phase 5 reflector <code>d0b42df</code>; Phase 6/7
-Cast+ADB <code>65043ce</code>; Phase 8 Miracast <code>12faf12</code>;
-Phase 9 guide <code>a5e5616</code>; Phase 11 Challenge runner + HelixQA
-bank <code>89f73b7</code>.</p>
+<strong>Repo anchor:</strong> branch <code>main</code> (all work merged
+to + performed on main per operator directive). Landing commits: bridge
+scaffold <code>d781002</code> + standing-suite wiring
+<code>5c28f56</code>; Phase 2/3 file protocols <code>182e80a</code>;
+Phase 4 email <code>2f31460</code>; Phase 5 reflector
+<code>d0b42df</code>; Phase 6/7 Cast+ADB <code>65043ce</code>; Phase 8
+Miracast <code>12faf12</code>; Phase 9 guide <code>a5e5616</code>; Phase
+11 Challenge runner + HelixQA bank <code>89f73b7</code>; Phase 1 SSRF
+teeth <code>1d87b3a</code>; Phase 10 containerization
+<code>1911d5e</code>; Phase 12 bidirectional <code>2ed0fed</code> +
+both-way protocol assertions <code>cc8b620</code>; stress+chaos
+<code>97d9733</code>; bench+memory + dns-rebinding <code>4e2810c</code>;
+concurrency+load <code>7e73b08</code>; §11.4.135 suite guards
+<code>6d8893f</code>.</p>
 <hr />
 <h2
 id="operator-blocked--operator-gated-items-read-first--11445-o1-surface">Operator-blocked

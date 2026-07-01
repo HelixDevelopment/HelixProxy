@@ -1,8 +1,8 @@
 # helix_proxy — VPN-LAN Service Access Feature Status Summary
 
-**Revision:** 1
-**Last modified:** 2026-07-01T17:10:00Z
-**Status:** Companion two-audience summary of [`Status.md`](Status.md) (§11.4.56). Page 1 is plain-language for the operator and stakeholders; Page 2 is the engineer phase matrix with commit refs and §-anchors.
+**Revision:** 2
+**Last modified:** 2026-07-01T19:15:00Z
+**Status:** Companion two-audience summary of [`Status.md`](Status.md) (§11.4.56). Page 1 is plain-language for the operator and stakeholders; Page 2 is the engineer phase matrix with commit refs and §-anchors. **Rev 2:** feature COMPLETE (Phases 0-12 on `main`) — Phase-12 bidirectional (design + ingress teeth + both-way reverse-leg assertions in all 5 protocol tests) + the §11.4.135 autonomous suite battery (stress+chaos / benchmark+memory / concurrency+load / DNS-rebinding gap) are all GREEN; the data-plane is env-blocked on a host rootless-podman aardvark-dns failure (operator-actionable, not a code defect).
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.153 feature Status set for the VPN-LAN service-access workstream (`feature/vpn-aware-dynamic-routing`, §11.4.167).
 
 ---
