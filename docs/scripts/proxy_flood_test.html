@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>proxy_flood_test.sh — operator guide</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">proxy_flood_test.sh — operator guide</h1>
+</header>
+<h1
+id="testsddosproxy_flood_test.sh-operator-guide"><code>tests/ddos/proxy_flood_test.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
+Runs live against the running proxy (HTTP forward
+<code>localhost:53128</code>, SOCKS5 <code>localhost:51080</code>);
+honest <code>SKIP</code> (§11.4.3) when the proxy is absent or the
+target is unreachable both ways.</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>§11.4.169 <strong>DDoS / load-flood</strong> test for the LIVE proxy.
+It sends a <strong>bounded high-rate burst</strong> (default
+<code>300</code> requests across <code>20</code> parallel workers)
+through the HTTP forward proxy and proves the proxy <strong>degrades
+gracefully</strong> rather than <strong>collapses</strong>: under
+overload it MAY shed load
+(<code>503</code>/<code>429</code>/timeout/reset) but it MUST stay UP —
+the process MUST NOT crash, both listeners MUST stay bound, and normal
+<code>204</code>/<code>200</code> service MUST <strong>recover</strong>
+the moment the flood ends (§11.4.85 resource-exhaustion: refuse cleanly
+OR degrade, <strong>never</strong> crash).</p>
+<p>Every flood outcome is categorised into a captured
+<strong>census</strong> — <code>success</code> | <code>refuse</code>
+(clean load-shed) | <code>timeout</code> | <code>error</code>
+(connection reset). Load-shedding during the flood is <strong>acceptable
+and healthy</strong>; the decisive proof is the <strong>post-flood
+recovery request succeeding</strong> plus <strong>both listeners
+surviving</strong> (§11.4.108 runtime-signature, §11.4.69 captured
+evidence). A metadata-only / “no error” PASS is refused (§11.4.1); a
+crash / hung recovery / dropped listener is a <code>FAIL</code>; an
+absent proxy is an honest <code>SKIP</code> — never a fabricated
+PASS.</p>
+<p>Distinct from its siblings (no duplication):
+<code>tests/stress/proxy_forward_stress.sh</code> is the
+<strong>stress</strong> case where <em>every</em> request must succeed;
+this is the <strong>overload / degrade-not-collapse</strong> case where
+shedding is allowed and <em>survival</em> is mandatory.
+<code>tests/dynamic/suites/ddos_flood_suite.sh</code> floods the
+<code>dynamic</code> VPN-aware <strong>routing</strong> stack
+(<code>target-a.internal</code>); <strong>this</strong> test floods the
+<strong>real proxy ports</strong>.
+<code>tests/regression/ddos_flood_evidence_test.sh</code> is a
+<strong>pure-function anti-bluff harness guard</strong> (no network);
+<strong>this</strong> is a <strong>live</strong> flood.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Committed library <code>tests/lib/evidence.sh</code> (sourced —
+provides <code>_code_in</code>, <code>port_is_listening</code>,
+<code>ab_pass_with_evidence</code>, <code>ab_skip_with_reason</code>,
+<code>_evidence_emit</code>).</li>
+<li><code>curl</code>, <code>awk</code>, <code>sort</code>,
+<code>grep</code>, <code>uniq</code>, POSIX <code>sh</code>,
+<code>date</code>.</li>
+<li>A running proxy on <code>HTTP_PROXY_PORT</code> (and, for the SOCKS
+survival probe, <code>SOCKS_PROXY_PORT</code>) for a
+non-<code>SKIP</code> run.</li>
+<li>Write access to <code>qa-results/</code> (gitignored).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<ul>
+<li>Default flood against <code>localhost:53128</code> /
+<code>localhost:51080</code>:
+<code>bash tests/ddos/proxy_flood_test.sh</code></li>
+<li>Conductor invocation under host-safety caps (§12.6 — the hard
+constraint):
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/ddos/proxy_flood_test.sh</code></li>
+<li>Heavier bounded burst (still hard-capped <code>total&lt;=500</code>,
+<code>conc&lt;=30</code>):
+<code>FLOOD_TOTAL=400 FLOOD_CONC=30 bash tests/ddos/proxy_flood_test.sh</code></li>
+</ul>
+<p>Env knobs: <code>HTTP_PROXY_URL</code> (default
+<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>53128</code>), <code>SOCKS_PROXY_HOST</code> (default
+<code>localhost</code>), <code>SOCKS_PROXY_PORT</code> (default
+<code>51080</code>), <code>FLOOD_TARGET</code> (default
+<code>https://www.gstatic.com/generate_204</code>),
+<code>FLOOD_EXPECT</code> (default <code>204 200</code>),
+<code>FLOOD_TOTAL</code> (default <code>300</code>, hard-capped
+<code>500</code>), <code>FLOOD_CONC</code> (default <code>20</code>,
+hard-capped <code>30</code>), <code>FLOOD_MAX_TIME</code> (default
+<code>5</code> s, capped <code>30</code>),
+<code>FLOOD_EVIDENCE_DIR</code> (default
+<code>qa-results/ddos/proxy_flood_&lt;ts&gt;</code>).</p>
+<h2 id="host-safety-12.6-non-negotiable">Host safety (§12.6 —
+non-negotiable)</h2>
+<p>The burst is <strong>hard-bounded regardless of env</strong>: total
+requests <code>&lt;= 500</code>, parallel workers <code>&lt;= 30</code>,
+per-request <code>--max-time</code> (default <code>5</code> s) so no
+request hangs unboundedly. Malformed knob values fall back to the safe
+defaults (§11.4.6 — never trust an unparseable knob to widen the blast
+radius). Worst-case wall-clock is <code>PER_WORKER × MAX_TIME</code>
+(degenerate all-timeout case) — finite and bounded. The flood pressures
+the <strong>proxy</strong>, not host memory; the tool is shell +
+<code>curl</code> only, well under the §12.6 60 % host-memory ceiling.
+Memory-leak-over-soak is <strong>out of scope</strong> here (honest
+boundary, §11.4.6) — that is
+<code>tests/dynamic/suites/memory_soak_suite.sh</code>.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Real flood landed + both listeners survived + recovery
+<code>204</code>/<code>200</code></strong> → <code>PASS</code>, citing
+<code>flood.evidence</code>. Exit <code>0</code>. (Load-shed
+<code>503</code>/<code>429</code>/timeout during the flood is
+fine.)</li>
+<li><strong>SOCKS listener was up before the flood and DOWN
+after</strong> → <code>FAIL</code> (a service collapsed under load).
+Exit <code>1</code>.</li>
+<li><strong>Recovery fails (or HTTP listener dropped) BUT the target is
+reachable directly</strong> → <code>FAIL</code> — a real proxy crash /
+collapse / stuck-fail-closed (§11.4.68 no fail-open). Exit
+<code>1</code>.</li>
+<li><strong>Proxy up + recovers but ZERO flood requests landed</strong>
+(all timeout/error) → <code>SKIP</code>
+(<code>network_unreachable_external</code>) — no real flood pressure was
+applied, so “survived” would be vacuous (§11.4.69 / §11.4.1). Exit
+<code>3</code>.</li>
+<li><strong>Recovery + direct probe both fail, port still
+listening</strong> → <code>SKIP</code>
+(<code>network_unreachable_external</code>) — a third-party outage is
+not a proxy defect (§11.4.1). Exit <code>3</code>.</li>
+<li><strong>HTTP proxy port not listening pre-flood</strong> →
+<code>SKIP</code> (<code>topology_unsupported</code>) before flooding
+nothing. Exit <code>3</code>.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><code>#!/usr/bin/env bash</code>, POSIX-clean body
+(<code>sh -n</code> + <code>bash -n</code>, §11.4.67).</li>
+<li>Pre-flood listener snapshot (<code>port_is_listening</code> on both
+ports) → <code>flood.evidence</code>; proxy-absent short-circuits to an
+honest <code>SKIP</code>.</li>
+<li>Flood: <code>FLOOD_CONC</code> bounded parallel workers, each
+issuing <code>PER_WORKER</code> requests, appending
+<code>%{http_code} %{time_total}</code> per request to its
+<strong>own</strong> file (a verdict never rests on a background job’s
+exit status).</li>
+<li><code>classify_outcome</code> (pure, no network) buckets each
+request into
+<code>success</code>/<code>refuse</code>/<code>timeout</code>/<code>error</code>;
+census + distinct-code histogram → <code>census.txt</code>;
+<code>success + refuse = flood_landed</code> (measurable HTTP responses
+= positive flood evidence).</li>
+<li>Post-flood survival: both listeners re-probed, a recovery request
+through the HTTP proxy, a direct cross-check probe, and a single SOCKS5
+recovery probe → <code>flood.evidence</code>.</li>
+<li><code>trap ... EXIT INT TERM</code> reaps <strong>only</strong> this
+script’s worker PIDs (never <code>kill 0</code>) and removes the scratch
+dir (§11.4.14).</li>
+<li>Resources: shell + curl only, concurrency hard-capped, well under
+the §12.6 60 % host-memory ceiling.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — sourced anti-bluff evidence
+library.</li>
+<li><code>tests/stress/proxy_forward_stress.sh</code> —
+sustained/concurrent STRESS suite (every request must succeed) that this
+DDoS/overload test complements.</li>
+<li><code>tests/chaos/proxy_restart_recovery.sh</code> — sibling chaos
+recovery suite.</li>
+<li><code>tests/dynamic/suites/ddos_flood_suite.sh</code> —
+routing-stack flood suite;
+<code>tests/regression/ddos_flood_evidence_test.sh</code> — the
+anti-bluff flood-evidence harness guard.</li>
+<li>Constitution §11.4.169 / §11.4.85 / §11.4.108 / §11.4.69 / §11.4.1 /
+§11.4.68 / §11.4.3 / §12.6.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — authored; <code>sh -n</code> + <code>bash -n</code>
+parse-clean; pure <code>classify_outcome</code> categorisation
+unit-driven (11/11 buckets correct, no network). Live flood +
+survival/recovery is exercised by the conductor against the running
+proxy.</p>
+</body>
+</html>

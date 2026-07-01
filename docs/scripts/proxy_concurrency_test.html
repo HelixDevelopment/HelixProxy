@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>proxy_concurrency_test.sh — operator guide</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">proxy_concurrency_test.sh — operator guide</h1>
+</header>
+<h1
+id="testsconcurrencyproxy_concurrency_testsh--operator-guide"><code>tests/concurrency/proxy_concurrency_test.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean
+(<code>sh -n</code> + <code>bash -n</code>). Runs live against the
+running HTTP forward proxy (<code>localhost:53128</code>) AND the SOCKS5
+proxy (<code>localhost:51080</code>); honest <code>SKIP</code> (§11.4.3)
+when no proxy is listening or the echo oracle is unreachable
+directly.</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>§11.4.169 <strong>concurrency / atomicity</strong> suite for the LIVE
+proxy data plane. It proves the proxy is SAFE under
+genuinely-<strong>simultaneous</strong> callers — the §1 "always
+consider concurrent callers" concern — with <strong>no
+cross-talk</strong>: no response served to the wrong client, no
+truncation, no corruption.</p>
+<p>The suite launches a HIGH number of clients (default
+<strong>40</strong>) that all park on a start <strong>barrier</strong>
+and are released <strong>at once</strong>, MIXING the HTTP forward proxy
+(<code>http://localhost:53128</code>) AND the SOCKS5 proxy
+(<code>socks5h://localhost:51080</code>) round-robin. Every client
+fetches a <strong>distinct identifiable resource</strong>: a per-client
+unique token — <code>HPCXT_&lt;run-nonce&gt;_C&lt;i&gt;_END</code> —
+echoed back in the response body by the echo endpoint. Cross-talk is
+then <strong>mechanically detectable</strong> — each client MUST receive
+ITS OWN token and NO OTHER client's token. The trailing
+<code>_END</code> sentinel doubles as a truncation detector.</p>
+<p>It PASSes only when <strong>every</strong> simultaneous client
+received its own <strong>correct, complete, distinct</strong> response,
+citing captured per-client evidence (§11.4.69) — a metadata-only PASS is
+refused. A foreign token (response served to the wrong client) or a
+corrupt/truncated body is a <strong>hard FAIL</strong> (§11.4.68). This
+is <strong>DISTINCT</strong> from
+<code>tests/stress/proxy_forward_stress.sh</code>, which drives
+sequential load plus a same-URL HTTPS-CONNECT burst on ONE transport and
+checks only HTTP codes — it does not test simultaneity across transports
+nor cross-talk.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Committed library <code>tests/lib/evidence.sh</code> (sourced —
+provides <code>_code_in</code>, <code>port_is_listening</code>,
+<code>ab_pass_with_evidence</code>,
+<code>ab_skip_with_reason</code>).</li>
+<li><code>curl</code> (with SOCKS5 support), <code>awk</code>,
+<code>sed</code>, <code>sort</code>, <code>grep</code>, <code>tr</code>,
+POSIX <code>sh</code>, <code>date</code>.</li>
+<li>A running HTTP forward proxy on <code>HTTP_PROXY_PORT</code> and/or
+a SOCKS5 proxy on <code>SOCKS_PROXY_PORT</code> for a non-SKIP run (both
+listening ⇒ a genuinely mixed run).</li>
+<li>A reachable <strong>echo endpoint</strong> that reflects the
+<code>__TOKEN__</code> substring back in its response body (default
+<code>postman-echo.com</code>; a self-hosted echo is the ideal target
+under heavy concurrent load — see Edge cases).</li>
+<li>Write access to <code>qa-results/</code> (gitignored).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<ul>
+<li>Default run against <code>localhost:53128</code> (HTTP) +
+<code>localhost:51080</code> (SOCKS5):
+<code>bash tests/concurrency/proxy_concurrency_test.sh</code></li>
+<li>Conductor invocation under host-safety caps (§12.6):
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/concurrency/proxy_concurrency_test.sh</code></li>
+<li>Higher simultaneity against a self-hosted echo (clean PASS/FAIL
+under load):
+<code>CONC_CLIENTS=60 CONC_ECHO_URL_TEMPLATE=http://127.0.0.1:8080/echo?t=__TOKEN__ bash tests/concurrency/proxy_concurrency_test.sh</code></li>
+</ul>
+<p>Env knobs: <code>HTTP_PROXY_URL</code> (default
+<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>53128</code>), <code>SOCKS_PROXY_URL</code> (default
+<code>socks5h://localhost:51080</code>), <code>SOCKS_PROXY_PORT</code>
+(default <code>51080</code>), <code>CONC_CLIENTS</code> (default
+<code>40</code>, clamped <code>2..80</code>),
+<code>CONC_ECHO_URL_TEMPLATE</code> (default
+<code>https://postman-echo.com/get?htok=__TOKEN__</code> — MUST contain
+the <code>__TOKEN__</code> placeholder and reflect it in the body),
+<code>CONC_EXPECT</code> (default <code>200</code>),
+<code>CONC_ENDPOINT_LIMIT_CODES</code> (default
+<code>429 500 502 503 504</code>), <code>CURL_MAX_TIME</code> (default
+<code>20</code>), <code>CONC_BARRIER_ARM_SECS</code> (default
+<code>1</code>), <code>CONC_EVIDENCE_DIR</code> (default
+<code>qa-results/concurrency/proxy_concurrency_&lt;ts&gt;</code>).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Every simultaneous client got its own correct distinct
+token</strong> → <code>PASS</code>, citing <code>clients.tsv</code>.
+Exit <code>0</code>.</li>
+<li><strong>Any client received a FOREIGN client's token</strong>
+(cross-talk / a response served to the wrong client / body corruption) →
+hard <code>FAIL</code> (§11.4.68), always, regardless of endpoint
+health. Exit <code>1</code>.</li>
+<li><strong>A concurrent proxied request was dropped or garbled</strong>
+(<code>000</code>, or a <code>200</code> with the own token missing /
+truncated) <strong>while the echo is reachable directly</strong> →
+<code>FAIL</code> — a real proxy defect under concurrency (§11.4.68 — a
+listening-but- dropping proxy never fail-opens to SKIP). Exit
+<code>1</code>.</li>
+<li><strong>The echo endpoint is unreachable DIRECTLY</strong> (baseline
+oracle cannot be established) → <code>SKIP</code>
+(<code>network_unreachable_external</code>) — the cross-talk test cannot
+run; a third-party outage is not a proxy defect (§11.4.1). Exit
+<code>3</code>.</li>
+<li><strong>The echo endpoint rate-limited / saturated under our own
+concurrent load</strong> (only <code>429</code>/<code>5xx</code>
+endpoint-limit shortfalls, no cross-talk, no proxy drop) →
+<code>SKIP</code> (<code>network_unreachable_external</code>) — a
+third-party limit, not a proxy defect. Point
+<code>CONC_ECHO_URL_TEMPLATE</code> at a self-hosted echo for a clean
+PASS/FAIL under high concurrency. Exit <code>3</code>.</li>
+<li><strong>No proxy listening on either port</strong> →
+<code>SKIP</code> (<code>topology_unsupported</code>). Exit
+<code>3</code>.</li>
+<li><strong>Deadlock guard</strong>: no fetch can exceed
+<code>CURL_MAX_TIME</code> (reports <code>000</code>); the barrier wait
+is itself bounded (~30s ceiling) so a worker never blocks forever.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><code>#!/usr/bin/env bash</code>, POSIX-clean body
+(<code>sh -n</code> + <code>bash -n</code>, §11.4.67); no bash arrays /
+<code>[[ ]]</code> / <code>&lt;&lt;&lt;</code> /
+process-substitution.</li>
+<li>Best-effort self-caps: exports <code>GOMAXPROCS=2</code> and applies
+<code>renice 19</code> + <code>ionice -c 3</code> to its own PID (the
+conductor SHOULD ALSO wrap with the caps).</li>
+<li>Preflight: probes <code>port_is_listening</code> for each proxy and
+runs a DIRECT baseline echo probe with sentinel token <code>C0</code> to
+establish the cross-talk oracle before any load is launched. Honest
+<code>SKIP</code> gates fire here.</li>
+<li>Each worker parks on a <code>GO</code> barrier file, then performs
+ONE distinct fetch and writes its <code>%{http_code}</code>, proxy
+label, token, and body to its OWN files — a verdict never rests on a
+background job's exit status (the B3 anti-bluff pattern). Workers are
+released simultaneously by <code>touch</code>-ing <code>GO</code>.</li>
+<li>Classification (main thread): each client's body is scanned for
+every <code>HPCXT_&lt;nonce&gt;_C&lt;num&gt;_END</code> token. Correct =
+the only number present is that client's index AND the HTTP code is
+expected; a foreign number → <code>CROSSTALK</code>; an endpoint-limit
+code → <code>ENDPOINT_LIMIT</code>; otherwise → <code>PROXY_DROP</code>.
+The per-client verdict lands in <code>clients.tsv</code>; the summary in
+<code>concurrency.evidence</code>.</li>
+<li><code>trap ... EXIT INT TERM</code> signals ONLY this script's
+worker PIDs (never <code>kill 0</code>) and removes the scratch dir
+(§11.4.14); evidence files are preserved.</li>
+<li>Resources: shell + curl only, simultaneous clients clamped
+<code>≤ 80</code>, well under the §12.6 60% host-memory ceiling. It
+NEVER touches operator resources (<code>wg0-mullvad</code>,
+<code>lava-*</code>, <code>whoami:58080</code>) and never stops/starts
+any container.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — sourced anti-bluff evidence
+library.</li>
+<li><code>tests/stress/proxy_forward_stress.sh</code> — the sibling
+<strong>stress</strong> suite (sequential + same-URL HTTPS-CONNECT burst
+on the HTTP transport); this concurrency suite is deliberately DISTINCT
+(simultaneity + mixed transports + cross-talk).</li>
+<li><code>challenges/scripts/proxy_forward_http_challenge.sh</code>,
+<code>challenges/scripts/proxy_socks5_challenge.sh</code> — the
+functional forward / SOCKS5 Challenges this concurrency suite
+complements.</li>
+<li>Constitution §11.4.169 / §1 (concurrent callers) / §11.4.69 /
+§11.4.68 / §11.4.1 / §11.4.50 / §11.4.107 / §12.6.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — authored; <code>sh -n</code> + <code>bash -n</code>
+parse-clean; cross-talk oracle extraction validated in isolation
+(own-token, foreign-token, truncation, empty, and the
+<code>C1</code>-vs-<code>C10</code> index-boundary cases). Live
+simultaneous mixed-transport load is exercised by the conductor against
+the running proxies (§11.4.119).</p>
+</body>
+</html>
