@@ -90,7 +90,10 @@ if [ "${1:-}" = "--inner" ]; then
     # §11.4.107(10) golden-bad: corrupt what the server serves AFTER fixing
     # SHA_SRC, so a load-bearing sha256 check MUST catch the mismatch.
     if [ "${POC_MUT:-0}" = 1 ]; then printf 'TAMPERED\n' >> "$SRVDIR/payload.txt"; log "MUT: payload tampered post-hash — teeth must FAIL"; fi
-    ( cd "$SRVDIR" && exec nsenter -t "$HOLDER" -n python3 -m http.server 8080 --bind 10.9.0.2 ) >/dev/null 2>&1 &
+    # peer server is self-bounded (timeout inside the netns, direct parent of
+    # python) so an outer-SIGKILL orphan self-terminates — no indefinite linger
+    # (review MEDIUM host-safety; avoids the -p --fork /proc-resolution gotcha).
+    ( cd "$SRVDIR" && exec nsenter -t "$HOLDER" -n timeout -k 2 60 python3 -m http.server 8080 --bind 10.9.0.2 ) >/dev/null 2>&1 &
     SRV=$!
     UP=0
     for _ in $(seq 1 30); do
@@ -120,13 +123,13 @@ _sd=$(cd "$(dirname "$0")" && pwd); _root=$(cd "$_sd/../.." && pwd)
 POC_MUT="${POC_MUT:-0}"
 
 _skip(){ printf 'SKIP: %s [%s]\n' "$SCRIPT_LABEL" "$1"; exit 0; }
-for _t in unshare nsenter ip python3 sha256sum; do command -v "$_t" >/dev/null 2>&1 || _skip "tool absent: $_t"; done
+for _t in unshare nsenter ip python3 sha256sum timeout; do command -v "$_t" >/dev/null 2>&1 || _skip "tool absent: $_t"; done
 # unprivileged-userns kill switch (where the knob exists)
 if [ -r /proc/sys/kernel/unprivileged_userns_clone ] && [ "$(cat /proc/sys/kernel/unprivileged_userns_clone)" = 0 ]; then
     _skip "unprivileged user namespaces disabled (kernel.unprivileged_userns_clone=0)"
 fi
-# does an unprivileged user+net namespace actually work here?
-if ! unshare -Ur -n true 2>/dev/null; then _skip "unshare -Ur -n failed (unprivileged userns unavailable)"; fi
+# does the EXACT unshare flag set the run uses actually work here?
+if ! unshare -Urnm true 2>/dev/null; then _skip "unshare -Urnm failed (unprivileged user+net+mount ns unavailable)"; fi
 # §12 host-safety: refuse to add fork pressure to a starved host
 _softu=$(ulimit -u 2>/dev/null || echo 0)
 _nproc=$(ps --no-headers -u "$(id -u)" 2>/dev/null | wc -l | tr -d ' ')

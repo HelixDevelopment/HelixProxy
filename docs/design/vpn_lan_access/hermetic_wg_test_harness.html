@@ -179,15 +179,17 @@
 <h1
 id="hermetic-wireguard-test-harness--autonomous-validation-without-live-mullvad">Hermetic
 WireGuard test harness — autonomous validation without live Mullvad</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-02T01:00:00Z <strong>Status:</strong> <strong>H0 DONE (real
-encrypted WireGuard tunnel round-trip proven), H1/H2/H3 next.</strong>
-Authority: inherits <code>constitution/Constitution.md</code> per
-§11.4.35. Serves the operator's deep-research mandate ("new ideas,
-game-changing approaches, opensource we can incorporate") + the §11.4.52
-autonomous-validation mandate. <strong>Rev 2 update:</strong> the
-planned userspace-<code>wireguard-go</code> build proved unnecessary —
-the host <code>wireguard</code> <strong>kernel module</strong> is usable
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-02T02:00:00Z <strong>Status:</strong> <strong>H0 DONE (real
+encrypted WireGuard tunnel) + H2 FIRST PROMOTION DONE (the unmodified
+<code>chromecast_dial.sh</code> eureka leg runs autonomously over the
+tunnel); H1/H2.x/H3 next.</strong> Authority: inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Serves the
+operator's deep-research mandate ("new ideas, game-changing approaches,
+opensource we can incorporate") + the §11.4.52 autonomous-validation
+mandate. <strong>Rev 2 update:</strong> the planned
+userspace-<code>wireguard-go</code> build proved unnecessary — the host
+<code>wireguard</code> <strong>kernel module</strong> is usable
 <strong>inside</strong> an unprivileged userns netns
 (<code>ip link add wg0 type wireguard</code> + <code>wg set</code>
 succeed under <code>unshare -Ur</code>), so H0-full is a zero-build,
@@ -454,11 +456,19 @@ the whole namespace dies with <code>unshare</code> (§11.4.14).</li>
 (smbd/vsftpd/webdav/eureka/mDNS Go responder, high ports, private confs,
 no root). Physical proof: each service reachable from peer-A over the
 tunnel.</li>
-<li><strong>H2</strong> — wire <code>HELIX_BRIDGE_MODE=hermetic</code> +
-run the existing protocol tests against the peer; promote the feasible
-rows to <code>AUTONOMOUS_VERIFIED</code> in the §11.4.52 ledger;
-NFS-kernel stays honest operator-gated. Each is a §11.4.135 standing
-guard.</li>
+<li><strong>H2 — FIRST PROMOTION DONE</strong>
+(<code>tests/vpn_lan/hermetic_bridge_run.sh</code>): the
+<strong>unmodified</strong> <code>chromecast_dial.sh</code> T6.2 eureka
+control leg now produces a REAL PASS over the hermetic WireGuard tunnel
+— its <code>bridge_require</code> flips SKIP→UP against a peer
+<code>eureka_info</code> JSON on <code>10.10.0.2:8008</code>; 3/3
+deterministic (§11.4.50), golden-bad <code>H2_MUT=badeureka</code> makes
+the real test FAIL on a name-less body (§11.4.107(10)). The bridge
+contract is pointed at the peer via its six vars (the
+<code>HELIX_BRIDGE_MODE=hermetic</code> library branch is future work).
+REMAINING H2.x: peer servers for SMB/FTP/WebDAV/mDNS (each unprivileged)
+promoting those tests too; NFS-kernel stays honest operator-gated (needs
+userspace NFS). Each promotion is a §11.4.135 standing guard.</li>
 <li><strong>H3</strong> — a §1.1 mutation per protocol proving the
 hermetic assertions are load-bearing (wrong sha256 in peer-B ⇒ test
 FAILs), and a determinism pass (§11.4.50, N iterations).</li>

@@ -1,6 +1,6 @@
 # `hermetic_wg_roundtrip.sh` — companion guide (§11.4.18)
 
-**Revision:** 1
+**Revision:** 2
 **Last modified:** 2026-07-02T00:00:00Z
 **Status:** H0-**full** for the hermetic WireGuard test harness
 ([design](../design/vpn_lan_access/hermetic_wg_test_harness.md)). Authority:
@@ -34,7 +34,8 @@ is used instead — simpler and faster, §11.4.82.)
 ## Prerequisites
 
 - bash, util-linux `unshare` + `nsenter`, iproute2 `ip` (with the `wireguard`
-  link type), wireguard-tools `wg`, python3, sha256sum.
+  link type), wireguard-tools `wg`, python3, sha256sum, `timeout` (self-bounds
+  the peer server inside the netns so an orphan terminates on its own, §12).
 - The host `wireguard` **kernel module loaded** (`/sys/module/wireguard`).
 - Unprivileged user namespaces permitted + process headroom (§12).
 

@@ -1,6 +1,6 @@
 # `hermetic_netns_poc.sh` — companion guide (§11.4.18)
 
-**Revision:** 1
+**Revision:** 2
 **Last modified:** 2026-07-02T00:00:00Z
 **Status:** H0 feasibility proof for the hermetic WireGuard test harness
 ([design](../design/vpn_lan_access/hermetic_wg_test_harness.md)). Authority:
@@ -29,7 +29,8 @@ itself exercise WireGuard, and it does **not** prove the real Mullvad topology
 ## Prerequisites
 
 - `bash`, util-linux `unshare` + `nsenter`, iproute2 `ip`, `python3`,
-  `sha256sum`.
+  `sha256sum`, `timeout` (self-bounds the peer server so an outer-SIGKILL
+  orphan terminates on its own — no indefinite linger, §12).
 - The host must permit **unprivileged user namespaces**
   (`kernel.unprivileged_userns_clone` = 1 where the knob exists;
   `user.max_user_namespaces` / `user.max_net_namespaces` > 0).

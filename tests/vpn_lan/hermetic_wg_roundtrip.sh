@@ -124,7 +124,9 @@ if [ "${1:-}" = "--inner" ]; then
     NONCE="hermetic-wg-proof-$$-${RANDOM}"
     printf '%s\n' "$NONCE" > "$SRVDIR/payload.txt"
     SHA_SRC=$(sha256sum "$SRVDIR/payload.txt" | cut -d' ' -f1)
-    ( cd "$SRVDIR" && exec nsenter -t "$HOLDER" -n python3 -m http.server 8080 --bind 10.10.0.2 ) >/dev/null 2>&1 &
+    # self-bounded server (timeout inside the netns) so an outer-SIGKILL orphan
+    # self-terminates — no indefinite linger (review MEDIUM host-safety).
+    ( cd "$SRVDIR" && exec nsenter -t "$HOLDER" -n timeout -k 2 60 python3 -m http.server 8080 --bind 10.10.0.2 ) >/dev/null 2>&1 &
     SRV=$!
 
     # poll the tunnel address from netns A (triggers the handshake)
@@ -164,12 +166,12 @@ _sd=$(cd "$(dirname "$0")" && pwd); _root=$(cd "$_sd/../.." && pwd)
 WG_MUT="${WG_MUT:-0}"
 _skip(){ printf 'SKIP: %s [%s]\n' "$SCRIPT_LABEL" "$1"; exit 0; }
 
-for _t in unshare nsenter ip python3 sha256sum wg; do command -v "$_t" >/dev/null 2>&1 || _skip "tool absent: $_t"; done
+for _t in unshare nsenter ip python3 sha256sum timeout wg; do command -v "$_t" >/dev/null 2>&1 || _skip "tool absent: $_t"; done
 [ -d /sys/module/wireguard ] || _skip "host 'wireguard' kernel module not loaded"
 if [ -r /proc/sys/kernel/unprivileged_userns_clone ] && [ "$(cat /proc/sys/kernel/unprivileged_userns_clone)" = 0 ]; then
     _skip "unprivileged user namespaces disabled"
 fi
-unshare -Ur -n true 2>/dev/null || _skip "unshare -Ur -n failed (unprivileged userns unavailable)"
+unshare -Urnm true 2>/dev/null || _skip "unshare -Urnm failed (unprivileged user+net+mount ns unavailable)"
 _softu=$(ulimit -u 2>/dev/null || echo 0); _inuse=$(ps --no-headers -u "$(id -u)" 2>/dev/null | wc -l | tr -d ' ')
 if [ "${_softu}" != unlimited ] && [ "${_softu:-0}" -gt 0 ] 2>/dev/null && [ "$(( _softu - _inuse ))" -lt 64 ] 2>/dev/null; then
     _skip "process headroom too low (ulimit -u=${_softu}, in use=${_inuse}) — §12 host-safety"
@@ -179,7 +181,10 @@ TS=$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%Y%m%dT%H%M%SZ)
 if [ "$WG_MUT" = badkey ]; then _mode=mut; else _mode=pass; fi
 export WG_EV_DIR="$_root/qa-results/vpn_lan/hermetic_wg/${TS}_${_mode}_$$"
 _rc=0
-WG_MUT="$WG_MUT" timeout 60 env WG_EV_DIR="$WG_EV_DIR" WG_MUT="$WG_MUT" \
+# outer bound sits a few seconds below the 60s holder-sleep / server self-timeout
+# so the outer reaper fires FIRST in the pathological case, leaving the inner
+# `timeout -k 2 60` self-bound as the belt-and-suspenders orphan guard (review nit).
+WG_MUT="$WG_MUT" timeout 55 env WG_EV_DIR="$WG_EV_DIR" WG_MUT="$WG_MUT" \
     unshare -Urnm bash "$0" --inner >/dev/null 2>&1 || _rc=$?
 _ev="$WG_EV_DIR/roundtrip.evidence"
 

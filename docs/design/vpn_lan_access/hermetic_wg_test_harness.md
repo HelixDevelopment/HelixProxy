@@ -1,8 +1,9 @@
 # Hermetic WireGuard test harness — autonomous validation without live Mullvad
 
-**Revision:** 2
-**Last modified:** 2026-07-02T01:00:00Z
-**Status:** **H0 DONE (real encrypted WireGuard tunnel round-trip proven), H1/H2/H3
+**Revision:** 3
+**Last modified:** 2026-07-02T02:00:00Z
+**Status:** **H0 DONE (real encrypted WireGuard tunnel) + H2 FIRST PROMOTION DONE (the
+unmodified `chromecast_dial.sh` eureka leg runs autonomously over the tunnel); H1/H2.x/H3
 next.** Authority: inherits `constitution/Constitution.md` per §11.4.35. Serves the
 operator's deep-research mandate ("new ideas, game-changing approaches, opensource we
 can incorporate") + the §11.4.52 autonomous-validation mandate. **Rev 2 update:** the
@@ -138,9 +139,14 @@ behaviour (real bridge or honest SKIP). No test learns it is talking to a loopba
    automatic — the whole namespace dies with `unshare` (§11.4.14).
 2. **H1** — peer-B service launcher (smbd/vsftpd/webdav/eureka/mDNS Go responder, high ports,
    private confs, no root). Physical proof: each service reachable from peer-A over the tunnel.
-3. **H2** — wire `HELIX_BRIDGE_MODE=hermetic` + run the existing protocol tests against the
-   peer; promote the feasible rows to `AUTONOMOUS_VERIFIED` in the §11.4.52 ledger; NFS-kernel
-   stays honest operator-gated. Each is a §11.4.135 standing guard.
+3. **H2 — FIRST PROMOTION DONE** (`tests/vpn_lan/hermetic_bridge_run.sh`): the **unmodified**
+   `chromecast_dial.sh` T6.2 eureka control leg now produces a REAL PASS over the hermetic
+   WireGuard tunnel — its `bridge_require` flips SKIP→UP against a peer `eureka_info` JSON on
+   `10.10.0.2:8008`; 3/3 deterministic (§11.4.50), golden-bad `H2_MUT=badeureka` makes the real
+   test FAIL on a name-less body (§11.4.107(10)). The bridge contract is pointed at the peer via
+   its six vars (the `HELIX_BRIDGE_MODE=hermetic` library branch is future work). REMAINING H2.x:
+   peer servers for SMB/FTP/WebDAV/mDNS (each unprivileged) promoting those tests too; NFS-kernel
+   stays honest operator-gated (needs userspace NFS). Each promotion is a §11.4.135 standing guard.
 4. **H3** — a §1.1 mutation per protocol proving the hermetic assertions are load-bearing
    (wrong sha256 in peer-B ⇒ test FAILs), and a determinism pass (§11.4.50, N iterations).
 

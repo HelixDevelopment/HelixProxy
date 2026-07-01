@@ -244,7 +244,7 @@
 <h1
 id="hermetic_wg_roundtripsh--companion-guide-11418"><code>hermetic_wg_roundtrip.sh</code>
 — companion guide (§11.4.18)</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
 2026-07-02T00:00:00Z <strong>Status:</strong> H0-<strong>full</strong>
 for the hermetic WireGuard test harness (<a
 href="../design/vpn_lan_access/hermetic_wg_test_harness.md">design</a>).
@@ -277,7 +277,9 @@ feasible and is used instead — simpler and faster, §11.4.82.)</p>
 <ul>
 <li>bash, util-linux <code>unshare</code> + <code>nsenter</code>,
 iproute2 <code>ip</code> (with the <code>wireguard</code> link type),
-wireguard-tools <code>wg</code>, python3, sha256sum.</li>
+wireguard-tools <code>wg</code>, python3, sha256sum,
+<code>timeout</code> (self-bounds the peer server inside the netns so an
+orphan terminates on its own, §12).</li>
 <li>The host <code>wireguard</code> <strong>kernel module
 loaded</strong> (<code>/sys/module/wireguard</code>).</li>
 <li>Unprivileged user namespaces permitted + process headroom

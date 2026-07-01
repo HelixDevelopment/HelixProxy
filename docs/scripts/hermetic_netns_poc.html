@@ -244,7 +244,7 @@
 <h1
 id="hermetic_netns_pocsh--companion-guide-11418"><code>hermetic_netns_poc.sh</code>
 — companion guide (§11.4.18)</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
 2026-07-02T00:00:00Z <strong>Status:</strong> H0 feasibility proof for
 the hermetic WireGuard test harness (<a
 href="../design/vpn_lan_access/hermetic_wg_test_harness.md">design</a>).
@@ -277,7 +277,9 @@ feasibility — the exact shape the userspace-WireGuard tunnel
 <ul>
 <li><code>bash</code>, util-linux <code>unshare</code> +
 <code>nsenter</code>, iproute2 <code>ip</code>, <code>python3</code>,
-<code>sha256sum</code>.</li>
+<code>sha256sum</code>, <code>timeout</code> (self-bounds the peer
+server so an outer-SIGKILL orphan terminates on its own — no indefinite
+linger, §12).</li>
 <li>The host must permit <strong>unprivileged user namespaces</strong>
 (<code>kernel.unprivileged_userns_clone</code> = 1 where the knob
 exists; <code>user.max_user_namespaces</code> /
