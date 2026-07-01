@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>phase3_issuance_guard.sh</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">phase3_issuance_guard.sh</h1>
+</header>
+<h1 id="phase3_issuance_guard.sh">phase3_issuance_guard.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z</p>
+<p>Standing §11.4.135 regression guard for the Let’s Encrypt
+<strong>Phase 3 hermetic DNS-01 issuance</strong> (task #59). It drives
+the REAL issuance artifact
+<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> and proves that
+the hermetic ACME stack still obtains a <strong>real</strong> TLS
+certificate against a local Pebble — AND that the exact design-gap
+regression the CoreDNS authoritative-SOA front fixes (2026-07-01) stays
+fixed. certmagic’s DNS-01 flow determines the DNS zone via an SOA walk
+<strong>before</strong> it presents the challenge TXT;
+<code>challtestsrv</code> answers <code>NOTIMP</code> to SOA (it has no
+authoritative mode), which blocked issuance (“could not determine zone …
+NOTIMP”). CoreDNS was inserted as an authoritative SOA front for
+<code>hermetic.test</code>, and Caddy’s <code>ACME_RESOLVERS</code> was
+pointed at <code>coredns:53</code>. If a later change reverts
+<code>ACME_RESOLVERS</code> back to <code>challtestsrv:8053</code> (or
+drops CoreDNS), issuance silently breaks — this guard catches that
+regression.</p>
+<h2 id="overview">Overview</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Path</td>
+<td><code>tests/letsencrypt/phase3_issuance_guard.sh</code></td>
+</tr>
+<tr>
+<td>Under guard</td>
+<td><code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> (issuance)
+· <code>deploy/letsencrypt/compose.hermetic.yml</code>
+(<code>ACME_RESOLVERS</code> default) ·
+<code>deploy/letsencrypt/coredns/Corefile</code> (SOA front) ·
+<code>Caddyfile</code></td>
+</tr>
+<tr>
+<td>Verdicts producer</td>
+<td><code>tests/letsencrypt/cert_analyzer.sh</code>
+(<code>cert_chain_roots_in</code> / <code>cert_san_matches</code>)</td>
+</tr>
+<tr>
+<td>Kind</td>
+<td>Live issuance guard — <strong>boots the hermetic podman-compose
+stack via phase3</strong> (rootless, §11.4.161); conductor-only
+(§11.4.119)</td>
+</tr>
+<tr>
+<td>Anti-bluff anchors</td>
+<td>§11.4.107, §11.4.108, §11.4.115, §11.4.135, §11.4.3, §11.4.50,
+§1.1</td>
+</tr>
+<tr>
+<td>Exit codes</td>
+<td><code>0</code> = PASS, <code>1</code> = FAIL, <code>2</code> = SKIP
+(topology absent / precondition unmet, §11.4.3)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>POSIX <code>sh</code> on <code>PATH</code> (to run the guard itself
++ parse the phase3 contract).</li>
+<li>To actually issue (conductor-side, GREEN or RED):
+<code>podman</code> + <code>podman-compose</code> (rootless, §11.4.161)
+and the built Caddy image
+<code>localhost/helix_proxy/caddy-challtestsrv:2.8.4</code> (produced by
+<code>deploy/letsencrypt/build.sh</code>). When these are absent the
+guard emits an honest §11.4.3 topology <strong>SKIP</strong> (exit 2),
+never a fake pass.</li>
+<li>No operator secret is required — the hermetic DNS-01 path uses the
+unauthenticated <code>challtestsrv</code> (§11.4.10). Pebble regenerates
+its issuance CA every boot; phase3 fetches THIS run’s CA for the chain
+check.</li>
+<li><strong>Do NOT run this guard during background authoring</strong> —
+it boots containers, which is conductor-only under §11.4.119
+(single-resource-owner). The conductor runs it as part of the
+release-gate sweep (§11.4.40).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GREEN standing guard — shipped defaults (ACME_RESOLVERS =&gt; coredns:53).</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># PASS iff phase3 issues a real cert AND cert_analyzer_verdicts.txt shows both</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># cert_chain_roots_in: PASS and cert_san_matches: PASS.</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">tests/letsencrypt/phase3_issuance_guard.sh</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># RED (reproduce) — broken resolver bypasses CoreDNS so the certmagic SOA walk</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># hits challtestsrv NOTIMP =&gt; no cert. PASS iff phase3 FAILS.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="ex">tests/letsencrypt/phase3_issuance_guard.sh</span></span></code></pre></div>
+<h2 id="red_mode-polarity">§11.4.115 RED_MODE polarity</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Meaning</th>
+<th>PASS condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RED_MODE=0</code> (default, GREEN standing guard)</td>
+<td>Run phase3 with shipped compose defaults</td>
+<td>phase3 exits <code>0</code> <strong>and</strong> the produced
+<code>cert_analyzer_verdicts.txt</code> contains
+<code>cert_chain_roots_in: PASS</code> <strong>and</strong>
+<code>cert_san_matches: PASS</code></td>
+</tr>
+<tr>
+<td><code>RED_MODE=1</code> (reproduce)</td>
+<td>Run phase3 with <code>ACME_RESOLVERS=challtestsrv:8053</code>
+(bypasses CoreDNS)</td>
+<td>phase3 <strong>FAILS</strong> (exit non-<code>0</code>,
+non-<code>2</code>) — the guard catches the CoreDNS-SOA-front
+regression</td>
+</tr>
+</tbody>
+</table>
+<p>A RED run in which phase3 still succeeds is a §11.4.7 finding (the
+regression is not caught) and the guard reports <strong>FAIL</strong>.
+Topology absent in either mode ⇒ <strong>SKIP</strong> (exit 2) — a
+reproduction cannot run without the stack.</p>
+<h2 id="red-injection-mechanism-no-deploy-change-required">RED injection
+mechanism (no <code>deploy/</code> change required)</h2>
+<p><code>compose.hermetic.yml</code> declares
+<code>- ACME_RESOLVERS=${ACME_RESOLVERS:-coredns:53}</code> and
+<code>phase3_hermetic_issue.sh</code> <strong>neither forces nor
+unsets</strong> <code>ACME_RESOLVERS</code>. Exporting
+<code>ACME_RESOLVERS=challtestsrv:8053</code> into phase3’s environment
+therefore propagates through <strong>phase3 → podman-compose → the
+compose <code>${..:-}</code> default → Caddy</strong>, pointing
+certmagic’s zone-determination resolver directly at
+<code>challtestsrv</code> (which answers <code>NOTIMP</code> to SOA) and
+bypassing the CoreDNS authoritative front — a faithful reproduction of
+the exact pre-fix bug. In GREEN the guard <code>unset</code>s any
+inherited <code>ACME_RESOLVERS</code> in a subshell so the shipped
+<code>coredns:53</code> default applies deterministically (§11.4.50).
+CoreDNS still boots in RED; it is simply never queried by Caddy.</p>
+<h3
+id="contingent-phase3-one-liner-documented-not-applied-here">Contingent
+phase3 one-liner (documented, NOT applied here)</h3>
+<p>As of phase3 HEAD <strong>2026-07-01, NO change is needed</strong>.
+If a future phase3 hardening pins or unsets <code>ACME_RESOLVERS</code>
+(e.g. adds <code>unset ACME_RESOLVERS</code> or
+<code>export ACME_RESOLVERS=coredns:53</code>) it would defeat this RED
+injection. The conductor (who owns <code>deploy/</code>) should then,
+right after phase3’s <code>export CADDY_IMAGE ...</code> line (~line
+101), honour an externally-supplied value instead of forcing it:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ACME_RESOLVERS</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${ACME_RESOLVERS</span><span class="op">:-</span>coredns:53<span class="va">}</span><span class="st">&quot;</span></span></code></pre></div>
+<p>so the guard can still inject the broken resolver.</p>
+<h2 id="suite-wiring-conductor-owns-testsrun-tests.sh">Suite wiring
+(conductor owns <code>tests/run-tests.sh</code>)</h2>
+<p>This guard mirrors the sibling §11.4.135 guards’ <code>0</code>=PASS
+/ <code>1</code>=FAIL convention, plus a third code
+<strong><code>2</code>=SKIP</strong> (this guard boots containers and is
+conductor-only under §11.4.119, unlike the hermetic siblings which never
+skip). The <code>run-tests.sh</code>
+<code>test_regression_guards()</code> wiring should treat exit
+<strong>2</strong> as a §11.4.3 SKIP
+(<code>test_result "..." "SKIP"</code>), exit <strong>0</strong> as
+PASS, exit <strong>1</strong> as FAIL — for BOTH the GREEN and the
+<code>RED_MODE=1</code> invocation. The conductor makes that wiring
+change (and any phase3 hook change); this guard does not edit
+<code>deploy/</code> or <code>run-tests.sh</code>.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Image / podman-compose absent</strong> → SKIP(2) with reason
+<code>topology_unsupported</code> /
+<code>feature_disabled_by_config</code> (mirrors phase3’s own exit-2
+OPERATOR-BLOCKED precondition). Never a fake pass.</li>
+<li><strong>phase3 precondition exit 2</strong> (no free port, etc.)
+mid-run → SKIP(2).</li>
+<li><strong>phase3 exit 0 but no verdicts file</strong> → FAIL (a
+§11.4.107 missing-evidence bluff — a PASS with no captured evidence is
+refused).</li>
+<li><strong>Stale verdicts</strong> → the guard reads only the
+<code>cert_analyzer_verdicts.txt</code> produced <strong>after</strong>
+its own start marker (<code>-newer</code>), so a previous run’s file is
+never mistaken for this run’s (single-owner, §11.4.119).</li>
+<li><strong>Missing <code>ionice</code>/<code>nice</code></strong> → the
+resource-cap prefix is built only from the tools present, so a missing
+cap tool never becomes a §11.4.1 script-internal FAIL-bluff.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Resolve <code>REPO_ROOT</code>, the phase3 artifact, and the phase3
+evidence root.</li>
+<li>Source <code>tests/lib/evidence.sh</code> when present (optional
+§11.4.69 emit helpers).</li>
+<li>Preconditions: phase3 present,
+<code>podman</code>/<code>podman-compose</code> on <code>PATH</code>,
+the built Caddy image exists — else honest §11.4.3 SKIP(2).</li>
+<li>Drop a start marker, then invoke phase3 capped
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code> (GREEN: shipped
+defaults with <code>ACME_RESOLVERS</code> unset; RED:
+<code>ACME_RESOLVERS=challtestsrv:8053</code>), capturing its combined
+output to
+<code>qa-results/regression/phase3_issuance_guard/</code>.</li>
+<li>GREEN — on phase3 exit 0, read the newest post-marker
+<code>cert_analyzer_verdicts.txt</code> and assert both
+<code>cert_chain_roots_in: PASS</code> and
+<code>cert_san_matches: PASS</code>. RED — assert phase3 FAILED (non-0,
+non-2).</li>
+<li>Emit the PASS/FAIL/SKIP verdict + an evidence file; exit
+<code>0</code>/<code>1</code>/<code>2</code>.</li>
+</ol>
+<p>The guard itself boots nothing and writes only its own evidence file;
+phase3 boots and self-tears-down the hermetic stack on every exit path
+(§11.4.14).</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> — the
+issuance artifact under guard.</li>
+<li><code>tests/letsencrypt/cert_analyzer.sh</code> — produces the
+verdicts this guard asserts.</li>
+<li><code>tests/regression/cert_analyzer_selfvalidation_test.sh</code> —
+sibling §11.4.135 guard for the analyzer’s self-validation (Phase
+1).</li>
+<li><code>tests/regression/assert_egress_ip_host_unknown_test.sh</code>
+— sibling guard whose RED_MODE polarity + style this guard matches.</li>
+<li><code>docs/research/letsencrypt_hermetic_20260701/</code> —
+CoreDNS-SOA-front root-cause research.</li>
+</ul>
+<h2 id="constitution-anchors">Constitution anchors</h2>
+<p>§11.4.107 (real-evidence / liveness), §11.4.108
+(source→artifact→runtime), §11.4.115 (RED-baseline polarity switch),
+§11.4.135 (standing regression guard), §11.4.3 (SKIP-with-reason),
+§11.4.50 (determinism), §11.4.119 (single-resource-owner —
+conductor-only boot), §1.1 (paired mutation).</p>
+<p><strong>Last verified:</strong> 2026-07-01 (authored;
+<code>sh -n</code> + <code>bash -n</code> clean; not executed — boot is
+conductor-only per §11.4.119).</p>
+</body>
+</html>

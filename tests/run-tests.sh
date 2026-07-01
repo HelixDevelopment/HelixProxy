@@ -696,6 +696,31 @@ test_regression_guards() {
         test_result "LE cert-analyzer bluff-analyzer RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # LE Phase-3 hermetic DNS-01 issuance guard (§11.4.135). Unlike the pure-logic
+    # guards above, this BOOTS the hermetic Pebble+CoreDNS+Caddy stack, so it uses
+    # a 3-way exit (0=PASS, 2=topology SKIP when the built image is absent §11.4.3,
+    # else FAIL) — collapsing SKIP into FAIL would be a §11.4.1 false-FAIL. GREEN =
+    # a real cert is issued + analyzer-verified; RED (broken resolver) reproduces
+    # the zone-determination regression the CoreDNS SOA-front fixes. Expensive
+    # (~2 min with the image present); set SKIP_LE_ISSUANCE_GUARD=1 to skip it.
+    if [ "${SKIP_LE_ISSUANCE_GUARD:-0}" = "1" ]; then
+        test_result "LE Phase-3 hermetic issuance guard" "SKIP" "SKIP_LE_ISSUANCE_GUARD=1"
+    else
+        sh "$SCRIPT_DIR/letsencrypt/phase3_issuance_guard.sh" >/dev/null 2>&1; _p3_rc=$?
+        case "$_p3_rc" in
+            0) test_result "LE Phase-3 hermetic issuance (GREEN: real cert issued + verified)" "PASS" ;;
+            2) test_result "LE Phase-3 hermetic issuance (GREEN)" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
+            *) test_result "LE Phase-3 hermetic issuance (GREEN)" "FAIL" \
+                   "run: sh tests/letsencrypt/phase3_issuance_guard.sh" ;;
+        esac
+        RED_MODE=1 sh "$SCRIPT_DIR/letsencrypt/phase3_issuance_guard.sh" >/dev/null 2>&1; _p3_rc=$?
+        case "$_p3_rc" in
+            0) test_result "LE Phase-3 issuance guard RED reproduces (broken resolver)" "PASS" ;;
+            2) test_result "LE Phase-3 issuance guard RED" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
+            *) test_result "LE Phase-3 issuance guard RED" "FAIL" "RED could not reproduce — §11.4.7" ;;
+        esac
+    fi
 }
 
 #######################################
