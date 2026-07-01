@@ -32,12 +32,14 @@ const (
 	squidImage    = "docker.io/ubuntu/squid:latest" // :latest VERIFIED = 6.13 (spec §20)
 )
 
-// minimalSquidConf mirrors the deployment placement: the dynamic include sits
-// ABOVE the base `http_access allow localnet` so `deny !tun_up` is reached first.
+// minimalSquidConf mirrors the FAIL-CLOSED deployment placement (§11.4.108,
+// config/squid/squid.dynamic.conf): the base carries NO unconditional
+// `allow localnet` — the include sits BEFORE `http_access deny all` and supplies
+// BOTH `deny !tun_up` (tunnel down → 503) AND the gated `allow localnet` (tunnel
+// up → permitted). A missing include falls through to `deny all` (no leak).
 const minimalSquidConf = `http_port 3128
 acl localnet src 10.0.0.0/8
 include /conf/dynamic-routing.conf
-http_access allow localnet
 http_access deny all
 `
 

@@ -7,21 +7,31 @@
 #   gated on (a) the Go control-plane lane clearing and (b) operator-provisioned
 #   gluetun WireGuard credentials (§11.4.21). No image build is run here.
 #
-# Bakes the SHIPPED base config/squid/squid.conf (verbatim) plus:
+# Bakes the FAIL-CLOSED dynamic base config/squid/squid.dynamic.conf (NOT the
+# permissive static squid.conf — §11.4.108 P10 security fix) plus:
 #   * the static external_acl helper COPIED from the control-plane image
 #     (multi-stage) — installed at the compiler's default helper path
 #     /usr/lib/helix-proxy/acl-helper (the path the rendered include references,
 #     §11.4.111 resolve-by-name), with a /usr/local/bin/acl-helper convenience copy;
-#   * a single `include /etc/squid/conf.d/*.conf` line APPENDED to the IMAGE copy
-#     of squid.conf — the on-disk tracked squid.conf is NOT modified (§11.4.122);
-#     the compiler-rendered include is mounted into /etc/squid/conf.d at runtime.
+#   * the branded ERR_TUNNEL_DOWN error page copied into the image error dir so
+#     `deny_info 503:ERR_TUNNEL_DOWN` resolves (config/squid/errors/ERR_TUNNEL_DOWN).
 #
-# The cache_peer → gluetun wiring + the fail-closed never_direct/deny block live
-# in that rendered include (config/squid/templates/dynamic-routing.conf.tmpl).
+# squid.dynamic.conf ALREADY places `include /etc/squid/conf.d/*.squid` (a
+# positive allow-list glob — see RC-4 note below) BEFORE the terminal
+# `http_access deny all` and carries NO unconditional `allow localnet`, so the
+# assembled config FAILS CLOSED: with no rendered include (compiler not run /
+# failed) a client request falls straight through to `deny all` → branded 503,
+# NEVER a direct egress leak. The static config/squid/squid.conf is left
+# untouched (§11.4.122) — it still serves the non-dynamic proxy modes.
 #
-# Build context: ./config/squid (so `COPY squid.conf` resolves).
-# CONTROL_PLANE_IMAGE is passed by compose (build.args) so the acl-helper comes
-# from the exact image proxy-compiler/proxy-healthd build.
+# The cache_peer → gluetun wiring + the fail-closed never_direct/deny block +
+# the gated `allow localnet` (AFTER `deny !tun_up`) live in the compiler-rendered
+# include (config/squid/templates/dynamic-routing.conf.tmpl), mounted into
+# /etc/squid/conf.d at runtime.
+#
+# Build context: ./config/squid (so `COPY squid.dynamic.conf` / `COPY errors`
+# resolve). CONTROL_PLANE_IMAGE is passed by compose (build.args) so the
+# acl-helper comes from the exact image proxy-compiler/proxy-healthd build.
 # =============================================================================
 
 ARG CONTROL_PLANE_IMAGE=localhost/helixproxy-control-plane:dev
@@ -36,7 +46,33 @@ FROM docker.io/ubuntu/squid:latest
 COPY --from=controlplane /usr/local/bin/acl-helper /usr/lib/helix-proxy/acl-helper
 COPY --from=controlplane /usr/local/bin/acl-helper /usr/local/bin/acl-helper
 
-# Base config baked verbatim; conf.d include APPENDED to the image copy only.
-COPY squid.conf /etc/squid/squid.conf
-RUN mkdir -p /etc/squid/conf.d \
- && printf '\n# Dynamic-routing include (compiler-rendered at runtime; §11.4.122 additive).\ninclude /etc/squid/conf.d/*.conf\n' >> /etc/squid/squid.conf
+# Fail-closed dynamic base baked as the running config (§11.4.108). It carries
+# the `include /etc/squid/conf.d/*.squid` line (positive allow-list) BEFORE
+# `http_access deny all` and has NO unconditional `allow localnet` — so NOTHING
+# is appended here.
+COPY squid.dynamic.conf /etc/squid/squid.conf
+RUN mkdir -p /etc/squid/conf.d
+
+# §11.4.108 RC-4 defense-in-depth: the ubuntu/squid base image ships
+# /etc/squid/conf.d/debian.conf with an UNCONDITIONAL `http_access allow localnet`.
+# The baked squid.conf globs `*.squid` (not `*.conf`) so debian.conf is already
+# NOT loaded; this comment-out is a second, independent layer so the leak cannot
+# reappear even if a future include ever globs `*.conf`. Idempotent (sed no-op if
+# the line is already absent).
+RUN if [ -f /etc/squid/conf.d/debian.conf ]; then \
+      sed -i 's/^http_access allow localnet/#http_access allow localnet  (§11.4.108: neutralized — dynamic profile fails closed)/' /etc/squid/conf.d/debian.conf ; \
+    fi
+
+# §11.4.108 fail-closed default include: guarantees squid's `*.squid` glob is
+# NEVER empty — Squid FATALs on a zero-match glob (verified: "Unable to find
+# configuration file"). Podman copy-up seeds this baked file into the fresh
+# generated volume at mount time, so squid starts even before the compiler
+# renders (and even if the compile never succeeds). It contributes NO
+# `http_access allow`, so with only this present every request falls through to
+# the base `http_access deny all` (fail-closed). The compiler ADDS the real
+# dynamic-routing.squid (sorts AFTER `00-`) on a successful compile.
+RUN printf '# Helix Proxy fail-closed default include (baked; %s).\n# Contributes NO http_access allow — with only this present every request\n# falls through to the base `http_access deny all`. The compiler adds the real\n# dynamic-routing.squid on a successful compile.\n' '§11.4.108' > /etc/squid/conf.d/00-failclosed.squid
+
+# Branded fail-closed error page: served by `deny_info 503:ERR_TUNNEL_DOWN` when
+# the tunnel is down (squid.dynamic.conf pins error_directory to this dir).
+COPY errors/ERR_TUNNEL_DOWN /usr/share/squid/errors/English/ERR_TUNNEL_DOWN

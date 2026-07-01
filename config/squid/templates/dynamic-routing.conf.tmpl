@@ -56,11 +56,17 @@ cache_peer_access {{TUNNEL_NAME}} deny all
 # --- fail-closed: never egress directly; serve a branded 503 when down -------
 # `never_direct allow all` forces EVERY request through a cache_peer. When the
 # helper returns ERR (tunnel down / Redis stale / no route) no peer is allowed,
-# so there is NO direct path that could leak — and the deny below returns the
-# branded ERR_TUNNEL_DOWN page (HTTP 503) instead (docs/DYNAMIC_ROUTING.md §5).
-# NOTE TO COMPILER: this `http_access deny !tun_up` MUST be inserted BEFORE the
-# base squid.conf `http_access allow localnet` line for the deny to be reached
-# (Squid evaluates http_access top-to-bottom, first match wins). See README.
+# so there is NO direct path that could leak — and `http_access deny !tun_up`
+# returns the branded ERR_TUNNEL_DOWN page (HTTP 503) instead (§5).
+# ORDERING IS LOAD-BEARING (§11.4.108): `deny !tun_up` (tunnel down → 503) is
+# evaluated BEFORE the GATED `http_access allow localnet` (tunnel up → permitted).
+# The baked base squid.dynamic.conf carries NO unconditional `allow localnet`
+# (that would let a LAN client egress before any VPN check), so this gated allow
+# is the ONLY client-allow; a MISSING include falls through to the base
+# `http_access deny all` → fail-closed (no leak). This include is placed BEFORE
+# `http_access deny all` by squid.dynamic.conf (Squid evaluates http_access
+# top-to-bottom, first match wins). See README.
 never_direct allow all
 http_access deny !tun_up
+http_access allow localnet
 deny_info 503:ERR_TUNNEL_DOWN tun_up

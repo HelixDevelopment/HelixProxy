@@ -988,5 +988,147 @@ test boots a throwaway <code>hp-it-pg-&lt;port&gt;</code>
 (<code>--rm</code>, <code>t.Cleanup</code>).</p>
 <p>Evidence: pasted <code>-race</code>/integration output; test at
 <code>internal/api/atomicity_test.go</code>.</p>
+<h2
+id="bugfix-0009--vpn-aware-dynamic-proxy-fail-opened-tunnel-down-leaked-direct-to-the-internet-instead-of-a-branded-503-p10-security-defect">BUGFIX-0009
+— VPN-aware dynamic proxy FAIL-OPENED: tunnel-down leaked direct to the
+internet instead of a branded 503 (P10 security defect)</h2>
+<ul>
+<li><strong>Type:</strong> Bug (RELEASE-BLOCKING security defect —
+fail-open egress leak; §11.4.129 huge-blocker)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong>
+<code>docker-compose.dynamic.yml</code> (entrypoint override),
+<code>config/squid/squid.dynamic.conf</code> (NEW fail-closed dynamic
+base), <code>config/squid/Containerfile.dynamic</code> (bakes
+fail-closed base + <code>*.squid</code> glob + branded
+<code>ERR_TUNNEL_DOWN</code> page + <code>00-failclosed.squid</code>
+default + debian.conf neutralize),
+<code>config/squid/errors/ERR_TUNNEL_DOWN</code> (NEW branded page),
+<code>config/squid/templates/dynamic-routing.conf.tmpl</code> +
+<code>control-plane/internal/routing/routing.go</code> +
+<code>control-plane/internal/routing/testdata/squid_dynamic.golden</code>
+(gated <code>allow localnet</code> AFTER <code>deny !tun_up</code>),
+<code>control-plane/internal/routing/routing_failclosed_test.go</code>
+(NEW §11.4.135 guard),
+<code>control-plane/internal/routing/routing_integration_test.go</code>
+(fail-closed placement)</li>
+<li><strong>Workable item:</strong> #38 (P10 fail-closed half)</li>
+</ul>
+<h3
+id="symptom--root-cause-fact--114102-investigation-captured-live">Symptom
+&amp; root cause (FACT — §11.4.102 investigation, captured live)</h3>
+<p>Booted <code>./start --dynamic</code> with the tunnel DOWN (no
+WireGuard creds): a client request through squid returned <strong>HTTP
+200 with <code>HIER_DIRECT/&lt;ip&gt;</code> in squid's own
+access.log</strong> — squid egressed DIRECTLY to the real internet
+instead of denying the request. A VPN-aware proxy that leaks direct when
+its tunnel is down is the exact opposite of its purpose. FIVE stacked
+root causes (§11.4.6 FACT, <code>file:line</code>):</p>
+<ol type="1">
+<li><strong>Entrypoint override.</strong>
+<code>control-plane/Containerfile:55 ENTRYPOINT ["compiler"]</code>;
+<code>docker-compose.dynamic.yml</code> overrode <code>command:</code>
+(not <code>entrypoint:</code>) for proxy-compiler + proxy-healthd → both
+ran <code>compiler &lt;args&gt;</code> and died
+<code>--dsn required</code>. The include was never rendered; redis was
+never seeded; <code>tun_up</code> was unevaluable.</li>
+<li><strong><code>depends_on</code> ignored.</strong> podman-compose
+ignores <code>condition: service_completed_successfully</code>, so squid
+started on the permissive base even though the compiler failed.</li>
+<li><strong>Fail-OPEN config assembly.</strong>
+<code>Containerfile.dynamic</code> baked the <em>static</em>
+<code>squid.conf</code> (unconditional
+<code>http_access allow localnet</code>) and appended the include AFTER
+<code>http_access deny all</code> → first-match-wins made the
+fail-closed <code>deny !tun_up</code> unreachable; no branded error page
+was baked.</li>
+<li><strong>RC-4 (dominant leak):</strong> the <code>ubuntu/squid</code>
+base image ships <code>/etc/squid/conf.d/debian.conf</code> with its OWN
+unconditional <code>allow localnet</code>; the <code>*.conf</code>
+include glob pulled it in — so the stack leaked even with a perfect
+compiler (and <code>*.conf</code> would also grab the Dante
+<code>*.sockd.conf</code> → parse break).</li>
+<li><strong>RC-5 (compiler couldn't render):</strong> the generated
+volume was namespace-root-owned (compiler runs non-root
+<code>helix</code> → <code>Permission denied</code>); the one-shot raced
+Postgres init; and squid FATALs on a zero-match include glob.</li>
+</ol>
+<h3
+id="fix-fail-closed-by-default--at-source-114150-squid-never_directdeny_infoerror_directory-research">Fix
+(fail-closed BY DEFAULT — at source; §11.4.150 squid
+<code>never_direct</code>/<code>deny_info</code>/<code>error_directory</code>
+research)</h3>
+<ul>
+<li><strong>New <code>config/squid/squid.dynamic.conf</code></strong>
+baked as the running config (static <code>squid.conf</code> UNTOUCHED,
+§11.4.122): NO unconditional <code>allow localnet</code>,
+<code>include /etc/squid/conf.d/*.squid</code> placed BEFORE the
+terminal <code>http_access deny all</code>. A MISSING include falls
+through to <code>deny all</code> → fail-closed.</li>
+<li><strong>Positive allow-list glob <code>*.squid</code></strong>
+(compiler <code>--squid-out …/dynamic-routing.squid</code>) matches ONLY
+the compiler's file — never
+<code>debian.conf</code>/<code>*.sockd.conf</code>; debian.conf
+<code>allow localnet</code> additionally sed-neutralized
+(defense-in-depth).</li>
+<li><strong>Gated client-allow:</strong> the template now emits
+<code>never_direct allow all</code> →
+<code>http_access deny !tun_up</code> (tunnel down → branded 503) →
+<code>http_access allow localnet</code> (the ONLY client-allow; reached
+only when tun up) → <code>deny_info 503:ERR_TUNNEL_DOWN</code>.</li>
+<li><strong>Branded <code>ERR_TUNNEL_DOWN</code> page</strong> baked +
+<code>error_directory</code> pinned.</li>
+<li><strong><code>00-failclosed.squid</code></strong> (rules-free) baked
++ written by the compiler wrapper before compile so the glob is never
+empty (contributes NO allow → <code>deny all</code>).</li>
+<li><strong>Entrypoint override</strong> for proxy-compiler
+(<code>/bin/sh -c</code> wrapper) + proxy-healthd
+(<code>healthd</code>); <code>:U</code> volume mount + compiler
+retry-until-postgres-ready loop.</li>
+</ul>
+<h3
+id="verification-captured-re-run-independently-by-the-conductor-114142-via-start---dynamic">Verification
+(captured, re-run INDEPENDENTLY by the conductor §11.4.142 via
+<code>./start --dynamic</code>)</h3>
+<pre><code># §11.4.135 guard routing_failclosed_test.go (assembles the REAL base + REAL
+# rendered include, directive-lines-only so prose can&#39;t satisfy/defeat a rule):
+#   RED_MODE=0 GREEN — deny !tun_up before any allow localnet; never_direct present; terminal deny all
+#   RED_MODE=1 reproduces the shipped fail-OPEN assembly (allow localnet before deny all; include appended)
+# Conductor §1.1 mutation: swap the template order (allow localnet BEFORE deny !tun_up) -&gt;
+#   guard FAILs with an ASSERTION (build still compiles, §11.4.1) -&gt; byte-identical
+#   restore md5 dc8f61241e4100bf60aea64b20cca906.
+$ go build/vet ./... exit 0
+
+# LIVE fail-closed proof (tunnel DOWN via ./start --dynamic; evidence under
+# qa-results/p10_failclosed_fix/conductor_reproof/):
+$ podman exec proxy-squid squid -k parse   -&gt; exit 0, assembled order:
+    ... never_direct allow all / http_access deny !tun_up / http_access allow localnet /
+        deny_info 503:ERR_TUNNEL_DOWN tun_up / http_access deny all
+$ curl -x http://localhost:53128 http://example.com/   (x3, deterministic §11.4.50)
+    -&gt; iter 1/2/3: http_code=503  ERR_TUNNEL_DOWN_in_body=3  &lt;title&gt;503 — VPN tunnel unavailable&lt;/title&gt;
+$ squid access.log (this-boot client 10.89.2.26):  TCP_DENIED/503 ... HIER_NONE/-  (x3, no HIER_DIRECT)
+    squid PID stable 36-&gt;36 (no crash); MEM 45% (&lt;=60% §12.6)
+    operator lava-postgres-thinker/lava-api-go-thinker &quot;Up 8 hours&quot; before AND after (untouched)
+    static proxy restored -&gt; 200</code></pre>
+<p>Honest gaps (§11.4.6): (1) the <strong>healthy path</strong> (tunnel
+UP → allowed egress) and the <strong>real-VPN-egress</strong> proof are
+operator-gated on gluetun WireGuard credentials (§11.4.21) — only the
+fail-closed half (tunnel-down → branded 503) is proven autonomously. (2)
+The shared <code>${LOG_DIR}/access.log</code> is NOT rotated between
+boots, so <code>HIER_DIRECT</code> lines from the PRE-FIX boot
+(different client IP <code>10.89.1.11</code>) persist in the file; the
+current-boot signal is the 3 curl 503s + this-boot client
+<code>10.89.2.26</code> all <code>TCP_DENIED</code> — not the historical
+aggregate count. (3) podman-compose ignores <code>depends_on</code> so
+squid can start before the compiler renders — the baked
+<code>00-failclosed.squid</code> keeps that window fail-closed
+(production relies on <code>restart: unless-stopped</code> + the baked
+default).</p>
+<p>Evidence: pasted <code>squid -k parse</code> + 3× 503/ERR_TUNNEL_DOWN
++ access.log TCP_DENIED; guard at
+<code>control-plane/internal/routing/routing_failclosed_test.go</code>;
+proof artifacts under
+<code>qa-results/p10_failclosed_fix/conductor_reproof/</code>.</p>
 </body>
 </html>

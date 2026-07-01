@@ -47,9 +47,9 @@ volumes:
   # Postgres data dir (control-plane source of truth; re-seeded from ./sql).
   proxy-pgdata:
   # Compiler-rendered config artifacts shared compiler → squid-dynamic:
-  #   /generated/dynamic-routing.conf         (squid include — *.conf)
-  #   /generated/dynamic-routing.sockd.conf   (dante routes — NOT *.conf)
-  #   /generated/proxy.pac                    (PAC file)
+  #   /generated/dynamic-routing.squid        (squid include — squid globs *.squid)
+  #   /generated/dynamic-routing.sockd.conf   (dante routes — squid does NOT glob it)
+  #   /generated/proxy.pac                    (PAC file — squid does NOT glob it)
   proxy-generated:
 
 #############################################
@@ -188,24 +188,54 @@ services:
       - PG_DB=${PG_DB:-proxy}
     secrets:
       - helixproxy_pg_password
+    # §11.4.108 defect-1 fix: the control-plane image ENTRYPOINT is `compiler`, so a
+    # bare `command:` here would run `compiler sh -c "…"` (compiler dies:
+    # `--dsn required`) and the DSN-assembly wrapper would NEVER run. Override the
+    # ENTRYPOINT to the shell so the wrapper `exec compiler --dsn …` actually runs.
+    entrypoint:
+      - /bin/sh
+      - -c
     # `$$` keeps PG_USER/PG_DB + $(cat secret) as RUNTIME shell refs (compose
     # leaves them un-interpolated). DSN password is read from the secret file,
     # never embedded (§11.4.10).
     command:
-      - sh
-      - -c
       - |
         set -e
+        mkdir -p /generated
+        # §11.4.108 fail-closed placeholder: write a rules-FREE default include
+        # BEFORE the compile so squid's `include /etc/squid/conf.d/*.squid` glob is
+        # NEVER empty — squid FATALs on a zero-match glob, and an empty compile
+        # (e.g. DB unreachable) would otherwise leave squid dead. This file
+        # contributes NO `http_access allow`, so with only it present the request
+        # falls through to the base `http_access deny all` (fail-closed). A
+        # successful compile ADDS dynamic-routing.squid (sorts AFTER this one).
+        printf '# Helix Proxy fail-closed default (compiler placeholder — NO rules).\n# Real VPN routing lands in dynamic-routing.squid on a successful compile;\n# with only this file present every request falls through to base `deny all`.\n' > /generated/00-failclosed.squid
         PGPW="$$(cat /run/secrets/helixproxy_pg_password)"
-        exec compiler \
-          --dsn "postgres://$${PG_USER}:$${PGPW}@proxy-postgres:5432/$${PG_DB}?sslmode=disable" \
+        DSN="postgres://$${PG_USER}:$${PGPW}@proxy-postgres:5432/$${PG_DB}?sslmode=disable"
+        # podman-compose ignores depends_on `service_healthy`, so the one-shot may
+        # start before Postgres finished initialising → retry until it is ready
+        # (or give up after ~60s). The fail-closed placeholder above already
+        # protects squid while we retry (§11.4.108).
+        n=0
+        until compiler \
+          --dsn "$$DSN" \
           --redis-addr proxy-redis:6379 \
           --helper-path /usr/lib/helix-proxy/acl-helper \
-          --squid-out /generated/dynamic-routing.conf \
+          --squid-out /generated/dynamic-routing.squid \
           --dante-out /generated/dynamic-routing.sockd.conf \
-          --pac-out /generated/proxy.pac
+          --pac-out /generated/proxy.pac ; do
+          n=$$((n+1))
+          if [ "$$n" -ge 30 ]; then echo "compiler: giving up after $$n attempts (postgres unreachable)"; exit 1; fi
+          echo "compiler: attempt $$n failed (postgres not ready?) — retry in 2s"
+          sleep 2
+        done
     volumes:
-      - proxy-generated:/generated
+      # `:U` chowns the named volume to the compiler's non-root user (helix,
+      # uid 65532 — the control-plane image runs `USER helix`, §11.4.161 rootless)
+      # so it can write the rendered includes + the fail-closed placeholder. The
+      # files are 0644 (world-readable), so squid reads them via its `:ro` mount
+      # regardless of its own uid.
+      - proxy-generated:/generated:U
     networks:
       - proxy-dynamic
     depends_on:
@@ -234,7 +264,13 @@ services:
       - HEALTHD_PROFILES=${HEALTHD_PROFILES:-demo}
       - HEALTHD_GLUETUN_BASE=http://proxy-gluetun:${GLUETUN_CONTROL_PORT:-8000}
       - HEALTHD_POLL_INTERVAL=${HEALTHD_POLL_INTERVAL:-5s}
-    command: ["healthd"]
+    # §11.4.108 defect-1 fix: the control-plane image ENTRYPOINT is `compiler`, so a
+    # bare `command: ["healthd"]` would run `compiler healthd` (compiler dies:
+    # `--dsn required`) and healthd would NEVER run — no vpn:status:<profile> key,
+    # so `tun_up` was unevaluable. Override the ENTRYPOINT to the healthd binary
+    # (env-driven, no positional args) so the health publisher actually runs.
+    entrypoint: ["healthd"]
+    command: []
     networks:
       - proxy-dynamic
     depends_on:
@@ -266,8 +302,10 @@ services:
       # The baked external_acl helper reads tunnel state from Redis (fail-closed).
       - REDIS_ADDR=proxy-redis:6379
     volumes:
-      # Compiler-rendered squid include lands here as *.conf; the baked
-      # squid.conf does `include /etc/squid/conf.d/*.conf`. Read-only mount.
+      # Compiler-rendered squid include lands here as dynamic-routing.squid; the
+      # baked fail-closed squid.conf does `include /etc/squid/conf.d/*.squid`
+      # (positive allow-list — NOT *.conf, which would pull the base image's
+      # debian.conf `allow localnet` leak, §11.4.108 RC-4). Read-only mount.
       - proxy-generated:/etc/squid/conf.d:ro
       - ${CACHE_DIR:-./cache}/squid:/var/spool/squid
       - ${LOG_DIR:-./logs}:/var/log/squid
