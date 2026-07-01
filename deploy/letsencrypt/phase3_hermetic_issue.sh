@@ -124,7 +124,12 @@ trap cleanup EXIT INT TERM
 # is an HONEST SKIP (§11.4.3 infra/topology unsupported — exit 2 OPERATOR-BLOCKED,
 # which the harness scores as SKIP), NEVER an infinite hang and NEVER a fake PASS.
 compose_up_or_skip() {
-	_bl=$(mktemp 2>/dev/null || echo "/tmp/le_boot_$$.log")
+	# Secure temp only — a predictable /tmp/<pid> fallback is a symlink-attack
+	# vector (an attacker pre-creating that path would redirect our '>' write).
+	_bl=$(mktemp 2>/dev/null) || _bl=""
+	if [ -z "${_bl}" ]; then
+		log "OPERATOR-BLOCKED: mktemp unavailable for boot log — honest SKIP §11.4.3"; exit 2
+	fi
 	# `|| _rc=$?` keeps set -e from aborting on the timeout's 124 before we can
 	# classify it — the whole point is to convert that failure into a SKIP.
 	_rc=0
