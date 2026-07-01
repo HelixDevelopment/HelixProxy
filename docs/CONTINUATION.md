@@ -1,8 +1,8 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 5
-**Last modified:** 2026-07-01T11:25:00Z
-**Status:** Active — anti-bluff existing-suite sweep COMPLETE (BUGFIX-0014…0018 landed + guarded). Let's Encrypt workstream (task #59): **Phase 0/1/2/3 DONE + committed** — a REAL hermetic DNS-01 certificate is issued by local Pebble and cert-analyzer-verified (re-runnable `deploy/letsencrypt/phase3_hermetic_issue.sh`, live-PASS Challenge, RED+GREEN-proven guard) @ `b2afa7d`. **Task #56 observability live-/metrics-scrape DONE + committed** (isolated trio, real Prometheus exposition proven) @ `401234e`. **LE Phase 5 (renewal/rotation) root-diagnosed but PENDING** — Pebble ≥2.8.0 `/set-renewal-info` works, but certmagic v0.21.3's persistent 6h ARI cache blocks a fast deterministic renewal; clean fix = Caddy ≥2.11.0 + libdns v1.0.0 provider port (feasibility research in flight, `docs/research/caddy_2110_ari_refetch_20260701/`). LE Phase 4 (staging token) + Phase 6 (prod cutover) + the LIVE dynamic-VPN P10 proof remain operator-gated. HEAD `cc58a0c`.
+**Revision:** 6
+**Last modified:** 2026-07-01T14:20:00Z
+**Status:** Active — **§11.4.126 autonomous hardening loop** (operator: "keep hardening, don't tag yet"). **P10 VPN fail-closed = GREEN** (the last major pending item): booted the dynamic stack, forced tunnel DOWN via Redis `vpn:status` → branded 503 `ERR_TUNNEL_DOWN` ×3 (real 3132-byte page), `leak_seen=0`, Squid PID unchanged, deterministic ×3 (§11.4.50) + RED-polarity guard (§11.4.115); egress-half operator-gated SKIP (gluetun creds §11.4.21). **2 real security fixes landed** (RED→GREEN + sink-side evidence + standing guards): Squid header/version-hygiene (`via off`+`forwarded_for delete`+version suppression — `Via` leak CONFIRMED live) `4f983ee`; Dante SOCKS5 SSRF (block link-local/loopback/RFC1918 + `command:connect`) `4626f05`. **2 items TRACKED-for-operator** (connectivity-risk §11.4.101): Squid `dns_nameservers` DNS-leak (static mode); Dante client-side open-relay. **§11.4.169 hardening matrix = 9 PASS / 2 honest SKIP** (`docs/design/hardening/Status.md` Rev 3). **LE issuance + renewal BOTH PROVEN** — autonomous scope COMPLETE (Phase 3 hermetic DNS-01 + Phase 5 zero-downtime rotation, cert-analyzer-verified, guarded); Phase 4 (staging token) + Phase 6 (prod domain) OPERATOR-BLOCKED (§11.4.10). Full suite 65/59/6/0. HEAD `4626f05` (== `main` == github/origin/upstream).
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
 **Plan:** `docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md` (Rev 1)
@@ -16,62 +16,81 @@
 
 ## 1. Current PHASE
 
-**Construction phase — landed: P0–P7 (control-plane + config-plane + control-API).**
-28 commits on `feature/vpn-aware-dynamic-routing` ahead of `main`. The Go
-control-plane (stores, health-publisher, acl-helper, config-compiler, P5b
-breaker/failover, P6 control-API/SSE/metrics/PAC/mTLS) builds clean (4 binaries:
-`acl-helper`, `api`, `compiler`, `healthd`; `go build`/`go vet`/`gofmt -l` all
-clean) and is proven at the unit / integration / config-parse layer. The
-`dynamic` compose profile + Containerfiles + orchestrator wiring are authored
-(P10-prep) but **never booted** — the live dynamic-VPN data-plane proof is the
-entire job of **P10**.
+**§11.4.126 autonomous hardening loop** — construction (P0–P10 fail-closed) is
+landed; the loop is now closing hardening gaps under all §11.4.169 test types
+with real captured evidence. Operator decision in force: **"keep hardening,
+don't tag yet."** The Go control-plane (stores, health-publisher, acl-helper,
+config-compiler, P5b breaker/failover, P6 control-API/SSE/metrics/PAC/mTLS)
+builds + vets + gofmt-clean and is proven unit / integration / config-parse; the
+`dynamic` compose profile boots live and the **fail-closed data-plane proof is
+GREEN**. Base proxy UP on `:53128` (204); host ~43%; 4 `helixproxy_*` Podman
+secrets present (enable dynamic re-boot).
 
-**MAJOR live finding this session (BUGFIX-0002):** the existing proxy genuinely
-did NOT serve under rootless Podman — squid crash-looped because the host-created
-`./logs` bind-mount was mode 0755 and the container's remapped non-root `proxy`
-user could not write `access.log` (FATAL). Fixed (`chmod 777` the log dir,
-mirroring the existing cache-dir remedy). After the fix the **3 existing
-features are PROVEN-WORKING-LIVE**: HTTP forward proxy (200 + `Via: proxy-squid`),
-Dante SOCKS5 (200), squid caching (`TCP_MEM_HIT`, no origin contact). This
-directly answers the operator's "most features don't work / can't be used"
-concern at the existing-proxy layer.
+**P10 VPN fail-closed — GREEN (§11.4.68/.115/.108):**
+`tests/dynamic/vpn_failclosed_test.sh` proven live — booted the dynamic stack,
+forced the tunnel DOWN via Redis `vpn:status`, tunnel-DOWN ⇒ branded 503
+`ERR_TUNNEL_DOWN` ×3 (real 3132-byte page), `leak_seen=0`, Squid PID unchanged;
+deterministic ×3 (§11.4.50) + RED polarity guard FAILs a fabricated 200 leak
+(§11.4.115). Real-VPN-egress half is operator-gated SKIP (gluetun WireGuard
+creds §11.4.21). Evidence `qa-results/dynamic/vpn_failclosed/20260701T130115Z/`.
+Re-runnable boot recipe: 4 external Podman secrets from
+`tests/observability/gen_test_mtls.sh` → `./start --dynamic` (backgrounded) →
+poll `proxy-squid` Up + compiler renders `dynamic-routing.squid` →
+`HELIX_DYNAMIC_STACK=1 GOMAXPROCS=2 nice -n 19 ionice -c 3 bash
+tests/dynamic/vpn_failclosed_test.sh`; restore base after: `./stop && ./start`.
 
-**BUGFIX-0003:** `run-tests.sh`'s `test_result` leaked a non-zero status on a
-no-message FAIL, aborting the suite after ~10 of 41 tests under `set -e`. Fixed
-(`return 0`); the suite now runs to completion and honestly reports 7
-pre-existing FAILs (the §11.4.1 false-FAILs P8 is fixing now).
+**2 real security fixes (config-security review, `docs/design/security/Status.md`
+Rev 2) — RED→GREEN + sink-side evidence + standing guards:**
+- Squid header/version-hygiene (`4f983ee`): `via off` + `forwarded_for delete` +
+  `httpd_suppress_version_string on` + `visible_hostname helix-proxy` in
+  `squid.conf` + `squid.dynamic.conf`. The `Via: 1.1 proxy-squid (squid/6.13)`
+  leak was CONFIRMED live (RED) → GONE (GREEN). Guard: `proxy_acl_security.sh`
+  S3. **Root-cause note:** single-file `:ro` bind mounts pin the inode → config
+  edits need a container **recreate** (`./stop && ./start`), NOT `squid -k
+  reconfigure` (re-reads the stale inode).
+- Dante SOCKS5 SSRF (`4626f05`): `command: connect` + `socks block` for 127/8,
+  169.254/16, 10/8, 172.16/12, 192.168/16 in `sockd.conf`. 5 internal targets
+  refused fast (code 000 ~0.01s, dante-log `block(N)`), external control 204, no
+  public-egress regression. Guard: `proxy_acl_security.sh` S4.
 
-**P8 anti-bluff existing-test sweep — COMMITTED** as four bugfix lanes:
-BUGFIX-0004 (`cd11494`, `run-tests.sh` §11.4.3 topology-aware ports + 3-state
-SKIP + §11.4.161 podman), BUGFIX-0005 (`4394643`, `final-verify.sh` +
-`verify-proxy.sh` false-VPN-routing §15 + `set -e` abort), BUGFIX-0006
-(`2bc03de`, `comprehensive-test.sh` revived from a 100%-dead `(( ))` abort + real
-data-plane evidence for B2/B3/B8 + B1 honest VPN SKIP). **P6 follow-ups —
-COMMITTED** (`8d95f8a`, WARNING-3 real bidirectional metric-name drift guard,
-independently §1.1-mutation-proven; WARNING-4 concurrency consistency test +
-documented cross-step audit gap → #52; WARNING-5 plaintext-metrics-listener
-design note → #53).
+**2 items TRACKED-for-operator (§11.4.101 connectivity-risk, NOT autonomously
+fixed):** (1) Squid `dns_nameservers 8.8.8.8` bypasses the DoT dnsproxy → DNS
+leak in **static** mode (dynamic mitigated by `never_direct`); re-point = risk.
+(2) Dante `socksmethod none` + `client pass from:0.0.0.0/0` open-relay if
+`:51080` escapes the bridge; client-CIDR restriction = risk. O(1) table in
+`docs/design/security/Status.md`.
 
-**MAJOR finding from the BUGFIX-0006 revival (#50, in flight):** reviving the
-dead `comprehensive-test.sh` immediately surfaced a **real regressed feature** —
-the documented 368-line `cache` management CLI (`./cache stats|clear|invalidate|
-trim`, README/USER_GUIDE/CACHE/TROUBLESHOOTING) is **gone from HEAD**. §11.4.124
-git-history investigation (FACT): commit `6ec58ef` accidentally deleted it — the
-tracked `cache` FILE collided with the runtime `cache/` DATA dir at the same path
-(`CACHE_DIR=$PROJECT_ROOT/cache`, `.gitignore:16` `cache/`). A background subagent
-is restoring it as non-colliding `./cachectl` (§11.4.101 safe/reversible),
-live-testing it on the running proxy, adding a §11.4.135 guard + §11.4.18
-companion, doc-syncing the 4 docs, and flipping the 4 `comprehensive-test.sh`
-cache-CLI SKIPs → real PASS — conductor reviews + commits on return (§11.4.142).
+**§11.4.169 hardening matrix (`docs/design/hardening/Status.md` Rev 3) — 9 PASS /
+2 honest SKIP:** PASS = stress+chaos, DDoS(300/300), concurrency(40, crosstalk=0),
+memory(ratio 1.0017), **P10 fail-closed**, **race/deadlock (0 DATA RACE, 11
+pkgs)**, **benchmark (200/200, p50=86ms/p95=88ms/p99=91ms, 10.84 req/s)** +
+unit/integration. SKIP (honest §11.4.3) = security ACL live-deny (no autonomous
+deny topology) + P10 egress-half (gluetun creds).
 
-**Remaining:** **#50** (cachectl restore, in flight) → **P10** (live dynamic
-boot — the usability proof; fail-closed half is data-plane-only + autonomous via
-a self-generated throwaway `helixproxy_pg_password` secret, real-VPN-egress half
-operator-gated on gluetun WireGuard creds) → **P12** (whole-branch review + full
-retest + merge no-force + prefixed tag). Follow-ups: #52 (store-tx audit
-atomicity), #53 (plaintext metrics listener, operator-gated).
+**Remaining actionable (non-operator-gated) is thinning.** Operator-gated:
+2 TRACKED security items (connectivity risk), LE Phase 4/6, P10 real-egress
+(gluetun creds), HelixQA vendoring (6 un-vendored siblings), release tag.
 
-## 2. The 28 landed commits (`git log --oneline main..HEAD`, newest first; this-session wave = newest 11)
+## 2. Landed commits (newest first)
+
+**`main` FF-tracks HEAD (§11.4.113 FF-only), so `main..HEAD` is empty — HEAD ==
+`main` == github/origin/upstream == `4626f05`.** The full feature-branch history
+since the original branch point is below; the historical table (numbered 1–28)
+is retained for the earlier construction wave.
+
+**Latest hardening wave (newest first):**
+
+| Commit | Lane | Summary |
+|---|---|---|
+| `4626f05` | security | Dante SOCKS5 SSRF hardening — block internal/link-local/loopback egress + `command:connect` (RED→GREEN + S4 guard) |
+| `4d0a7ed` | control-plane | drop dead nil-check in TestPostgresSatisfiesQueries (golangci SA4023) |
+| `916e72b` | helixqa | unblock recipe for the proxy test bank (6 un-vendored own-org siblings) |
+| `8833ccc` | letsencrypt | cert-analyzer edge-case coverage 37→55 (validity boundaries, malformed PEM, empty/IP/mixed SAN, double-wildcard) |
+| `4f983ee` | security | Squid header/version-hygiene hardening (`via off` + `forwarded_for delete` + version suppression) — RED→GREEN + S3 guard |
+| `1caaf51` | hardening | control-plane unit(100–61%)+Go-benchmarks+audit-atomicity-verified + Challenges 2/3 + §11.4.169 matrix sync |
+| `567c9e1` | hardening | P10 VPN fail-closed GREEN + race(0)/benchmark(p50=86ms) + §11.4.169 Status matrix |
+
+**Earlier construction wave (historical, numbered from the original branch point):**
 
 | # | Commit | Phase | Summary |
 |---|---|---|---|
@@ -145,23 +164,30 @@ atomicity), #53 (plaintext metrics listener, operator-gated).
 - **Existing-test bluff audit** (Stream E) — 8 bluffs across 4 scripts catalogued
   (§11.4.138), guards owed to P8.
 
-### OWED-TO-P10 (the LIVE dynamic-stack data-plane proof — NOT yet captured)
-The `dynamic` compose profile (postgres + redis + control-plane + gluetun(s) +
-squid+helper + dante) has **never been booted**; `docs/DYNAMIC_ROUTING.md` is
-explicitly DESIGN-only. The following remain **unproven live** and are the
-usability proof:
+### CAPTURED-AT-P10 (fail-closed data-plane proof — the dynamic stack HAS booted)
+The `dynamic` compose profile (postgres + redis + control-plane + squid+helper +
+dante) now **boots live**; the fail-closed half of the usability proof is
+captured:
+- `graceful_503` — **PROVEN**: tunnel DOWN (Redis `vpn:status`) → branded 503
+  `ERR_TUNNEL_DOWN` ×3 (3132-byte page) with **Squid PID unchanged**;
+  deterministic ×3 + RED-polarity guard. Evidence
+  `qa-results/dynamic/vpn_failclosed/20260701T130115Z/`.
+- `no_leak` (tunnel-down case) — **PROVEN**: `leak_seen=0` during the DOWN window
+  (no target reached while the tunnel is down).
+
+### OWED-TO-P10 (real-VPN-egress half — operator-gated on gluetun WG creds)
+Requires real gluetun WireGuard credentials (§11.4.21); still **unproven live**:
 - `vpn_real_egress` — egress IP via proxy `== tunnel exit && != host IP` **+ `wg
   transfer` Δ** (200 OK is not routing).
-- `graceful_503` — tunnel down → branded 503 with **Squid PID unchanged** → up →
-  200, live.
-- `no_leak / killswitch` — drop tunnel → **zero** target packets on the real
-  uplink (`tcpdump`) + DNS only via the intended resolver.
+- `no_leak / killswitch` (up→drop case) — drop a *real* tunnel → **zero** target
+  packets on the real uplink (`tcpdump`) + DNS only via the intended resolver.
 - per-user **407 auth challenge** live; **secret injection leak-free** at runtime.
 - **G1 residual** — full rootless kernel-WG *operation* (handshake + routing +
   throughput), only interface *creation* was spiked (§20 G1).
 - **G3 residual / P9** — concurrent / repeated SIGHUP + **route-change-mid-session**
   SOCKS path behaviour (§20 G3).
-- circuit-breaker open → failover to next up tier (P5b not yet landed).
+- circuit-breaker open → failover to next up tier — **landed** (`6bdeef9`, P5b);
+  live-under-load failover proof still owed.
 
 ## 4. Remaining phases
 
@@ -169,11 +195,11 @@ usability proof:
 |---|---|---|
 | **P5b** | per-target circuit breaker + tunnel tier-failover (`sony/gobreaker/v2`) | ✅ landed `6bdeef9` |
 | **P6**  | control-API + SSE + metrics + PAC + fail-closed mTLS | ✅ landed `62b22fe` (admin-UI templ/htmx + §11.4.170 host-rendered pixel proof = P6.2, deferred) |
-| **P8**  | fix existing-test bluffs → §11.4.3 topology dispatch / honest SKIP / §11.4.161 + §11.4.135 guards | **in flight** (2 subagents: `run-tests.sh` + `comprehensive-test.sh`) |
-| **P9**  | full test matrix + Challenges + HelixQA (all §11.4.169 types; G3 route-change-mid-session live test) | harness landed `0aca034`; live execution coupled to P10 |
-| **P10** | **live `dynamic`-mode boot + captured data-plane evidence = the usability proof** | **critical unblocker**; fail-closed half doable now, real-egress half operator-gated (gluetun WG creds) |
-| **P11** | docs sync + HTML/PDF (+DOCX where mandated) exports (this CONTINUATION + .remember are part of it) | ongoing |
-| **P12** | whole-branch review (iterate-to-GO) + full retest + merge to `main` no-force + prefixed release tag | last |
+| **P8**  | fix existing-test bluffs → §11.4.3 topology dispatch / honest SKIP / §11.4.161 + §11.4.135 guards | ✅ landed (`cd11494`/`4394643`/`2bc03de`/`8d95f8a`) |
+| **P9**  | full test matrix + Challenges + HelixQA (all §11.4.169 types; G3 route-change-mid-session live test) | §11.4.169 matrix GREEN (9 PASS/2 SKIP); Challenges 2/3; HelixQA vendoring operator-gated (6 siblings) |
+| **P10** | **live `dynamic`-mode boot + captured data-plane evidence = the usability proof** | ✅ **fail-closed half GREEN** (`567c9e1`); real-egress half operator-gated (gluetun WG creds §11.4.21) |
+| **P11** | docs sync + HTML/PDF (+DOCX where mandated) exports (this CONTINUATION + .remember are part of it) | ongoing (this Rev 6 sync) |
+| **P12** | whole-branch review (iterate-to-GO) + full retest + merge to `main` no-force + prefixed release tag | operator-gated — "keep hardening, don't tag yet" |
 
 ## 5. Binding constraints (non-negotiable)
 
@@ -198,35 +224,31 @@ usability proof:
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `cc58a0c` (== `main` == all 3 remotes github/origin/upstream; integrate any
+   `4626f05` (== `main` == all 3 remotes github/origin/upstream; integrate any
    newer foreign commit per §11.4.71, no force §11.4.113). The single canonical
    moment-valid resume file is `.remember/remember.md` (§11.4.131) — read it first.
-2. **Anti-bluff sweep + LE Phase 0–3 + task #56 — ALL DONE + committed.** LE
-   hermetic DNS-01 issuance is PROVEN (real cert from local Pebble, cert-analyzer-
-   verified, re-runnable `deploy/letsencrypt/phase3_hermetic_issue.sh` @ `b2afa7d`;
-   live-PASS Challenge `challenges/scripts/le_phase3_issuance_challenge.sh`; standing
-   guard `tests/letsencrypt/phase3_issuance_guard.sh` RED+GREEN, wired in
-   `run-tests.sh`). Task #56 observability live-/metrics-scrape PROVEN (isolated
-   trio `deploy/observability/compose.metrics.yml`, real Prometheus exposition @
-   `401234e`). CoreDNS SOA-front fixed certmagic zone-determination; the Pebble/Caddy
-   image-tag + `-strict` + `vv2.8.4` bugs were all found + fixed live.
-3. **LE Phase 5 (renewal/rotation) — ROOT-DIAGNOSED, PENDING.** Pebble ≥2.8.0
-   `/set-renewal-info` stores+serves a past ARI window (CONFIRMED), but certmagic
-   v0.21.3's persistent 6h ARI cache blocks a fast deterministic renewal (`/load`
-   + restart both read the cache). NEXT = the feasibility research
-   `docs/research/caddy_2110_ari_refetch_20260701/`: does certmagic ≥v0.25.1
-   re-fetch ARI on reload? GO ⇒ port the challtestsrv DNS provider to libdns v1.0.0
-   + rebuild the Caddy image at ≥2.11.0 + re-verify issuance+renewal. Detail in
-   `docs/research/pebble_set_renewal_info_20260701/` + `letsencrypt_renewal_20260701/`.
-   Phase 4 (LE-staging token §11.4.10) + Phase 6 (prod cutover) OPERATOR-BLOCKED.
-4. **P10 dynamic-VPN real-VPN-egress** remains operator-gated on gluetun WireGuard
-   creds (§11.4.66); the fail-closed half is autonomously doable (boot dynamic
-   stack, tunnel down → branded 503 + no leak) — booting reclaims `:53128`,
-   single-owner (§11.4.119), free the running proxy first.
-5. **Release (§11.4.40/§11.4.113/§11.4.151):** after LE Phase 5 (or an operator
-   decision to ship issuance-only) + a full retest, cut `helix_proxy-0.1.0-dev-0.0.2`
-   via GitHub AND GitLab CLIs (GitLab OPERATOR-BLOCKED — no GitLab remote) with the
-   `docs/releases/CHANGELOG_helix_proxy-0.1.0-dev-0.0.2.md` (Rev 2), FF-only onto `main`.
+2. **Continue the §11.4.126 autonomous hardening loop** (operator: "keep
+   hardening, don't tag yet"). Base proxy UP `:53128` (204); ~43% host; 4
+   `helixproxy_*` Podman secrets present. Keep dispatching 3–4 parallel
+   non-data-plane subagents on remaining actionable items (§11.4.103); the data
+   plane / `:53128` has a single owner (§11.4.119) — coordinate before any boot.
+3. **P10 fail-closed — GREEN + guarded (`567c9e1`).** Real-VPN-egress half remains
+   operator-gated on gluetun WireGuard creds (§11.4.21/.66). To re-run fail-closed:
+   4 secrets from `tests/observability/gen_test_mtls.sh` → `./start --dynamic`
+   (backgrounded) → `HELIX_DYNAMIC_STACK=1 … bash tests/dynamic/vpn_failclosed_test.sh`
+   → restore base `./stop && ./start`.
+4. **LE — issuance + renewal BOTH PROVEN (autonomous scope COMPLETE).** Phase 3
+   hermetic DNS-01 issuance + Phase 5 zero-downtime renewal/rotation are
+   cert-analyzer-verified, re-runnable, and guarded
+   (`tests/letsencrypt/phase3_issuance_guard.sh` + `phase5_rotation_guard.sh`,
+   wired in `run-tests.sh`); custom Caddy image via `deploy/letsencrypt/build.sh`;
+   cert-analyzer self-test 37→55 (`8833ccc`). Phase 4 (LE-staging token §11.4.10)
+   + Phase 6 (prod domain) OPERATOR-BLOCKED. Docs `docs/design/letsencrypt/Status.md`.
+5. **Operator-gated queue (surface, don't autonomously break):** 2 TRACKED
+   security items (Squid `dns_nameservers` DNS-leak, Dante client-side open-relay
+   — both connectivity-risk §11.4.101); LE Phase 4/6; P10 real-egress (gluetun
+   creds); HelixQA vendoring (6 un-vendored siblings, `docs/helixqa/UNBLOCK.md`);
+   the release tag `helix_proxy-0.1.0-dev-0.0.2` (operator said don't tag yet).
 6. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
    types (§11.4.169), paired §1.1 mutation, independent review → iterate-to-GO
    (§11.4.142/§11.4.125/§11.4.134), docs in sync (§11.4.60/§11.4.65/§11.4.106),
