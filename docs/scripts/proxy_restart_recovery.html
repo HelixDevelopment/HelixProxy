@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>proxy_restart_recovery</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="testschaosproxy_restart_recovery.sh-operator-guide"><code>tests/chaos/proxy_restart_recovery.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
+Detects the Squid container (READ-ONLY) and honest-<code>SKIP</code>s
+(§11.4.3) when it is absent or when the restart hook is not configured.
+The restart + recovery assertion runs when the
+<strong>conductor</strong> supplies the injection command.</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>§11.4.85 / §11.4.169 <strong>chaos</strong> suite proving the LIVE
+HTTP forward proxy (Squid, <code>localhost:53128</code>)
+<strong>recovers after a mid-flight container restart</strong> — the
+process-death / §11.4.144 detect → wait → re-attach contract:</p>
+<ol type="1">
+<li>capture a <strong>working</strong> proxied request (baseline
+<code>204</code>/<code>200</code>),</li>
+<li>inject the fault — restart the squid container (delegated, see
+below),</li>
+<li>poll the proxied request through a <strong>bounded recovery
+window</strong> and assert it recovers to
+<code>204</code>/<code>200</code>,</li>
+</ol>
+<p>emitting a <strong>categorised recovery trace</strong>
+(<code>baseline_ok</code> / <code>fault_injected</code> /
+<code>probe … state=DOWN</code> / <code>recovered … state=UP</code>)
+with per-event UTC timestamps. Every PASS cites the captured
+<code>recovery_trace.log</code> (§11.4.69).</p>
+<h2 id="fault-injection-delegated-never-hardcoded">Fault injection
+(delegated — never hardcoded)</h2>
+<p>The script <strong>never</strong> hardcodes
+<code>podman</code>/<code>docker restart</code> — the containers
+submodule (§11.4.76) plus the container/CI hard-stop forbid ad-hoc
+container commands. The restart is a <strong>config-injected</strong>
+command (§11.4.28) the conductor supplies via
+<code>PROXY_CHAOS_RESTART_CMD</code>. When it is <strong>unset</strong>,
+the fault cannot be injected autonomously, so the suite
+<code>SKIP</code>s-with-reason (<code>feature_disabled_by_config</code>)
+— the authoring agent never restarts a container.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Committed library <code>tests/lib/evidence.sh</code> (sourced).</li>
+<li><code>curl</code>, <code>awk</code>, <code>grep</code>, POSIX
+<code>sh</code>, <code>date</code>.</li>
+<li><code>podman</code> OR <code>docker</code> for READ-ONLY container
+detection (optional).</li>
+<li>For the live assertion: a running <code>proxy-squid</code> container
+<strong>and</strong> <code>PROXY_CHAOS_RESTART_CMD</code> set to a
+containers-submodule restart command.</li>
+<li>Write access to <code>qa-results/</code> (gitignored).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<ul>
+<li>Authoring / no-hook run (honest SKIP):
+<code>bash tests/chaos/proxy_restart_recovery.sh</code></li>
+<li>Conductor run with the injection hook:
+<code>PROXY_CHAOS_RESTART_CMD='&lt;containers-submodule restart proxy-squid&gt;' bash tests/chaos/proxy_restart_recovery.sh</code></li>
+<li>Under host-safety caps:
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3 PROXY_CHAOS_RESTART_CMD='…' bash tests/chaos/proxy_restart_recovery.sh</code></li>
+</ul>
+<p>Env knobs: <code>HTTP_PROXY_URL</code> (default
+<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>53128</code>), <code>CHAOS_SQUID_CONTAINER</code>
+(default <code>proxy-squid</code>), <code>CHAOS_TARGET</code> (default
+<code>https://www.gstatic.com/generate_204</code>),
+<code>CHAOS_EXPECT</code> (default <code>204 200</code>),
+<code>CHAOS_RECOVERY_TIMEOUT</code> (default <code>60</code> s — the
+reused reconnect budget), <code>CHAOS_RECOVERY_POLL</code> (default
+<code>2</code> s), <code>CURL_MAX_TIME</code> (default <code>15</code>),
+<code>PROXY_CHAOS_RESTART_CMD</code> (injection hook),
+<code>CHAOS_EVIDENCE_DIR</code> (default
+<code>qa-results/chaos/proxy_restart_&lt;ts&gt;</code>).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Squid container not running</strong> → <code>SKIP</code>
+(<code>topology_unsupported</code>). Exit <code>3</code>.</li>
+<li><strong>No healthy baseline through the proxy</strong> →
+<code>SKIP</code> (<code>topology_unsupported</code>) — a broken
+baseline is a different defect owned by the forward-proxy suites, not a
+recovery failure. Exit <code>3</code>.</li>
+<li><strong><code>PROXY_CHAOS_RESTART_CMD</code> unset</strong> →
+<code>SKIP</code> (<code>feature_disabled_by_config</code>) — the fault
+is not injectable autonomously. Exit <code>3</code>.</li>
+<li><strong>Recovers within the window</strong> → <code>PASS</code>,
+citing <code>recovery_trace.log</code>. Exit <code>0</code>.</li>
+<li><strong>Never recovers within
+<code>CHAOS_RECOVERY_TIMEOUT</code></strong> → <code>FAIL</code>. Exit
+<code>1</code>.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><code>#!/usr/bin/env bash</code>, POSIX-clean body
+(<code>sh -n</code> + <code>bash -n</code>, §11.4.67).</li>
+<li>READ-ONLY <code>podman ps</code> / <code>docker ps</code> detection
+(whole-name match).</li>
+<li>Bounded poll loop uses the reused reconnect budget (never invented,
+§11.4.6): poll every <code>CHAOS_RECOVERY_POLL</code> s up to
+<code>CHAOS_RECOVERY_TIMEOUT</code> s.</li>
+<li><code>trace()</code> writes categorised timestamped events to
+<code>recovery_trace.log</code>.</li>
+<li><code>trap ... EXIT INT TERM</code> leaves the target quiescent
+(§11.4.14).</li>
+<li>Resources: shell + curl only, single-threaded poll, well under
+§12.6.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — sourced anti-bluff evidence
+library.</li>
+<li><code>tests/dynamic/suites/chaos_suite.sh</code> — the P10
+dynamic-stack chaos suite (same delegated-injection pattern).</li>
+<li><code>tests/stress/proxy_forward_stress.sh</code>,
+<code>tests/security/proxy_acl_security.sh</code> — sibling stress +
+security suites.</li>
+<li>Constitution §11.4.85 / §11.4.169 / §11.4.144 / §11.4.69 / §11.4.28
+/ §11.4.76 / §11.4.14 / §11.4.6.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — authored; <code>sh -n</code> + <code>bash -n</code>
+parse-clean; no-hook run yields an honest SKIP. The restart + recovery
+assertion is exercised by the conductor with
+<code>PROXY_CHAOS_RESTART_CMD</code> set.</p>
+</body>
+</html>

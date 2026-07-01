@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>proxy_forward_stress</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="testsstressproxy_forward_stress.sh-operator-guide"><code>tests/stress/proxy_forward_stress.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
+Runs live against the running Squid HTTP forward proxy
+(<code>localhost:53128</code>); honest <code>SKIP</code> (§11.4.3) when
+the proxy or the target endpoint is unreachable.</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>§11.4.85 / §11.4.169 <strong>stress</strong> suite for the LIVE HTTP
+forward proxy (Squid, <code>localhost:53128</code>). It drives <strong>N
+≥ 100 sequential</strong> HTTPS-CONNECT requests through the proxy
+<strong>plus a concurrent burst of ≥ 10 parallel</strong> requests,
+captures each request’s <code>%{http_code}</code> and
+<code>%{time_total}</code> to its <strong>own file</strong> (so a
+verdict never rests on a background job’s exit status — the B3 bluff
+fix), and records a <code>p50/p95/p99</code> latency distribution to a
+captured <code>latency.txt</code>. It PASSes only when
+<strong>every</strong> proxied request succeeded
+(<code>204</code>/<code>200</code>) with no deadlock (every request
+returned within <code>--max-time</code>) and no crash. A representative
+plain-HTTP probe captures the Squid <code>Via:</code> header — hard
+client-side proof the bytes transited <code>proxy-squid</code>. Every
+PASS cites captured evidence (§11.4.69); a metadata-only PASS is
+refused.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Committed library <code>tests/lib/evidence.sh</code> (sourced —
+provides <code>_code_in</code>, <code>port_is_listening</code>,
+<code>proxy_conn_verdict</code>, <code>ab_pass_with_evidence</code>,
+<code>ab_skip_with_reason</code>).</li>
+<li><code>curl</code>, <code>awk</code>, <code>sort</code>,
+<code>grep</code>, POSIX <code>sh</code>, <code>date</code>.</li>
+<li>A running Squid forward proxy on <code>HTTP_PROXY_PORT</code> for a
+non-SKIP run.</li>
+<li>Write access to <code>qa-results/</code> (gitignored).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<ul>
+<li>Default run against <code>localhost:53128</code>:
+<code>bash tests/stress/proxy_forward_stress.sh</code></li>
+<li>Conductor invocation under host-safety caps (§12.6):
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/stress/proxy_forward_stress.sh</code></li>
+<li>Custom load / target:
+<code>STRESS_SEQ=100 STRESS_CONC=10 STRESS_TARGET=https://www.gstatic.com/generate_204 bash tests/stress/proxy_forward_stress.sh</code></li>
+</ul>
+<p>Env knobs: <code>HTTP_PROXY_URL</code> (default
+<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>53128</code>), <code>STRESS_TARGET</code> (default
+<code>https://www.gstatic.com/generate_204</code>),
+<code>STRESS_EXPECT</code> (default <code>204 200</code>),
+<code>STRESS_VIA_TARGET</code> (default
+<code>http://www.gstatic.com/generate_204</code>),
+<code>STRESS_SEQ</code> (default <code>100</code>),
+<code>STRESS_CONC</code> (default <code>10</code>),
+<code>CURL_MAX_TIME</code> (default <code>20</code>),
+<code>STRESS_EVIDENCE_DIR</code> (default
+<code>qa-results/stress/proxy_forward_&lt;ts&gt;</code>).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Every proxied request succeeds</strong> → <code>PASS</code>,
+citing <code>latency.txt</code>. Exit <code>0</code>.</li>
+<li><strong>Some requests dropped BUT the target is reachable
+directly</strong> → <code>FAIL</code>, a real proxy defect / possible
+deadlock (§11.4.68 — a listening-but-dropping proxy can never fail-open
+to SKIP). Exit <code>1</code>.</li>
+<li><strong>Requests dropped AND the target is unreachable directly
+too</strong> → <code>SKIP</code>
+(<code>network_unreachable_external</code>) — a third-party outage is
+not a proxy defect (§11.4.1). Exit <code>3</code>.</li>
+<li><strong>Proxy port not listening + no direct signal</strong> →
+<code>SKIP</code> (<code>topology_unsupported</code>). Exit
+<code>3</code>.</li>
+<li><strong>Deadlock guard</strong>: no request can exceed
+<code>CURL_MAX_TIME</code>; a hung request reports <code>000</code> and
+counts as a failure — never hangs the suite.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><code>#!/usr/bin/env bash</code>, POSIX-clean body
+(<code>sh -n</code> + <code>bash -n</code>, §11.4.67).</li>
+<li>Step 0 Via corroboration probe (plain HTTP) →
+<code>via_probe_headers.txt</code>.</li>
+<li>Sequential loop → <code>seq.N.code</code>; concurrent burst →
+<code>conc.N.code</code> / <code>conc.N.time</code> (bounded by
+<code>STRESS_CONC</code>); latency samples sorted numerically;
+nearest-rank <code>p50/p95/p99</code> + <code>min/max/mean</code>
+computed in <code>awk</code> → <code>latency.txt</code>. Summary →
+<code>stress.evidence</code>.</li>
+<li><code>trap ... EXIT INT TERM</code> reaps stray workers and removes
+the scratch dir (§11.4.14).</li>
+<li>Resources: shell + curl only, capped concurrency, well under the
+§12.6 60% host-memory ceiling.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — sourced anti-bluff evidence
+library.</li>
+<li><code>challenges/scripts/proxy_forward_http_challenge.sh</code> —
+the functional forward Challenge this stress suite complements.</li>
+<li><code>tests/chaos/proxy_restart_recovery.sh</code>,
+<code>tests/security/proxy_acl_security.sh</code> — sibling chaos +
+security suites.</li>
+<li>Constitution §11.4.85 / §11.4.169 / §11.4.69 / §11.4.1 / §11.4.68 /
+§11.4.50 / §11.4.107 / §12.6.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — authored; <code>sh -n</code> + <code>bash -n</code>
+parse-clean. Live sustained / concurrent load is exercised by the
+conductor against the running proxy.</p>
+</body>
+</html>

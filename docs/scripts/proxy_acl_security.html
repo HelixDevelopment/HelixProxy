@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>proxy_acl_security</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="testssecurityproxy_acl_security.sh-operator-guide"><code>tests/security/proxy_acl_security.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
+Runs live against the running Squid HTTP forward proxy
+(<code>localhost:53128</code>); honest <code>SKIP</code> (§11.4.3) when
+the proxy or the header-echo endpoint is unreachable.</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script.</p>
+</blockquote>
+<h2 id="overview">Overview</h2>
+<p>§11.4.169 / §11.4.85 <strong>security</strong> suite asserting the
+LIVE HTTP forward proxy’s ACL + header-hygiene posture with captured
+evidence (§11.4.69). Two hard-gated anti-bluff checks:</p>
+<ul>
+<li><strong>S1 — ACL deny does not leak.</strong> A request the proxy
+MUST deny — a <code>CONNECT</code> to a non-SSL port, blocked by the
+shipped Squid rule <code>http_access deny CONNECT !SSL_ports</code> —
+must return the expected deny code (<code>403</code> Forbidden, or
+<code>407</code> when per-user proxy-auth is configured) and NEVER a
+<code>2xx</code>/<code>3xx</code> success. A success code for a
+must-deny target is a real LEAK (§11.4.68) → <code>FAIL</code>.</li>
+<li><strong>S2 — header hygiene.</strong> The hop-by-hop
+<code>Proxy-Authorization</code> credential the client sends to the
+proxy must NOT be forwarded to the upstream ORIGIN. Proven by echoing
+the request back from <code>httpbin.org/headers</code> (plain HTTP so
+Squid parses and strips hop-by-hop headers) and asserting a client
+SENTINEL header IS echoed (the request really reached the origin THROUGH
+the proxy) WHILE <code>Proxy-Authorization</code> is ABSENT (stripped —
+no credential leak). A <code>Proxy-Authorization</code> echoed at the
+origin is a credential LEAK → <code>FAIL</code>.</li>
+</ul>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>End-to-end <code>Authorization</code> / <code>Cookie</code> headers
+are addressed to the origin the client chose and ARE forwarded by design
+— that is <strong>not</strong> a leak. This suite gates on the
+hop-by-hop <code>Proxy-Authorization</code> (which must never reach the
+origin) and captures <code>X-Forwarded-For</code> presence as
+<strong>informational</strong> evidence only (default Squid
+<code>forwarded_for on</code>), never a hard gate. The “credential” sent
+in S2 is a throwaway base64 of <code>sentinel:leak</code> — deliberately
+worthless, so asserting it is stripped never logs a real secret
+(§11.4.10).</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Committed library <code>tests/lib/evidence.sh</code> (sourced —
+<code>_code_in</code>, <code>port_is_listening</code>,
+<code>ab_pass_with_evidence</code>,
+<code>ab_skip_with_reason</code>).</li>
+<li><code>curl</code>, <code>awk</code>, <code>grep</code>, POSIX
+<code>sh</code>, <code>date</code>.</li>
+<li>A running Squid forward proxy on <code>HTTP_PROXY_PORT</code> for a
+non-SKIP run.</li>
+<li>Outbound reachability to the header-echo endpoint for S2.</li>
+<li>Write access to <code>qa-results/</code> (gitignored).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<ul>
+<li>Default run against <code>localhost:53128</code>:
+<code>bash tests/security/proxy_acl_security.sh</code></li>
+<li>Under host-safety caps (§12.6):
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/security/proxy_acl_security.sh</code></li>
+<li>Custom deny target / echo endpoint:
+<code>SEC_DENY_TARGET=https://example.com:81/ SEC_HEADER_ECHO_URL=http://httpbin.org/headers bash tests/security/proxy_acl_security.sh</code></li>
+</ul>
+<p>Env knobs: <code>HTTP_PROXY_URL</code> (default
+<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>53128</code>), <code>SEC_DENY_TARGET</code> (default
+<code>https://example.com:81/</code>), <code>SEC_DENY_EXPECT</code>
+(default <code>403 407</code>), <code>SEC_HEADER_ECHO_URL</code>
+(default <code>http://httpbin.org/headers</code>),
+<code>CURL_MAX_TIME</code> (default <code>15</code>),
+<code>SEC_EVIDENCE_DIR</code> (default
+<code>qa-results/security/proxy_acl_&lt;ts&gt;</code>).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Deny enforced (<code>403</code>/<code>407</code>)</strong> →
+S1 <code>PASS</code>, citing <code>s1_acl_deny.evidence</code>.</li>
+<li><strong>Success code for a must-deny target</strong> → S1
+<code>FAIL</code> (ACL LEAK, §11.4.68).</li>
+<li><strong>Proxy port not listening / unexpected deny code</strong> →
+S1 honest <code>SKIP</code> (<code>topology_unsupported</code>) — cannot
+prove a clean deny nor a leak.</li>
+<li><strong>Canary echoed AND <code>Proxy-Authorization</code>
+absent</strong> → S2 <code>PASS</code>, citing
+<code>s2_header_hygiene.evidence</code>.</li>
+<li><strong><code>Proxy-Authorization</code> echoed at the
+origin</strong> → S2 <code>FAIL</code> (credential LEAK).</li>
+<li><strong>Origin echo not captured through the proxy</strong> → S2
+<code>SKIP</code> (<code>network_unreachable_external</code>) — the
+security property is not assertable now.</li>
+<li><strong>Aggregate</strong>: <code>FAIL</code> if any check FAILs;
+<code>PASS</code> if ≥ 1 PASS and 0 FAIL; else <code>SKIP</code>. Exit
+<code>1</code> / <code>0</code> / <code>3</code>.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><code>#!/usr/bin/env bash</code>, POSIX-clean body
+(<code>sh -n</code> + <code>bash -n</code>, §11.4.67).</li>
+<li>S1 classifies the deny code with a success-code recogniser so a
+<code>2xx</code>/<code>3xx</code> is an unambiguous leak;
+<code>403</code>/<code>407</code> is deny-enforced.</li>
+<li>S2 sends a non-secret sentinel canary + a throwaway
+<code>Proxy-Authorization</code>; cross-checks the origin echo (canary
+present ⇒ request transited the proxy) and asserts the hop-by-hop
+credential was stripped.</li>
+<li><code>trap ... EXIT INT TERM</code> cleanup (§11.4.14). Resources:
+shell + curl only, well under §12.6.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/lib/evidence.sh</code> — sourced anti-bluff evidence
+library.</li>
+<li><code>tests/dynamic/analyzers/auth_407_analyzer.sh</code> — the
+per-user-auth 407/200 oracle (complementary auth signal).</li>
+<li><code>tests/stress/proxy_forward_stress.sh</code>,
+<code>tests/chaos/proxy_restart_recovery.sh</code> — sibling stress +
+chaos suites.</li>
+<li>Constitution §11.4.169 / §11.4.85 / §11.4.69 / §11.4.68 / §11.4.1 /
+§11.4.6 / §11.4.10 / §12.6.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — authored; <code>sh -n</code> + <code>bash -n</code>
+parse-clean. The ACL-deny + header- hygiene assertions run live against
+the running proxy under the conductor.</p>
+</body>
+</html>
