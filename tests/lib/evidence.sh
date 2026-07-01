@@ -174,6 +174,84 @@ ab_skip_with_reason() {
 }
 
 # ----------------------------------------------------------------------------
+# Through-proxy connectivity verdict (client-side functional checks).
+# ----------------------------------------------------------------------------
+
+# _code_in <code> <space-separated-list>
+# 0 iff <code> is a WHOLE token of the list (never a substring).
+_code_in() {
+    _ci_code=$1
+    for _ci_t in $2; do
+        [ "$_ci_code" = "$_ci_t" ] && return 0
+    done
+    return 1
+}
+
+# proxy_conn_verdict <proxy_code> <direct_code> <expected_codes> <port_listening>
+# PURE classifier (no network) for a through-proxy connectivity check. It closes
+# BOTH failure modes at once:
+#   - §11.4.1 false-FAIL: a third-party / local-internet outage must NOT FAIL a
+#     healthy proxy — it SKIPs (network_unreachable_external).
+#   - §11.4.68 fail-OPEN: a genuinely broken proxy must NOT be masked as a SKIP —
+#     when the site IS reachable directly but the proxy cannot fetch it, that is a
+#     real defect and FAILs.
+# Decision (first match wins), printing exactly one of PASS | FAIL | SKIP:<reason>:
+#   proxy_code in expected                       -> PASS
+#   proxy miss, direct_code in expected          -> FAIL
+#        (the SAME URL is reachable DIRECTLY, so the network + site are proven up
+#         and the proxy is at fault — whether its port is misconfigured-but-listening
+#         OR the process crashed / never bound the port. This out-ranks the port
+#         probe so a DEAD proxy on a working host can never fail-open to SKIP §11.4.68.)
+#   proxy miss, direct miss, port listening      -> SKIP:network_unreachable_external
+#        (proxy is up but neither it nor a direct fetch reach the site — the site /
+#         internet is down, not the proxy's fault; §11.4.3.)
+#   proxy miss, direct miss, port NOT listening  -> SKIP:topology_unsupported
+#        (proxy absent AND no positive network signal to substantiate a FAIL — an
+#         honest topology SKIP, never a fabricated PASS and never an unprovable FAIL.)
+# NOTE (§11.4.68, reviewer catch): the port-listening probe MUST NOT out-rank a
+# positive direct-reachability signal. There is no config flag under which the
+# proxy is legitimately absent for verify-proxy.sh / final-verify.sh, so "nothing
+# listening + site reachable directly" means the proxy crashed — a real defect —
+# NOT a topology absence. Hence direct-in-expected FAILs first, and the port probe
+# only distinguishes the two ambiguous SKIP reasons (both already non-FAIL).
+# <expected_codes> is a space-separated list of acceptable HTTP codes for BOTH the
+# proxied and the direct probe of the SAME URL (e.g. "204" or "200 301 302").
+proxy_conn_verdict() {
+    _pcv_proxy=$1
+    _pcv_direct=$2
+    _pcv_expected=$3
+    _pcv_listening=$4
+    if _code_in "$_pcv_proxy" "$_pcv_expected"; then
+        printf 'PASS\n'; return 0
+    fi
+    if _code_in "$_pcv_direct" "$_pcv_expected"; then
+        printf 'FAIL\n'; return 0
+    fi
+    if [ "$_pcv_listening" = "yes" ]; then
+        printf 'SKIP:network_unreachable_external\n'; return 0
+    fi
+    printf 'SKIP:topology_unsupported\n'; return 0
+}
+
+# port_is_listening <port>
+# 0 iff something is LISTENing on <port> locally. Live host-stack check (ss, else
+# netstat) — used to distinguish "proxy absent" (SKIP:topology_unsupported) from
+# "proxy broken" (FAIL) for proxy_conn_verdict. NOT pure (inspects the network
+# stack); the pure decision lives in proxy_conn_verdict, which IS self-tested.
+port_is_listening() {
+    _pil_port=$1
+    if command -v ss >/dev/null 2>&1; then
+        ss -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$_pil_port\$"
+        return $?
+    fi
+    if command -v netstat >/dev/null 2>&1; then
+        netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$_pil_port\$"
+        return $?
+    fi
+    return 1
+}
+
+# ----------------------------------------------------------------------------
 # Data-plane evidence probes.
 # ----------------------------------------------------------------------------
 

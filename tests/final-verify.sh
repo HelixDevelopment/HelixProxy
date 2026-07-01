@@ -21,6 +21,7 @@ NC='\033[0m'
 
 PASS=0
 FAIL=0
+SKIP=0
 
 # §11.4.1 enabler: assignment form, NOT (( PASS++ )) / (( FAIL++ )). Under
 # `set -e` a post-increment whose prior value is 0 evaluates the (( )) to 0,
@@ -29,6 +30,37 @@ FAIL=0
 test_pass() { echo -e "${GREEN}✓${NC} $1"; PASS=$((PASS + 1)); }
 test_fail() { echo -e "${RED}✗${NC} $1"; FAIL=$((FAIL + 1)); }
 
+# Data-plane anti-bluff evidence helpers (proxy_conn_verdict / port_is_listening /
+# ab_skip_with_reason / assert_egress_ip). Sourced up-front so the connectivity
+# checks below can CLASSIFY a proxy miss instead of blindly FAILing on a
+# third-party/local-internet outage (§11.4.1 / discovery-sweep F3).
+. "$SCRIPT_DIR/lib/evidence.sh"
+
+# conn_check <label> <scheme> <port> <url> <expected-codes>
+# Anti-bluff through-proxy connectivity check: proxy returns expected -> PASS; a
+# site outage (proxy AND direct both fail) -> SKIP (no §11.4.1 false-FAIL); the
+# proxy is up but cannot fetch a site reachable DIRECTLY -> FAIL (no §11.4.68
+# fail-open of a real defect); the proxy port is not listening -> SKIP (absent).
+conn_check() {
+    _cc_label=$1; _cc_scheme=$2; _cc_port=$3; _cc_url=$4; _cc_expected=$5
+    _cc_pc=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+        --proxy "${_cc_scheme}://localhost:${_cc_port}" "$_cc_url" 2>/dev/null || echo "000")
+    if _code_in "$_cc_pc" "$_cc_expected"; then
+        test_pass "$_cc_label (code: $_cc_pc)"
+        return 0
+    fi
+    _cc_dc=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$_cc_url" 2>/dev/null || echo "000")
+    _cc_listen=no
+    if port_is_listening "$_cc_port"; then _cc_listen=yes; fi
+    _cc_v=$(proxy_conn_verdict "$_cc_pc" "$_cc_dc" "$_cc_expected" "$_cc_listen")
+    case "$_cc_v" in
+        PASS)   test_pass "$_cc_label (code: $_cc_pc)" ;;
+        FAIL)   test_fail "$_cc_label (proxy code: $_cc_pc, site reachable directly: $_cc_dc)" ;;
+        SKIP:*) ab_skip_with_reason "$_cc_label (proxy code: $_cc_pc, direct: $_cc_dc)" "${_cc_v#SKIP:}"
+                SKIP=$((SKIP + 1)) ;;
+    esac
+}
+
 echo -e "${CYAN}"
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║           PROXY SERVICE FINAL VERIFICATION                   ║"
@@ -36,40 +68,16 @@ echo "╚═══════════════════════�
 echo -e "${NC}\n"
 
 # 1. HTTP Proxy
-echo "Testing HTTP Proxy (port ${HTTP_PROXY_PORT})..."
-code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 --proxy http://localhost:${HTTP_PROXY_PORT} 'http://connectivitycheck.gstatic.com/generate_204' 2>/dev/null || echo "000")
-if [[ "$code" == "204" ]]; then
-    test_pass "HTTP Proxy working (code: $code)"
-else
-    test_fail "HTTP Proxy (code: $code)"
-fi
+conn_check "HTTP Proxy" http "$HTTP_PROXY_PORT" 'http://connectivitycheck.gstatic.com/generate_204' '204'
 
-# 2. HTTPS through HTTP Proxy  
-echo "Testing HTTPS through HTTP Proxy..."
-code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 --proxy http://localhost:${HTTP_PROXY_PORT} 'https://www.google.com' 2>/dev/null || echo "000")
-if [[ "$code" =~ ^(200|301|302)$ ]]; then
-    test_pass "HTTPS through HTTP Proxy (code: $code)"
-else
-    test_fail "HTTPS through HTTP Proxy (code: $code)"
-fi
+# 2. HTTPS through HTTP Proxy
+conn_check "HTTPS through HTTP Proxy" http "$HTTP_PROXY_PORT" 'https://www.google.com' '200 301 302'
 
 # 3. SOCKS5 Proxy
-echo "Testing SOCKS5 Proxy (port ${SOCKS_PROXY_PORT})..."
-code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 --proxy socks5://localhost:${SOCKS_PROXY_PORT} 'http://connectivitycheck.gstatic.com/generate_204' 2>/dev/null || echo "000")
-if [[ "$code" == "204" ]]; then
-    test_pass "SOCKS5 Proxy working (code: $code)"
-else
-    test_fail "SOCKS5 Proxy (code: $code)"
-fi
+conn_check "SOCKS5 Proxy" socks5 "$SOCKS_PROXY_PORT" 'http://connectivitycheck.gstatic.com/generate_204' '204'
 
 # 4. HTTPS through SOCKS5
-echo "Testing HTTPS through SOCKS5..."
-code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 --proxy socks5://localhost:${SOCKS_PROXY_PORT} 'https://www.google.com' 2>/dev/null || echo "000")
-if [[ "$code" =~ ^(200|301|302)$ ]]; then
-    test_pass "HTTPS through SOCKS5 (code: $code)"
-else
-    test_fail "HTTPS through SOCKS5 (code: $code)"
-fi
+conn_check "HTTPS through SOCKS5" socks5 "$SOCKS_PROXY_PORT" 'https://www.google.com' '200 301 302'
 
 # 5. VPN Routing — §11.4.69 data-plane egress proof (anti-bluff audit B5).
 #    OLD BLUFF (removed): host_ip == proxy_ip => test_pass "VPN routing verified".
@@ -81,7 +89,6 @@ fi
 #    (§11.4.3) — we do NOT fabricate a VPN PASS; the live RED/GREEN proof is
 #    deferred to P10 (needs a real tunnel + VPN_EXIT_IP).
 echo "Verifying VPN routing..."
-. "$SCRIPT_DIR/lib/evidence.sh"
 EXPECTED_EXIT_IP="${VPN_EXIT_IP:-}"
 if [[ -n "$EXPECTED_EXIT_IP" ]]; then
     host_ip=$(curl -s -4 --max-time 15 https://ifconfig.me 2>/dev/null || echo "unknown")
@@ -92,12 +99,13 @@ if [[ -n "$EXPECTED_EXIT_IP" ]]; then
     fi
 else
     ab_skip_with_reason "VPN routing (egress == expected tunnel exit, != host)" "operator_attended"
+    SKIP=$((SKIP + 1))
 fi
 
 # Summary
 echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║  SUMMARY: ${GREEN}Passed: $PASS${NC} ${RED}Failed: $FAIL${NC}                              ${NC}"
+echo -e "${CYAN}║  SUMMARY: ${GREEN}Passed: $PASS${NC} ${RED}Failed: $FAIL${NC} Skipped: $SKIP                  ${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 

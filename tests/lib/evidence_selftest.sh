@@ -152,6 +152,28 @@ check_value 1500  "procdev_field: wg0 rx-packets (field 2)" \
 check_value 87654 "procdev_field: eth0 tx-packets (field 10)" \
     "$(procdev_field "$FIX/proc_net_dev.snapshot" eth0 10)"
 
+# --- proxy_conn_verdict (client-side connectivity classifier, BUGFIX-0014) --
+# The whole point: never false-FAIL on a site outage (§11.4.1), never fail-OPEN a
+# real proxy defect into a SKIP (§11.4.68). Both polarities asserted, including the
+# reviewer-caught crashed-proxy case: a positive DIRECT signal out-ranks the port
+# probe, so a DEAD proxy (port not listening) on a working host FAILs, never SKIPs.
+check_value PASS "proxy_conn_verdict: proxy returns expected -> PASS" \
+    "$(proxy_conn_verdict 204 000 '204' yes)"
+check_value FAIL "proxy_conn_verdict: proxy miss + site reachable directly (port up) -> FAIL (defect NOT masked)" \
+    "$(proxy_conn_verdict 000 204 '204' yes)"
+check_value FAIL "proxy_conn_verdict: proxy CRASHED (port down) + site reachable directly -> FAIL (no §11.4.68 fail-open)" \
+    "$(proxy_conn_verdict 000 204 '204' no)"
+check_value SKIP:network_unreachable_external "proxy_conn_verdict: proxy miss + site also down (port up) -> SKIP outage (no false-FAIL)" \
+    "$(proxy_conn_verdict 000 000 '204' yes)"
+check_value SKIP:topology_unsupported "proxy_conn_verdict: proxy absent (port down) + no network signal -> SKIP topology (unprovable)" \
+    "$(proxy_conn_verdict 000 000 '204' no)"
+check_value PASS "proxy_conn_verdict: multi-code expected (301 in '200 301 302') -> PASS" \
+    "$(proxy_conn_verdict 301 000 '200 301 302' yes)"
+check_value FAIL "proxy_conn_verdict: multi-code expected, proxy miss + direct 200 -> FAIL" \
+    "$(proxy_conn_verdict 000 200 '200 301 302' yes)"
+check_value SKIP:network_unreachable_external "proxy_conn_verdict: _code_in exact-match (20 does NOT match '200') -> not PASS" \
+    "$(proxy_conn_verdict 20 000 '200' yes)"
+
 # --- TAP plan + summary -----------------------------------------------------
 printf '1..%d\n' "$TESTS"
 printf '# tests=%d passed=%d failed=%d\n' "$TESTS" "$((TESTS - FAILS))" "$FAILS"

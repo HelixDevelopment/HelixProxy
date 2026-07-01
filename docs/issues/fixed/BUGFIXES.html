@@ -1457,5 +1457,129 @@ host-power invocation.</p>
 <code>tests/regression/no_suspend_export_sibling_test.sh</code>;
 companion
 <code>docs/scripts/no_suspend_export_sibling_test.md</code>.</p>
+<h2
+id="bugfix-0014--proxy-connectivity-checks-false-fail-on-a-third-party--local-internet-outage-f2f3">BUGFIX-0014
+— proxy-connectivity checks false-FAIL on a third-party / local-internet
+outage (F2/F3)</h2>
+<ul>
+<li><strong>Type:</strong> Bug (test-suite integrity — a §11.4.1
+false-FAIL; the connectivity scripts hard-FAILed a healthy proxy
+whenever the probed SITE was unreachable, making them non-deterministic
+(§11.4.50) and not re-runnable (§11.4.98))</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong> <code>tests/lib/evidence.sh</code>
+(new <code>proxy_conn_verdict</code> classifier
+<ul>
+<li><code>_code_in</code> + <code>port_is_listening</code>),
+<code>tests/verify-proxy.sh</code> + <code>tests/final-verify.sh</code>
+(tests 1–4 routed through a <code>conn_check</code> helper),
+<code>tests/lib/evidence_selftest.sh</code> (8 truth-table cases, now
+37/37), <code>tests/regression/proxy_conn_verdict_test.sh</code> (new
+§11.4.135 guard), <code>tests/run-tests.sh</code> (guard registered,
+GREEN+RED), <code>docs/scripts/proxy_conn_verdict_test.md</code>
+(companion), + <code>.html</code>/<code>.pdf</code>.</li>
+</ul></li>
+<li><strong>Discovered by:</strong> the §11.4.118 anti-bluff discovery
+sweep (findings F2/F3, CONFIRMED).</li>
+</ul>
+<p>Root cause: <code>verify-proxy.sh</code> and
+<code>final-verify.sh</code> classified every through-proxy check as
+<code>code == expected -&gt; PASS else FAIL</code>. That conflates two
+entirely different worlds: (a) the proxy is broken (a real defect worth
+a FAIL), and (b) the <em>site</em> the probe targets is momentarily
+unreachable (an external outage the proxy cannot be blamed for). When
+<code>connectivitycheck.gstatic.com</code> / <code>www.google.com</code>
+blip — or the host has no egress at all — a perfectly healthy proxy
+scored FAIL. That is a §11.4.1 false-FAIL: the suite reports a product
+defect that does not exist, and cannot be re-run to a stable
+verdict.</p>
+<p>Fix: a single client-side classifier
+<code>proxy_conn_verdict &lt;proxy_code&gt; &lt;direct_code&gt; &lt;expected&gt; &lt;port_listening&gt;</code>
+in the shared <code>evidence.sh</code> — the <em>sink-side</em>
+discipline of BUGFIX-0012 (<code>_external_egress_verdict</code>)
+applied to the <em>client</em> side:</p>
+<table>
+<thead>
+<tr>
+<th>proxy in expected</th>
+<th>direct in expected</th>
+<th>port listening</th>
+<th>verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>yes</td>
+<td>—</td>
+<td>—</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>no</td>
+<td>yes</td>
+<td>—</td>
+<td><strong>FAIL</strong> (site reachable directly, proxy can't serve it
+— a real defect whether the port is up-but-broken OR the proxy crashed;
+the positive direct signal out-ranks the port probe, §11.4.68 not
+fail-open)</td>
+</tr>
+<tr>
+<td>no</td>
+<td>no</td>
+<td>yes</td>
+<td><strong>SKIP:network_unreachable_external</strong> (site outage — no
+§11.4.1 false-FAIL)</td>
+</tr>
+<tr>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td><strong>SKIP:topology_unsupported</strong> (proxy absent AND no
+network signal to substantiate a FAIL)</td>
+</tr>
+</tbody>
+</table>
+<p><code>verify-proxy.sh</code> / <code>final-verify.sh</code> call it
+through a <code>conn_check</code> wrapper; the VPN egress check is
+unchanged (still an honest <code>operator_attended</code> SKIP absent a
+live tunnel, §11.4.52).</p>
+<p><strong>Independent-review reconciliation
+(§11.4.120/§11.4.134):</strong> the first cut gated the port-listening
+probe <em>before</em> the direct-reachability check, so a fully-crashed
+proxy (port down) on a host with working internet resolved to
+<code>SKIP:topology_unsupported</code> instead of <code>FAIL</code> — a
+§11.4.68 fail-open (the <code>conn_check</code> consumers gate their
+exit banner on the FAIL counter only). An independent reviewer caught
+it; the fix was reconciled (not fake-passed): a positive
+<strong>direct</strong>-reachability signal now out-ranks the port
+probe, so a dead-proxy-on-a-working-host FAILs; the port probe only
+distinguishes the two already-non-FAIL SKIP reasons. The guard +
+selftest truth tables were updated to pin the corrected behaviour
+(<code>000 204 '204' no -&gt; FAIL</code>).</p>
+<h3
+id="verification-captured-114115-redgreen--11--114146-reproduce-first-1">Verification
+(captured, §11.4.115 RED→GREEN + §1.1 + §11.4.146 reproduce-first)</h3>
+<pre><code># unit truth table (both polarities of the classifier, incl. crashed-proxy + exact-match cases):
+$ bash tests/lib/evidence_selftest.sh              -&gt; 1..37  tests=37 passed=37 failed=0
+# §11.4.135 guard:
+$ tests/regression/proxy_conn_verdict_test.sh            -&gt; [PASS] GREEN (PASS/FAIL/SKIP truth table)
+$ RED_MODE=1 tests/regression/proxy_conn_verdict_test.sh -&gt; [PASS] RED reproduces the pre-fix false-FAIL (proxy=000 outage =&gt; FAIL)
+# §1.1 paired mutation — outage branch SKIP -&gt; FAIL in evidence.sh proxy_conn_verdict:
+$ (mutated) proxy_conn_verdict_test.sh   -&gt; [FAIL] MISMATCH: proxy_conn_verdict 000 000 204 yes -&gt; FAIL (want SKIP) ; restore byte-identical (md5 0d70728…ced5) -&gt; PASS
+# live smoke against the running proxy (:53128 / :51080):
+$ bash tests/verify-proxy.sh   -&gt; 4 PASS + 1 SKIP (VPN operator_attended), exit 0
+$ bash tests/final-verify.sh   -&gt; 4 PASS + 1 SKIP (VPN operator_attended), exit 0</code></pre>
+<p>Honest boundary (§11.4.6): a test-suite-integrity fix — it makes the
+connectivity checks deterministic + re-runnable and refuses to score a
+proxy FAIL for a site the host itself cannot reach; it changes NO
+product behaviour and STILL FAILs a genuine proxy defect (proxy down
+while the site is reachable directly). The narrower F1
+(comprehensive-test.sh canaries) is tracked as its own focused pass to
+give each canary the defect-vs-intentional-probe judgment it needs.</p>
+<p>Evidence: guard
+<code>tests/regression/proxy_conn_verdict_test.sh</code>; unit
+<code>tests/lib/evidence_selftest.sh</code>; companion
+<code>docs/scripts/proxy_conn_verdict_test.md</code>.</p>
 </body>
 </html>

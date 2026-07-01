@@ -605,6 +605,29 @@ test_regression_guards() {
         test_result "BUGFIX-0012 external-egress false-FAIL RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # BUGFIX-0014 (discovery-sweep F2/F3) — GREEN guard: evidence.sh
+    # proxy_conn_verdict (the client-side connectivity classifier now used by
+    # verify-proxy.sh + final-verify.sh) must SKIP a site OUTAGE (proxy+direct
+    # both fail) instead of a §11.4.1 false-FAIL, while still FAILing a real
+    # proxy defect (proxy miss but the site is reachable directly — §11.4.68
+    # not fail-open) and SKIPping an absent port (topology).
+    if bash "$SCRIPT_DIR/regression/proxy_conn_verdict_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0014 proxy-conn-verdict outage SKIP not FAIL (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-0014 proxy-conn-verdict outage SKIP not FAIL (GREEN)" "FAIL" \
+            "run: bash tests/regression/proxy_conn_verdict_test.sh"
+    fi
+
+    # BUGFIX-0014 — RED self-check: the pre-fix (code != expected => FAIL) replica
+    # must FAIL a proxy miss on an external outage. RED that cannot reproduce is a
+    # §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/proxy_conn_verdict_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-0014 proxy-conn-verdict false-FAIL RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-0014 proxy-conn-verdict false-FAIL RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################
