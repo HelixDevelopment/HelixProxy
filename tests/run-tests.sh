@@ -544,6 +544,27 @@ test_regression_guards() {
         test_result "BUGFIX-CACHECLI cache CLI absent RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # BUGFIX-ADMIN-TOPOLOGY (P12 retest finding 2) — GREEN guard: comprehensive-
+    # test.sh's _port_topology_check must SKIP a port held by a NON-project process
+    # (never fail-open PASS on a foreign responder — §11.4.68/§11.4.69) AND PASS an
+    # owner-published+listening port.
+    if bash "$SCRIPT_DIR/regression/comprehensive_admin_topology_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-ADMIN-TOPOLOGY fail-open refused (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-ADMIN-TOPOLOGY fail-open refused (GREEN)" "FAIL" \
+            "run: bash tests/regression/comprehensive_admin_topology_test.sh"
+    fi
+
+    # BUGFIX-ADMIN-TOPOLOGY — RED self-check: the pre-fix replica (listening=>PASS)
+    # must reproduce the fail-open bluff on a foreign-held port. A RED that cannot
+    # reproduce is a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/comprehensive_admin_topology_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-ADMIN-TOPOLOGY fail-open RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-ADMIN-TOPOLOGY fail-open RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################

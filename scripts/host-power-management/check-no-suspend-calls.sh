@@ -35,10 +35,21 @@ EXCLUDE_DIRS=(
   # the submodule polices its own compliance. Added during constitution
   # submodule init; same class as the vendor/third_party exclusions above.
   "constitution"
+  # CONST-033 non-host context (justified): every vendored/owned git submodule
+  # under submodules/ (challenges, containers, helix_qa, docs_chain, …) DOCUMENTS
+  # the forbidden host-power commands and/or ships its OWN CONST-033 guard — the
+  # parent scanner does not police a submodule's internals; each submodule
+  # polices its own compliance (§11.4.28). Same class as the `constitution`
+  # exclusion above and the vendor/third_party exclusions.
+  "submodules"
   "cli_agents" "MCP" "MCP_Module/submodules"
   ".cache" ".gradle" ".idea" ".vscode" ".venv" "venv" "__pycache__"
   "build" "dist" "target" "out" "bin" "obj"
   "releases"
+  # Generated / gitignored output trees — never shippable source. They also
+  # capture this scanner's OWN output (which lists the banned commands), so
+  # scanning them is self-referential (§11.4.1 false-FAIL).
+  "qa-results" "recordings" "logs"
 )
 
 # File-path substrings allowlisted (the canonical artifacts and
@@ -47,7 +58,7 @@ EXCLUDE_PATHS=(
   "host-power-management/"
   "host_no_auto_suspend_challenge.sh"
   "no_suspend_calls_challenge.sh"
-  "HOST_POWER_MANAGEMENT.md"
+  "HOST_POWER_MANAGEMENT."
   "CONSTITUTION.md"
   "CONSTITUTION.json"
   "AGENTS.md"

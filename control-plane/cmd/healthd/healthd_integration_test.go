@@ -25,8 +25,12 @@ import (
 	"digital.vasic.helixproxy/controlplane/internal/vpn"
 )
 
-// A syntactically valid (length-correct, base64) but BOGUS WireGuard key — enough
-// for gluetun to start its control server without a real tunnel (spike G4).
+// FABRICATED, non-functional WireGuard-key-SHAPED test fixtures (§11.4.10):
+// length-correct base64 that is NOT real key material — it protects nothing,
+// dials nothing, and exists only so gluetun starts its control server without a
+// real tunnel in this local integration test (spike G4). Safe to track: not a
+// secret (a secret-scanner hit here is a false positive). Never reused as a real
+// key. Do NOT replace with operator key material — that WOULD be a §11.4.10 leak.
 const (
 	fakeWGPriv = "QODfjyV0bXFvVX9RVy5pIkPCQ8Yt3DkpVcF6h0Bv1n8="
 	fakeWGPub  = "K3KQ2zZ8aXdvVX+RVy5pIkPCQ8Yt3DkpVcF6h0Bv2m4="

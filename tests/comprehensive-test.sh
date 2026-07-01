@@ -305,35 +305,50 @@ test_containers() {
 #######################################
 # Test: Port availability
 #######################################
+# §11.4.68/§11.4.69 topology-aware port check (mirrors run-tests.sh
+# _ports_check_one). A listening host port proves the SERVICE works ONLY if the
+# PROJECT container that owns it is running AND publishes it — a NON-project
+# process listening on the port is NOT the project's service (a fail-open bluff;
+# observed: a foreign `whoami` on :58080 answers 200 to any path and even echoes
+# `Hostname: proxy-admin`). Truth table:
+#   owner publishes + listening      -> PASS  (project service up and serving)
+#   owner publishes + NOT listening  -> FAIL  (owner up but nothing bound)
+#   owner NOT publishing + listening -> SKIP  (a non-project process holds it)
+#   owner NOT publishing + no listen -> SKIP  (service not deployed in this topology)
+_port_topology_check() {
+    local port="$1" owner="$2" label="$3"
+    local runtime published="no" listening="no"
+    runtime=$(get_runtime)
+    if container_running "$owner"; then
+        case "$runtime" in
+            podman) podman port "$owner" 2>/dev/null | grep -q ":${port}$" && published="yes" ;;
+            docker) docker port "$owner" 2>/dev/null | grep -q ":${port}$" && published="yes" ;;
+        esac
+    fi
+    ss -tuln 2>/dev/null | grep -q ":${port} " && listening="yes"
+    if [[ "$published" == "yes" && "$listening" == "yes" ]]; then
+        test_result "$label $port listening ($owner)" "PASS"
+    elif [[ "$published" == "yes" && "$listening" == "no" ]]; then
+        test_result "$label $port listening ($owner)" "FAIL" "$owner publishes :$port but nothing is bound"
+    elif [[ "$published" == "no" && "$listening" == "yes" ]]; then
+        test_result "$label $port" "SKIP" "a NON-project process holds :$port ($owner not publishing it) — not the project's service (§11.4.68); readiness not assertable (§11.4.3)"
+    else
+        test_result "$label $port" "SKIP" "$owner not running/publishing :$port in this topology (§11.4.3)"
+    fi
+}
+
 test_ports() {
     test_header "PORT BINDING TESTS"
-    
+
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    
+
     local http_port="${HTTP_PROXY_PORT:-53128}"
     local socks_port="${SOCKS_PROXY_PORT:-51080}"
     local admin_port="${PROXY_ADMIN_PORT:-58080}"
-    
-    # Test HTTP proxy port
-    if ss -tuln | grep -q ":${http_port} "; then
-        test_result "HTTP proxy port $http_port listening" "PASS"
-    else
-        test_result "HTTP proxy port $http_port listening" "FAIL"
-    fi
-    
-    # Test SOCKS proxy port
-    if ss -tuln | grep -q ":${socks_port} "; then
-        test_result "SOCKS proxy port $socks_port listening" "PASS"
-    else
-        test_result "SOCKS proxy port $socks_port listening" "FAIL"
-    fi
-    
-    # Test admin port
-    if ss -tuln | grep -q ":${admin_port} "; then
-        test_result "Admin port $admin_port listening" "PASS"
-    else
-        test_result "Admin port $admin_port listening" "SKIP" "Optional"
-    fi
+
+    _port_topology_check "$http_port"  "proxy-squid" "HTTP proxy port"
+    _port_topology_check "$socks_port" "proxy-dante" "SOCKS proxy port"
+    _port_topology_check "$admin_port" "proxy-admin" "Admin port"
 }
 
 #######################################
@@ -549,27 +564,44 @@ test_caching() {
 #######################################
 test_admin() {
     test_header "ADMIN INTERFACE TESTS"
-    
+
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     local port="${PROXY_ADMIN_PORT:-58080}"
-    
-    # Test health endpoint
+
+    # §11.4.68/§11.4.69 ownership gate: a 200 from :$port is proof ONLY if the
+    # PROJECT's proxy-admin container is running AND publishes that host port.
+    # Otherwise a non-project responder (observed: a foreign `whoami` on :58080
+    # answers 200 to ANY path and even echoes `Hostname: proxy-admin`) would be a
+    # fail-open bluff. When not project-owned, SKIP-with-reason (§11.4.3) — we
+    # refuse to assert whatever happens to answer on the port.
+    local runtime published="no"
+    runtime=$(get_runtime)
+    if container_running "proxy-admin"; then
+        case "$runtime" in
+            podman) podman port "proxy-admin" 2>/dev/null | grep -q ":${port}$" && published="yes" ;;
+            docker) docker port "proxy-admin" 2>/dev/null | grep -q ":${port}$" && published="yes" ;;
+        esac
+    fi
+    if [[ "$published" != "yes" ]]; then
+        test_result "Admin interface (:$port)" "SKIP" \
+            "proxy-admin not running or not publishing :$port — refusing to assert a non-project responder (§11.4.68); readiness not assertable (§11.4.3)"
+        return 0
+    fi
+
+    # Owned: a 200 here is genuinely the project's admin.
     local response
     response=$(curl -s -o /dev/null -w "%{http_code}" \
         --max-time 10 \
         "http://localhost:$port/health" 2>/dev/null || echo "000")
-    
     if [[ "$response" == "200" ]]; then
         test_result "Admin health endpoint" "PASS"
     else
         test_result "Admin health endpoint" "FAIL" "HTTP code: $response"
     fi
-    
-    # Test main page
+
     response=$(curl -s -o /dev/null -w "%{http_code}" \
         --max-time 10 \
         "http://localhost:$port/" 2>/dev/null || echo "000")
-    
     if [[ "$response" == "200" ]]; then
         test_result "Admin main page" "PASS"
     else

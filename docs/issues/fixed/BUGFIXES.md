@@ -768,3 +768,83 @@ unless-stopped` + the baked default).
 Evidence: pasted `squid -k parse` + 3× 503/ERR_TUNNEL_DOWN + access.log TCP_DENIED;
 guard at `control-plane/internal/routing/routing_failclosed_test.go`; proof artifacts
 under `qa-results/p10_failclosed_fix/conductor_reproof/`.
+
+## BUGFIX-0010 — two P12-retest-discovered test-suite bluffs: CONST-033 scanner false-FAIL + comprehensive-test admin fail-open
+
+- **Type:** Bug (test-suite integrity — a §11.4.1 false-FAIL + a §11.4.68/§11.4.69 fail-open false-PASS)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `scripts/host-power-management/check-no-suspend-calls.sh`
+  (EXCLUDE_DIRS/PATHS), `tests/comprehensive-test.sh` (`_port_topology_check` +
+  `test_ports` + `test_admin`), `tests/run-tests.sh` (register the new guard),
+  `tests/regression/comprehensive_admin_topology_test.sh` (NEW §11.4.135 guard),
+  `docs/scripts/comprehensive_admin_topology_test.md` (+ html/pdf),
+  `control-plane/cmd/healthd/healthd_integration_test.go` (fake-WG-key §11.4.10 comment)
+- **Workable item:** #39 (P12 iterate-to-GO — the full retest found both)
+
+### Symptom & root cause (FACT — §11.4.102, independently re-verified by the conductor)
+
+The P12 full retest surfaced two test-integrity defects (neither a product defect;
+the proxy genuinely serves — but a green suite that lies is exactly what §11.4
+forbids):
+
+**(A) CONST-033 scanner false-FAIL (§11.4.1).** `no_suspend_calls_challenge.sh`
+exited 1. All 26 hits were forbidden-command *strings* inside vendored-submodule
+DOCUMENTATION that describes the CONST-033 ban (`submodules/{challenges,containers}/
+docs/HOST_POWER_MANAGEMENT.html`, a `CHALLENGE.md`) plus the scanner's OWN captured
+output under `qa-results/` — ZERO hits in the project's shippable tree. Root cause:
+the scanner excluded `HOST_POWER_MANAGEMENT.md` but not its §11.4.65 `.html`/`.pdf`
+exports, and did not exclude the vendored `submodules/` tree (which police their own
+CONST-033 compliance, exactly like the already-excluded `constitution`) nor the
+generated `qa-results/` output. A guard that FAILs on its own ban-documentation is a
+§11.4.1 false-FAIL.
+
+**(B) comprehensive-test admin fail-open (§11.4.68/§11.4.69).** `test_ports()` +
+`test_admin()` asserted `:58080` health purely on "is something listening / does it
+answer 200?" — with NO check the responder is the project's `proxy-admin`. In the
+host topology `proxy-admin` is unpublished (internal port only) and `:58080` is held
+by a foreign `whoami` that answers 200 to any path (and echoes `Hostname:
+proxy-admin`). So 3 checks were FALSE PASSes hitting the foreign service — a
+fail-open-to-whatever-answers bluff. `run-tests.sh` handles the same port correctly
+via an ownership check; comprehensive-test lacked it.
+
+### Fix (at source)
+
+**(A)** EXCLUDE_DIRS += `submodules` (vendored/owned submodules police their own
+CONST-033 compliance — same class as `constitution`) + `qa-results`/`recordings`/`logs`
+(generated); EXCLUDE_PATHS `HOST_POWER_MANAGEMENT.md` → `HOST_POWER_MANAGEMENT.`
+(covers the .md/.html/.pdf export siblings).
+
+**(B)** New `_port_topology_check(port, owner, label)` mirroring run-tests.sh's
+`_ports_check_one`: a listening port is a PASS only if the owner container is running
+AND publishes it (`podman/docker port <owner> | grep :<port>`); non-project-held +
+listening → SKIP; `test_ports`+`test_admin` both route through the ownership gate.
+
+### Verification (captured, re-run by the conductor)
+
+```
+# (A) CONST-033 scanner — §11.4.120 gate reconciliation (still catches REAL violations):
+$ bash challenges/scripts/no_suspend_calls_challenge.sh            -> PASS (clean tree)
+$ printf 'systemctl suspend\n' > tests/_probe.txt; bash …/check-no-suspend-calls.sh . 
+    -> exit 1, 1 hit on the probe  (guard NOT neutered — still FAILs a real invocation)
+$ rm tests/_probe.txt; bash …/no_suspend_calls_challenge.sh        -> PASS again
+$ bash challenges/scripts/host_no_auto_suspend_challenge.sh        -> 4 pass / 0 fail
+
+# (B) comprehensive-test admin fail-open — §11.4.135 guard (RED_MODE polarity):
+#   podman port proxy-squid -> :53128 (owns), proxy-dante -> :51080 (owns),
+#   proxy-admin -> (publishes nothing); :58080 held by foreign whoami pid 1106372.
+$ bash tests/regression/comprehensive_admin_topology_test.sh       -> GREEN (foreign→SKIP, owned→PASS)
+$ RED_MODE=1 …/comprehensive_admin_topology_test.sh                -> RED reproduces (foreign→PASS bluff)
+$ bash tests/comprehensive-test.sh  -> 35 pass / 0 fail / 8 skip (admin now SKIP, not 3 false PASS)
+$ bash tests/run-tests.sh           -> 41 pass / 0 fail / 6 skip (new guard registered GREEN+RED)
+```
+
+Honest boundary (§11.4.6): both are test-suite-integrity fixes — they make the suite
+HONEST (a false-FAIL stops lying about a clean tree; a fail-open stops passing on a
+foreign responder). Neither changes proxy behaviour. The admin interface being
+unreachable on host `:58080` in this topology (proxy-admin unpublished) is a separate
+observation for the operator, not a proxy defect — the test now correctly SKIPs it
+rather than fabricating a PASS.
+
+Evidence: guard at `tests/regression/comprehensive_admin_topology_test.sh`;
+companion `docs/scripts/comprehensive_admin_topology_test.md`.

@@ -1130,5 +1130,105 @@ default).</p>
 <code>control-plane/internal/routing/routing_failclosed_test.go</code>;
 proof artifacts under
 <code>qa-results/p10_failclosed_fix/conductor_reproof/</code>.</p>
+<h2
+id="bugfix-0010--two-p12-retest-discovered-test-suite-bluffs-const-033-scanner-false-fail--comprehensive-test-admin-fail-open">BUGFIX-0010
+— two P12-retest-discovered test-suite bluffs: CONST-033 scanner
+false-FAIL + comprehensive-test admin fail-open</h2>
+<ul>
+<li><strong>Type:</strong> Bug (test-suite integrity — a §11.4.1
+false-FAIL + a §11.4.68/§11.4.69 fail-open false-PASS)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong>
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code>
+(EXCLUDE_DIRS/PATHS), <code>tests/comprehensive-test.sh</code>
+(<code>_port_topology_check</code> + <code>test_ports</code> +
+<code>test_admin</code>), <code>tests/run-tests.sh</code> (register the
+new guard),
+<code>tests/regression/comprehensive_admin_topology_test.sh</code> (NEW
+§11.4.135 guard),
+<code>docs/scripts/comprehensive_admin_topology_test.md</code> (+
+html/pdf),
+<code>control-plane/cmd/healthd/healthd_integration_test.go</code>
+(fake-WG-key §11.4.10 comment)</li>
+<li><strong>Workable item:</strong> #39 (P12 iterate-to-GO — the full
+retest found both)</li>
+</ul>
+<h3
+id="symptom--root-cause-fact--114102-independently-re-verified-by-the-conductor">Symptom
+&amp; root cause (FACT — §11.4.102, independently re-verified by the
+conductor)</h3>
+<p>The P12 full retest surfaced two test-integrity defects (neither a
+product defect; the proxy genuinely serves — but a green suite that lies
+is exactly what §11.4 forbids):</p>
+<p><strong>(A) CONST-033 scanner false-FAIL (§11.4.1).</strong>
+<code>no_suspend_calls_challenge.sh</code> exited 1. All 26 hits were
+forbidden-command <em>strings</em> inside vendored-submodule
+DOCUMENTATION that describes the CONST-033 ban
+(<code>submodules/{challenges,containers}/ docs/HOST_POWER_MANAGEMENT.html</code>,
+a <code>CHALLENGE.md</code>) plus the scanner's OWN captured output
+under <code>qa-results/</code> — ZERO hits in the project's shippable
+tree. Root cause: the scanner excluded
+<code>HOST_POWER_MANAGEMENT.md</code> but not its §11.4.65
+<code>.html</code>/<code>.pdf</code> exports, and did not exclude the
+vendored <code>submodules/</code> tree (which police their own CONST-033
+compliance, exactly like the already-excluded <code>constitution</code>)
+nor the generated <code>qa-results/</code> output. A guard that FAILs on
+its own ban-documentation is a §11.4.1 false-FAIL.</p>
+<p><strong>(B) comprehensive-test admin fail-open
+(§11.4.68/§11.4.69).</strong> <code>test_ports()</code> +
+<code>test_admin()</code> asserted <code>:58080</code> health purely on
+"is something listening / does it answer 200?" — with NO check the
+responder is the project's <code>proxy-admin</code>. In the host
+topology <code>proxy-admin</code> is unpublished (internal port only)
+and <code>:58080</code> is held by a foreign <code>whoami</code> that
+answers 200 to any path (and echoes <code>Hostname: proxy-admin</code>).
+So 3 checks were FALSE PASSes hitting the foreign service — a
+fail-open-to-whatever-answers bluff. <code>run-tests.sh</code> handles
+the same port correctly via an ownership check; comprehensive-test
+lacked it.</p>
+<h3 id="fix-at-source-3">Fix (at source)</h3>
+<p><strong>(A)</strong> EXCLUDE_DIRS += <code>submodules</code>
+(vendored/owned submodules police their own CONST-033 compliance — same
+class as <code>constitution</code>) +
+<code>qa-results</code>/<code>recordings</code>/<code>logs</code>
+(generated); EXCLUDE_PATHS <code>HOST_POWER_MANAGEMENT.md</code> →
+<code>HOST_POWER_MANAGEMENT.</code> (covers the .md/.html/.pdf export
+siblings).</p>
+<p><strong>(B)</strong> New
+<code>_port_topology_check(port, owner, label)</code> mirroring
+run-tests.sh's <code>_ports_check_one</code>: a listening port is a PASS
+only if the owner container is running AND publishes it
+(<code>podman/docker port &lt;owner&gt; | grep :&lt;port&gt;</code>);
+non-project-held + listening → SKIP;
+<code>test_ports</code>+<code>test_admin</code> both route through the
+ownership gate.</p>
+<h3 id="verification-captured-re-run-by-the-conductor">Verification
+(captured, re-run by the conductor)</h3>
+<pre><code># (A) CONST-033 scanner — §11.4.120 gate reconciliation (still catches REAL violations):
+$ bash challenges/scripts/no_suspend_calls_challenge.sh            -&gt; PASS (clean tree)
+$ printf &#39;systemctl suspend\n&#39; &gt; tests/_probe.txt; bash …/check-no-suspend-calls.sh . 
+    -&gt; exit 1, 1 hit on the probe  (guard NOT neutered — still FAILs a real invocation)
+$ rm tests/_probe.txt; bash …/no_suspend_calls_challenge.sh        -&gt; PASS again
+$ bash challenges/scripts/host_no_auto_suspend_challenge.sh        -&gt; 4 pass / 0 fail
+
+# (B) comprehensive-test admin fail-open — §11.4.135 guard (RED_MODE polarity):
+#   podman port proxy-squid -&gt; :53128 (owns), proxy-dante -&gt; :51080 (owns),
+#   proxy-admin -&gt; (publishes nothing); :58080 held by foreign whoami pid 1106372.
+$ bash tests/regression/comprehensive_admin_topology_test.sh       -&gt; GREEN (foreign→SKIP, owned→PASS)
+$ RED_MODE=1 …/comprehensive_admin_topology_test.sh                -&gt; RED reproduces (foreign→PASS bluff)
+$ bash tests/comprehensive-test.sh  -&gt; 35 pass / 0 fail / 8 skip (admin now SKIP, not 3 false PASS)
+$ bash tests/run-tests.sh           -&gt; 41 pass / 0 fail / 6 skip (new guard registered GREEN+RED)</code></pre>
+<p>Honest boundary (§11.4.6): both are test-suite-integrity fixes — they
+make the suite HONEST (a false-FAIL stops lying about a clean tree; a
+fail-open stops passing on a foreign responder). Neither changes proxy
+behaviour. The admin interface being unreachable on host
+<code>:58080</code> in this topology (proxy-admin unpublished) is a
+separate observation for the operator, not a proxy defect — the test now
+correctly SKIPs it rather than fabricating a PASS.</p>
+<p>Evidence: guard at
+<code>tests/regression/comprehensive_admin_topology_test.sh</code>;
+companion
+<code>docs/scripts/comprehensive_admin_topology_test.md</code>.</p>
 </body>
 </html>
