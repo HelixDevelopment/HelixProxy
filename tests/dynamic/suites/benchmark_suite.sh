@@ -11,11 +11,18 @@
 #               baseline is a finding (§11.4.169 benchmarking clause).
 # Status:       AUTHORED FOR P10. SKIPs-with-reason today (no live stack) —
 #               honest non-evidence, never a fake PASS.
-# Baseline:     BENCH_BASELINE (default qa-results/p9-harness/bench_baseline.p95);
-#               absent => budget-only check + the run writes the file so future
-#               runs gain the regression check.
-# RED_MODE:     §11.4.115. RED_MODE=1 expects p95 > budget (regression
-#               reproduced); RED_MODE=0 GREEN guard asserts within budget.
+# Baseline:     BENCH_BASELINE (default tests/dynamic/baselines/benchmark_p95.baseline
+#               — a COMMITTED, TRACKED path so the ratchet persists across clean
+#               runs and actually gates; NOT a gitignored qa-results throwaway,
+#               which never persisted and silently disarmed the ratchet). ABSENT
+#               => the run SEEDS the committed baseline from THIS real measurement
+#               and SKIPs-with-reason — NEVER a silent budget-only PASS
+#               (§11.4.169(13) / §11.4.1). PRESENT => compare p95 vs baseline;
+#               growth > BENCH_REGRESS_PCT is a regression FAIL (a finding). The
+#               baseline is seeded ONCE and NEVER auto-refreshed on PASS (auto-
+#               refresh would let regressions ratchet-drift in silently).
+# RED_MODE:     §11.4.115. RED_MODE=1 expects p95 > budget (breach reproduced);
+#               RED_MODE=0 GREEN guard asserts within budget + no regression.
 # Usage:        bash tests/dynamic/suites/benchmark_suite.sh
 # Env:          BENCH_N (samples, default 200), BENCH_TARGET (default
 #               http://target-a.internal/), BENCH_P95_BUDGET_MS (default 800),
@@ -28,6 +35,39 @@ DIR=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=/dev/null
 . "$DIR/../lib/analyzer_common.sh"
 
+# ----------------------------------------------------------------------------
+# bench_regression_verdict — PURE §11.4.169(13) benchmark ratchet classifier.
+# No network, no file I/O; extractable + fixture-driven by the standing guard
+# tests/regression/benchmark_baseline_ratchet_test.sh (§1.1 / §11.4.135).
+# Args:  <p95_ms> <budget_ms> <baseline_p95_ms | 0-or-empty = absent> <regress_pct>
+# Prints EXACTLY one of:
+#   PASS             p95 within budget AND within tolerance vs the baseline
+#   FAIL:budget      p95 unmeasured (<=0) OR exceeds the absolute budget
+#   FAIL:regression  p95 grew > regress_pct vs the recorded baseline (a finding)
+#   SEED             no usable baseline yet — caller seeds it + SKIPs (NEVER a
+#                    silent budget-only PASS)
+# ----------------------------------------------------------------------------
+bench_regression_verdict() {
+    _brv_p95=$1
+    _brv_budget=$2
+    _brv_base=$3
+    _brv_pct=$4
+    if [ -z "$_brv_p95" ] || ! [ "$_brv_p95" -gt 0 ] 2>/dev/null; then
+        printf 'FAIL:budget\n'; return 0
+    fi
+    if [ "$_brv_p95" -gt "$_brv_budget" ] 2>/dev/null; then
+        printf 'FAIL:budget\n'; return 0
+    fi
+    if [ -z "$_brv_base" ] || ! [ "$_brv_base" -gt 0 ] 2>/dev/null; then
+        printf 'SEED\n'; return 0
+    fi
+    _brv_growth=$(awk -v a="$_brv_p95" -v b="$_brv_base" 'BEGIN { printf "%d", ((a - b) * 100) / b }')
+    if [ "$_brv_growth" -gt "$_brv_pct" ] 2>/dev/null; then
+        printf 'FAIL:regression\n'; return 0
+    fi
+    printf 'PASS\n'; return 0
+}
+
 SUITE="benchmark"
 RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
 QA="$(ac_qa_dir p9-harness)/${SUITE}_${RUN_ID}"
@@ -37,7 +77,7 @@ N=${BENCH_N:-200}
 TARGET=${BENCH_TARGET:-http://target-a.internal/}
 BUDGET=${BENCH_P95_BUDGET_MS:-800}
 REGRESS_PCT=${BENCH_REGRESS_PCT:-25}
-BASELINE=${BENCH_BASELINE:-$(ac_qa_dir p9-harness)/bench_baseline.p95}
+BASELINE=${BENCH_BASELINE:-$AC_REPO_ROOT/tests/dynamic/baselines/benchmark_p95.baseline}
 SERIES="$QA/latency_ms.series"
 
 printf '# %s suite — run-id %s (RED_MODE=%s) n=%d p95_budget=%dms\n' \
@@ -74,35 +114,47 @@ p50=$1; p95=$2; p99=$3
 
 base_p95=""
 [ -f "$BASELINE" ] && base_p95=$(awk 'NF{print $1; exit}' "$BASELINE" 2>/dev/null)
-regress=""
-if [ -n "$base_p95" ] && [ "$base_p95" -gt 0 ] 2>/dev/null; then
-    regress=$(awk -v a="$p95" -v b="$base_p95" 'BEGIN { printf "%d", ((a - b) * 100) / b }')
-fi
 {
-    printf 'p50=%sms p95=%sms p99=%sms budget_p95=%sms baseline_p95=%sms regress_pct=%s\n' \
-        "$p50" "$p95" "$p99" "$BUDGET" "${base_p95:-none}" "${regress:-n/a}"
+    printf 'p50=%sms p95=%sms p99=%sms budget_p95=%sms baseline_p95=%sms regress_pct_max=%s%%\n' \
+        "$p50" "$p95" "$p99" "$BUDGET" "${base_p95:-none}" "$REGRESS_PCT"
 } > "$QA/benchmark.evidence"
 cat "$SERIES" >> "$QA/benchmark.evidence"
 
 if dyn_red_mode; then
+    # §11.4.115 suite-level RED: reproduce a p95 that breaches the absolute budget.
     if [ "$p95" -gt "$BUDGET" ]; then
-        ab_pass_with_evidence "$SUITE RED-baseline reproduced p95 regression (${p95}ms > ${BUDGET}ms)" "$QA/benchmark.evidence"
+        ab_pass_with_evidence "$SUITE RED-baseline reproduced p95 budget breach (${p95}ms > ${BUDGET}ms)" "$QA/benchmark.evidence"
         exit $?
     fi
-    ac_fail "$SUITE RED-baseline" "[reason: p95=${p95}ms within budget — no regression to reproduce]"
+    ac_fail "$SUITE RED-baseline" "[reason: p95=${p95}ms within budget — no breach to reproduce]"
     exit 1
 fi
 
-within_budget=0
-[ "$p95" -le "$BUDGET" ] && [ "$p95" -gt 0 ] && within_budget=1
-no_regress=1
-if [ -n "$regress" ] && [ "$regress" -gt "$REGRESS_PCT" ] 2>/dev/null; then no_regress=0; fi
-
-if [ "$within_budget" -eq 1 ] && [ "$no_regress" -eq 1 ]; then
-    # Record / refresh the baseline for future regression checks.
-    printf '%s\n' "$p95" > "$BASELINE" 2>/dev/null || true
-    ab_pass_with_evidence "$SUITE p95=${p95}ms <= ${BUDGET}ms, no regression" "$QA/benchmark.evidence"
-    exit $?
-fi
-ac_fail "$SUITE" "[reason: p95=${p95}ms budget=${BUDGET}ms within=$within_budget regress=${regress:-n/a}% (max ${REGRESS_PCT}%) — see $QA/benchmark.evidence]"
-exit 1
+# §11.4.169(13) regression ratchet vs the COMMITTED baseline (seed-once, no
+# auto-refresh drift). The verdict is the PURE, fixture-tested classifier — the
+# SAME function the standing guard drives with fixtures (§1.1 / §11.4.135), so a
+# regressed measurement can never silently PASS.
+verdict=$(bench_regression_verdict "$p95" "$BUDGET" "${base_p95:-0}" "$REGRESS_PCT")
+case "$verdict" in
+    PASS)
+        ab_pass_with_evidence "$SUITE p95=${p95}ms <= ${BUDGET}ms, no regression vs baseline ${base_p95}ms (growth <= ${REGRESS_PCT}%)" "$QA/benchmark.evidence"
+        exit $?
+        ;;
+    SEED)
+        # First run with no committed baseline: seed it from THIS real
+        # measurement, then SKIP — NEVER a silent budget-only PASS
+        # (§11.4.169(13) / §11.4.1). Commit the seeded file to arm the ratchet.
+        mkdir -p "$(dirname "$BASELINE")" 2>/dev/null || true
+        printf '%s\n' "$p95" > "$BASELINE" 2>/dev/null || true
+        ab_skip_with_reason "$SUITE regression ratchet not yet armed — seeded committed baseline ${p95}ms at $BASELINE (commit it to arm)" "feature_disabled_by_config"
+        exit $?
+        ;;
+    FAIL:regression)
+        ac_fail "$SUITE regression" "[reason: p95=${p95}ms grew > ${REGRESS_PCT}% vs committed baseline ${base_p95}ms — regression finding, see $QA/benchmark.evidence]"
+        exit 1
+        ;;
+    *)
+        ac_fail "$SUITE budget" "[reason: p95=${p95}ms vs budget ${BUDGET}ms (unmeasured or over budget) — see $QA/benchmark.evidence]"
+        exit 1
+        ;;
+esac

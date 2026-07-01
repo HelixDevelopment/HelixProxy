@@ -1148,3 +1148,51 @@ needs a distinct "observed-up-before" signal and is tracked separately (the naiv
 
 Evidence: guard `tests/regression/ddos_flood_evidence_test.sh`; companion
 `docs/scripts/ddos_flood_evidence_test.md`.
+
+## BUGFIX-0016 — benchmark performance ratchet never compared against a persistent baseline (F6)
+
+- **Type:** Bug (test-suite integrity — a §11.4.169(13) / §11.4.1 bluff: a performance suite that always PASSes regardless of a real regression)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `tests/dynamic/suites/benchmark_suite.sh` (new pure
+  `bench_regression_verdict` classifier; baseline moved to a committed path; seed-once
+  + SKIP on absent baseline; FAIL on regression beyond tolerance; auto-refresh drift
+  removed), `tests/regression/benchmark_baseline_ratchet_test.sh` (new §11.4.135 guard),
+  `docs/scripts/benchmark_baseline_ratchet_test.md` (companion),
+  `tests/dynamic/baselines/README.txt` (committed baseline-path anchor), + `.html`/`.pdf`.
+- **Discovered by:** the §11.4.118 anti-bluff discovery sweep (finding F6, CONFIRMED).
+
+Root cause: the benchmark defaulted its regression baseline to
+`qa-results/p9-harness/bench_baseline.p95` — a path under the git-IGNORED
+`qa-results/` tree (`.gitignore`). So the baseline was a throwaway that never
+persisted across clean runs → `base_p95=""` → the p50/p95/p99-vs-baseline comparison
+never fired → every run PASSed purely on the absolute budget regardless of a real
+regression. Compounding it: a first run with no baseline emitted a PASS (not a
+seed+SKIP), and a PASS auto-refreshed the throwaway (ratchet drift). A §11.4.169(13)
+/ §11.4.1 bluff — a performance guard that cannot fail on a regression.
+
+Fix: a pure `bench_regression_verdict()` classifier; the baseline moved to the
+committed/tracked path `tests/dynamic/baselines/benchmark_p95.baseline`; a first run
+with no committed baseline SEEDs it from the REAL measurement and SKIPs-with-reason
+(never a silent budget-only PASS, never a fabricated value per §11.4.6); a present
+baseline is compared and a p95 growth beyond `BENCH_REGRESS_PCT` FAILs as a regression;
+the baseline is seeded once and never auto-refreshed.
+
+### Verification (captured, independently reviewed §11.4.142 — GO)
+
+```
+$ bash tests/regression/benchmark_baseline_ratchet_test.sh       -> [PASS] GREEN (PASS in-tolerance + FAIL:regression 50%>25% + SEED no-baseline + FAIL:budget)
+$ RED_MODE=1 tests/regression/benchmark_baseline_ratchet_test.sh -> [PASS] RED reproduces the pre-fix budget-only bluff (PASSes a 50%-regressed p95)
+# §1.1 paired mutation (neutralise the tolerance compare):
+$ (mutated) benchmark_baseline_ratchet_test.sh   -> [FAIL] REGRESS=PASS (real assertion mismatch) ; restore byte-identical (md5 70860ed…f751) -> PASS
+# baseline path NOT gitignored: git check-ignore tests/dynamic/baselines/* -> rc=1 (empty)
+```
+
+Honest boundary (§11.4.6): a test-suite-integrity fix — it makes the ratchet real.
+The `benchmark_p95.baseline` value file is intentionally seed-on-first-real-run
+(fabricating a value would violate §11.4.6); after the first genuine P10 measurement
+the operator commits the seeded baseline to arm the ratchet — documented in
+`tests/dynamic/baselines/README.txt`.
+
+Evidence: guard `tests/regression/benchmark_baseline_ratchet_test.sh`; companion
+`docs/scripts/benchmark_baseline_ratchet_test.md`.
