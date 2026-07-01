@@ -1,7 +1,7 @@
 # VPN-LAN Service Access — Status Summary
 
-**Revision:** 1
-**Last modified:** 2026-07-01T16:35:00Z
+**Revision:** 2
+**Last modified:** 2026-07-01T16:48:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -49,17 +49,17 @@ OPERATOR-BLOCKED §11.4.68), anti-bluff `ab_pass_with_evidence` (non-empty artef
 | Phase | Scope | Status | Commit / evidence |
 |---|---|---|---|
 | 0 | bridge scaffold + svord-doctor | PASS | `d781002` + suite `test_vpn_lan_bridge` GREEN (§11.4.115 teeth) `5c28f56` |
-| 1 | routed gateway + SSRF reconciliation | PENDING | conductor-owned, security-critical (§11.4.120) |
+| 1 | routed gateway + SSRF reconciliation | AUTHORED (local-stub GREEN) | `1d87b3a` ssrf_carveout_teeth.sh: floor survives narrow carve (T1/T2/T3), `SSRF_MUT=1` catches 2/2 collapses; wired into standing suite; live carve bridge+operator-gated (§11.4.120/§11.4.133) |
 | 2 | SMB/CIFS/NMB + NFS | AUTHORED (SKIP-proven) | `182e80a` sha256 round-trip; bridge-down PASS_lines=0 |
 | 3 | FTP/FTPS/SFTP + WebDAV(via Squid) | AUTHORED (SKIP-proven) | `182e80a` wrong-answer⇒FAIL |
 | 4 | IMAP/SMTP-submission/POP3 + open-relay guard | AUTHORED (SKIP-proven) | `2f31460` external-RCPT-accepted⇒FAIL |
-| 5 | mDNS/SSDP/WS-Disc/DNS-SD reflector | IN PROGRESS | remote deploy operator-gated (§11.4.122) |
-| 6 | Chromecast/DIAL | IN PROGRESS | control 8008/8009 routes; discovery reflects |
-| 7 | ADB (access/debug/connect/flash) | IN PROGRESS | routed 5555 + adb-server; usbip flash (§11.4.133) |
+| 5 | mDNS/SSDP/WS-Disc/DNS-SD reflector | AUTHORED (SKIP-proven) | `d0b42df` reflector_design.md (cited RFCs) + discovery_reflect.sh; remote deploy operator-gated (§11.4.122) |
+| 6 | Chromecast/DIAL | AUTHORED (SKIP-proven) | `65043ce` chromecast_dial.sh; eureka 8008 + CASTV2 8009 transition (§11.4.107); discovery = Phase-5 dep |
+| 7 | ADB (access/debug/connect/flash) | AUTHORED (SKIP-proven) | `65043ce` adb_over_vpn.sh; routed 5555 + §11.4.174 serial-safety; usbip flash operator-gated (§11.4.133) |
 | 8 | Miracast | PASS (Won't-fix, §11.4.112) | `12faf12` cited verdict + Cast alternative |
 | 9 | operator bridge-setup guide | PASS | `a5e5616` leak-clean HTML+PDF |
-| 10 | containerize (§11.4.76) | PENDING | reflector + adb-server on-demand |
-| 11 | §11.4.169 coverage + Challenges + HelixQA | IN PROGRESS | Challenge + `vpn_lan.yaml` bank; HelixQA-run blocked (§11.4.3) |
+| 10 | containerize (§11.4.76) | AUTHORED (SKIP-proven) | `1911d5e` containerization.md + vpn_lan_containers.yaml + container_boot.sh; submodule untouched |
+| 11 | §11.4.169 coverage + Challenges + HelixQA | AUTHORED (run-blocked) | `89f73b7` Challenge + `vpn_lan.yaml` 9-case bank; HelixQA-run blocked 6 siblings (§11.4.3); stress+chaos in flight |
 
 Autonomous value delivered: the anti-bluff gate (bridge-down ⇒ honest SKIP, exit 0, zero
 `^PASS:`) + the §11.4.115 teeth in the standing suite. Live round-trip evidence

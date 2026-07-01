@@ -174,15 +174,18 @@
 <body>
 <h1 id="vpn-lan-service-access--integration-status">VPN-LAN Service
 Access — Integration Status</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T16:35:00Z <strong>Status:</strong> In progress — Phase 0
-(bridge scaffold) + Phase 8 (Miracast verdict) + Phase 9 (docs) DONE;
-Phases 2/3/4 protocol tests authored + honest-SKIP-proven (live
-round-trips operator-gated); Phases 5/6/7/10/11 in progress. Every
-autonomous claim below cites a real <code>qa-results/</code> artefact or
-a committed file (§11.4.6); every live-round-trip path honestly SKIPs
-until the operator connects the svord bridge (§11.4.3).
-<strong>Authority:</strong> Inherits
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T16:48:00Z <strong>Status:</strong> In progress — ALL 12
+phases (0–11) now have committed deliverables. Phase 0 (bridge scaffold)
++ Phase 1 (SSRF carve-out teeth, local-stub GREEN + wired into the
+standing suite) + Phase 8 (Miracast Won't-fix) + Phase 9 (docs) are
+autonomously PROVEN; Phases 2/3/4/5/6/7/10/11 protocol + reflector +
+Cast + ADB + containerization + Challenge/HelixQA assets are AUTHORED
+and honest-SKIP-proven (bridge-down ⇒ SKIP + exit 0, zero fake PASS);
+every live round-trip is operator-gated on the svord connection. Every
+claim below cites a real committed file/<code>qa-results/</code>
+artefact (§11.4.6); every live path honestly SKIPs until the operator
+connects the bridge (§11.4.3). <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
 integration-status doc for the VPN-LAN service-access feature workstream
 (<code>feature/vpn-aware-dynamic-routing</code>).
@@ -258,10 +261,17 @@ PASS, <code>qa-results/suite/run_20260701T160156Z.log</code> 71/64/7/0)
 <tr>
 <td>1</td>
 <td>L3 routed gateway + SSRF allowlist reconciliation</td>
-<td>PENDING</td>
-<td>Design in <code>PLAN.md</code> §4; security-critical,
-conductor-owned; local-stub SSRF-teeth logic to land before any live
-10/8 carve-out (gated on bridge up)</td>
+<td>AUTHORED (local-stub GREEN)</td>
+<td><code>1d87b3a</code>
+<code>tests/vpn_lan/ssrf_carveout_teeth.sh</code>: proves the SOCKS SSRF
+floor survives the narrow 10/8 carve-out with NO live VPN +
+<code>sockd.conf</code> READ-ONLY — T1 live-floor teeth
+(metadata+loopback+all RFC1918 blocked, public passes), T2 narrow-carve
+floor-preserving, T3 ordering (first-match-wins);
+<code>SSRF_MUT=1</code> catches 2/2 golden-bad collapses
+(§11.4.107(10)); wired into standing suite
+<code>test_vpn_lan_ssrf</code>. Live 10/8 carve-out application stays
+bridge-gated + operator-gated (§11.4.101/§11.4.133)</td>
 </tr>
 <tr>
 <td>2</td>
@@ -291,24 +301,31 @@ never argv (§11.4.10); live operator-gated</td>
 <tr>
 <td>5</td>
 <td>mDNS/SSDP/WS-Discovery/DNS-SD reflector</td>
-<td>IN PROGRESS</td>
-<td>Remote deploy operator-gated (§11.4.122); reflector design +
-local-stub discovery test in flight</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>d0b42df</code> <code>reflector_design.md</code> (Avahi
+enable-reflector + SSDP LOCATION-rewrite, cited RFC 6762/6763/5771/2365)
++ <code>tests/vpn_lan/discovery_reflect.sh</code> (bridge-down SKIP +
+exit 0, PASS_lines=0); remote deploy operator-gated (§11.4.122)</td>
 </tr>
 <tr>
 <td>6</td>
 <td>Chromecast / DIAL (reflect discovery + route control)</td>
-<td>IN PROGRESS</td>
-<td><code>tests/vpn_lan/chromecast_dial.sh</code> authoring in flight;
-control 8008/8009 routes, discovery via Phase-5 reflector</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>65043ce</code> <code>tests/vpn_lan/chromecast_dial.sh</code>;
+eureka_info :8008 (200+JSON name⇒PASS, 200-no-name/non-200⇒FAIL
+fail-closed), CASTV2 :8009 liveness via status transition
+(identical⇒SKIP not fake-PASS §11.4.107); discovery = Phase-5
+dependency; live operator-gated</td>
 </tr>
 <tr>
 <td>7</td>
 <td>ADB over VPN (access/debug/connect/flash)</td>
-<td>IN PROGRESS</td>
-<td><code>tests/vpn_lan/adb_over_vpn.sh</code> authoring in flight;
-routed 5555 + adb-server; flash via <code>usbip</code> (USB-bound,
-operator-gated §11.4.133)</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>65043ce</code> <code>tests/vpn_lan/adb_over_vpn.sh</code>;
+routed 5555 connect+getprop⇒PASS, offline/unauthorized⇒FAIL; §11.4.174
+device-safety (disconnect-our-serial-only, never kill-server); flash via
+<code>usbip</code> USB-bound operator-gated (§11.4.133); in-depth phased
+design in flight</td>
 </tr>
 <tr>
 <td>8</td>
@@ -330,18 +347,24 @@ leak-clean</td>
 <tr>
 <td>10</td>
 <td>Containerization via containers submodule (§11.4.76)</td>
-<td>PENDING</td>
-<td>Reflector + adb-server to boot on-demand via
-<code>submodules/containers</code> (rootless §11.4.161); depends on
-Phase 5/6/7 design</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>1911d5e</code> <code>containerization.md</code> +
+<code>vpn_lan_containers.yaml</code> (project-side service decl,
+config-injected §11.4.28) + <code>tests/vpn_lan/container_boot.sh</code>
+(bridge-down SKIP exit 0; malformed decl⇒FAIL fail-closed; never boots a
+container); <code>submodules/containers</code> untouched; remote deploy
+operator-gated (§11.4.122)</td>
 </tr>
 <tr>
 <td>11</td>
 <td>§11.4.169 full test-type coverage + Challenges + HelixQA</td>
-<td>IN PROGRESS</td>
-<td>Challenge script + HelixQA <code>vpn_lan.yaml</code> bank authoring
-in flight; HelixQA-run honestly blocked (6 un-vendored siblings,
-§11.4.3)</td>
+<td>AUTHORED (run-blocked)</td>
+<td><code>89f73b7</code>
+<code>challenges/scripts/run_vpn_lan_challenges.sh</code> + HelixQA
+<code>tools/helixqa/banks/vpn_lan.yaml</code> (9 cases); bridge-down
+self-proof RESULT:OK PASS=0 FAIL=0 all-SKIP; HelixQA-run honestly
+blocked (6 un-vendored siblings, §11.4.3); stress+chaos §11.4.85 in
+flight</td>
 </tr>
 </tbody>
 </table>

@@ -174,8 +174,8 @@
 <body>
 <h1 id="vpn-lan-service-access--status-summary">VPN-LAN Service Access —
 Status Summary</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T16:35:00Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T16:48:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
@@ -249,8 +249,11 @@ artefact required).</p>
 <tr>
 <td>1</td>
 <td>routed gateway + SSRF reconciliation</td>
-<td>PENDING</td>
-<td>conductor-owned, security-critical (§11.4.120)</td>
+<td>AUTHORED (local-stub GREEN)</td>
+<td><code>1d87b3a</code> ssrf_carveout_teeth.sh: floor survives narrow
+carve (T1/T2/T3), <code>SSRF_MUT=1</code> catches 2/2 collapses; wired
+into standing suite; live carve bridge+operator-gated
+(§11.4.120/§11.4.133)</td>
 </tr>
 <tr>
 <td>2</td>
@@ -274,20 +277,23 @@ PASS_lines=0</td>
 <tr>
 <td>5</td>
 <td>mDNS/SSDP/WS-Disc/DNS-SD reflector</td>
-<td>IN PROGRESS</td>
-<td>remote deploy operator-gated (§11.4.122)</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>d0b42df</code> reflector_design.md (cited RFCs) +
+discovery_reflect.sh; remote deploy operator-gated (§11.4.122)</td>
 </tr>
 <tr>
 <td>6</td>
 <td>Chromecast/DIAL</td>
-<td>IN PROGRESS</td>
-<td>control 8008/8009 routes; discovery reflects</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>65043ce</code> chromecast_dial.sh; eureka 8008 + CASTV2 8009
+transition (§11.4.107); discovery = Phase-5 dep</td>
 </tr>
 <tr>
 <td>7</td>
 <td>ADB (access/debug/connect/flash)</td>
-<td>IN PROGRESS</td>
-<td>routed 5555 + adb-server; usbip flash (§11.4.133)</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>65043ce</code> adb_over_vpn.sh; routed 5555 + §11.4.174
+serial-safety; usbip flash operator-gated (§11.4.133)</td>
 </tr>
 <tr>
 <td>8</td>
@@ -304,15 +310,17 @@ PASS_lines=0</td>
 <tr>
 <td>10</td>
 <td>containerize (§11.4.76)</td>
-<td>PENDING</td>
-<td>reflector + adb-server on-demand</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>1911d5e</code> containerization.md + vpn_lan_containers.yaml +
+container_boot.sh; submodule untouched</td>
 </tr>
 <tr>
 <td>11</td>
 <td>§11.4.169 coverage + Challenges + HelixQA</td>
-<td>IN PROGRESS</td>
-<td>Challenge + <code>vpn_lan.yaml</code> bank; HelixQA-run blocked
-(§11.4.3)</td>
+<td>AUTHORED (run-blocked)</td>
+<td><code>89f73b7</code> Challenge + <code>vpn_lan.yaml</code> 9-case
+bank; HelixQA-run blocked 6 siblings (§11.4.3); stress+chaos in
+flight</td>
 </tr>
 </tbody>
 </table>

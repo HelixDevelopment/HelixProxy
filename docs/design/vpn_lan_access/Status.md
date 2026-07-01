@@ -1,8 +1,8 @@
 # VPN-LAN Service Access — Integration Status
 
-**Revision:** 1
-**Last modified:** 2026-07-01T16:35:00Z
-**Status:** In progress — Phase 0 (bridge scaffold) + Phase 8 (Miracast verdict) + Phase 9 (docs) DONE; Phases 2/3/4 protocol tests authored + honest-SKIP-proven (live round-trips operator-gated); Phases 5/6/7/10/11 in progress. Every autonomous claim below cites a real `qa-results/` artefact or a committed file (§11.4.6); every live-round-trip path honestly SKIPs until the operator connects the svord bridge (§11.4.3).
+**Revision:** 2
+**Last modified:** 2026-07-01T16:48:00Z
+**Status:** In progress — ALL 12 phases (0–11) now have committed deliverables. Phase 0 (bridge scaffold) + Phase 1 (SSRF carve-out teeth, local-stub GREEN + wired into the standing suite) + Phase 8 (Miracast Won't-fix) + Phase 9 (docs) are autonomously PROVEN; Phases 2/3/4/5/6/7/10/11 protocol + reflector + Cast + ADB + containerization + Challenge/HelixQA assets are AUTHORED and honest-SKIP-proven (bridge-down ⇒ SKIP + exit 0, zero fake PASS); every live round-trip is operator-gated on the svord connection. Every claim below cites a real committed file/`qa-results/` artefact (§11.4.6); every live path honestly SKIPs until the operator connects the bridge (§11.4.3).
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.45 integration-status doc for the VPN-LAN service-access feature workstream (`feature/vpn-aware-dynamic-routing`).
 **Companion:** summary [`Status_Summary.md`](Status_Summary.md) · plan [`PLAN.md`](PLAN.md) · Miracast verdict [`miracast_verdict.md`](miracast_verdict.md) · operator guide [`../../guides/vpn_lan_bridge_setup.md`](../../guides/vpn_lan_bridge_setup.md)
 
@@ -19,17 +19,17 @@
 | Phase | Scope | Status | Evidence / commit |
 |---|---|---|---|
 | 0 | env-var svord bridge scaffold + svord-doctor preflight | PASS | `d781002`; svord-doctor 3-verdict discrimination (UP/SKIP/MISCONFIGURED) + standing-suite `test_vpn_lan_bridge` GREEN (honest SKIP + §11.4.115 teeth PASS, `qa-results/suite/run_20260701T160156Z.log` 71/64/7/0) `5c28f56` |
-| 1 | L3 routed gateway + SSRF allowlist reconciliation | PENDING | Design in `PLAN.md` §4; security-critical, conductor-owned; local-stub SSRF-teeth logic to land before any live 10/8 carve-out (gated on bridge up) |
+| 1 | L3 routed gateway + SSRF allowlist reconciliation | AUTHORED (local-stub GREEN) | `1d87b3a` `tests/vpn_lan/ssrf_carveout_teeth.sh`: proves the SOCKS SSRF floor survives the narrow 10/8 carve-out with NO live VPN + `sockd.conf` READ-ONLY — T1 live-floor teeth (metadata+loopback+all RFC1918 blocked, public passes), T2 narrow-carve floor-preserving, T3 ordering (first-match-wins); `SSRF_MUT=1` catches 2/2 golden-bad collapses (§11.4.107(10)); wired into standing suite `test_vpn_lan_ssrf`. Live 10/8 carve-out application stays bridge-gated + operator-gated (§11.4.101/§11.4.133) |
 | 2 | SMB/CIFS/NMB + NFS round-trip | AUTHORED (SKIP-proven) | `182e80a` `tests/vpn_lan/smb_nfs_roundtrip.sh`; bridge-down SKIP + exit 0, PASS_lines=0 (no fake PASS); live sha256 round-trip operator-gated |
 | 3 | FTP/FTPS/SFTP + WebDAV (WebDAV via existing Squid) | AUTHORED (SKIP-proven) | `182e80a` `tests/vpn_lan/ftp_sftp_webdav.sh`; wrong-answer⇒FAIL (WebDAV non-207 / SFTP sha-mismatch), unreachable⇒SKIP; live operator-gated |
 | 4 | IMAP/IMAPS/SMTP-submission/POP3S + open-relay guard | AUTHORED (SKIP-proven) | `2f31460` `tests/vpn_lan/email_roundtrip.sh`; open-relay negative test (external-RCPT-accepted⇒FAIL); creds via stdin never argv (§11.4.10); live operator-gated |
-| 5 | mDNS/SSDP/WS-Discovery/DNS-SD reflector | IN PROGRESS | Remote deploy operator-gated (§11.4.122); reflector design + local-stub discovery test in flight |
-| 6 | Chromecast / DIAL (reflect discovery + route control) | IN PROGRESS | `tests/vpn_lan/chromecast_dial.sh` authoring in flight; control 8008/8009 routes, discovery via Phase-5 reflector |
-| 7 | ADB over VPN (access/debug/connect/flash) | IN PROGRESS | `tests/vpn_lan/adb_over_vpn.sh` authoring in flight; routed 5555 + adb-server; flash via `usbip` (USB-bound, operator-gated §11.4.133) |
+| 5 | mDNS/SSDP/WS-Discovery/DNS-SD reflector | AUTHORED (SKIP-proven) | `d0b42df` `reflector_design.md` (Avahi enable-reflector + SSDP LOCATION-rewrite, cited RFC 6762/6763/5771/2365) + `tests/vpn_lan/discovery_reflect.sh` (bridge-down SKIP + exit 0, PASS_lines=0); remote deploy operator-gated (§11.4.122) |
+| 6 | Chromecast / DIAL (reflect discovery + route control) | AUTHORED (SKIP-proven) | `65043ce` `tests/vpn_lan/chromecast_dial.sh`; eureka_info :8008 (200+JSON name⇒PASS, 200-no-name/non-200⇒FAIL fail-closed), CASTV2 :8009 liveness via status transition (identical⇒SKIP not fake-PASS §11.4.107); discovery = Phase-5 dependency; live operator-gated |
+| 7 | ADB over VPN (access/debug/connect/flash) | AUTHORED (SKIP-proven) | `65043ce` `tests/vpn_lan/adb_over_vpn.sh`; routed 5555 connect+getprop⇒PASS, offline/unauthorized⇒FAIL; §11.4.174 device-safety (disconnect-our-serial-only, never kill-server); flash via `usbip` USB-bound operator-gated (§11.4.133); in-depth phased design in flight |
 | 8 | Miracast structural-impossibility verdict | PASS (Won't-fix) | `12faf12` `miracast_verdict.md` (§11.4.112); cited Wi-Fi-Alliance evidence; Google Cast as the routable alternative; no fake traversal test |
 | 9 | Documentation (operator bridge-setup guide) | PASS | `a5e5616` `../../guides/vpn_lan_bridge_setup.md` (routing map + verdict table + 12-row protocol matrix + FAQ); HTML+PDF §11.4.168 leak-clean |
-| 10 | Containerization via containers submodule (§11.4.76) | PENDING | Reflector + adb-server to boot on-demand via `submodules/containers` (rootless §11.4.161); depends on Phase 5/6/7 design |
-| 11 | §11.4.169 full test-type coverage + Challenges + HelixQA | IN PROGRESS | Challenge script + HelixQA `vpn_lan.yaml` bank authoring in flight; HelixQA-run honestly blocked (6 un-vendored siblings, §11.4.3) |
+| 10 | Containerization via containers submodule (§11.4.76) | AUTHORED (SKIP-proven) | `1911d5e` `containerization.md` + `vpn_lan_containers.yaml` (project-side service decl, config-injected §11.4.28) + `tests/vpn_lan/container_boot.sh` (bridge-down SKIP exit 0; malformed decl⇒FAIL fail-closed; never boots a container); `submodules/containers` untouched; remote deploy operator-gated (§11.4.122) |
+| 11 | §11.4.169 full test-type coverage + Challenges + HelixQA | AUTHORED (run-blocked) | `89f73b7` `challenges/scripts/run_vpn_lan_challenges.sh` + HelixQA `tools/helixqa/banks/vpn_lan.yaml` (9 cases); bridge-down self-proof RESULT:OK PASS=0 FAIL=0 all-SKIP; HelixQA-run honestly blocked (6 un-vendored siblings, §11.4.3); stress+chaos §11.4.85 in flight |
 
 ## Honest boundary (§11.4.6)
 
