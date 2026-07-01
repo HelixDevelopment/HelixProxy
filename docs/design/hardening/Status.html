@@ -174,21 +174,24 @@
 <body>
 <h1 id="proxy-hardening--test-type-coverage-status">Proxy Hardening —
 Test-Type Coverage Status</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-07-01T13:26:00Z <strong>Status:</strong> In progress — 9 test types
-PASS with captured live evidence (unit [control-plane, all pkgs pass],
-stress+chaos, DDoS, concurrency/atomicity, memory-soak, <strong>P10 VPN
-fail-closed full-automation GREEN</strong>, <strong>race/deadlock [0
-DATA RACE]</strong>, <strong>benchmarking/performance [data-plane
-p50=86ms + control-plane Go micro-benchmarks]</strong>,
-<strong>Challenges [2 PASS / 1 honest SKIP]</strong>), 2 honest SKIP
-(security ACL — no autonomous real-ACL-deny topology; HelixQA — bank
-blocked on 6 un-vendored siblings), integration + e2e PENDING (broader
-<code>tests/run-tests.sh</code> suite). The control-plane store-layer
-audit-atomicity TOCTOU was investigated this round and found already
-CLOSED (<code>store.WithTx</code>), verified RED→GREEN. No PASS is
-claimed without a real <code>qa-results/</code> evidence path (§11.4.6).
-<strong>Authority:</strong> Inherits
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-07-01T15:34:00Z <strong>Status:</strong> In progress — 10 test
+types PASS with captured live evidence (unit [control-plane, all pkgs
+pass], stress+chaos, DDoS, concurrency/atomicity, memory-soak,
+<strong>P10 VPN fail-closed full-automation GREEN</strong>,
+<strong>race/deadlock [0 DATA RACE]</strong>,
+<strong>benchmarking/performance [data-plane p50=86ms + control-plane Go
+micro-benchmarks]</strong>, <strong>Challenges [2 PASS / 1 honest
+SKIP]</strong>, <strong>security ACL live-deny GREEN [authoritative
+Squid access.log <code>TCP_DENIED/403</code> + <code>HIER_NONE</code> —
+deny enforced + no upstream leak; S3 Via + S4 SOCKS-SSRF also PASS,
+wired into the standing suite §11.4.135]</strong>), 1 honest SKIP
+(HelixQA — bank blocked on 6 un-vendored siblings), integration + e2e
+PENDING (broader <code>tests/run-tests.sh</code> suite). The
+control-plane store-layer audit-atomicity TOCTOU was investigated this
+round and found already CLOSED (<code>store.WithTx</code>), verified
+RED→GREEN. No PASS is claimed without a real <code>qa-results/</code>
+evidence path (§11.4.6). <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
 integration-status doc reconciling the §11.4.169 test-type-coverage
 matrix for the proxy hardening workstream. <strong>Companion:</strong>
@@ -213,14 +216,6 @@ needs operator gluetun WireGuard credentials (§11.4.21). The fail-closed
 half is now GREEN.</td>
 <td>Operator provides gluetun WireGuard creds; then the real-egress
 positive path can be captured.</td>
-</tr>
-<tr>
-<td>security ACL deny-does-not-leak (SKIP)</td>
-<td>No autonomous topology on the base stack produces a real Squid ACL
-deny (observed deny code <code>000000</code> — cannot prove deny nor
-leak).</td>
-<td>A dynamic/ACL-configured topology where a CONNECT to a denied target
-returns 403/407, so deny-without-leak is provable.</td>
 </tr>
 </tbody>
 </table>
@@ -317,13 +312,21 @@ flood; recovery code 204. <code>OVERALL=PASS</code>.</td>
 </tr>
 <tr>
 <td>Security</td>
-<td>SKIP</td>
-<td><code>qa-results/security/proxy_acl_20260701T120913Z/s1_acl_deny.evidence</code></td>
-<td>Honest SKIP:topology_unsupported — no autonomous real-ACL-deny
-topology on the base stack (observed deny code <code>000000</code>).
-Header-hygiene sub-check captured
-(<code>s2_header_hygiene.evidence</code>). Not a PASS-by-default
-(§11.4.3).</td>
+<td>PASS</td>
+<td><code>qa-results/security/proxy_acl_20260701T152442Z/s1_acl_deny.evidence</code></td>
+<td>S1 ACL-deny GREEN via the <strong>authoritative Squid
+access.log</strong> discriminator: a must-deny
+<code>CONNECT example.com:80</code> (non-SSL port, blocked by
+<code>http_access deny CONNECT !SSL_ports</code>) logs
+<code>TCP_DENIED/403 ... HIER_NONE</code> — deny enforced AND no
+upstream contacted (no leak, §11.4.68/§11.4.69). Client code (000) is
+supplementary; the log is the oracle (previously the <code>000</code>
+ambiguity forced a SKIP). RED teeth (§11.4.115): an allowed
+<code>:443</code> CONNECT logs
+<code>TCP_TUNNEL/200 ... HIER_DIRECT</code> → S1 correctly refuses a
+false deny-PASS. S3 Via/version-hygiene + S4 SOCKS-SSRF also PASS; all
+wired into the standing suite
+(<code>run-tests.sh test_security_guards</code>, §11.4.135).</td>
 </tr>
 <tr>
 <td>Stress + Chaos</td>
@@ -396,15 +399,21 @@ allocs), <code>CompileAll</code> ~39 µs/op (167 allocs),
 </table>
 <h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
 <p>This matrix reconciles the <strong>hardening</strong> test-type
-picture proven in this session. Nine types (unit, stress+chaos, DDoS,
+picture proven in this session. Ten types (unit, stress+chaos, DDoS,
 concurrency/atomicity, memory, P10 fail-closed full-automation,
-race/deadlock, benchmarking, Challenges) are PASS with captured live
-<code>qa-results/</code> evidence. Two SKIPs are honest (§11.4.3):
-security ACL (no autonomous deny topology on the base stack) and HelixQA
-(bank blocked on 6 un-vendored own-org siblings — the runner +
-<code>proxy.yaml</code> bank exist; unblock = vendor them or pass
-<code>HELIXQA_BIN</code>). Integration + e2e remain PENDING — not claims
-the capability is broken; covered by the broader
+race/deadlock, benchmarking, Challenges, security ACL live-deny) are
+PASS with captured live <code>qa-results/</code> evidence. The
+security-ACL row moved SKIP→PASS this round: the <code>000</code>
+client-code ambiguity that previously forced the SKIP was replaced by
+reading Squid's own access.log (<code>TCP_DENIED/403</code> +
+<code>HIER_NONE</code>), the authoritative sink-side oracle (§11.4.69),
+with a RED teeth-check (allowed <code>:443</code> →
+<code>TCP_TUNNEL</code>/<code>HIER_DIRECT</code> → no false deny-PASS,
+§11.4.115) and the guard wired into the standing suite (§11.4.135). One
+SKIP is honest (§11.4.3): HelixQA (bank blocked on 6 un-vendored own-org
+siblings — the runner + <code>proxy.yaml</code> bank exist; unblock =
+vendor them or pass <code>HELIXQA_BIN</code>). Integration + e2e remain
+PENDING — not claims the capability is broken; covered by the broader
 <code>tests/run-tests.sh</code> suite. The two follow-ups flagged
 earlier this round are RESOLVED: the store-layer audit-atomicity TOCTOU
 was found already CLOSED (<code>store.WithTx</code>, verified

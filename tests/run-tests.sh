@@ -750,7 +750,8 @@ test_regression_guards() {
 #######################################
 test_security_guards() {
     echo -e "\n${BLUE}=== Security Guards (§11.4.135 / §11.4.69) ===${NC}"
-    # proxy_acl_security.sh asserts S3 Via/version-hygiene + S4 SOCKS5-SSRF-block
+    # proxy_acl_security.sh asserts S1 ACL-deny (authoritative access.log
+    # TCP_DENIED/HIER_NONE) + S3 Via/version-hygiene + S4 SOCKS5-SSRF-block
     # against the LIVE proxy: exit 0=PASS / 3=topology SKIP (proxy not serving,
     # §11.4.3) / 1=FAIL. GREEN proves the shipped Squid/Dante hardening is really
     # deployed (§11.4.108 runtime-signature). The RED polarity — SEC_SSRF_TARGET
@@ -782,6 +783,28 @@ test_security_guards() {
         fi
     else
         test_result "Security guard S4 RED reproduces" "SKIP" "S4 not GREEN (dante not serving) — RED not assertable §11.4.3"
+    fi
+    # S1 ACL-deny GREEN — the first run's [S1] line reports whether the authoritative
+    # Squid access.log discriminator (TCP_DENIED/403 + HIER_NONE) proved a must-deny
+    # CONNECT was denied WITHOUT any upstream contact (deny enforced + no leak,
+    # §11.4.69/§11.4.68). GREEN proves the shipped `http_access deny CONNECT
+    # !SSL_ports` rule is really enforced on the live Squid (§11.4.108).
+    if printf '%s\n' "$_sec_out" | grep -q '\[S1\] PASS'; then
+        test_result "Security guard S1 ACL deny enforced + no leak (TCP_DENIED/HIER_NONE, live)" "PASS"
+        # S1 RED — point at an ALLOWED target (:443). Squid legitimately tunnels it
+        # (TCP_TUNNEL/HIER_DIRECT), so the deny discriminator MUST NOT emit a false
+        # [S1] PASS. This proves S1 has teeth — it refuses an unconditional GREEN
+        # (§11.4.115 polarity teeth).
+        _s1_red_out=$(SEC_DENY_TARGET=https://example.com:443/ SEC_DENY_HOSTPORT=example.com:443 \
+            bash "$SCRIPT_DIR/security/proxy_acl_security.sh" 2>&1 || true)
+        if printf '%s\n' "$_s1_red_out" | grep -q '\[S1\] PASS'; then
+            test_result "Security guard S1 RED reproduces (allowed :443 => no false deny-PASS)" "FAIL" \
+                "allowed target still produced [S1] PASS — S1 discriminator weak §11.4.7/§11.4.115"
+        else
+            test_result "Security guard S1 RED reproduces (allowed :443 => no false deny-PASS)" "PASS"
+        fi
+    else
+        test_result "Security guard S1 ACL deny (live)" "SKIP" "S1 not GREEN (proxy/access.log absent) — deny not assertable §11.4.3"
     fi
 }
 

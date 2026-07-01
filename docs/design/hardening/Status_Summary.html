@@ -174,8 +174,8 @@
 <body>
 <h1 id="proxy-hardening--status-summary">Proxy Hardening — Status
 Summary</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-07-01T13:26:00Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-07-01T15:40:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
@@ -216,15 +216,21 @@ tests exercising the shared state.</li>
 <li><strong>Performance benchmark:</strong> 200 requests through the
 proxy, measured typical latency at ~86 milliseconds (99th percentile ~91
 ms) — a saved performance baseline.</li>
+<li><strong>Access-control leak test (newly proven this round):</strong>
+we asked the proxy to reach a blocked destination and confirmed — by
+reading the proxy's own access log, its most authoritative record — that
+the request was <strong>denied and never sent upstream</strong> (no
+leak). A deliberately-allowed destination correctly did <em>not</em>
+trigger a false "denied" result, so the test genuinely catches the
+difference. This previously had to be skipped because the client-side
+result code was ambiguous; reading the proxy's own log removed the
+ambiguity.</li>
 </ul>
 <p><strong>What is still honestly skipped:</strong></p>
 <ul>
 <li><strong>Real-VPN egress proof</strong> (that traffic actually exits
 <em>through</em> the tunnel) needs the operator's VPN credentials —
 honestly skipped, not faked.</li>
-<li><strong>The access-control leak test</strong> is honestly
-<strong>skipped</strong> because the current setup can't automatically
-produce a real "access denied" situation to test against.</li>
 </ul>
 <p><strong>Also proven this round:</strong> the proxy's own unit tests
 all pass (control-plane, every package), and the live Challenge bank
@@ -232,11 +238,12 @@ passed (web-forward + SOCKS5; the cache check was honestly skipped
 because its log wasn't readable). An audit-record safety concern raised
 during the review turned out to be <strong>already fixed</strong> in the
 code — we verified it holds.</p>
-<p><strong>Bottom line:</strong> nine hardening/coverage dimensions —
-including the critical VPN fail-closed safety guarantee — are now proven
-solid with saved evidence; two items remain honestly skipped pending
-operator credentials / a specific topology / a buildable QA binary. No
-result is overstated.</p>
+<p><strong>Bottom line:</strong> ten hardening/coverage dimensions —
+including the critical VPN fail-closed safety guarantee and the
+access-control leak test now proven via the proxy's own log — are proven
+solid with saved evidence; the remaining honest skips are the real-VPN
+egress proof (operator credentials) and the HelixQA bank (a buildable QA
+binary). No result is overstated.</p>
 <hr />
 <h2 id="page-2--for-software-engineers">Page 2 — For software
 engineers</h2>
@@ -282,10 +289,14 @@ are the literal <code>OVERALL=</code> lines from each
 </tr>
 <tr>
 <td>Security (ACL)</td>
-<td>SKIP</td>
-<td><code>qa-results/security/proxy_acl_20260701T120913Z/s1_acl_deny.evidence</code>
-— <code>SKIP:topology_unsupported</code> (deny code <code>000000</code>,
-§11.4.3)</td>
+<td>PASS</td>
+<td><code>qa-results/security/proxy_acl_20260701T152442Z/s1_acl_deny.evidence</code>
+— S1 deny via authoritative Squid access.log:
+<code>CONNECT example.com:80</code> ⇒
+<code>TCP_DENIED/403 … HIER_NONE</code> (deny + no upstream leak,
+§11.4.68/§11.4.69); RED teeth: allowed <code>:443</code> ⇒
+<code>TCP_TUNNEL/HIER_DIRECT</code> ⇒ no false deny-PASS (§11.4.115).
+Wired into standing suite (§11.4.135)</td>
 </tr>
 <tr>
 <td>Full-automation (P10 VPN fail-closed)</td>

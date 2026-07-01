@@ -1,7 +1,7 @@
 # Proxy Hardening — Status Summary
 
-**Revision:** 3
-**Last modified:** 2026-07-01T13:26:00Z
+**Revision:** 4
+**Last modified:** 2026-07-01T15:40:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -38,23 +38,28 @@ none of these results can be faked.
   exercising the shared state.
 - **Performance benchmark:** 200 requests through the proxy, measured typical latency at
   ~86 milliseconds (99th percentile ~91 ms) — a saved performance baseline.
+- **Access-control leak test (newly proven this round):** we asked the proxy to reach a
+  blocked destination and confirmed — by reading the proxy's own access log, its most
+  authoritative record — that the request was **denied and never sent upstream** (no leak).
+  A deliberately-allowed destination correctly did *not* trigger a false "denied" result,
+  so the test genuinely catches the difference. This previously had to be skipped because
+  the client-side result code was ambiguous; reading the proxy's own log removed the
+  ambiguity.
 
 **What is still honestly skipped:**
 
 - **Real-VPN egress proof** (that traffic actually exits *through* the tunnel) needs the
   operator's VPN credentials — honestly skipped, not faked.
-- **The access-control leak test** is honestly **skipped** because the current setup can't
-  automatically produce a real "access denied" situation to test against.
 
 **Also proven this round:** the proxy's own unit tests all pass (control-plane, every
 package), and the live Challenge bank passed (web-forward + SOCKS5; the cache check was
 honestly skipped because its log wasn't readable). An audit-record safety concern raised
 during the review turned out to be **already fixed** in the code — we verified it holds.
 
-**Bottom line:** nine hardening/coverage dimensions — including the critical VPN fail-closed
-safety guarantee — are now proven solid with saved evidence; two items remain honestly
-skipped pending operator credentials / a specific topology / a buildable QA binary. No
-result is overstated.
+**Bottom line:** ten hardening/coverage dimensions — including the critical VPN fail-closed
+safety guarantee and the access-control leak test now proven via the proxy's own log — are
+proven solid with saved evidence; the remaining honest skips are the real-VPN egress proof
+(operator credentials) and the HelixQA bank (a buildable QA binary). No result is overstated.
 
 ---
 
@@ -69,7 +74,7 @@ result is overstated.
 | Stress + Chaos | PASS | `qa-results/stress/proxy_forward_20260701T120843Z/stress.evidence` (110/110, `OVERALL=PASS`) + `qa-results/chaos/proxy_restart_20260701T120941Z/recovery_trace.log` (`recovered=yes … OVERALL=PASS`) |
 | Concurrency / atomicity | PASS | `qa-results/concurrency/proxy_concurrency_20260701T122740Z/concurrency.evidence` — 40 mixed clients, `crosstalk=0`, `OVERALL=PASS` |
 | Memory | PASS | `qa-results/memory/proxy_soak_20260701T122643Z/soak.evidence` — `growth_ratio=1.0017`, `OVERALL=PASS` |
-| Security (ACL) | SKIP | `qa-results/security/proxy_acl_20260701T120913Z/s1_acl_deny.evidence` — `SKIP:topology_unsupported` (deny code `000000`, §11.4.3) |
+| Security (ACL) | PASS | `qa-results/security/proxy_acl_20260701T152442Z/s1_acl_deny.evidence` — S1 deny via authoritative Squid access.log: `CONNECT example.com:80` ⇒ `TCP_DENIED/403 … HIER_NONE` (deny + no upstream leak, §11.4.68/§11.4.69); RED teeth: allowed `:443` ⇒ `TCP_TUNNEL/HIER_DIRECT` ⇒ no false deny-PASS (§11.4.115). Wired into standing suite (§11.4.135) |
 | Full-automation (P10 VPN fail-closed) | PASS | `qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt` — tunnel DOWN ⇒ branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged; deterministic ×3 + RED polarity guard (§11.4.50/§11.4.115). Egress-half operator-gated SKIP (§11.4.21) |
 | Race / deadlock | PASS | `qa-results/race/control-plane_race_20260701T125739Z.log` — `go test -race ./...` 11 pkgs, **0 DATA RACE**, EXIT=0 |
 | Benchmarking / performance | PASS | `qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt` — 200/200 204s, `p50=0.086 p95=0.088 p99=0.091`s, 10.841 req/s, `OVERALL=PASS` |

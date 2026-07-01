@@ -5,12 +5,17 @@
 # Purpose:      Assert the LIVE HTTP forward proxy's (Squid, localhost:53128)
 #               SECURITY posture with captured evidence (§11.4.69), two hard-gated
 #               anti-bluff checks:
-#                 S1 ACL DENY does NOT leak — a request the proxy MUST deny (a
-#                    CONNECT to a non-SSL port, blocked by the shipped Squid
-#                    `http_access deny CONNECT !SSL_ports` rule) returns the
-#                    expected deny code (403 Forbidden, or 407 when per-user
-#                    proxy-auth is configured) and NEVER a 2xx/3xx success. A 2xx
-#                    for a must-deny target is a real LEAK (§11.4.68) -> FAIL.
+#                 S1 ACL DENY is enforced + does NOT leak — a CONNECT to a non-SSL
+#                    port (blocked by the shipped Squid `http_access deny CONNECT
+#                    !SSL_ports` rule) is PROVEN denied by reading Squid's OWN
+#                    access.log (via `podman exec`, read-only): a `TCP_DENIED/403
+#                    ... CONNECT <target> ... HIER_NONE` line proves BOTH the policy
+#                    denial fired AND that no upstream was contacted (HIER_NONE =
+#                    no egress = no leak). Client codes are unreliable here (Squid
+#                    closes the denied tunnel → curl 000), so the log is the oracle
+#                    (§11.4.69). A `TCP_TUNNEL`/`HIER_DIRECT` line for the must-deny
+#                    target is a real LEAK (§11.4.68) -> FAIL; log unreadable ->
+#                    honest SKIP (§11.4.3), never a fail-open PASS.
 #                 S2 HEADER HYGIENE — the hop-by-hop `Proxy-Authorization`
 #                    credential the client sends to the proxy is NOT forwarded to
 #                    the upstream ORIGIN. Proven by echoing the request back from
@@ -31,9 +36,13 @@
 # Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use).
 #               Env: HTTP_PROXY_URL (default http://localhost:53128),
 #                    HTTP_PROXY_PORT (default 53128),
-#                    SEC_DENY_TARGET (default https://example.com:81/ — CONNECT to
-#                        a non-SSL port; Squid denies BEFORE any upstream connect),
-#                    SEC_DENY_EXPECT (default "403 407"),
+#                    SEC_DENY_TARGET (default https://example.com:80/ — CONNECT to
+#                        non-SSL port 80; Squid denies via deny CONNECT !SSL_ports),
+#                    SEC_DENY_HOSTPORT (default example.com:80 — the host:port token
+#                        matched in the Squid access.log deny line),
+#                    SEC_SQUID_CONTAINER (default proxy-squid — read access.log via
+#                        `podman exec`, read-only), SEC_SQUID_LOG (default
+#                        /var/log/squid/access.log),
 #                    SEC_HEADER_ECHO_URL (default http://httpbin.org/headers),
 #                    CURL_MAX_TIME (default 15),
 #                    SEC_EVIDENCE_DIR (default qa-results/security/proxy_acl_<ts>).
@@ -41,10 +50,13 @@
 #               Exit: 0 = PASS, 1 = FAIL (ACL leak or credential leak — real
 #               security defect), 3 = SKIP (honest: proxy/topology absent, or the
 #               header-echo endpoint unreachable, §11.4.3).
-# Side-effects: Live curl only. NEVER stops/starts/restarts/reconfigures any
-#               container; never touches operator resources. Creates the evidence
-#               dir under qa-results/ (gitignored). `trap` cleanup (§11.4.14).
-# Dependencies: bash, curl, awk, grep; tests/lib/evidence.sh (sourced).
+# Side-effects: Live curl + a READ-ONLY `podman exec proxy-squid` (tail/wc the
+#               access.log — never mutates the container). NEVER stops/starts/
+#               restarts/reconfigures any container; never touches operator
+#               resources. Creates the evidence dir under qa-results/ (gitignored).
+#               `trap` cleanup (§11.4.14).
+# Dependencies: bash, curl, awk, grep, sed, podman (read-only exec);
+#               tests/lib/evidence.sh (sourced).
 # Resources:    shell + curl only; well under the §12.6 60% host-memory ceiling.
 # Cross-refs:   §11.4.169 (security test type) / §11.4.85 / §11.4.69 (captured
 #               evidence) / §11.4.68 (no fail-open) / §11.4.1 (no false-FAIL) /
@@ -80,8 +92,7 @@ fi
 # --- Config -----------------------------------------------------------------
 PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
 PROXY_PORT=${HTTP_PROXY_PORT:-53128}
-DENY_TARGET=${SEC_DENY_TARGET:-https://example.com:81/}
-DENY_EXPECT=${SEC_DENY_EXPECT:-403 407}
+DENY_TARGET=${SEC_DENY_TARGET:-https://example.com:80/}
 ECHO_URL=${SEC_HEADER_ECHO_URL:-http://httpbin.org/headers}
 MAX_TIME=${CURL_MAX_TIME:-15}
 RUN_TS=$(date -u +%Y%m%dT%H%M%SZ)
@@ -108,47 +119,83 @@ echo "=== $SUITE — run $RUN_TS ==="
 echo "proxy=$PROXY_URL  evidence=$EVIDENCE_DIR"
 
 # ---------------------------------------------------------------------------
-# S1 — ACL deny does NOT leak.
+# S1 — ACL deny is ENFORCED and does NOT leak (authoritative sink-side, §11.4.69).
+#   A CONNECT to a non-SSL port is denied by Squid's shipped
+#   `http_access deny CONNECT !SSL_ports`. Client-observed codes are UNRELIABLE
+#   here — Squid closes the denied CONNECT tunnel, so curl reports 000 (this is the
+#   ambiguity that previously forced an honest SKIP). The verdict therefore reads
+#   Squid's OWN access.log via `podman exec` (read-only): a
+#   `TCP_DENIED/403 ... CONNECT <target> ... HIER_NONE` line PROVES both the policy
+#   denial fired AND that NO upstream was ever contacted (HIER_NONE = no egress =
+#   no leak, §11.4.68). A `TCP_TUNNEL`/`HIER_DIRECT` line for the must-deny target
+#   is a real LEAK -> FAIL. Log unreadable / proxy absent -> honest SKIP (§11.4.3),
+#   NEVER a fail-open PASS.
 # ---------------------------------------------------------------------------
 S1_EV="$EVIDENCE_DIR/s1_acl_deny.evidence"
+SQUID_CTR=${SEC_SQUID_CONTAINER:-proxy-squid}
+SQUID_LOG=${SEC_SQUID_LOG:-/var/log/squid/access.log}
+DENY_HOSTPORT=${SEC_DENY_HOSTPORT:-example.com:80}
+if port_is_listening "$PROXY_PORT"; then listen=yes; else listen=no; fi
+
+# Snapshot the authoritative access.log line count BEFORE the probe (read-only).
+log_before=$(podman exec "$SQUID_CTR" sh -c "wc -l < '$SQUID_LOG'" 2>/dev/null || printf '')
+
+# Fire the must-deny CONNECT. The client code is SUPPLEMENTARY only — Squid closes
+# the denied tunnel so curl typically reports 000; the access.log is the oracle.
 deny_code=$(curl -sS --max-time "$MAX_TIME" -o /dev/null -w '%{http_code}' \
     -x "$PROXY_URL" "$DENY_TARGET" 2>/dev/null || printf '000')
-if port_is_listening "$PROXY_PORT"; then listen=yes; else listen=no; fi
+
+# Classify by the lines THIS probe appended to the authoritative sink.
+_hp_re=$(printf '%s' "$DENY_HOSTPORT" | sed 's/\./\\./g')
+deny_line=""; leak_line=""
+if [ -n "$log_before" ]; then
+    appended=$(podman exec "$SQUID_CTR" sh -c "tail -n +$((log_before + 1)) '$SQUID_LOG'" 2>/dev/null || printf '')
+    deny_line=$(printf '%s\n' "$appended" | grep -E "CONNECT ${_hp_re} " | grep -E 'TCP_DENIED' | tail -1)
+    leak_line=$(printf '%s\n' "$appended" | grep -E "CONNECT ${_hp_re} " | grep -E 'TCP_TUNNEL|HIER_DIRECT' | tail -1)
+fi
+
 {
-    printf '=== S1: ACL deny does not leak ===\n'
-    printf 'deny_target=%s (CONNECT to a non-SSL port — must be denied by Squid)\n' "$DENY_TARGET"
-    printf 'expected_deny_codes=%s\n' "$DENY_EXPECT"
-    printf 'proxy_http_code=%s port_%s_listening=%s\n' "$deny_code" "$PROXY_PORT" "$listen"
+    printf '=== S1: ACL deny enforced + no leak (authoritative access.log) ===\n'
+    printf 'deny_target=%s (CONNECT to non-SSL port :%s — must be denied by http_access deny CONNECT !SSL_ports)\n' "$DENY_TARGET" "${DENY_HOSTPORT##*:}"
+    printf 'squid_container=%s log=%s port_%s_listening=%s\n' "$SQUID_CTR" "$SQUID_LOG" "$PROXY_PORT" "$listen"
+    printf 'client_http_code=%s (supplementary — Squid closes the denied CONNECT tunnel)\n' "$deny_code"
+    printf 'authoritative_deny_line=%s\n' "${deny_line:-<none>}"
+    printf 'leak_line=%s\n' "${leak_line:-<none>}"
 } > "$S1_EV"
 
-# A 2xx/3xx SUCCESS for a must-deny target is an unambiguous LEAK.
-_is_success_code() {
-    case "$1" in
-        200|201|202|203|204|205|206|301|302|303|307|308) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-if _code_in "$deny_code" "$DENY_EXPECT"; then
-    printf 'verdict=PASS (deny enforced, no leak)\n' >> "$S1_EV"
-    echo "[S1] PASS ACL deny enforced (code=$deny_code)"
-    ab_pass_with_evidence "S1 ACL deny enforced ($deny_code for must-deny $DENY_TARGET)" "$S1_EV"
-    N_PASS=$((N_PASS + 1))
-elif _is_success_code "$deny_code"; then
-    printf 'verdict=FAIL (LEAK: proxy served a must-deny target)\n' >> "$S1_EV"
-    echo "[S1] FAIL LEAK — proxy returned success ($deny_code) for a must-deny target"
-    _evidence_emit FAIL "S1 ACL deny" "[reason: proxy returned $deny_code (success) for must-deny $DENY_TARGET — ACL LEAK (§11.4.68); see $S1_EV]"
-    N_FAIL=$((N_FAIL + 1))
-elif [ "$listen" = "no" ]; then
+if [ "$listen" = "no" ]; then
     printf 'verdict=SKIP:topology_unsupported (proxy port not listening)\n' >> "$S1_EV"
     echo "[S1] SKIP proxy :$PROXY_PORT not listening"
     ab_skip_with_reason "S1 ACL deny (proxy :$PROXY_PORT not listening)" "topology_unsupported"
     N_SKIP=$((N_SKIP + 1))
+elif [ -z "$log_before" ]; then
+    printf 'verdict=SKIP:topology_unsupported (squid access.log not readable via podman exec %s — no fail-open)\n' "$SQUID_CTR" >> "$S1_EV"
+    echo "[S1] SKIP squid access.log unreadable (container $SQUID_CTR) — no fail-open"
+    ab_skip_with_reason "S1 ACL deny (access.log unreadable in $SQUID_CTR)" "topology_unsupported"
+    N_SKIP=$((N_SKIP + 1))
+elif [ -n "$leak_line" ]; then
+    printf 'verdict=FAIL (LEAK: must-deny CONNECT forwarded upstream)\n' >> "$S1_EV"
+    echo "[S1] FAIL LEAK — proxy forwarded a must-deny CONNECT: $leak_line"
+    _evidence_emit FAIL "S1 ACL deny" "[reason: access.log shows must-deny CONNECT $DENY_HOSTPORT forwarded upstream ($leak_line) — ACL LEAK (§11.4.68); see $S1_EV]"
+    N_FAIL=$((N_FAIL + 1))
+elif [ -n "$deny_line" ]; then
+    if printf '%s' "$deny_line" | grep -q 'HIER_NONE'; then
+        printf 'verdict=PASS (TCP_DENIED + HIER_NONE = deny enforced, no upstream contacted, no leak)\n' >> "$S1_EV"
+        echo "[S1] PASS ACL deny enforced + no leak (TCP_DENIED, HIER_NONE): $deny_line"
+        ab_pass_with_evidence "S1 ACL deny enforced + HIER_NONE no-leak for must-deny $DENY_HOSTPORT" "$S1_EV"
+        N_PASS=$((N_PASS + 1))
+    else
+        printf 'verdict=FAIL (denied but hierarchy != HIER_NONE — cannot prove no upstream contact)\n' >> "$S1_EV"
+        echo "[S1] FAIL deny line lacks HIER_NONE: $deny_line"
+        _evidence_emit FAIL "S1 ACL deny" "[reason: TCP_DENIED but hierarchy != HIER_NONE ($deny_line) — no-leak not provable; see $S1_EV]"
+        N_FAIL=$((N_FAIL + 1))
+    fi
 else
-    # Listening but neither the expected deny code nor a leak (e.g. 000/502/503):
-    # cannot prove a clean deny NOR a leak on this topology — honest SKIP.
-    printf 'verdict=SKIP:topology_unsupported (unexpected deny code %s — cannot prove deny or leak)\n' "$deny_code" >> "$S1_EV"
-    echo "[S1] SKIP unexpected code=$deny_code (neither expected deny nor a leak)"
-    ab_skip_with_reason "S1 ACL deny (unexpected code $deny_code — deny posture not assertable on this topology)" "topology_unsupported"
+    # Listening + log readable but NO deny line AND no leak line for the target:
+    # the must-deny request left no authoritative trace — cannot prove deny; SKIP.
+    printf 'verdict=SKIP:topology_unsupported (no access.log deny/leak line for %s — client_code=%s)\n' "$DENY_HOSTPORT" "$deny_code" >> "$S1_EV"
+    echo "[S1] SKIP no authoritative access.log line for $DENY_HOSTPORT (client_code=$deny_code)"
+    ab_skip_with_reason "S1 ACL deny (no authoritative access.log trace for $DENY_HOSTPORT)" "topology_unsupported"
     N_SKIP=$((N_SKIP + 1))
 fi
 
