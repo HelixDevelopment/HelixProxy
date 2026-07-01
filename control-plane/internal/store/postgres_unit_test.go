@@ -135,10 +135,11 @@ func TestErrNotFoundDistinct(t *testing.T) {
 // complete Queries implementation (mirrors the var _ Queries assertion).
 func TestPostgresSatisfiesQueries(t *testing.T) {
 	t.Parallel()
-	var q Queries = New(nil)
-	if q == nil {
-		t.Fatal("New(nil) must return a non-nil Queries")
-	}
+	// Compile-time assertion: *Postgres is a complete Queries implementation —
+	// binding New(nil)'s concrete *Postgres to the interface fails to compile if a
+	// method is missing (the real coverage). A runtime `if q == nil` is dead code
+	// (SA4023): New always returns a non-nil *Postgres.
+	var _ Queries = New(nil)
 	// We do not call methods here (no DB); this only pins the interface.
 	_ = context.Background()
 }
