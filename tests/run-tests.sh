@@ -809,6 +809,69 @@ test_security_guards() {
 }
 
 #######################################
+# VPN-LAN svord bridge preflight (Phase 0 — §11.4.3 honest-SKIP + §11.4.115 teeth)
+#   Runs scripts/svord_doctor.sh and interprets its single BRIDGE: verdict. When
+#   the svord bridge is DOWN or the .env contract is not configured (the default
+#   autonomous state — no live svord connection), the VPN-LAN feature correctly
+#   SKIPs (topology absent) — NEVER a fake PASS. When UP, the preflight PASSes and
+#   the operator-gated protocol round-trips become runnable. A teeth check proves
+#   the SKIP is CONDITIONAL (a healthy local stub flips the verdict to UP), so the
+#   honest-SKIP can never degrade into an always-SKIP rubber-stamp.
+#######################################
+test_vpn_lan_bridge() {
+    local doctor="$SCRIPT_DIR/../scripts/svord_doctor.sh"
+    if [[ ! -f "$doctor" ]]; then
+        test_result "VPN-LAN svord bridge preflight" "SKIP" "svord_doctor.sh absent (Phase 0 not present) §11.4.3"
+        return
+    fi
+    local _vd_out _vd_rc=0
+    _vd_out=$(sh "$doctor" 2>&1) || _vd_rc=$?
+    local _verdict
+    _verdict=$(printf '%s\n' "$_vd_out" | grep -E '^BRIDGE: ' | tail -1)
+    case "$_verdict" in
+        "BRIDGE: UP")
+            test_result "VPN-LAN svord bridge preflight (bridge UP — protocol round-trips runnable)" "PASS"
+            ;;
+        "BRIDGE: SKIP:"*)
+            test_result "VPN-LAN svord bridge preflight (bridge down — honest SKIP §11.4.3)" "SKIP" \
+                "${_verdict#BRIDGE: } — VPN-LAN tests correctly SKIP when the svord bridge is down (not a fake PASS)"
+            ;;
+        "BRIDGE: MISCONFIGURED:"*)
+            test_result "VPN-LAN svord bridge preflight (bridge not configured — honest SKIP §11.4.3)" "SKIP" \
+                "${_verdict#BRIDGE: } — copy .env.example→.env + point at svord_toolkit to enable the VPN-LAN feature"
+            ;;
+        *)
+            test_result "VPN-LAN svord bridge preflight" "FAIL" \
+                "svord_doctor emitted no recognized BRIDGE verdict (rc=$_vd_rc): ${_vd_out}"
+            ;;
+    esac
+
+    # §11.4.115 teeth — prove the SKIP is CONDITIONAL, not an always-SKIP: point
+    # svord_doctor at a local UP-stub bridge (health exit 0, loopback host) and
+    # assert the verdict flips to UP. If the preflight SKIPped even with a healthy
+    # stub, the honest-SKIP would be a rubber-stamp (a §11.4 bluff).
+    local _stub
+    _stub=$(mktemp -d 2>/dev/null || echo "/tmp/svord_stub_$$")
+    mkdir -p "$_stub"
+    printf '#!/bin/sh\nexit 0\n' > "$_stub/health"
+    printf '#!/bin/sh\nexit 0\n' > "$_stub/conn"
+    printf '#!/bin/sh\nexit 0\n' > "$_stub/disc"
+    chmod +x "$_stub/health" "$_stub/conn" "$_stub/disc" 2>/dev/null
+    local _teeth _teeth_rc=0
+    _teeth=$(HELIX_SVORD_DIR="$_stub" HELIX_BRIDGE_CONNECT="$_stub/conn" \
+        HELIX_BRIDGE_DISCONNECT="$_stub/disc" HELIX_BRIDGE_HEALTH="$_stub/health" \
+        HELIX_BRIDGE_SUBNET="10.0.0.0/8" HELIX_BRIDGE_HOST="127.0.0.1" \
+        sh "$doctor" 2>&1) || _teeth_rc=$?
+    rm -rf "$_stub" 2>/dev/null
+    if printf '%s\n' "$_teeth" | grep -q '^BRIDGE: UP'; then
+        test_result "VPN-LAN bridge preflight teeth (UP-stub ⇒ UP — SKIP is conditional §11.4.115)" "PASS"
+    else
+        test_result "VPN-LAN bridge preflight teeth (UP-stub ⇒ UP — SKIP is conditional §11.4.115)" "FAIL" \
+            "healthy local stub did not yield BRIDGE: UP — preflight may be an always-SKIP rubber-stamp: ${_teeth}"
+    fi
+}
+
+#######################################
 # Print summary
 #######################################
 print_summary() {
@@ -848,6 +911,7 @@ main() {
     test_constitution_inheritance
     test_regression_guards
     test_security_guards
+    test_vpn_lan_bridge
     test_environment
     test_directories
     test_scripts
