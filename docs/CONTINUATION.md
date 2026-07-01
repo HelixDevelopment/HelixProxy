@@ -1,8 +1,8 @@
 # CONTINUATION — Helix Proxy: VPN-Aware Dynamic Routing Extension
 
-**Revision:** 3
-**Last modified:** 2026-07-01T02:43:32Z
-**Status:** Active — control-plane + config-plane + control-API (P6) landed and unit/integration/parse-proven; the existing forward-proxy/SOCKS5/cache features are now PROVEN-WORKING-LIVE after BUGFIX-0002 (squid no longer crash-loops under rootless Podman); the LIVE *dynamic-VPN* data-plane proof is still owed to P10.
+**Revision:** 4
+**Last modified:** 2026-07-01T12:40:00Z
+**Status:** Active — the anti-bluff existing-suite sweep is COMPLETE (audit B1–B8 all remediated + guarded; BUGFIX-0014/0015/0016/0017/0018 landed; standing suite `run-tests.sh` = 61 run / 55 pass / 6 skip / 0 fail with every guard GREEN+RED registered). Let's Encrypt workstream (task #59) started: Phase 0 operator decisions + Phase 1 offline cert-analyzer + self-validation guard landed @ `2812f48`. LE Phase 2/3 (hermetic Caddy+Pebble issuance) + release-prep in flight via 3 background subagents. The LIVE *dynamic-VPN* data-plane proof (P10) + LE real-domain cutover remain operator-gated.
 **Branch:** `feature/vpn-aware-dynamic-routing`
 **Spec:** `docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md` (Rev 4)
 **Plan:** `docs/superpowers/plans/2026-06-30-vpn-aware-proxy-extension-plan.md` (Rev 1)
@@ -198,36 +198,47 @@ usability proof:
 ## 6. Resume now (next actionable)
 
 1. `git fetch --all --prune` on `feature/vpn-aware-dynamic-routing`; confirm HEAD
-   `8d95f8a` (28 ahead of `main`; or integrate any newer foreign commit per
-   §11.4.71, no force).
-2. **#50 cachectl restore (in flight, background subagent):** on its return,
-   review independently (§11.4.142) — verify the live `./cachectl stats/size/list`
-   data-plane evidence, the CONTAINER_RUNTIME wiring fix, the §11.4.135 guard
-   RED/GREEN + §1.1 mutation (byte-identical restore md5), the doc-sync
-   (`./cache`→`./cachectl` in README/USER_GUIDE/CACHE/TROUBLESHOOTING + exports,
-   zero raw-markup leak §11.4.168), and the 4 flipped `comprehensive-test.sh`
-   cache-CLI checks now PASS — then commit explicit-path (§11.4.84), no-force.
-3. **P10 fail-closed half (doable now, NO operator dependency):** boot the
-   `dynamic` stack (data-plane only: redis+postgres+gluetun+compiler+healthd+
-   squid-dynamic; a **self-generated throwaway** `helixproxy_pg_password` Podman
-   secret — internal test-DB password, not an operator credential) with the
-   tunnel forced down (empty `WIREGUARD_*` + `FIREWALL=on`) → assert branded 503
-   with squid PID unchanged + zero target packets on the real uplink (`tcpdump`
-   no-leak). NB: booting reclaims `:53128` from the running proxy — single-owner
-   the data plane (§11.4.119), so run AFTER #50's live cache testing frees it.
-   The **real-VPN-egress half** (egress IP == tunnel exit != host + `wg transfer`
-   Δ) is **operator-gated on gluetun WireGuard credentials** — surface via
-   §11.4.66 ONLY at that boundary (don't block the loop; §11.4.21/§11.4.101). The
-   `api-service` control-plane entry is NOT required for the data-plane
-   fail-closed proof; only for the full control surface (resolve at execution).
-4. **P12 (last):** whole-branch review iterate-to-GO + full retest (§11.4.40) +
-   merge onto latest `main` fast-forward-only (§11.4.113) + project-prefixed
-   release tag (§11.4.151).
-5. Tracked follow-ups: **#52** (store-tx spanning mutation+audit — the WARNING-4
-   cross-step un-audited-mutation window), **#53** (separate plaintext `/metrics`
-   listener vs the mTLS port — WARNING-5, operator-gated at P10 topology). P6.2
-   admin-UI + §11.4.170 host-rendered pixel proof deferred.
-6. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
+   `2812f48` (== `main` == all 3 remotes github/origin/upstream; integrate any
+   newer foreign commit per §11.4.71, no force §11.4.113).
+2. **Anti-bluff sweep — DONE.** Audit `docs/research/existing_test_bluffs_audit/`
+   B1–B8 all remediated in committed `comprehensive-test.sh`/`verify-proxy.sh`/
+   `final-verify.sh`/`run-tests.sh` (assert_egress_ip, assert_cache_hit,
+   per-request %{http_code}, ab_pass_with_evidence, honest SKIP bucket).
+   Standing guards registered in `run-tests.sh test_regression_guards()`:
+   BUGFIX-0014 (proxy_conn_verdict), 0015 (ddos_flood evidence), 0016 (benchmark
+   ratchet), 0018 (assert_egress_ip host-undeterminable fail-open + F-1 IP-shape),
+   LE cert-analyzer self-validation — each GREEN + `RED_MODE=1`. Full suite:
+   61 run / 55 pass / 6 skip / 0 fail. BUGFIX-0017 (comprehensive canaries) also
+   landed (reuses the 0014 classifier guard).
+3. **LE workstream (task #59) — IN FLIGHT.** Landed @ `2812f48`: Phase 0 decisions
+   (Caddy auto-HTTPS / DNS-01 / hermetic-first — `docs/design/letsencrypt/Status.md`)
+   + Phase 1 offline cert-analyzer `tests/letsencrypt/cert_analyzer.sh` (5 pure
+   now-seam functions, self-validated §11.4.107(10), guard
+   `cert_analyzer_selfvalidation_test.sh` GREEN+RED, §1.1 verified). 3 background
+   subagents running (authoring only — conductor is the single container-boot
+   owner §11.4.119): (A) hermetic Caddy+Pebble+DNS-01 research →
+   `docs/research/letsencrypt_hermetic_20260701/`; (B) Phase-2 infra config →
+   `deploy/letsencrypt/` (Caddyfile+compose+secret NAMES/volume via the containers
+   submodule, rootless); (C) release-prep audit + runbook → `docs/releases/`.
+   On each return: conductor reviews (§11.4.142), integrates, then boots the
+   hermetic Pebble+Caddy stack via `submodules/containers` (§11.4.76) to prove a
+   REAL cert issuance (Phase 3, anti-bluff core), asserting the result with the
+   cert-analyzer; Phase 5 renewal/rotation sim next. Phase 4 (LE-staging real
+   DNS-01 token §11.4.10) + Phase 6 (prod cutover, real domain) are OPERATOR-BLOCKED
+   — surface via §11.4.66 only at that boundary.
+4. **Two documented follow-up nits (non-blocking):** (i) F5 ddos_flood
+   crashed-vs-absent reason precision (needs an "observed-up-before" signal;
+   BUGFIX-0015 ledger). (ii) `_evidence_ip_shaped` accepts the long-form IPv6
+   `0:0:0:0:0:0:0:0` (unreachable as a fail-open — no caller emits it; re-review
+   informational note). Neither is a live bluff.
+5. **P10 dynamic-VPN data-plane proof + #56 observability** remain: fail-closed
+   half doable autonomously (boot dynamic stack, tunnel down → branded 503 + no
+   leak), real-VPN-egress half operator-gated on gluetun WireGuard creds (§11.4.66).
+   Booting reclaims `:53128` — single-owner (§11.4.119); free the running proxy first.
+6. **Release (§11.4.40/§11.4.113/§11.4.151):** after LE Phase 3 + full retest, cut
+   `helix_proxy-0.1.0-dev-0.0.2` via GitHub AND GitLab CLIs with a changelog (per
+   the release runbook stream C is drafting), FF-only merge onto latest `main`.
+7. Every change: TDD reproduce-first (§11.4.43/§11.4.115), all warranted test
    types (§11.4.169), paired §1.1 mutation, independent review → iterate-to-GO
    (§11.4.142/§11.4.125/§11.4.134), docs in sync (§11.4.60/§11.4.65/§11.4.106),
-   operator resources untouched (§11.4.174: `wg0-mullvad`, `lava-*`).
+   operator resources untouched (§11.4.174: `wg0-mullvad`, `lava-*`, `whoami:58080`).
