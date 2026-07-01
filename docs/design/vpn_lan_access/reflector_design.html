@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>reflector_design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">reflector_design</h1>
+</header>
+<h1
+id="multicast-discovery-reflector-remote-side-design-vpn-lan-phase-5">Multicast
+Discovery Reflector — Remote-Side Design (VPN-LAN Phase 5)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Design — reflector NOT
+deployed (operator-gated §11.4.122); local discovery test honest-SKIPs
+until a reflector is configured (§11.4.3) <strong>Authority:</strong>
+Inherits <code>constitution/Constitution.md</code> per §11.4.35. Phase 5
+of <a href="PLAN.md"><code>PLAN.md</code></a> §5 — the remote-side
+multicast discovery reflector that lets helix_proxy-side clients
+enumerate services living on the svord VPN-internal subnet.
+<strong>Feature workstream:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> (§11.4.167)
+<strong>Companion:</strong> plan <a
+href="PLAN.md"><code>PLAN.md</code></a> §2 routing map (the “Multicast
+discovery → REFLECT” row) + §5 Phase 5 · the discovered devices are then
+driven by Phase 6 (Google Cast / DIAL) · the structural-impossibility
+sibling is <a
+href="miracast_verdict.md"><code>miracast_verdict.md</code></a> · local
+proof: <a
+href="../../../tests/vpn_lan/discovery_reflect.sh"><code>../../../tests/vpn_lan/discovery_reflect.sh</code></a></p>
+<hr />
+<h2 id="problem-statement-fact-11.4.6">1. Problem statement (FACT,
+§11.4.6)</h2>
+<p>helix_proxy’s VPN is <strong>L3-routed</strong> (WireGuard + L2TP/PPP
+over <code>ppp0</code>; reachable subnet <code>10.0.0.0/8</code>; svord
+host <code>10.6.100.221</code>) — see <a
+href="PLAN.md"><code>PLAN.md</code></a> §2. Unicast services (SMB, NFS,
+FTP, SFTP, IMAP, SMTP, POP3, WebDAV, Cast control, DIAL control, ADB)
+route across it as ordinary IP packets. <strong>Service
+<em>discovery</em>, however, does not</strong> — the four mainstream
+discovery protocols in scope are all <strong>multicast</strong>, and a
+router (which is exactly what an L3 VPN is) <strong>does not forward
+these multicast groups across a subnet boundary by default.</strong> So
+a helix_proxy-side client that runs an <code>avahi-browse</code> / SSDP
+<code>M-SEARCH</code> sees only its <em>own</em> local subnet, never the
+remote VPN-internal subnet where the target devices actually live.</p>
+<p>The discovery protocols and their multicast well-known endpoints
+(FACT — stable, standardized values):</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Protocol</th>
+<th>Transport</th>
+<th>IPv4 group</th>
+<th>Port</th>
+<th>Governing spec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>mDNS</strong> (Bonjour name resolution)</td>
+<td>UDP</td>
+<td><code>224.0.0.251</code></td>
+<td><code>5353</code></td>
+<td>RFC 6762</td>
+</tr>
+<tr>
+<td><strong>DNS-SD</strong> (service enumeration, layered on mDNS)</td>
+<td>UDP</td>
+<td><code>224.0.0.251</code></td>
+<td><code>5353</code></td>
+<td>RFC 6763</td>
+</tr>
+<tr>
+<td><strong>SSDP / UPnP</strong> (device discovery)</td>
+<td>UDP</td>
+<td><code>239.255.255.250</code></td>
+<td><code>1900</code></td>
+<td>UPnP Device Architecture</td>
+</tr>
+<tr>
+<td><strong>WS-Discovery</strong> (SOAP-over-UDP discovery)</td>
+<td>UDP</td>
+<td><code>239.255.255.250</code></td>
+<td><code>3702</code></td>
+<td>OASIS WS-Discovery</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2
+id="why-multicast-does-not-cross-an-l3-vpn-the-routing-argument-fact">2.
+WHY multicast does not cross an L3 VPN (the routing argument, FACT)</h2>
+<p>Two independent standard-mandated properties make these groups
+<strong>subnet-local by design</strong> — a router (the VPN) is
+<em>required</em> to drop them, not merely configured not to forward
+them:</p>
+<ol type="1">
+<li><p><strong>mDNS / DNS-SD use a link-local multicast group.</strong>
+<code>224.0.0.251</code> sits inside <code>224.0.0.0/24</code>, the
+IANA-registered <strong>Local Network Control Block</strong> (RFC 5771).
+Traffic to this range is <strong>link-local</strong>: it is sent with
+<strong>IP TTL = 1</strong> (RFC 6762 §11 requires mDNS
+queries/responses to use TTL 255 for its own integrity check but the
+group itself is link-scoped, and in practice the packets never leave the
+link), and routers <strong>MUST NOT forward</strong>
+Local-Network-Control-Block multicast off the originating link. A packet
+with TTL 1 is decremented to 0 at the first router hop and discarded
+before it can reach the <code>ppp0</code> peer. <strong>There is nothing
+for the L3 VPN to route</strong> — the datagram is dead at the first hop
+by the standard’s own rules.</p></li>
+<li><p><strong>SSDP / WS-Discovery use an administratively-scoped group
+with a tiny hop budget.</strong> <code>239.255.255.250</code> is in
+<code>239.0.0.0/8</code>, the <strong>Administratively Scoped</strong> /
+organization-local multicast range (RFC 2365 / RFC 5771). The UPnP
+Device Architecture specifies SSDP messages be sent with a <strong>small
+default TTL (2)</strong> so they stay within the local site, and —
+decisively — <strong>no multicast routing exists across the VPN tunnel
+to carry <code>239.0.0.0/8</code> between subnets</strong> in the first
+place. Even were the TTL larger, an ordinary unicast-only L3 VPN carries
+no IGMP/PIM multicast-routing state, so the group is never propagated to
+the remote subnet’s clients.</p></li>
+</ol>
+<p><strong>Consequence (the recon finding, <a
+href="PLAN.md"><code>PLAN.md</code></a> §2 / §11):</strong>
+<em>“Multicast discovery — REFLECT on the remote (device-side) network —
+routers do not forward it across L3.”</em> Unicast routes; multicast
+must be <strong>reflected</strong> onto the subnet where the querying
+client lives. This is not a helix_proxy limitation — it is a property of
+IP multicast scoping shared by every L3-routed network.</p>
+<hr />
+<h2 id="reflector-architecture-the-fix">3. Reflector architecture (the
+fix)</h2>
+<p>The fix is to place a <strong>multicast discovery reflector on the
+REMOTE (device-side) subnet</strong> — the <code>10.0.0.0/8</code> side
+where the discoverable services physically live — that re-emits the
+discovery traffic so a helix_proxy-side client, reachable over the
+routed VPN, can enumerate the remote services. The reflector is
+<strong>two cooperating components</strong>, one per multicast family,
+because mDNS (link-local <code>224.0.0.251/5353</code>) and
+SSDP/WS-Discovery (admin-scoped <code>239.255.255.250/1900,3702</code>)
+are different groups needing different relays:</p>
+<h3 id="mdns-dns-sd-avahi-reflector-enable-reflectoryes-fact">3.1 mDNS /
+DNS-SD — Avahi reflector (<code>enable-reflector=yes</code>) — FACT</h3>
+<p><strong>Avahi</strong> (the standard Linux mDNS/DNS-SD stack) ships a
+first-class <strong>reflector mode</strong>. In
+<code>avahi-daemon.conf</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[reflector]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">enable-reflector</span><span class="ot">=</span><span class="kw">yes</span></span></code></pre></div>
+<p>With <code>enable-reflector=yes</code> the daemon <strong>repeats
+mDNS packets it sees on one interface out of every other interface it
+manages</strong>, bridging the <code>224.0.0.251:5353</code> group
+across the interface boundary. Deployed on a host that has a foot on the
+remote device subnet <strong>and</strong> a routed/bridged path the
+helix_proxy client can reach, it reflects the remote devices’
+Bonjour/DNS-SD advertisements so <code>avahi-browse</code> on the
+helix_proxy side resolves them. This is a <strong>documented, supported
+Avahi feature</strong> — not a bespoke hack.</p>
+<ul>
+<li><strong>Scope discipline (FACT):</strong> the reflector repeats
+<em>all</em> mDNS it sees, so it MUST be constrained to only the
+interfaces that actually need bridging (<code>allow-interfaces</code> /
+<code>deny-interfaces</code> in <code>avahi-daemon.conf</code>) to avoid
+flooding unrelated links. Over-broad reflection is a noise/security
+concern, so the interface allow-list is part of the deployed config, not
+an afterthought.</li>
+</ul>
+<h3
+id="ssdp-upnp-1900-ws-discovery-3702-an-ssdp-relay-inference-on-exact-tool">3.2
+SSDP / UPnP (1900) + WS-Discovery (3702) — an SSDP relay — INFERENCE on
+exact tool</h3>
+<p>Avahi handles <strong>only</strong> mDNS. SSDP
+(<code>239.255.255.250:1900</code>) and WS-Discovery
+(<code>239.255.255.250:3702</code>) need a <strong>separate multicast
+relay</strong> on the same remote subnet. Two mechanisms, in order of
+preference:</p>
+<ul>
+<li><strong>A dedicated SSDP/UPnP relay daemon</strong> that listens for
+<code>M-SEARCH</code> on one interface and re-issues
+advertisements/responses onto the client-facing interface — the cleanest
+fit because it understands SSDP’s <code>M-SEARCH</code> /
+<code>NOTIFY</code> semantics and can rewrite the <code>LOCATION</code>
+header so the advertised URL is a <strong>routable <code>10.x</code>
+address</strong> the helix_proxy client can then reach over unicast.
+<strong>(INFERENCE — §11.4.6:</strong> the specific relay daemon is a
+deployment-time choice; the <em>requirement</em> — an SSDP-aware relay
+that rewrites <code>LOCATION</code> to a routable address — is FACT, the
+exact binary is not yet pinned and will be selected + cited when the
+reflector is actually deployed per §11.4.150.)</li>
+<li><strong>A static multicast router (<code>smcroute</code>)</strong>
+as the generic fallback: it statically forwards a multicast group
+between two interfaces without SSDP awareness. This carries the
+<code>239.255.255.250</code> datagrams across the interface boundary but
+does <strong>not</strong> rewrite <code>LOCATION</code> URLs, so it only
+helps when the advertised URLs already carry routable addresses.
+<strong>(INFERENCE</strong> on suitability for a given site.)</li>
+</ul>
+<h3 id="deployment-topology">3.3 Deployment topology</h3>
+<pre><code>  helix_proxy side                    L3 VPN                 REMOTE device subnet (10.0.0.0/8)
+ ┌────────────────┐            (WireGuard + ppp0,       ┌──────────────────────────────────┐
+ │ client:        │  routed     unicast IP only,        │  ┌────────────────────────────┐  │
+ │ avahi-browse   │  unicast    NO multicast forward)   │  │  REFLECTOR host            │  │
+ │ SSDP M-SEARCH  │◄───────────────────────────────────┤  │  - Avahi enable-reflector  │  │
+ │                │   reflected/relayed discovery +     │  │  - SSDP/WS-D relay         │  │
+ │ then unicast   │   routable LOCATION/SRV targets     │  │    (rewrites LOCATION→10.x) │  │
+ │ control (§4)   │───────────────────────────────────►│  └──────────────┬─────────────┘  │
+ └────────────────┘                                     │        224.0.0.251:5353 (mDNS)   │
+                                                         │        239.255.255.250:1900/3702 │
+                                                         │   ┌──────────┐   ┌────────────┐  │
+                                                         │   │ Cast/TV  │   │ NAS / UPnP │  │
+                                                         │   └──────────┘   └────────────┘  │
+                                                         └──────────────────────────────────┘</code></pre>
+<p>The reflector lives <strong>on the remote subnet</strong> (where
+physics allows it to see <code>224.0.0.251</code> /
+<code>239.255.255.250</code> locally) and re-emits toward the
+helix_proxy-reachable side. helix_proxy itself deploys and runs nothing
+on the remote host autonomously (§3.4).</p>
+<h3
+id="containerization-containers-submodule-11.4.76-rootless-11.4.161">3.4
+Containerization (containers submodule §11.4.76, rootless
+§11.4.161)</h3>
+<p>Per <a href="PLAN.md"><code>PLAN.md</code></a> §5 T5.1 + Phase 10,
+the reflector is packaged and booted <strong>only</strong> via the
+<code>submodules/containers</code> orchestration layer —
+<strong>never</strong> an ad-hoc <code>podman</code>/<code>docker</code>
+invocation:</p>
+<ul>
+<li>The Avahi-reflector + SSDP-relay images boot
+<strong>on-demand</strong> through the submodule’s <code>pkg/boot</code>
+/ <code>pkg/compose</code> / <code>pkg/health</code> primitives (the
+on-demand-infra invariant, §11.4.76) — the test/deploy entry point
+brings the reflector up, the operator is never asked to run
+<code>podman</code> by hand.</li>
+<li>The runtime is <strong>rootless Podman</strong> (§11.4.161) — no
+<code>sudo</code>, no rootful Docker.</li>
+<li>Any missing capability (e.g. the SSDP relay is not yet an image the
+submodule can model) is added by <strong>extending
+<code>submodules/containers</code> upstream</strong> (§11.4.74
+extend-don’t-reimplement), never worked around with a raw command in
+this repo.</li>
+<li>Config (the remote subnet, the allowed interfaces, the
+<code>LOCATION</code>-rewrite target) is <strong>injected</strong> into
+the container (env / config file, §11.4.28 decoupling) — the submodule
+stays project-agnostic and the reflector image carries
+<strong>no</strong> helix_proxy-specific hardcoding.</li>
+</ul>
+<h3 id="operator-gated-deployment-11.4.122">3.5 Operator-gated
+deployment (§11.4.122)</h3>
+<p><strong>Deploying a reflector on a remote host CHANGES that
+host</strong> (it starts a daemon, joins multicast groups, re-emits
+traffic onto its subnet). Under §11.4.122 (no silent change to any
+remote/connected host) <strong>and</strong> <a
+href="PLAN.md"><code>PLAN.md</code></a> §1 hard-constraint 2,
+helix_proxy MUST NOT deploy the reflector autonomously. The sequence
+is:</p>
+<ol type="1">
+<li><strong>Ask first (§11.4.66 interactive options), BEFORE any remote
+deployment</strong> — present the operator a keep/deploy decision with
+the concrete blast radius (which host, which subnet, which interfaces,
+that a daemon will be started and multicast re-emitted), and the
+teardown path.</li>
+<li><strong>Only on explicit operator approval</strong> does the
+containerized reflector boot on the operator-designated remote host via
+<code>submodules/containers</code>.</li>
+<li>Until then the reflector is <strong>not deployed</strong>, and the
+local discovery test honest-SKIPs
+(<code>feature_disabled_by_config</code> when no reflector is configured
+— §11.4.3 / §11.4.69), never a fake PASS.</li>
+</ol>
+<p>This mirrors the whole feature’s autonomous-vs-operator-gated split
+(<a href="PLAN.md"><code>PLAN.md</code></a> §8): the <strong>design +
+the honest-SKIP-gated local test are autonomous now</strong>; the
+<strong>remote deployment is parked as operator-gated</strong>
+(§11.4.21) and surfaced via §11.4.66 when reached.</p>
+<hr />
+<h2 id="honest-boundary-discovery-is-not-control-11.4.6">4. Honest
+boundary — discovery is not control (§11.4.6)</h2>
+<p>The reflector solves <strong>discovery only</strong>. Its job ends
+the moment a remote service is <em>enumerated</em> on the
+helix_proxy-side client. Everything after that is <strong>routable
+unicast</strong> and does <strong>not</strong> need the reflector:</p>
+<ul>
+<li><strong>Google Cast</strong> — discovery is
+<code>_googlecast._tcp</code> mDNS (reflected here); once the device +
+its <code>10.x</code> address are known, control is <strong>unicast
+TCP</strong>: <code>GET http://&lt;ip&gt;:8008/setup/eureka_info</code>
+and CASTV2 on <code>8009</code> (TLS). These route over the L3 VPN
+directly (<a href="PLAN.md"><code>PLAN.md</code></a> §5 Phase 6, driven
+by <a
+href="../../../tests/vpn_lan/chromecast_dial.sh"><code>chromecast_dial.sh</code></a>).</li>
+<li><strong>DIAL</strong> — discovery is SSDP <code>M-SEARCH</code>
+(reflected here); control is plain <strong>unicast HTTP</strong> to the
+advertised <code>LOCATION</code>.</li>
+<li><strong>UPnP / WS-Discovery devices</strong> (NAS, printers, media
+servers) — discovery is multicast (reflected here); the subsequent
+SOAP/HTTP control-plane and data-plane calls are
+<strong>unicast</strong> to the discovered
+<code>LOCATION</code>/endpoint.</li>
+</ul>
+<p>So the reflector’s <strong>single deliverable</strong> is: <em>“a
+remote service, and its routable address/URL, becomes visible to a
+helix_proxy-side discovery client.”</em> The <code>LOCATION</code>/SRV
+target it surfaces MUST be a <strong>routable <code>10.x</code>
+address</strong> (hence §3.2’s rewrite requirement) so the follow-up
+unicast probe reaches the real device over the VPN. What the reflector
+does <strong>not</strong> and <strong>cannot</strong> do: carry the
+control or media planes (those are unicast and route on their own), and
+— per <a href="miracast_verdict.md"><code>miracast_verdict.md</code></a>
+— it does <strong>nothing</strong> for Miracast (Wi-Fi-Direct/L2,
+structurally-impossible over an L3 VPN, §11.4.112; the routable casting
+alternative is Google Cast / DIAL above).</p>
+<p><strong>What this design guarantees vs. does not (§11.4.6):</strong>
+it guarantees a <strong>correct, standards-grounded discovery-bridging
+architecture</strong> and a <strong>local test that honestly SKIPs until
+a reflector exists</strong> — it does <strong>NOT</strong> guarantee
+live enumeration until the operator approves and a reflector is actually
+deployed on the remote subnet (§3.5). No phase is “done” until its
+runtime signature verifies with captured evidence (§11.4.108) and it
+crosses independent review (§11.4.142).</p>
+<hr />
+<h2 id="local-verification-the-autonomous-slice-discovery_reflect.sh">5.
+Local verification (the autonomous slice — <a
+href="../../../tests/vpn_lan/discovery_reflect.sh"><code>discovery_reflect.sh</code></a>)</h2>
+<p>The Phase-5 test proves the <strong>client-side enumeration
+path</strong> with the exact anti-bluff discipline of every VPN-LAN
+test:</p>
+<ul>
+<li><strong>Bridge gate first (§11.4.3 / §11.4.69):</strong> sources
+<code>tests/lib/svord_bridge.sh</code>, calls
+<code>bridge_require</code>; when the svord bridge is
+<strong>down</strong> (the default autonomous state, no
+<code>.env</code>) it prints an honest SKIP and exits 0 — <strong>the
+path that runs now</strong>. No reflector is contacted at all.</li>
+<li><strong>Bridge up + reflector configured</strong>
+(<code>HELIX_VPN_REFLECTOR</code> present/reachable): runs
+<code>avahi-browse -rpt _services._dns-sd._udp</code> (or a configured
+<code>_googlecast._tcp</code>) and <strong>asserts a REAL remote service
+is enumerated through the reflector</strong> — the PASS evidence is the
+non-empty, resolved (<code>^=</code>) browse output; an SSDP
+<code>M-SEARCH</code> to <code>239.255.255.250:1900</code> is captured
+as <strong>supplementary</strong> discovery context (non-scored).</li>
+<li><strong>No reflector configured</strong> ⇒
+<code>SKIP:feature_disabled_by_config</code> (the reflector is
+operator-gated and not yet deployed — §3.5).</li>
+<li><strong><code>avahi-browse</code> absent</strong> ⇒
+<code>SKIP:topology_unsupported</code> (client tool missing).</li>
+<li><strong>Never a fake PASS</strong> — enumeration of a real service
+is required for PASS; an absent reflector/tool SKIPs, it never PASSes
+(§11.4.6 / §11.4.69).</li>
+</ul>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li><strong>RFC 6762 — Multicast DNS</strong> (mDNS; UDP 5353, group
+<code>224.0.0.251</code>, link-local scope):
+<code>https://www.rfc-editor.org/rfc/rfc6762</code></li>
+<li><strong>RFC 6763 — DNS-Based Service Discovery</strong> (DNS-SD
+layered on mDNS):
+<code>https://www.rfc-editor.org/rfc/rfc6763</code></li>
+<li><strong>RFC 5771 — IANA Guidelines for IPv4 Multicast Address
+Assignments</strong> (<code>224.0.0.0/24</code> Local Network Control
+Block; <code>239.0.0.0/8</code> Administratively Scoped):
+<code>https://www.rfc-editor.org/rfc/rfc5771</code></li>
+<li><strong>RFC 2365 — Administratively Scoped IP Multicast</strong>
+(<code>239.0.0.0/8</code> organization-local scope):
+<code>https://www.rfc-editor.org/rfc/rfc2365</code></li>
+<li><strong>Avahi <code>avahi-daemon.conf</code> —
+<code>[reflector] enable-reflector=yes</code></strong> (the documented
+mDNS reflector mode):
+<code>https://linux.die.net/man/5/avahi-daemon.conf</code> · project:
+<code>https://www.avahi.org/</code></li>
+<li><strong>UPnP Device Architecture</strong> (SSDP over
+<code>239.255.255.250:1900</code>, small default TTL):
+<code>https://openconnectivity.org/developer/specifications/upnp-resources/upnp/</code></li>
+<li><strong>OASIS Web Services Dynamic Discovery (WS-Discovery)</strong>
+(SOAP-over-UDP, <code>239.255.255.250:3702</code>):
+<code>https://docs.oasis-open.org/ws-dd/discovery/1.1/os/wsdd-discovery-1.1-spec-os.html</code></li>
+<li><strong>smcroute — static multicast routing daemon</strong> (the
+generic fallback relay):
+<code>https://github.com/troglobit/smcroute</code></li>
+</ul>
+<p><em>Access date for all sources: 2026-07-01. FACT items (multicast
+groups, ports, RFC-mandated link-local / administratively-scoped
+behaviour, Avahi’s <code>enable-reflector</code> feature) are grounded
+in the cited standards; items explicitly marked
+<strong>INFERENCE</strong> (§11.4.6) — the specific SSDP-relay binary
+selection and its suitability per site — are deployment-time choices to
+be pinned + cited when the reflector is actually deployed per §11.4.150,
+never asserted as settled here. Deep-research (§11.4.150), multi-angle:
+routing-layer (RFC 5771/2365 scoping), protocol-layer (RFC 6762/6763,
+UPnP, WS-Discovery), tooling-layer (Avahi reflector, smcroute) — access
+date 2026-07-01.</em></p>
+</body>
+</html>
