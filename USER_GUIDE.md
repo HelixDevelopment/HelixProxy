@@ -385,33 +385,33 @@ DNS_SERVERS=1.1.1.1,1.0.0.1
 
 ```bash
 # Basic statistics
-./cache stats
+./cachectl stats
 
 # Size breakdown
-./cache size
+./cachectl size
 
 # List cached content
-./cache list
+./cachectl list
 ```
 
 ### Clearing Cache
 
 ```bash
 # Clear with confirmation
-./cache clear
+./cachectl clear
 
 # Force clear
-./cache clear -f
+./cachectl clear -f
 ```
 
 ### Manual Invalidation
 
 ```bash
 # Remove stale files
-./cache invalidate
+./cachectl invalidate
 
 # Trim to specific size
-./cache trim 30  # 30 GB
+./cachectl trim 30  # 30 GB
 ```
 
 ### Automatic Invalidation

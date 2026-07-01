@@ -532,3 +532,78 @@ external cap (faithful-relay, not truncation), and the corrected lane was
 re-reviewed clean before commit.
 
 Evidence: `qa-results/comprehensive/`.
+
+---
+
+## BUGFIX-0007 — documented `cache` management CLI accidentally deleted (path collision with the runtime `cache/` data dir) → restored as `cachectl`
+
+- **Type:** Bug (regression — documented end-user feature unusable; §11.4.124)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `cachectl` (restored + 3 runtime fixes), `tests/run-tests.sh`
+  + `tests/comprehensive-test.sh` (cache-CLI checks → real PASS), README.md /
+  USER_GUIDE.md / docs/CACHE.md / docs/TROUBLESHOOTING.md (`./cache`→`./cachectl`),
+  `docs/scripts/cachectl.md`, `tests/regression/cache_cli_present_test.sh` (guard)
+- **Workable item:** #50 (surfaced by BUGFIX-0006's revival of `comprehensive-test.sh`)
+
+### Symptom & root cause (FACT — §11.4.6 / §11.4.124 git-history investigation)
+
+The documented 368-line `cache` management CLI (`stats|clear|invalidate|warmup|
+list|size|trim`, referenced in README / USER_GUIDE / docs/CACHE / docs/
+TROUBLESHOOTING) was **gone from HEAD** — every documented `./cache <cmd>` was a
+broken instruction. Git history proves an ACCIDENTAL deletion: `CACHE_DIR` has
+always been `$PROJECT_ROOT/cache` and `.gitignore:16` ignores `cache/` (the
+directory), so the tracked `cache` FILE and the runtime `cache/` DATA directory
+occupy the SAME path and cannot coexist. Once the runtime materialised the
+directory, commit `6ec58ef` ("fix: container config for host-vpn mode") recorded
+the `cache` file as deleted in a broad `git add` — collateral to an unrelated
+change. The data dir `cache/{squid,streaming}` is LIVE (bind-mounted into the
+running proxy), so it must NOT move (§11.4.133).
+
+### Fix (at source)
+
+Restore the CLI faithfully from `84e1754:cache` under the NON-colliding name
+`cachectl` (§11.4.101 safe/reversible — coexists with the gitignored `cache/`
+data dir; the live data dir + running proxy untouched). The byte-restored file
+did NOT work under rootless Podman; three FACT-grade runtime defects fixed at
+source (the §11.4.108 SOURCE-restored ≠ RUNTIME-works lesson):
+
+1. **`pipefail` partial-read abort** — squid's cache subdirs are owned by a
+   remapped subuid the host cannot traverse, so `du`/`find` exit non-zero; the
+   sourced `lib/container-runtime.sh` re-enables `set -o pipefail`, aborting every
+   stat/list mid-output. Fix: `set +o pipefail` after the `source`.
+2. **`CONTAINER_RUNTIME` unset** — `main()` never called `init_runtime`, so the
+   `invalidate` squid-flush `case` aborted under `set -u`. Fix: `init_runtime` +
+   `detect_container_runtime` fallback + export in `main()`.
+3. **`((removed++))` `set -e` abort in `trim`** — post-increment returns exit 1
+   when `removed=0`. Fix: `removed=$((removed + 1))` (the §11.4.1 class).
+
+Docs synced (`./cache <cmd>` → `./cachectl <cmd>`, 28 replacements; the
+`CACHE_DIR=./cache` data-dir value correctly untouched). NB: the documented
+command name changes `cache`→`cachectl`; the operator may later prefer a
+different collision resolution (e.g. relocating the data dir) — the capability is
+restored now and the name choice is reversible.
+
+### Verification (captured, re-run independently by the conductor §11.4.142)
+
+```
+# cachectl works LIVE against the rootless-podman cache (read-only):
+$ ./cachectl stats|size|list   -> exit 0, real figures (Cache Directory, 4.0K, Files: 2, full tree)
+# §11.4.135 guard (RED_MODE polarity §11.4.115):
+$ tests/regression/cache_cli_present_test.sh            -> GREEN PASS (dispatches all 7 subcommands)
+$ RED_MODE=1 tests/regression/cache_cli_present_test.sh -> RED PASS (reproduces "CLI absent → unusable")
+# §1.1 mutation (conductor's own): drop `trim` from dispatch -> guard FAILs
+#   "missing-subcommands:[trim]" (bash -n still clean = assertion, not parse error);
+#   restored byte-identical md5 7e935b1deb4fed1435f6b48274844c2f (before==after).
+# Suites (conductor re-run):
+$ bash tests/comprehensive-test.sh  -> 44 run / 38 pass / 0 fail / 6 skip (the 4 cache-CLI checks now PASS)
+$ bash tests/run-tests.sh           -> 45 run / 39 pass / 0 fail / 6 skip, exit 0 (incl. BUGFIX-CACHECLI GREEN+RED)
+```
+
+Honest gap (§11.4.6): the `invalidate` squid-flush WIRING is proven
+(CONTAINER_RUNTIME=podman, `is_container_running proxy-squid`=TRUE, podman branch
+selected) but the live `squid -k rotate` was not executed end-to-end (target-safety
+§11.4.133 — not flushing the live proxy's cache); destructive subcommands were
+proven on a throwaway dir. `warmup` remains the original documented placeholder.
+
+Evidence: `qa-results/cachectl/`, `qa-results/regression/cachecli/`.

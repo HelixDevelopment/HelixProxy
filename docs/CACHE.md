@@ -129,16 +129,16 @@ CACHE_MAX_SIZE_GB=50
 
 ```bash
 # View statistics
-./cache stats
+./cachectl stats
 
 # Clear all cache
-./cache clear
+./cachectl clear
 
 # Run invalidation
-./cache invalidate
+./cachectl invalidate
 
 # Trim to size
-./cache trim 30
+./cachectl trim 30
 ```
 
 ### Invalidation Triggers
@@ -221,7 +221,7 @@ For high-traffic scenarios:
 ### Cache Statistics
 
 ```bash
-./cache stats
+./cachectl stats
 ```
 
 Output includes:
@@ -295,7 +295,7 @@ For YouTube and similar services:
 ./stop
 
 # Clear cache
-./cache clear -f
+./cachectl clear -f
 
 # Rebuild cache structure
 ./init
@@ -308,10 +308,10 @@ For YouTube and similar services:
 
 ```bash
 # Check size
-./cache stats
+./cachectl stats
 
 # Trim to size
-./cache trim 30
+./cachectl trim 30
 
 # Or increase limit in .env
 CACHE_MAX_SIZE_GB=100

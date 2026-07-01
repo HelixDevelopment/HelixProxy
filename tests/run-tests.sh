@@ -156,7 +156,7 @@ test_scripts() {
         "start"
         "stop"
         "status"
-        "cache"
+        "cachectl"
         "restart"
         "lib/container-runtime.sh"
     )
@@ -522,6 +522,26 @@ test_regression_guards() {
         test_result "BUGFIX-PORTS topology-aware RED reproduces" "PASS"
     else
         test_result "BUGFIX-PORTS topology-aware RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # BUGFIX-CACHECLI (regression #50) — GREEN guard: the documented cache CLI
+    # (restored as ./cachectl after the 6ec58ef accidental deletion) must be
+    # present, executable, parseable, and dispatch every documented subcommand.
+    if bash "$SCRIPT_DIR/regression/cache_cli_present_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-CACHECLI cache CLI present + complete (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-CACHECLI cache CLI present + complete (GREEN)" "FAIL" \
+            "run: bash tests/regression/cache_cli_present_test.sh"
+    fi
+
+    # BUGFIX-CACHECLI — RED self-check: the post-deletion state (CLI absent ->
+    # documented feature unusable) must reproduce. A RED that cannot reproduce
+    # is a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/cache_cli_present_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-CACHECLI cache CLI absent RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-CACHECLI cache CLI absent RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
 }

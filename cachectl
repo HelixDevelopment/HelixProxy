@@ -1,0 +1,396 @@
+#!/usr/bin/env bash
+#######################################
+# Proxy Cache Management Script
+# Manage, inspect, and invalidate cache
+#######################################
+
+set -eu
+
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/container-runtime.sh"
+
+# Regression #50 / §11.4.124: disable `pipefail` AFTER sourcing the lib (the lib
+# sets `set -euo pipefail` at its top, which re-enables pipefail in this shell).
+# Every pipeline below is `du.../find... 2>/dev/null | <text-filter>`. Under
+# rootless Podman the live squid cache files live in `cache/squid/00..0F`
+# sub-dirs owned by a remapped high subuid the host user cannot traverse, so
+# `du`/`find` legitimately exit non-zero ("Permission denied") on those dirs.
+# With pipefail that non-zero status propagated through the pipe and `set -e`
+# aborted every stats/size/list/invalidate command mid-output. The desired value
+# is the text-filter's result (a correct host-side partial view); the
+# container-owned sub-dirs MUST NOT be chmod/chown-ed (§11.4.133 — squid FATALs
+# on perm changes), so the CLI tolerates the expected partial read instead.
+set +o pipefail
+
+#######################################
+# Show usage information
+#######################################
+usage() {
+    cat << EOF
+Usage: $(basename "$0") <COMMAND> [OPTIONS]
+
+Cache management commands:
+
+Commands:
+    stats               Show cache statistics
+    clear               Clear all cache
+    invalidate          Run cache invalidation (remove stale files)
+    warmup              Pre-populate cache with common resources
+    list                List cached domains/URLs
+    size                Show cache size breakdown
+    trim [GB]           Trim cache to specified size in GB
+
+Options:
+    -h, --help          Show this help message
+    -v, --verbose       Enable verbose output
+    -f, --force         Force operation without confirmation
+    -y, --yes           Skip confirmation prompts
+
+Examples:
+    $(basename "$0") stats           Show cache statistics
+    $(basename "$0") clear -f        Force clear all cache
+    $(basename "$0") invalidate      Remove stale cache entries
+    $(basename "$0") trim 30         Trim cache to 30GB
+EOF
+}
+
+#######################################
+# Show cache statistics
+#######################################
+show_stats() {
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════╗"
+    echo "║                  CACHE STATISTICS                          ║"
+    echo "╚════════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    if [[ ! -d "$CACHE_DIR" ]]; then
+        echo "  Cache directory not found: $CACHE_DIR"
+        echo "  Run './init' to create cache directory"
+        return 1
+    fi
+    
+    local total_size_bytes
+    total_size_bytes=$(du -sb "$CACHE_DIR" 2>/dev/null | cut -f1)
+    
+    local total_size_human
+    total_size_human=$(du -sh "$CACHE_DIR" 2>/dev/null | cut -f1)
+    
+    local file_count
+    file_count=$(find "$CACHE_DIR" -type f 2>/dev/null | wc -l)
+    
+    local dir_count
+    dir_count=$(find "$CACHE_DIR" -mindepth 1 -type d 2>/dev/null | wc -l)
+    
+    local max_size_bytes=$((CACHE_MAX_SIZE_GB * 1024 * 1024 * 1024))
+    local usage_percent=0
+    if [[ $max_size_bytes -gt 0 ]]; then
+        usage_percent=$((total_size_bytes * 100 / max_size_bytes))
+    fi
+    
+    echo "  Cache Directory:    $CACHE_DIR"
+    echo "  Total Size:         $total_size_human"
+    echo "  Max Size:           ${CACHE_MAX_SIZE_GB} GB"
+    echo "  Usage:              ${usage_percent}%"
+    echo "  Files:              $file_count"
+    echo "  Directories:        $dir_count"
+    echo ""
+    
+    if [[ -d "$CACHE_DIR/squid" ]]; then
+        local squid_size
+        squid_size=$(du -sh "$CACHE_DIR/squid" 2>/dev/null | cut -f1)
+        local squid_files
+        squid_files=$(find "$CACHE_DIR/squid" -type f 2>/dev/null | wc -l)
+        echo "  Squid Cache:"
+        echo "    Size:            $squid_size"
+        echo "    Files:           $squid_files"
+    fi
+    
+    if [[ -d "$CACHE_DIR/streaming" ]]; then
+        local stream_size
+        stream_size=$(du -sh "$CACHE_DIR/streaming" 2>/dev/null | cut -f1)
+        local stream_files
+        stream_files=$(find "$CACHE_DIR/streaming" -type f 2>/dev/null | wc -l)
+        echo "  Streaming Cache:"
+        echo "    Size:            $stream_size"
+        echo "    Files:           $stream_files"
+    fi
+    
+    echo ""
+    
+    local oldest_file
+    oldest_file=$(find "$CACHE_DIR" -type f -printf '%T+ %p\n' 2>/dev/null | sort | head -1 | cut -d' ' -f2-)
+    local newest_file
+    newest_file=$(find "$CACHE_DIR" -type f -printf '%T+ %p\n' 2>/dev/null | sort -r | head -1 | cut -d' ' -f2-)
+    
+    if [[ -n "$oldest_file" ]]; then
+        echo "  Oldest File:        $oldest_file"
+        echo "  Newest File:        $newest_file"
+    fi
+    
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+}
+
+#######################################
+# Clear all cache
+#######################################
+clear_cache() {
+    local force="${1:-false}"
+    
+    if [[ "$force" != "true" ]]; then
+        echo "Warning: This will delete all cached content!"
+        read -p "Are you sure? [y/N] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Cancelled"
+            return 0
+        fi
+    fi
+    
+    log "info" "Clearing cache directory: $CACHE_DIR"
+    
+    if [[ -d "$CACHE_DIR/squid" ]]; then
+        rm -rf "$CACHE_DIR/squid"/* 2>/dev/null || true
+    fi
+    
+    if [[ -d "$CACHE_DIR/streaming" ]]; then
+        rm -rf "$CACHE_DIR/streaming"/* 2>/dev/null || true
+    fi
+    
+    mkdir -p "$CACHE_DIR/squid"
+    mkdir -p "$CACHE_DIR/streaming"
+    
+    log "info" "Cache cleared successfully"
+}
+
+#######################################
+# Run cache invalidation
+#######################################
+invalidate_cache() {
+    log "info" "Running cache invalidation..."
+    
+    local max_age_days="${CACHE_MAX_AGE_DAYS:-30}"
+    local max_size_gb="${CACHE_MAX_SIZE_GB:-50}"
+    
+    log "info" "Max age: $max_age_days days"
+    log "info" "Max size: $max_size_gb GB"
+    
+    if [[ "$max_age_days" -gt 0 ]]; then
+        log "info" "Removing files older than $max_age_days days..."
+        local removed_count
+        removed_count=$(find "$CACHE_DIR" -type f -mtime +$max_age_days -delete -print 2>/dev/null | wc -l)
+        log "info" "Removed $removed_count old files"
+    fi
+    
+    log "info" "Cleaning empty directories..."
+    find "$CACHE_DIR" -type d -empty -delete 2>/dev/null || true
+    
+    local current_size_kb
+    current_size_kb=$(du -sk "$CACHE_DIR" 2>/dev/null | cut -f1)
+    local max_size_kb=$((max_size_gb * 1024 * 1024))
+    
+    if [[ $current_size_kb -gt $max_size_kb ]]; then
+        log "warn" "Cache over size limit"
+        trim_cache "$max_size_gb" "true"
+    fi
+    
+    if is_container_running "proxy-squid"; then
+        log "info" "Invalidating Squid cache..."
+        case "$CONTAINER_RUNTIME" in
+            podman)
+                podman exec proxy-squid squid -k rotate 2>/dev/null || true
+                ;;
+            docker)
+                docker exec proxy-squid squid -k rotate 2>/dev/null || true
+                ;;
+        esac
+    fi
+    
+    log "info" "Cache invalidation complete"
+    show_stats
+}
+
+#######################################
+# Trim cache to specified size
+#######################################
+trim_cache() {
+    local target_gb="${1:-${CACHE_MAX_SIZE_GB:-50}}"
+    local force="${2:-false}"
+    
+    local target_kb=$((target_gb * 1024 * 1024))
+    local current_kb
+    current_kb=$(du -sk "$CACHE_DIR" 2>/dev/null | cut -f1)
+    
+    log "info" "Current cache size: $((current_kb / 1024)) MB"
+    log "info" "Target size: ${target_gb} GB"
+    
+    if [[ $current_kb -le $target_kb ]]; then
+        log "info" "Cache is already within target size"
+        return 0
+    fi
+    
+    if [[ "$force" != "true" ]]; then
+        echo "This will remove oldest cached files."
+        read -p "Continue? [y/N] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Cancelled"
+            return 0
+        fi
+    fi
+    
+    log "info" "Trimming cache..."
+    
+    local removed=0
+    while [[ $current_kb -gt $target_kb ]]; do
+        local oldest_file
+        oldest_file=$(find "$CACHE_DIR" -type f -printf '%A@ %p\n' 2>/dev/null | sort -n | head -1 | cut -d' ' -f2-)
+        
+        if [[ -z "$oldest_file" ]]; then
+            break
+        fi
+        
+        rm -f "$oldest_file" 2>/dev/null || true
+        # §11.4.1: `((removed++))` returns exit 1 when removed is 0 (post-increment
+        # yields the old value 0), which `set -e` treats as a fatal error and aborts
+        # the trim loop after the first file. Use the set -e-safe arithmetic form.
+        removed=$((removed + 1))
+        current_kb=$(du -sk "$CACHE_DIR" 2>/dev/null | cut -f1)
+    done
+    
+    log "info" "Removed $removed files"
+}
+
+#######################################
+# List cached domains
+#######################################
+list_cache() {
+    echo "Cache Structure:"
+    if [[ -d "$CACHE_DIR" ]]; then
+        find "$CACHE_DIR" -maxdepth 3 -type d -exec sh -c 'echo "  $(du -sh "$1" 2>/dev/null | cut -f1) - $1"' _ {} \; 2>/dev/null | head -50
+    else
+        echo "Cache directory not found"
+    fi
+}
+
+#######################################
+# Show cache size breakdown
+#######################################
+show_size_breakdown() {
+    echo "Cache Size Breakdown:"
+    echo "====================="
+    
+    if [[ ! -d "$CACHE_DIR" ]]; then
+        echo "Cache directory not found"
+        return 1
+    fi
+    
+    echo ""
+    echo "By Top-Level Directory:"
+    for dir in "$CACHE_DIR"/*; do
+        if [[ -d "$dir" ]]; then
+            local size
+            size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+            local name
+            name=$(basename "$dir")
+            printf "  %-20s %s\n" "$name" "$size"
+        fi
+    done
+    
+    echo ""
+    echo "File Size Distribution:"
+    local tiny=$(find "$CACHE_DIR" -type f -size -100k 2>/dev/null | wc -l)
+    local small=$(find "$CACHE_DIR" -type f -size +100k -size -1M 2>/dev/null | wc -l)
+    local medium=$(find "$CACHE_DIR" -type f -size +1M -size -10M 2>/dev/null | wc -l)
+    local large=$(find "$CACHE_DIR" -type f -size +10M -size -100M 2>/dev/null | wc -l)
+    local huge=$(find "$CACHE_DIR" -type f -size +100M 2>/dev/null | wc -l)
+    
+    printf "  < 100KB:             %d files\n" "$tiny"
+    printf "  100KB - 1MB:         %d files\n" "$small"
+    printf "  1MB - 10MB:          %d files\n" "$medium"
+    printf "  10MB - 100MB:        %d files\n" "$large"
+    printf "  > 100MB:             %d files\n" "$huge"
+}
+
+#######################################
+# Main function
+#######################################
+main() {
+    local COMMAND=""
+    local FORCE="false"
+    local VERBOSE="false"
+    local TRIM_SIZE=""
+    
+    if [[ $# -eq 0 ]]; then
+        usage
+        exit 0
+    fi
+    
+    case "$1" in
+        stats|clear|invalidate|warmup|list|size|trim)
+            COMMAND="$1"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            log "error" "Unknown command: $1"
+            usage
+            exit 1
+            ;;
+    esac
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -v|--verbose)
+                VERBOSE="true"
+                LOG_LEVEL="debug"
+                shift
+                ;;
+            -f|--force|-y|--yes)
+                FORCE="true"
+                shift
+                ;;
+            *)
+                if [[ "$COMMAND" == "trim" && -z "$TRIM_SIZE" ]]; then
+                    TRIM_SIZE="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    export LOG_LEVEL
+    load_environment
+
+    # Initialize the container runtime (regression #50 wiring). `invalidate`'s
+    # squid-flush `case "$CONTAINER_RUNTIME"` and the lib's is_container_running
+    # both read $CONTAINER_RUNTIME; without this it is unset and aborts under
+    # `set -u` (or silently no-ops). init_runtime detects + exports the runtime
+    # the way lib/container-runtime.sh intends. cachectl never runs compose, so a
+    # missing compose binary must NOT break read-only stats — tolerate a non-zero
+    # return (CONTAINER_RUNTIME is assigned before that check) and guarantee a
+    # defined value via detect_container_runtime as a fallback.
+    init_runtime || true
+    : "${CONTAINER_RUNTIME:=$(detect_container_runtime)}"
+    export CONTAINER_RUNTIME
+
+    case "$COMMAND" in
+        stats) show_stats ;;
+        clear) clear_cache "$FORCE" ;;
+        invalidate) invalidate_cache ;;
+        warmup) log "warn" "Warmup not implemented yet" ;;
+        list) list_cache ;;
+        size) show_size_breakdown ;;
+        trim) trim_cache "${TRIM_SIZE:-${CACHE_MAX_SIZE_GB:-50}}" "$FORCE" ;;
+    esac
+}
+
+main "$@"

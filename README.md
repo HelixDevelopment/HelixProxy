@@ -190,19 +190,19 @@ See `.env.example` for complete configuration options.
 
 ```bash
 # Show cache statistics
-./cache stats
+./cachectl stats
 
 # Clear all cache
-./cache clear
+./cachectl clear
 
 # Force clear without confirmation
-./cache clear -f
+./cachectl clear -f
 
 # Run invalidation (remove stale files)
-./cache invalidate
+./cachectl invalidate
 
 # Trim cache to specific size
-./cache trim 30  # Trim to 30GB
+./cachectl trim 30  # Trim to 30GB
 ```
 
 ## Client Configuration
@@ -296,7 +296,7 @@ Automatic invalidation:
 
 Manual invalidation:
 ```bash
-./cache invalidate
+./cachectl invalidate
 ```
 
 ## Security
@@ -334,7 +334,7 @@ sudo ufw allow from 192.168.1.0/24 to any port 51080
 
 1. Verify cache directory exists and is writable
 2. Check Squid logs: `./logs/squid/cache.log`
-3. Verify cache configuration: `./cache stats`
+3. Verify cache configuration: `./cachectl stats`
 
 ### Connection Refused
 

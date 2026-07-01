@@ -116,7 +116,7 @@ cat .env | grep VPN
 
 ```bash
 # Check cache stats
-./cache stats
+./cachectl stats
 
 # Check Squid logs
 tail -f logs/squid/cache.log
@@ -137,7 +137,7 @@ ls -la $CACHE_DIR/squid
 2. **Cache full**
    ```bash
    # Clear cache
-   ./cache clear
+   ./cachectl clear
    
    # Or increase limit
    CACHE_MAX_SIZE_GB=100
@@ -260,7 +260,7 @@ curl --proxy http://localhost:53128 http://google.com
 podman stats
 
 # Check cache memory
-./cache stats
+./cachectl stats
 ```
 
 #### Solutions
@@ -277,7 +277,7 @@ podman stats
 
 3. **Reduce cache size**
    ```bash
-   ./cache trim 20
+   ./cachectl trim 20
    ```
 
 ---
@@ -293,7 +293,7 @@ podman stats
 
 ```bash
 # Check hit ratio
-./cache stats
+./cachectl stats
 
 # Monitor connections
 podman exec proxy-squid squidclient mgr:info
@@ -471,7 +471,7 @@ podman logs --tail 100 proxy-vpn
 ./init --check
 
 # Cache health
-./cache stats
+./cachectl stats
 
 # Network test
 curl --proxy http://localhost:53128 https://ifconfig.me

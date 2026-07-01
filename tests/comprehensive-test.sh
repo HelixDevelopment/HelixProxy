@@ -155,16 +155,17 @@ get_socks_proxy_ip() {
 }
 
 #######################################
-# §11.4.3 / §11.4.124: is a REAL `cache` management CLI present?
-# Returns 0 only when $PROJECT_ROOT/cache is a regular EXECUTABLE FILE — NOT the
-# gitignored runtime data directory that currently occupies that path. The
-# documented `cache` CLI (commit 84e1754, docs/CACHE.md: stats|clear|invalidate|
-# trim) was regressed out and is absent at HEAD — tracked restoration issue #50.
-# When the CLI is restored this returns 0 and the cache-command checks PASS
-# automatically; until then they SKIP (§11.4.3), never a hard FAIL.
+# §11.4.3 / §11.4.124: is the REAL cache-management CLI present?
+# Returns 0 only when $PROJECT_ROOT/cachectl is a regular EXECUTABLE FILE. The
+# documented CLI (commit 84e1754, docs/CACHE.md: stats|clear|invalidate|trim)
+# was accidentally deleted in 6ec58ef because the tracked `cache` FILE collided
+# with the gitignored `cache/` runtime DATA directory at the same path
+# (regression #50); it is restored under the non-colliding name `cachectl`.
+# When present this returns 0 and the cache-command checks run+assert (PASS);
+# if somehow absent they SKIP-with-reason (§11.4.3), never a hard FAIL.
 #######################################
 cache_cli_available() {
-    [[ -f "$PROJECT_ROOT/cache" && -x "$PROJECT_ROOT/cache" && ! -d "$PROJECT_ROOT/cache" ]]
+    [[ -f "$PROJECT_ROOT/cachectl" && -x "$PROJECT_ROOT/cachectl" ]]
 }
 
 #######################################
@@ -524,23 +525,22 @@ test_caching() {
         test_result "Cache HIT (Squid TCP_*HIT in access.log)" "SKIP" "access.log not readable via runtime"
     fi
 
-    # §11.4.69 + §11.4.3 + §11.4.124: capture the real `./cache stats` output and
-    # assert a SUBSTANTIVE cache figure (exit-status-only &>/dev/null was
-    # presence-only). Topology-aware: the documented `cache` CLI was regressed
-    # out (#50) and its path is now the runtime data dir — run+assert when a real
-    # CLI is present (PASS), else honest SKIP (NOT a hard FAIL). Restoring the
-    # CLI flips this to PASS automatically.
+    # §11.4.69 + §11.4.3 + §11.4.124: capture the real `./cachectl stats` output
+    # and assert a SUBSTANTIVE cache figure (exit-status-only &>/dev/null was
+    # presence-only). Topology-aware: the documented cache CLI (restored as
+    # ./cachectl after the 6ec58ef accidental deletion, #50) is run+asserted when
+    # present (PASS); if somehow absent → honest SKIP (NOT a hard FAIL).
     if cache_cli_available; then
         local cache_stats_out="$EVIDENCE_DIR/cache_stats.out"
-        "$PROJECT_ROOT/cache" stats > "$cache_stats_out" 2>&1 || true
+        "$PROJECT_ROOT/cachectl" stats > "$cache_stats_out" 2>&1 || true
         if grep -Eq 'Cache (Hits|Size|Misses)|TCP_[A-Z_]*HIT|Hit ratio|[0-9]+ ?(KB|MB|GB|bytes)|[0-9]+ objects?' "$cache_stats_out"; then
             ab_pass_with_evidence "cache stats reports real figures" "$cache_stats_out" || true
             test_result "Cache stats command reports real figures" "PASS" "evidence: $cache_stats_out"
         else
-            test_result "Cache stats command reports real figures" "FAIL" "cache CLI present but no substantive figures ($cache_stats_out)"
+            test_result "Cache stats command reports real figures" "FAIL" "cachectl present but no substantive figures ($cache_stats_out)"
         fi
     else
-        test_result "Cache stats command (real CLI)" "SKIP" "cache CLI absent — documented feature regressed out, tracked #50 (§11.4.124)"
+        test_result "Cache stats command (real CLI)" "SKIP" "cachectl absent — restore the cache CLI, tracked #50 (§11.4.124)"
     fi
 }
 
@@ -629,25 +629,24 @@ test_cache_commands() {
     # §11.4.69 + §11.4.3 + §11.4.124: capture the real output of each cache
     # command and assert a SUBSTANTIVE figure instead of exit-status-only
     # (&>/dev/null was presence-only). [audit B8]  Topology-aware: the documented
-    # `cache` CLI (stats|size|list) was regressed out of HEAD (#50) and its path
-    # is now the runtime data DIRECTORY, so when no real CLI is present these
-    # SKIP-with-reason (honest §11.4.3) rather than hard-FAIL; restoring the CLI
-    # flips them to PASS automatically.
+    # cache CLI (stats|size|list), restored as ./cachectl after the 6ec58ef
+    # accidental deletion (#50), is run+asserted when present (PASS); if somehow
+    # absent these SKIP-with-reason (honest §11.4.3) rather than hard-FAIL.
     local cc out
     if cache_cli_available; then
         for cc in stats size list; do
             out="$EVIDENCE_DIR/cache_cmd_${cc}.out"
-            "$PROJECT_ROOT/cache" "$cc" > "$out" 2>&1 || true
+            "$PROJECT_ROOT/cachectl" "$cc" > "$out" 2>&1 || true
             if grep -Eq 'Cache|TCP_[A-Z_]*HIT|Hit ratio|[0-9]+ ?(KB|MB|GB|bytes)|[0-9]+ objects?' "$out"; then
                 ab_pass_with_evidence "cache $cc reports real figures" "$out" || true
                 test_result "Cache $cc command reports real figures" "PASS" "evidence: $out"
             else
-                test_result "Cache $cc command reports real figures" "FAIL" "cache CLI present but no substantive output ($out)"
+                test_result "Cache $cc command reports real figures" "FAIL" "cachectl present but no substantive output ($out)"
             fi
         done
     else
         for cc in stats size list; do
-            test_result "Cache $cc command (real CLI)" "SKIP" "cache CLI absent — documented feature regressed out, tracked #50 (§11.4.124)"
+            test_result "Cache $cc command (real CLI)" "SKIP" "cachectl absent — restore the cache CLI, tracked #50 (§11.4.124)"
         done
     fi
 }
