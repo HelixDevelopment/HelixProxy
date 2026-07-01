@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>LETSENCRYPT_HTTPS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="lets-encrypt-https--design-document">Let's Encrypt HTTPS —
+Design Document</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T11:00:00Z <strong>Status:</strong> Draft — design scout
+deliverable, NOT yet implemented. Awaiting the OPERATOR INPUT REQUIRED
+decisions below before Phase 0 can close. <strong>Authority:</strong>
+Inherits the Helix Constitution submodule
+(<code>constitution/Constitution.md</code>) per §11.4.35. Honors
+§11.4.161 (rootless Podman), §11.4.76 (containers submodule), §11.4.156
+(no CI/CD, no git hooks), §11.4.10 / §11.4.30 (secrets), §11.4.74
+(catalogue-first), §11.4.99 / §11.4.150 (latest-source research),
+§11.4.169 (all test types), CONST-033 (no host power changes).
+<strong>Companion plan:</strong> <a
+href="LETSENCRYPT_HTTPS_PLAN.md"><code>LETSENCRYPT_HTTPS_PLAN.md</code></a></p>
+<blockquote>
+<p>This is a DESIGN, not an implementation. No source code, no container
+boot, no host network changes were made producing it. It is written to
+be handed to implementers, who execute the phased plan in the companion
+doc.</p>
+</blockquote>
+<hr />
+<h2 id="1-current-tls--certificate-reality-step-1-findings--cited">1.
+Current TLS / certificate reality (Step 1 findings — cited)</h2>
+<p>Everything below was read directly from the working tree. File:line
+citations are exact.</p>
+<h3 id="11-the-httpsocks-forward-proxies-do-not-terminate-tls">1.1 The
+HTTP/SOCKS forward proxies do NOT terminate TLS</h3>
+<ul>
+<li><p><strong>Squid</strong> (<code>docker-compose.yml:56-120</code>,
+config <code>config/squid/squid.conf</code>) is a <strong>forward
+caching proxy</strong> on <code>HTTP_PROXY_PORT</code> (default
+<code>53128</code>, <code>.env.example:16</code>). It does
+<strong>not</strong> present a server certificate. The only TLS-related
+lines in <code>config/squid/squid.conf</code> are standard
+CONNECT-tunnel ACLs:</p>
+<ul>
+<li><code>config/squid/squid.conf:33</code> —
+<code>acl SSL_ports port 443</code></li>
+<li><code>config/squid/squid.conf:36</code> —
+<code>acl Safe_ports port 443</code></li>
+<li><code>config/squid/squid.conf:50</code> —
+<code>http_access deny CONNECT !SSL_ports</code></li>
+</ul>
+<p>There is <strong>no <code>https_port</code>, no <code>sslcrtd</code>,
+no <code>ssl_bump</code></strong>. Client HTTPS is <em>tunnelled</em>
+through the <code>CONNECT</code> verb, never decrypted. SSL inspection /
+MITM is explicitly disabled: <code>.env.example:269-271</code> →
+<code>HTTPS_INSPECTION=false</code> ("WARNING: Requires certificate
+setup"). So Squid needs <strong>no</strong> public certificate
+today.</p></li>
+<li><p><strong>Dante</strong> (<code>docker-compose.yml:127-194</code>,
+config <code>config/dante/sockd.conf</code>) is <strong>SOCKS5</strong>
+on <code>SOCKS_PROXY_PORT</code> (default <code>51080</code>). SOCKS5 is
+not a TLS protocol; no server cert.</p></li>
+</ul>
+<p>Conclusion: the proxy data-plane is <strong>client-configured forward
+proxying</strong>. Clients point their browser/OS at
+<code>HOST_IP:53128</code> / <code>:51080</code>. There is no server
+hostname a browser validates, hence <strong>no public LE cert applies to
+Squid/Dante</strong>.</p>
+<h3
+id="12-the-control-plane-api-uses-internal-mtls-with-a-private-client-ca--out-of-scope-for-public-le">1.2
+The control-plane API uses INTERNAL mTLS with a PRIVATE client CA — out
+of scope for public LE</h3>
+<ul>
+<li><code>control-plane/internal/api/tls.go:25-56</code> —
+<code>buildTLSConfig</code> sets
+<code>cfgTLS.ClientAuth = tls.RequireAndVerifyClientCert</code>
+(<code>tls.go:54</code>). This is <strong>mutual TLS</strong>: every
+caller must present a client certificate signed by a configured
+<strong>private client CA</strong>.</li>
+<li>Key material is loaded from <strong>file paths that are
+Podman-secret mount points</strong>, never embedded
+(<code>tls.go:8-11</code>, <code>.env.example:144-158</code>):
+<ul>
+<li><code>CONTROL_API_TLS_CERT=/run/secrets/helixproxy_api_cert</code>
+(secret name <code>helixproxy_api_cert</code>)</li>
+<li><code>CONTROL_API_TLS_KEY=/run/secrets/helixproxy_api_key</code></li>
+<li><code>CONTROL_API_TLS_CLIENT_CA=/run/secrets/helixproxy_api_client_ca</code></li>
+</ul></li>
+<li>The server
+(<code>control-plane/internal/api/server.go:169-212</code>) serves REST
+CRUD + SSE (<code>/events</code>) + Prometheus <code>/metrics</code> +
+PAC (<code>/proxy.pac</code>) over that mTLS socket on
+<code>CONTROL_API_ADDR</code> (default <code>:58080</code>,
+<code>.env.example:142</code>). It is <strong>fail-closed</strong>: no
+valid client identity ⇒ no access (<code>tls.go:4-6</code>).</li>
+</ul>
+<p><strong>Why LE does not fit here.</strong> Let's Encrypt is a public
+<strong>Domain-Validation CA</strong> that issues
+<strong>server</strong> certificates only. It does not, and cannot,
+issue a <strong>client CA</strong> for an internal mTLS trust boundary.
+The control-plane API is an internal service reached by internal callers
+holding internal client certs; substituting a public LE server cert
+would neither remove the need for the private client CA nor pass any
+public ACME challenge (there is no public DNS name or reachable
+validation path for an internal service). <strong>The mTLS API is
+therefore explicitly OUT OF SCOPE for this LE work</strong> and stays
+exactly as designed. LE and mTLS are orthogonal: one authenticates the
+<em>server</em> to public browsers, the other authenticates
+<em>clients</em> to a private server.</p>
+<ul>
+<li>Optional plaintext <code>/metrics</code> listener:
+<code>control-plane/internal/api/server.go:126-158</code>
+(<code>startMetricsListener</code>), config
+<code>CONTROL_API_METRICS_ADDR</code> (<code>.env.example:170</code>,
+<strong>empty/OFF by default</strong>). Plaintext, pod-internal, for a
+non-mTLS Prometheus scraper. Not a public surface, not a candidate for
+LE.</li>
+</ul>
+<h3
+id="13-the-only-webhttps-shaped-surface-is-the-caddy-admin-interface--and-it-is-plaintext-80-not-even-wired-into-compose">1.3
+The only web/HTTPS-shaped surface is the Caddy admin interface — and it
+is plaintext <code>:80</code>, not even wired into compose</h3>
+<ul>
+<li><code>config/caddy/Caddyfile:3</code> — <code>:80 { ... }</code>.
+<strong>Plaintext port 80.</strong> It is a static file server
+(<code>root * /srv</code>, <code>file_server browse</code>), a
+<code>/health</code> responder, a <code>/status</code> JSON page, and a
+stubbed <code>/api/*</code> → <code>501</code>
+(<code>Caddyfile:1-42</code>). It fronts
+<code>services/admin/index.html</code>.</li>
+<li><strong>Caddy is NOT a running service today.</strong> A search of
+both <code>docker-compose.yml</code> and
+<code>docker-compose.dynamic.yml</code> for a <code>caddy</code> service
+returns nothing — the Caddyfile is a <strong>config artifact
+only</strong>. The compose "admin" that <em>does</em> run is
+<code>proxy-admin</code> = <code>traefik/whoami</code> on host
+<code>:58080</code> plaintext
+(<code>docker-compose.yml:199-211</code>).</li>
+</ul>
+<h3 id="14-compose-services--exposed-ports-inventory">1.4 Compose
+services + exposed ports (inventory)</h3>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>File:line</th>
+<th>Port(s) exposed</th>
+<th>TLS today</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>proxy-vpn</code> (OpenVPN client gateway)</td>
+<td><code>docker-compose.yml:11-49</code></td>
+<td><code>53128</code>, <code>51080</code></td>
+<td>none (tunnel egress)</td>
+</tr>
+<tr>
+<td><code>proxy-squid*</code> (HTTP forward proxy)</td>
+<td><code>docker-compose.yml:56-120</code> /
+<code>docker-compose.dynamic.yml:289-326</code></td>
+<td><code>53128</code></td>
+<td>none (CONNECT tunnel)</td>
+</tr>
+<tr>
+<td><code>proxy-dante*</code> (SOCKS5)</td>
+<td><code>docker-compose.yml:127-194</code></td>
+<td><code>51080</code></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>proxy-admin</code> (<code>traefik/whoami</code>)</td>
+<td><code>docker-compose.yml:199-211</code></td>
+<td><code>58080</code> (host net)</td>
+<td>none (plaintext)</td>
+</tr>
+<tr>
+<td><code>proxy-gluetun</code> (dynamic VPN egress)</td>
+<td><code>docker-compose.dynamic.yml:128-</code></td>
+<td>internal <code>8888</code></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>proxy-redis</code> / <code>proxy-postgres</code></td>
+<td><code>docker-compose.dynamic.yml:67-</code> / <code>89-</code></td>
+<td>internal</td>
+<td>none</td>
+</tr>
+<tr>
+<td>control-plane API (<code>cmd/api</code>)</td>
+<td><code>control-plane/internal/api/server.go</code></td>
+<td><code>58080</code></td>
+<td><strong>internal mTLS (private CA)</strong></td>
+</tr>
+<tr>
+<td>Caddy admin</td>
+<td><code>config/caddy/Caddyfile</code> (unwired)</td>
+<td><code>80</code> (plaintext)</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<h3 id="15-plain-statement-of-the-actual-public-https-surface">1.5 Plain
+statement of the actual public HTTPS surface</h3>
+<p><strong>There is NO existing public-facing HTTPS surface in
+helix_proxy today.</strong> Nothing terminates a public server-cert TLS
+handshake. Therefore:</p>
+<blockquote>
+<p><strong>Let's Encrypt does not "add HTTPS to an existing endpoint"
+here — it requires INTRODUCING a TLS-termination front.</strong> The
+natural, lowest-friction front is the <strong>Caddy
+admin/dashboard</strong>, which already exists as a Caddyfile
+(<code>config/caddy/Caddyfile</code>) and whose engine (Caddy) has
+best-in-class automatic HTTPS. This design upgrades that plaintext
+<code>:80</code> admin surface into a Caddy-terminated public HTTPS
+surface and wires it in as a rootless, containers-submodule-orchestrated
+service. The forward proxies and the internal mTLS API are
+untouched.</p>
+</blockquote>
+<p>What the public LE cert is <em>for</em>: the <strong>operator-chosen
+dashboard hostname</strong> (see OPERATOR INPUT REQUIRED §9). Example
+only: <code>proxy.example.com</code>.</p>
+<hr />
+<h2 id="2-catalogue-check-result-11474">2. Catalogue-check result
+(§11.4.74)</h2>
+<p>Checked both organizations for a reusable
+cert/acme/letsencrypt/tls/proxy-front module, via authenticated
+<code>gh</code> (GitHub) and <code>glab</code> (GitLab):</p>
+<pre><code>gh repo list vasic-digital     | grep -iE &#39;cert|acme|letsencrypt|tls|ssl|caddy|traefik|proxy&#39;
+  → vasic-digital/helix_transport (HelixVPN Rust transport: MASQUE/Hysteria2/Shadowsocks/UDP-over-TLS)
+gh repo list HelixDevelopment  | grep -iE &#39;cert|acme|letsencrypt|tls|...&#39;
+  → HelixDevelopment/HelixProxy (this repo), HelixDevelopment/HelixGitpx (git proxy — unrelated)
+glab repo list --group vasic-digital | grep -iE &#39;cert|acme|tls|...&#39;  → no match
+glab api groups/vasic-digital/projects?search=cert                    → []</code></pre>
+<p><strong>Verdict: <code>no-match</code>.</strong> There is
+<strong>no</strong> existing owned ACME/cert/TLS-termination submodule
+to reuse. <code>helix_transport</code>'s "UDP-over-TLS" is a VPN
+<em>transport</em> obfuscation layer, not an ACME/cert-issuance or
+HTTPS-termination component — not applicable.</p>
+<p><strong>Catalogue-Check line for the tracker:</strong>
+<code>Catalogue-Check: no-match vasic-digital + HelixDevelopment (no cert/acme/tls submodule); reuse the published Caddy engine via the containers submodule per §11.4.76</code>.</p>
+<p><strong>Reuse decision:</strong> rather than author a bespoke ACME
+client, this design <strong>reuses the Caddy server engine</strong> (an
+off-the-shelf, published artifact — not a new in-house implementation)
+and <strong>orchestrates it through the existing
+<code>submodules/containers</code> module</strong> (§11.4.76), which
+already provides <code>pkg/boot</code>, <code>pkg/compose</code>,
+<code>pkg/health</code>, <code>pkg/crossbuild</code>,
+<code>pkg/volume</code>, <code>pkg/orchestrator</code>. No new org
+submodule is created. If, in future, multiple projects need the same
+Caddy-ACME front, the extract-to-submodule path (§11.4.74 "extend") is a
+follow-up — noted, not required now.</p>
+<hr />
+<h2 id="3-deep-research-summary-step-2--cited-accessed-2026-07-01">3.
+Deep research summary (Step 2 — cited, accessed 2026-07-01)</h2>
+<h3 id="31-acme-client-trade-offs">3.1 ACME client trade-offs</h3>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Language</th>
+<th>Renewal model</th>
+<th>Reload</th>
+<th>DNS-01 providers</th>
+<th>Fit for this project</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Caddy</strong> (automatic HTTPS)</td>
+<td>Go</td>
+<td><strong>built-in in-process loop</strong> — no external
+timer/cron/hook</td>
+<td><strong>hot in-memory swap, zero-downtime</strong></td>
+<td>90+ via CertMagic/libdns (custom build)</td>
+<td><strong>BEST</strong> — already present as a Caddyfile; renewal loop
+satisfies §11.4.156 with no cron/CI/hook; is <em>also</em> the TLS
+terminator so no separate reload plumbing</td>
+</tr>
+<tr>
+<td><strong>lego</strong></td>
+<td>Go</td>
+<td>issue/renew <strong>command</strong> — needs an external timer</td>
+<td>writes files → downstream must reload</td>
+<td>90+</td>
+<td>Good as a library if we ever embed ACME in Go, but the control-plane
+is internal-mTLS and must NOT become a public terminator; as a CLI it
+still needs a systemd --user timer (more moving parts)</td>
+</tr>
+<tr>
+<td><strong>certbot</strong></td>
+<td>Python</td>
+<td><code>certbot renew</code> — ships its own systemd timer</td>
+<td>writes files → deploy-hook reload</td>
+<td>many (plugins)</td>
+<td>Heavier (Python/snap), timer-based; no advantage here</td>
+</tr>
+<tr>
+<td><strong>acme.sh</strong></td>
+<td>POSIX shell</td>
+<td>cron-installed by default</td>
+<td>writes files → reloadcmd</td>
+<td>150+</td>
+<td>Minimal deps but its default renewal is <strong>cron</strong>, which
+collides with the spirit of §11.4.156's "host mechanism, not cron-in-CI"
+unless re-homed to a systemd timer</td>
+</tr>
+<tr>
+<td><strong>Traefik ACME</strong></td>
+<td>Go</td>
+<td>built-in loop</td>
+<td>hot reload</td>
+<td>many</td>
+<td>Equivalent to Caddy but we already have a Caddyfile; introducing
+Traefik duplicates the front</td>
+</tr>
+</tbody>
+</table>
+<p>Sources: <a href="https://go-acme.github.io/lego/">Lego docs</a>, <a
+href="https://caddyserver.com/docs/automatic-https">Caddy Automatic
+HTTPS</a>, <a
+href="https://oneuptime.com/blog/post/2026-03-02-use-acme-clients-certbot-lego-acmesh-ubuntu/view">ACME
+clients on Ubuntu (OneUptime, 2026-03)</a>, <a
+href="https://sslinsights.com/certbot-vs-acme-sh/">certbot vs acme.sh
+(SSLInsights, 2026)</a>.</p>
+<p><strong>Recommendation: Caddy automatic HTTPS.</strong> Rationale:
+(a) already present in the repo as a Caddyfile — catalogue-first reuse;
+(b) the ACME client <em>and</em> the TLS terminator are the same
+long-running process, so renewal → hot-reload is one built-in mechanism
+with <strong>zero downtime and no SIGHUP/restart</strong>
+(<code>Caddy docs</code>: "Caddy keeps all managed certificates
+renewed"); (c) its renewal is an <strong>in-process goroutine loop
+inside a long-running container</strong> — exactly the "long-running
+renewal container/loop" the constitution's §11.4.156 discussion allows,
+needing <strong>no cron, no CI pipeline, no git hook</strong>; (d)
+DNS-01 + HTTP-01 + TLS-ALPN-01 all supported.</p>
+<h3 id="32-challenge-type-for-this-hosttopology">3.2 Challenge type for
+THIS host/topology</h3>
+<p>The host runs mission-critical parallel workloads; binding public
+<code>:80</code>/<code>:443</code> and exposing an inbound validation
+path is a risk that must be an explicit operator choice.</p>
+<table>
+<thead>
+<tr>
+<th>Challenge</th>
+<th>Needs inbound</th>
+<th>Wildcards</th>
+<th>Behind NAT</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HTTP-01</strong></td>
+<td>port <strong>80</strong> externally reachable</td>
+<td>no</td>
+<td>no</td>
+<td>simplest, but requires opening inbound <code>:80</code> on the
+mission-critical host</td>
+</tr>
+<tr>
+<td><strong>TLS-ALPN-01</strong></td>
+<td>port <strong>443</strong> externally reachable</td>
+<td>no</td>
+<td>no</td>
+<td>avoids <code>:80</code>, still needs inbound <code>:443</code></td>
+</tr>
+<tr>
+<td><strong>DNS-01</strong></td>
+<td><strong>nothing inbound</strong> (writes a TXT record via DNS
+provider API)</td>
+<td><strong>yes</strong></td>
+<td><strong>yes</strong></td>
+<td>needs a DNS provider API token; validation is outbound-only</td>
+</tr>
+</tbody>
+</table>
+<p>Sources: <a href="https://caddyserver.com/docs/automatic-https">Caddy
+Automatic HTTPS</a> ("HTTP challenge requires port 80… TLS-ALPN requires
+port 443… DNS challenge does not require any open ports"); <a
+href="https://caddy.community/t/rootless-podman-acme-dns-challenge-problem/33595">Rootless
+Podman ACME/DNS (Caddy Community)</a> ("Rootless Podman won't be able to
+open the default HTTP and HTTPS ports (80 and 443)"); <a
+href="https://www.hostmycode.com/blog/linux-vps-acme-dns-challenge-automation-wildcard-tls-caddy-cloudflare-2026">wildcard
+TLS with Caddy + Cloudflare, 2026 (HostMyCode)</a>.</p>
+<p><strong>Recommendation: DNS-01.</strong> Rationale: (a) it needs
+<strong>no inbound port</strong> for <em>validation</em> — the safest
+option for a mission-critical host that should not casually accept
+inbound <code>:80</code>; (b) it works behind NAT; (c) it supports
+<strong>wildcard</strong> certs (<code>*.proxy.example.com</code>) if
+the dashboard grows subdomains; (d) it sidesteps the rootless-Podman
+privileged-port problem for the <em>challenge</em> (note: serving the
+resulting HTTPS still needs <code>:443</code> reachable to clients — see
+§4.4). The cost is a <strong>DNS provider API token</strong>, handled as
+a Podman secret (§7). <strong>HTTP-01 is the fallback</strong> if the
+operator confirms inbound <code>:80</code> can be safely bound and
+prefers not to manage a DNS token — this is an operator decision
+(§9).</p>
+<h3 id="33-renewal-rotation-reload-staging-rate-limits">3.3 Renewal,
+rotation, reload, staging, rate limits</h3>
+<ul>
+<li><strong>Renewal loop.</strong> Caddy/CertMagic renews automatically
+on an internal schedule (commonly when ~⅓ of the lifetime remains). The
+exact day count is a CertMagic default, not pinned in the fetched Caddy
+page — the design does <strong>not</strong> hard-code a number; it
+treats "Caddy renews well before expiry" as the mechanism and
+<em>verifies</em> it in the renewal-simulation test (§6). <a
+href="https://caddyserver.com/docs/automatic-https">Caddy docs</a>:
+"Caddy keeps all managed certificates renewed."</li>
+<li><strong>Rotation / reload with zero downtime.</strong> Caddy swaps
+the renewed cert <strong>in memory</strong> on the live listener — no
+<code>SIGHUP</code>, no container restart, no dropped connections. This
+is the decisive advantage over file-writing clients
+(lego/certbot/acme.sh), which need a downstream reload hook.</li>
+<li><strong>Staging vs production ACME.</strong> Always issue against
+<strong>Let's Encrypt STAGING</strong>
+(<code>https://acme-staging-v02.api.letsencrypt.org/directory</code>)
+first — untrusted chain but same protocol, generous limits — then cut to
+production only after staging is green. <a
+href="https://letsencrypt.org/docs/staging-environment/">LE Staging
+Environment</a>.</li>
+<li><strong>Rate limits.</strong> Production LE: <strong>50 certificates
+per registered domain / 7 days</strong> (new issuance); <strong>5
+duplicate certificates / week</strong>; <strong>renewals are
+exempt</strong> from the per-domain limit and, when signalled via
+<strong>ARI (ACME Renewal Info)</strong>, exempt from rate limits
+generally. <a href="https://letsencrypt.org/docs/rate-limits/">Rate
+Limits</a>, <a
+href="https://letsencrypt.org/2026/02/24/rate-limits-45-day-certs">Shorter
+lifetimes &amp; rate limits, 2026-02-24</a>. Implication: use staging
+for ALL iteration; production issuance is a one-shot cutover; renewals
+never hit the limit.</li>
+<li><strong>Shrinking lifetimes.</strong> LE is moving default lifetime
+<strong>90 → 64 → 45 days</strong> over two years; renewal frequency
+will roughly double. <a
+href="https://letsencrypt.org/2026/02/24/rate-limits-45-day-certs">LE
+2026-02-24</a>. This is <strong>why a self-driving in-process renewal
+loop (Caddy) is strategically correct</strong> — the more frequent the
+renewals, the more valuable a zero-touch renewer. Any timer-based
+approach must shorten its interval as lifetimes shrink; Caddy adapts
+automatically (ARI-aware).</li>
+</ul>
+<h3 id="34-hermetic--anti-bluff-testing-building-blocks">3.4 Hermetic /
+anti-bluff testing building blocks</h3>
+<ul>
+<li><strong>Pebble</strong> — Let's Encrypt's tiny in-RAM RFC-8555 ACME
+test server; boots in seconds, no persistence, used in the official test
+suites of lego/certbot/getssl. Ideal for <strong>hermetic</strong>
+integration tests: issue a real cert against a local ACME with zero
+network / zero rate-limit exposure. <a
+href="https://github.com/letsencrypt/pebble">Pebble</a>, <a
+href="https://letsencrypt.org/2025/04/30/pebbleacmeimplementation">How
+Pebble supports ACME client developers (LE, 2025-04-30)</a>.</li>
+<li><strong>step-ca</strong> — a real private ACME server (persistent)
+for a longer-lived internal ACME endpoint if ever needed. <a
+href="https://smallstep.com/blog/private-acme-server/">Run your own
+private ACME server (Smallstep)</a>. Pebble is preferred for CI-shaped
+hermetic tests; step-ca is the heavier alternative.</li>
+</ul>
+<hr />
+<h2 id="4-recommended-architecture">4. Recommended architecture</h2>
+<h3 id="41-one-paragraph-summary">4.1 One-paragraph summary</h3>
+<p>Add a <strong>rootless Caddy container</strong>
+(<code>proxy-caddy</code>), orchestrated by the <strong>containers
+submodule</strong> (§11.4.76), that terminates public HTTPS for the
+operator-chosen dashboard hostname and reverse-proxies to the existing
+admin static site (and, if the operator wants, a read-only status
+endpoint). Caddy obtains and renews the certificate via <strong>ACME
+DNS-01</strong> (recommended) using a <strong>DNS-provider API token
+supplied as a Podman secret</strong>, storing the ACME account key +
+issued certs in a <strong>persistent, gitignored volume</strong>.
+Renewal and rotation are <strong>built into the long-running Caddy
+process</strong> (no cron, no CI, no git hook — §11.4.156), with
+<strong>zero-downtime in-memory cert swap</strong>. Staging LE is used
+for all iteration; production is a gated one-shot cutover. The internal
+mTLS control-plane API and the forward proxies are unchanged.</p>
+<h3 id="42-component-diagram-textual">4.2 Component diagram
+(textual)</h3>
+<pre><code>                 Internet / LAN client (browser)
+                              │  HTTPS :443  (operator-chosen hostname)
+                              ▼
+        ┌───────────────────────────────────────────────┐
+        │  proxy-caddy  (rootless container)             │
+        │  • Caddy engine = ACME client + TLS terminator │
+        │  • automatic-HTTPS: issue + RENEW (in-process) │
+        │  • zero-downtime in-memory cert rotation       │
+        │  • DNS-01 challenge via provider API token     │
+        │    (Podman secret, never in git)               │
+        │  volumes:                                      │
+        │   - caddy-data  (ACME acct key + certs) [gitignored, persistent]
+        │   - caddy-config                                │
+        └──────────────┬────────────────────────────────┘
+                       │ reverse_proxy (plaintext, pod-internal net)
+                       ▼
+        ┌──────────────────────────┐   (unchanged, out of scope for LE)
+        │ admin static site /srv   │   ┌───────────────────────────────┐
+        │ (services/admin/…)       │   │ control-plane API — INTERNAL   │
+        └──────────────────────────┘   │ mTLS, PRIVATE client CA        │
+                                       │ (control-plane/internal/api)   │
+   DNS-01 validation path (outbound):  └───────────────────────────────┘
+   Caddy → DNS provider API → writes _acme-challenge TXT → LE verifies</code></pre>
+<h3 id="43-where-it-plugs-in--exact-servicesportsfiles">4.3 Where it
+plugs in — exact services/ports/files</h3>
+<ul>
+<li><strong>New compose service <code>proxy-caddy</code></strong> in a
+NEW overlay <code>docker-compose.https.yml</code> (kept out of the
+pristine base <code>docker-compose.yml</code> per the project's
+§11.4.122 overlay pattern, mirroring how
+<code>docker-compose.dynamic.yml</code> overlays the base). It publishes
+<code>:443</code> (and optionally <code>:80</code> for HTTP→HTTPS
+redirect only). It joins a dedicated pod-internal Podman network so it
+can <code>reverse_proxy</code> the admin site by service name (per the
+Caddy-Community rootless guidance: put Caddy + proxied containers on a
+dedicated Podman DNS-enabled network rather than host
+port-forwarding).</li>
+<li><strong><code>config/caddy/Caddyfile</code></strong> — upgrade the
+<code>:80 { … }</code> block to a <strong>site block keyed by the
+operator hostname</strong> with a <code>tls</code> directive selecting
+the ACME issuer (DNS-01 provider + email + CA endpoint from env),
+retaining the <code>/health</code>, <code>/status</code>,
+<code>file_server</code> behaviour behind HTTPS, with an automatic
+<code>:80</code>→<code>:443</code> redirect.</li>
+<li><strong>Custom Caddy image.</strong> The official
+<code>docker.io/library/caddy</code> image does <strong>not</strong>
+bundle DNS-provider modules (<a
+href="https://oneuptime.com/blog/post/2026-02-08-how-to-run-caddy-with-docker-and-automatic-https-wildcard-certificates/view">oneuptime,
+2026-02-08</a>). A <strong>custom image</strong> built with
+<code>xcaddy</code> + the chosen <code>caddy-dns/&lt;provider&gt;</code>
+module is required for DNS-01. Build it through the containers submodule
+<strong><code>pkg/crossbuild</code></strong> and a new
+<code>config/caddy/Containerfile</code> (mirrors the existing
+<code>config/squid/Containerfile.dynamic</code> pattern). For HTTP-01
+the stock image suffices (no custom build) — a real reason the challenge
+choice affects Phase 1.</li>
+<li><strong>Orchestration</strong> via the containers submodule: a
+<code>pkg/boot</code> + <code>pkg/compose</code> entry brings
+<code>proxy-caddy</code> up on demand, <code>pkg/health</code> gates
+readiness on a TLS handshake + <code>/health</code> 200. No ad-hoc
+<code>podman run</code> (§11.4.76). Rootless (§11.4.161).</li>
+<li><strong><code>.env.example</code></strong> — new NON-SECRET vars
+only (values in git are placeholders; the token itself is a
+<strong>secret name</strong>, never a value):
+<ul>
+<li><code>CADDY_DASHBOARD_DOMAIN=</code> (operator sets; e.g.
+<code>proxy.example.com</code>)</li>
+<li><code>CADDY_ACME_EMAIL=</code> (operator sets; LE account
+contact)</li>
+<li><code>CADDY_ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory</code>
+(staging default; prod is the cutover change)</li>
+<li><code>CADDY_ACME_CHALLENGE=dns</code> (or <code>http</code>)</li>
+<li><code>CADDY_DNS_PROVIDER=</code> (e.g. <code>cloudflare</code>, only
+for DNS-01)</li>
+<li><code>CADDY_DNS_TOKEN_SECRET=helixproxy_caddy_dns_token</code>
+(Podman <strong>secret name</strong>, never the value — §11.4.10)</li>
+<li><code>CADDY_HTTPS_PORT=443</code> /
+<code>CADDY_HTTP_PORT=80</code></li>
+</ul></li>
+<li><strong>Untouched:</strong>
+<code>control-plane/internal/api/*</code> (internal mTLS),
+<code>config/squid/*</code>, <code>config/dante/*</code>, all proxy
+data-plane. LE adds a surface; it removes nothing (§11.4.122).</li>
+</ul>
+<h3
+id="44-rootless-podman-port-note-design-constraint-not-a-host-change-here">4.4
+Rootless-Podman port note (design constraint, not a host change
+here)</h3>
+<p>Rootless Podman cannot bind privileged ports (<code>&lt;1024</code>)
+by default (<a
+href="https://caddy.community/t/rootless-podman-acme-dns-challenge-problem/33595">Caddy
+Community</a>). Serving public HTTPS still requires <code>:443</code> to
+reach the container. Options for the <em>serving</em> port (an
+operator/host decision, <strong>not performed by this design</strong> —
+CONST-033 and "no host network changes" respected):</p>
+<ol type="1">
+<li>Set <code>net.ipv4.ip_unprivileged_port_start=443</code> on the host
+(a sysctl the <strong>operator</strong> applies; documented in the
+rollout runbook, not executed here).</li>
+<li>Publish the container on a high port (e.g. <code>:8443</code>) and
+front it with an operator-managed firewall/NAT redirect
+<code>443→8443</code>.</li>
+<li>Run behind an existing host reverse-proxy / load-balancer that
+already owns <code>:443</code>.</li>
+</ol>
+<p>DNS-01 keeps the <em>challenge</em> free of any inbound-port
+requirement; only the <em>serving</em> port question remains, and it is
+enumerated for the operator (§9). The design assumes option (1) or (2)
+and does not depend on which.</p>
+<hr />
+<h2 id="5-security-11410--11430">5. Security (§11.4.10 / §11.4.30)</h2>
+<ul>
+<li><strong>ACME account key</strong>: generated by Caddy on first run,
+stored in the <code>caddy-data</code> volume. That volume path is
+<strong>gitignored</strong> (§11.4.30) and declared with a §11.4.77
+regeneration note (re-issue via ACME on loss). The account key is a
+secret — never committed, never printed in logs.</li>
+<li><strong>DNS provider API token</strong> (DNS-01 only): a
+<strong>Podman secret</strong>
+(<code>podman secret create helixproxy_caddy_dns_token …</code>, created
+by the operator OUT of band). Only the <strong>secret name</strong>
+(<code>CADDY_DNS_TOKEN_SECRET</code>) appears in
+<code>.env.example</code> / compose; the value never touches git or
+<code>.env</code> (§11.4.10). It is mounted to Caddy as an env var
+sourced from <code>/run/secrets/…</code> or injected via the compose
+<code>secrets:</code> stanza. Scope the token to <strong>DNS-edit on the
+single zone</strong> only (least privilege).</li>
+<li><strong>Pre-store leak audit (§11.4.10.A)</strong>: before the
+operator stores the token, run the repo-wide audit
+(<code>git ls-files | xargs grep -l &lt;value&gt;</code>,
+<code>git log -S&lt;value&gt; --all</code>) to confirm no prior leak of
+that specific value.</li>
+<li><strong>Issued cert + private key</strong>: in
+<code>caddy-data</code>, gitignored, <code>0600</code>-class perms
+inside the container. Never committed (§11.4.30). The public cert MAY be
+surfaced read-only for evidence, the private key NEVER.</li>
+<li><strong><code>.gitignore</code> additions</strong>:
+<code>caddy-data/</code>, <code>caddy-config/</code>, any
+<code>*.pem</code>/<code>*.key</code> under a Caddy data path, plus the
+standard secret patterns already covered.</li>
+<li><strong>Blast radius</strong>: the Caddy front is a <em>new</em>
+internet-facing surface. It exposes ONLY the admin static site +
+<code>/health</code> + <code>/status</code> (read-only) — never the mTLS
+control API, never the proxy ports. Keep the reverse-proxy allow-list
+tight; do not proxy <code>/api/*</code> mutating paths through the
+public front.</li>
+</ul>
+<hr />
+<h2 id="6-test-strategy-across-all-114169-types-anti-bluff">6. Test
+strategy across all §11.4.169 types (anti-bluff)</h2>
+<p>Every PASS cites captured evidence via
+<code>ab_pass_with_evidence</code> under
+<code>qa-results/&lt;run-id&gt;/letsencrypt/…</code>. Feature class per
+§11.4.69: <code>network_connectivity</code> / <code>tls</code> for the
+handshake, plus a project-local <code>acme_cert</code> class.</p>
+<table>
+<thead>
+<tr>
+<th>Type (§11.4.169)</th>
+<th>What it proves</th>
+<th>Mechanism / evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>unit</strong></td>
+<td>cert parsing + <strong>expiry math</strong> (days-to-expiry, "is
+renewal due?" boundary), Caddyfile template render, env→issuer
+mapping</td>
+<td>Go/table tests on a synthetic cert; <strong>golden-good +
+golden-bad</strong> analyzer fixtures per §11.4.107(10). Mocks allowed
+HERE ONLY (§11.4.27).</td>
+</tr>
+<tr>
+<td><strong>integration (hermetic)</strong></td>
+<td>Caddy issues a REAL cert against a <strong>local ACME
+(Pebble)</strong> with DNS-01 solved locally</td>
+<td>boot Pebble via the <strong>containers submodule</strong>; assert
+Caddy serves a cert whose chain roots in Pebble's test CA; capture the
+served leaf + chain. No network, no rate limits.</td>
+</tr>
+<tr>
+<td><strong>integration (staging)</strong></td>
+<td>end-to-end against <strong>LE STAGING</strong> real endpoint</td>
+<td>real DNS-01 TXT written+cleared; assert a staging-issued
+(untrusted-but-valid-shape) cert for the real hostname; capture
+<code>openssl s_client</code> chain.</td>
+</tr>
+<tr>
+<td><strong>e2e</strong></td>
+<td>real client → real HTTPS → admin <code>/health</code> 200 over the
+served cert</td>
+<td>drive a real HTTPS GET; capture status + served cert SANs.</td>
+</tr>
+<tr>
+<td><strong>renewal simulation</strong></td>
+<td>the renewal loop <strong>fires</strong> near expiry</td>
+<td>seed a <strong>fake near-expiry cert</strong> into
+<code>caddy-data</code>; observe Caddy renew it against Pebble/staging;
+capture before/after <code>NotAfter</code>. §11.4.135 guard.</td>
+</tr>
+<tr>
+<td><strong>rotation</strong></td>
+<td>old cert → new cert, <strong>service serves the NEW chain with zero
+downtime</strong></td>
+<td>force renewal; hold a live connection across the swap; assert the
+served leaf serial changed AND no connection dropped.</td>
+</tr>
+<tr>
+<td><strong>negative</strong></td>
+<td>expired / invalid / self-signed cert is <strong>rejected</strong>,
+and a DNS-token-absent run <strong>fails closed</strong> (never a silent
+plaintext fallback)</td>
+<td>present an expired cert → client rejects; remove the DNS secret →
+issuance fails loudly (SKIP-with-reason if topology-absent, never
+PASS).</td>
+</tr>
+<tr>
+<td><strong>security</strong></td>
+<td>token never in git/logs; TLS ≥1.2; only the intended surface
+exposed</td>
+<td>leak-grep gate; TLS version assert; route allow-list assert.</td>
+</tr>
+<tr>
+<td><strong>stress + chaos (§11.4.85)</strong></td>
+<td>renewal under load; ACME endpoint flaps → Caddy retries with
+backoff, keeps serving the existing valid cert</td>
+<td>kill/restart Pebble mid-renewal; assert graceful retry + no outage
+while the current cert is still valid.</td>
+</tr>
+<tr>
+<td><strong>Challenges (§11.4.169)</strong></td>
+<td>user-visible "the dashboard is reachable over trusted HTTPS" scored
+on positive captured evidence</td>
+<td>HelixQA/Challenges bank entry driving the real HTTPS GET + chain
+capture.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>§11.4.135 regression guards + §1.1 paired mutations to
+build:</strong></p>
+<ul>
+<li>Guard <code>acme-issues-cert-hermetic</code> — Pebble issuance PASS.
+Mutation: point Caddy at a bogus ACME dir → guard must FAIL.</li>
+<li>Guard <code>renewal-fires-before-expiry</code> — near-expiry cert
+renews. Mutation: freeze/disable the renewal loop → guard must FAIL
+(proves the guard actually watches renewal, not just presence).</li>
+<li>Guard <code>rotation-serves-new-chain</code> — served leaf serial
+changes post-renew. Mutation: pin the old cert (skip swap) → guard must
+FAIL.</li>
+<li>Guard <code>dns-token-is-secret-only</code> — leak-grep of the token
+value across tree + history. Mutation: plant the value in a tracked file
+→ guard must FAIL.</li>
+<li>Guard <code>failclosed-no-plaintext-fallback</code> — with issuance
+impossible, the front does NOT serve plaintext on the HTTPS port.
+Mutation: add a plaintext fallback → guard must FAIL.</li>
+<li>Analyzer self-validation (§11.4.107(10)): the cert-chain/expiry
+analyzer PASSes its golden-good fixture and FAILs its golden-bad
+(expired/wrong-CA) fixture.</li>
+</ul>
+<p>All non-unit tests use the <strong>containers submodule</strong> to
+boot Pebble/step-ca/Caddy (§11.4.76); topology-absent ⇒ honest
+SKIP-with-reason (§11.4.3), never a fake PASS (§11.4.69 no fail-open
+skip).</p>
+<hr />
+<h2 id="7-rollout--rollback--host-install-steps">7. Rollout / rollback +
+host-install steps</h2>
+<h3 id="71-rollout-staged-gated">7.1 Rollout (staged, gated)</h3>
+<ol type="1">
+<li><strong>Phase 0 operator decisions</strong> resolved (§9).</li>
+<li>Build the custom Caddy image (DNS-01) via containers-submodule
+<code>pkg/crossbuild</code>; assert the DNS module is present.</li>
+<li>Operator creates the Podman secret for the DNS token (out of band) +
+optional host sysctl / NAT for <code>:443</code>.</li>
+<li>Bring up <code>proxy-caddy</code> against <strong>STAGING</strong>
+ACME; verify a staging cert issues + <code>/health</code> serves over
+HTTPS.</li>
+<li>Run the full §6 test matrix (hermetic + staging) green with captured
+evidence.</li>
+<li><strong>Cutover</strong>: flip <code>CADDY_ACME_CA</code> to
+production; bring the service up; verify a <strong>trusted</strong> cert
+(browser-valid) + capture the chain. One-shot issuance (rate-limit
+aware).</li>
+<li>Add the §11.4.45 <code>docs/design/…/Status.md</code> +
+Status_Summary; register the §11.4.135 guards into the standing suite;
+sync all doc exports.</li>
+</ol>
+<h3 id="72-rollback">7.2 Rollback</h3>
+<ul>
+<li>The front is <strong>additive</strong> (§11.4.122): removing
+<code>docker-compose.https.yml</code> from the overlay set (or stopping
+<code>proxy-caddy</code> via the containers submodule) returns the
+system to its pre-LE state with zero impact on the proxies or the mTLS
+API.</li>
+<li>Cert/account-key loss ⇒ re-issue via ACME (the §11.4.77 regeneration
+mechanism); no data lost because the <code>caddy-data</code> volume is
+reproducible from ACME.</li>
+<li>Staging→prod is reversible by flipping <code>CADDY_ACME_CA</code>
+back to staging (though a prod cert already issued stays valid until
+expiry).</li>
+</ul>
+<h3
+id="73-host-install-steps-operator-performed-documented-not-executed-by-this-design--const-033-no-host-network-changes">7.3
+Host-install steps (operator-performed; documented, NOT executed by this
+design — CONST-033, no host network changes)</h3>
+<ul>
+<li>Create the Podman secret:
+<code>podman secret create helixproxy_caddy_dns_token &lt;token-file&gt;</code>
+(least-privilege DNS token).</li>
+<li>Decide + apply the <code>:443</code> reachability option (§4.4) —
+sysctl OR firewall NAT OR front-LB. Operator action.</li>
+<li>Ensure a persistent, gitignored path for the <code>caddy-data</code>
+volume.</li>
+<li>(No <code>systemd --user</code> timer is required in the recommended
+Caddy design — renewal is in-process. IF the operator instead picks
+lego/certbot, the plan's alternative branch adds a <strong>systemd
+--user timer</strong> — never cron-in-CI, never a git hook, per
+§11.4.156.)</li>
+</ul>
+<hr />
+<h2 id="8-constitution-compliance-matrix">8. Constitution compliance
+matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>How this design honors it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§11.4.161 rootless Podman</td>
+<td><code>proxy-caddy</code> runs rootless; privileged-port handled via
+operator sysctl/NAT, not root</td>
+</tr>
+<tr>
+<td>§11.4.76 containers submodule</td>
+<td>Caddy image build (<code>pkg/crossbuild</code>), boot
+(<code>pkg/boot</code>/<code>pkg/compose</code>), readiness
+(<code>pkg/health</code>); no ad-hoc podman</td>
+</tr>
+<tr>
+<td>§11.4.156 no CI/CD, no git hooks</td>
+<td>renewal = <strong>in-process Caddy loop</strong> (long-running
+container), NOT cron/CI/hook. lego/certbot fallback uses a
+<strong>systemd --user timer</strong></td>
+</tr>
+<tr>
+<td>CONST-033 no host power changes</td>
+<td>none proposed; host steps are non-power sysctl/NAT,
+operator-performed</td>
+</tr>
+<tr>
+<td>§11.4.10 / §11.4.30 secrets</td>
+<td>DNS token = Podman secret NAME only; ACME key + certs gitignored;
+leak audit before store</td>
+</tr>
+<tr>
+<td>§11.4.74 catalogue-first</td>
+<td>checked both orgs (gh+glab) → no-match; reuse published Caddy
+engine, no new submodule</td>
+</tr>
+<tr>
+<td>§11.4.99 / §11.4.150 latest-source research</td>
+<td>multi-angle research cited with URLs + 2026-07-01 access date</td>
+</tr>
+<tr>
+<td>§11.4.169 all test types</td>
+<td>full matrix incl. hermetic Pebble local-ACME + staging +
+renewal/rotation/negative</td>
+</tr>
+<tr>
+<td>§11.4.135 / §1.1</td>
+<td>five named guards each with a paired mutation; analyzer
+self-validated</td>
+</tr>
+<tr>
+<td>§11.4.122 no silent removal</td>
+<td>additive front; removes nothing; mTLS API + proxies untouched</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-operator-input-required-11466">9. OPERATOR INPUT REQUIRED
+(§11.4.66)</h2>
+<p>These decisions cannot be made autonomously — they depend on
+operator-owned infrastructure, DNS control, and risk tolerance for the
+mission-critical host. Each is framed as concrete options with a
+Recommended choice and what the implementer does next.</p>
+<h3 id="decision-a--what-hostname-is-the-public-cert-for">Decision A —
+What hostname is the public cert FOR?</h3>
+<p>Let's Encrypt issues a cert for a specific DNS name that must resolve
+to (or be DNS-controllable by) this host. There is no such name in the
+repo today.</p>
+<ul>
+<li><strong>[A1] A dedicated dashboard hostname</strong> (e.g.
+<code>proxy.example.com</code>) — <em>Recommended</em>. Smallest
+surface, single SAN. Implementer sets
+<code>CADDY_DASHBOARD_DOMAIN</code> and issues a single-name cert.</li>
+<li><strong>[A2] A wildcard</strong> (e.g.
+<code>*.proxy.example.com</code>) — only if the dashboard will grow
+subdomains. Requires DNS-01 (wildcards are DNS-01-only). Implementer
+configures a wildcard issuer.</li>
+<li><strong>[A3] Defer</strong> — no public hostname yet; ship the whole
+feature against <strong>Pebble + staging only</strong> and leave
+production issuance as a later operator-gated step.</li>
+</ul>
+<blockquote>
+<p>Implementer needs the exact FQDN before any staging or production
+issuance.</p>
+</blockquote>
+<h3 id="decision-b--challenge-type-dns-01-vs-http-01">Decision B —
+Challenge type: DNS-01 vs HTTP-01?</h3>
+<ul>
+<li><strong>[B1] DNS-01 with a DNS provider API token</strong> —
+<em>Recommended</em>. No inbound port for validation (safest for the
+mission-critical host), supports wildcards, works behind NAT.
+<strong>Operator must:</strong> name the DNS provider
+(Cloudflare/Route53/OVH/…) and provide a least-privilege API token
+<strong>as a Podman secret</strong>
+(<code>helixproxy_caddy_dns_token</code>) out of band. Implementer
+builds the custom Caddy image with that provider's DNS module.</li>
+<li><strong>[B2] HTTP-01</strong> — simpler, no DNS token, stock Caddy
+image. <strong>Operator must confirm inbound <code>:80</code> can be
+safely bound/reachable on this host.</strong> Implementer skips the
+custom image.</li>
+<li><strong>[B3] TLS-ALPN-01</strong> — avoids <code>:80</code> but
+needs inbound <code>:443</code>. Niche; choose only if <code>:80</code>
+is impossible but <code>:443</code> inbound is fine.</li>
+</ul>
+<blockquote>
+<p>This choice changes Phase 1 (custom image built only for DNS-01) and
+the secret handling.</p>
+</blockquote>
+<h3
+id="decision-c--staging-first-then-production-and-who-owns-443">Decision
+C — Staging-first, then production? (and who owns
+<code>:443</code>)</h3>
+<ul>
+<li><strong>[C1] Staging → gated production cutover</strong> —
+<em>Recommended</em>. Iterate entirely on LE staging (no rate-limit
+risk), cut to production as a one-shot after the full test matrix is
+green. Implementer defaults <code>CADDY_ACME_CA</code> to staging and
+treats prod as an operator-approved flip.</li>
+<li><strong>[C2] Pebble/staging only, no production yet</strong> — pairs
+with [A3]; fully hermetic + staging, production deferred.</li>
+<li><strong>[C3] Straight to production</strong> — <em>Not
+recommended</em> (burns rate-limit budget on iteration; risks the
+50/week + 5 duplicate/week limits).</li>
+</ul>
+<p>Sub-question C-port — how does <code>:443</code> reach the rootless
+container? <strong>[C-port-1]</strong> operator sets
+<code>net.ipv4.ip_unprivileged_port_start=443</code> (host sysctl,
+operator-applied); <strong>[C-port-2]</strong> publish
+<code>:8443</code> + operator firewall NAT <code>443→8443</code>
+(<em>Recommended</em> if unsure — no privileged bind);
+<strong>[C-port-3]</strong> front behind an existing host LB that
+already owns <code>:443</code>.</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified (2026-07-01)</h2>
+<ul>
+<li>Caddy — Automatic HTTPS: <a
+href="https://caddyserver.com/docs/automatic-https">https://caddyserver.com/docs/automatic-https</a></li>
+<li>Caddy Community — Rootless Podman ACME/DNS: <a
+href="https://caddy.community/t/rootless-podman-acme-dns-challenge-problem/33595">https://caddy.community/t/rootless-podman-acme-dns-challenge-problem/33595</a></li>
+<li>Caddy + Docker wildcard (custom DNS image required), 2026-02-08: <a
+href="https://oneuptime.com/blog/post/2026-02-08-how-to-run-caddy-with-docker-and-automatic-https-wildcard-certificates/view">https://oneuptime.com/blog/post/2026-02-08-how-to-run-caddy-with-docker-and-automatic-https-wildcard-certificates/view</a></li>
+<li>Wildcard TLS with Caddy + Cloudflare, 2026 (HostMyCode): <a
+href="https://www.hostmycode.com/blog/linux-vps-acme-dns-challenge-automation-wildcard-tls-caddy-cloudflare-2026">https://www.hostmycode.com/blog/linux-vps-acme-dns-challenge-automation-wildcard-tls-caddy-cloudflare-2026</a></li>
+<li>Lego — ACME client &amp; library (Go): <a
+href="https://go-acme.github.io/lego/">https://go-acme.github.io/lego/</a></li>
+<li>ACME clients (certbot/lego/acme.sh) on Ubuntu, 2026-03-02: <a
+href="https://oneuptime.com/blog/post/2026-03-02-use-acme-clients-certbot-lego-acmesh-ubuntu/view">https://oneuptime.com/blog/post/2026-03-02-use-acme-clients-certbot-lego-acmesh-ubuntu/view</a></li>
+<li>certbot vs acme.sh, 2026 (SSLInsights): <a
+href="https://sslinsights.com/certbot-vs-acme-sh/">https://sslinsights.com/certbot-vs-acme-sh/</a></li>
+<li>Let's Encrypt — Rate Limits: <a
+href="https://letsencrypt.org/docs/rate-limits/">https://letsencrypt.org/docs/rate-limits/</a></li>
+<li>Let's Encrypt — Shorter lifetimes &amp; rate limits (90→64→45d,
+ARI), 2026-02-24: <a
+href="https://letsencrypt.org/2026/02/24/rate-limits-45-day-certs">https://letsencrypt.org/2026/02/24/rate-limits-45-day-certs</a></li>
+<li>Let's Encrypt — Staging Environment: <a
+href="https://letsencrypt.org/docs/staging-environment/">https://letsencrypt.org/docs/staging-environment/</a></li>
+<li>Pebble (letsencrypt/pebble) — miniature ACME test server: <a
+href="https://github.com/letsencrypt/pebble">https://github.com/letsencrypt/pebble</a></li>
+<li>How Pebble supports ACME client developers (LE, 2025-04-30): <a
+href="https://letsencrypt.org/2025/04/30/pebbleacmeimplementation">https://letsencrypt.org/2025/04/30/pebbleacmeimplementation</a></li>
+<li>Run your own private ACME server with step-ca (Smallstep): <a
+href="https://smallstep.com/blog/private-acme-server/">https://smallstep.com/blog/private-acme-server/</a></li>
+</ul>
+<p><strong>Negative findings (per §11.4.99 honesty):</strong> the
+fetched Caddy automatic-HTTPS page does <strong>not</strong> state an
+exact renewal-window day count, and does <strong>not</strong> mention
+ARI by name; the design therefore does not hard-code a renewal day count
+and instead verifies the renewal behaviour empirically in the
+renewal-simulation test. The LE 2026 page confirms renewals are
+rate-limit-exempt but did not, on the fetched view, spell out ARI
+mechanics — treat ARI as "supported by modern Caddy/CertMagic" and
+verify at implementation time against the then-current Caddy release
+notes (re-verify before prod cutover per §11.4.99 90-day staleness for
+risk-classified services).</p>
+</body>
+</html>

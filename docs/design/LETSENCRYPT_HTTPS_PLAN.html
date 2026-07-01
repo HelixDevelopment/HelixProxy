@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>LETSENCRYPT_HTTPS_PLAN</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="lets-encrypt-https--phased-implementation-plan">Let's Encrypt
+HTTPS — Phased Implementation Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T11:00:00Z <strong>Status:</strong> Draft — implementation
+plan for the design in <a
+href="LETSENCRYPT_HTTPS.md"><code>LETSENCRYPT_HTTPS.md</code></a>. Phase
+0 is BLOCKING on the OPERATOR INPUT REQUIRED decisions (design §9).
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Phases are
+PWU-sized (§11.4.58): each self-contained, each with files + tests + a
+§11.4.135 guard + a §1.1 mutation + captured evidence
+(§11.4.5/§11.4.69). <strong>Companion design:</strong> <a
+href="LETSENCRYPT_HTTPS.md"><code>LETSENCRYPT_HTTPS.md</code></a></p>
+<blockquote>
+<p>Docs-only planning artifact. No code, no boot, no commits produced
+here. Every phase below is TDD-first (§11.4.43/§11.4.115): write the RED
+test that reproduces "feature absent/broken", then implement to GREEN,
+then register the guard + mutation. Non-unit tests boot infra via the
+containers submodule (§11.4.76) and SKIP-with-reason when topology is
+absent (§11.4.3), never fake-PASS.</p>
+</blockquote>
+<hr />
+<h2 id="dependency-graph-order-is-load-bearing">Dependency graph (order
+is load-bearing)</h2>
+<pre><code>Phase 0 (operator decisions, BLOCKING)
+   │
+   ├─► Phase 1 (custom Caddy image — DNS-01 only; skipped for HTTP-01)
+   │        │
+   ├─► Phase 2 (compose service + secrets + volumes wiring, no real issuance)
+   │        │
+   │        ├─► Phase 3 (hermetic Pebble local-ACME integration)  ◄── the anti-bluff core
+   │        │        │
+   │        │        ├─► Phase 4 (LE STAGING e2e — real endpoint)
+   │        │        │        │
+   │        │        │        ├─► Phase 5 (renewal + rotation simulation)
+   │        │        │        │        │
+   │        │        │        │        └─► Phase 6 (prod cutover + Status docs + rollback runbook)</code></pre>
+<p>Phases 1–5 use <strong>staging / Pebble only</strong> — zero
+production rate-limit exposure (design §3.3). Phase 6 is the single
+operator-gated production issuance.</p>
+<hr />
+<h2 id="phase-0--operator-decisions--tracker-scaffolding-blocking">Phase
+0 — Operator decisions + tracker scaffolding (BLOCKING)</h2>
+<p><strong>Goal:</strong> resolve the three OPERATOR INPUT REQUIRED
+decisions (design §9: hostname, challenge type, staging/prod +
+<code>:443</code> reachability) and open the workable items.</p>
+<ul>
+<li><strong>Files:</strong> <code>docs/Issues.md</code> (+ summary)
+entries with ATM-NNN ids per §11.4.54; a
+<code>docs/design/letsencrypt/Status.md</code> +
+<code>Status_Summary.md</code> scaffold (§11.4.45/§11.4.56) marked
+PENDING.</li>
+<li><strong>Tests/guard:</strong> none (planning phase). Guard is
+documentary: the tracker entries exist with Type/Status/ATM-id
+(§11.4.148).</li>
+<li><strong>Evidence:</strong> the <code>AskUserQuestion</code> decision
+record captured in the tracker.</li>
+<li><strong>Exit:</strong> Decisions A/B/C answered. Decision B (DNS-01
+vs HTTP-01) selects whether Phase 1 runs.</li>
+<li><strong>Depends on:</strong> nothing. <strong>Blocks:</strong>
+everything.</li>
+</ul>
+<hr />
+<h2
+id="phase-1--custom-caddy-image-with-the-dns-01-provider-module-dns-01-branch-only">Phase
+1 — Custom Caddy image with the DNS-01 provider module (DNS-01 branch
+only)</h2>
+<p><strong>Goal:</strong> produce a rootless-runnable Caddy image that
+contains the operator-chosen <code>caddy-dns/&lt;provider&gt;</code>
+module (the stock image lacks DNS modules — design §4.3).
+<strong>Skipped entirely if Decision B = HTTP-01</strong> (stock image
+suffices).</p>
+<ul>
+<li><strong>Files:</strong>
+<ul>
+<li><code>config/caddy/Containerfile</code> — <code>xcaddy build</code>
+with <code>--with github.com/caddy-dns/&lt;provider&gt;</code> (mirrors
+<code>config/squid/Containerfile.dynamic</code>).</li>
+<li>build recipe wired through the containers submodule
+<code>pkg/crossbuild</code> (no ad-hoc podman build — §11.4.76).</li>
+<li><code>.env.example</code> — <code>CADDY_DNS_PROVIDER</code>,
+<code>SQUID</code>-style image tag var <code>CADDY_IMAGE</code>.</li>
+</ul></li>
+<li><strong>Tests (§11.4.169):</strong>
+<ul>
+<li>unit: Containerfile lints / <code>sh -n</code> recipe (§11.4.67);
+RED = image built WITHOUT the module.</li>
+<li>integration: build the image via <code>pkg/crossbuild</code>; assert
+<code>caddy list-modules | grep dns.providers.&lt;provider&gt;</code>
+present (§11.4.38 open-the-artifact evidence).</li>
+</ul></li>
+<li><strong>Guard §11.4.135:</strong>
+<code>caddy-image-has-dns-module</code>.</li>
+<li><strong>§1.1 mutation:</strong> drop the <code>--with</code> line →
+guard FAILs.</li>
+<li><strong>Evidence:</strong> <code>caddy list-modules</code> output
+under <code>qa-results/&lt;run-id&gt;/letsencrypt/phase1/</code>.</li>
+<li><strong>Depends on:</strong> Phase 0 (Decision B).
+<strong>Blocks:</strong> Phase 2 (DNS-01 branch).</li>
+</ul>
+<hr />
+<h2
+id="phase-2--compose-service-podman-secret-and-cert-volume-wiring-no-real-issuance">Phase
+2 — Compose service, Podman secret, and cert volume wiring (no real
+issuance)</h2>
+<p><strong>Goal:</strong> define <code>proxy-caddy</code> and its
+secret/volume plumbing so the front boots and terminates TLS with a
+<em>self-signed/internal</em> cert — proving the wiring before any
+ACME.</p>
+<ul>
+<li><strong>Files:</strong>
+<ul>
+<li><code>docker-compose.https.yml</code> — new overlay (§11.4.122
+pattern) with <code>proxy-caddy</code>, its dedicated Podman network,
+<code>:443</code>/<code>:80</code> publish per Decision C-port,
+<code>secrets:</code> for <code>CADDY_DNS_TOKEN_SECRET</code>, volumes
+<code>caddy-data</code> + <code>caddy-config</code>.</li>
+<li><code>config/caddy/Caddyfile</code> — upgrade <code>:80 {}</code> →
+<code>{$CADDY_DASHBOARD_DOMAIN}</code> site block with <code>tls</code>
+issuer stub set to Caddy's <strong>internal</strong> CA first (no ACME
+yet), keep <code>/health</code> <code>/status</code>
+<code>file_server</code>, add <code>:80</code>→<code>:443</code>
+redirect.</li>
+<li><code>.env.example</code> — all new CADDY_* vars (design §4.3).</li>
+<li><code>.gitignore</code> — <code>caddy-data/</code>,
+<code>caddy-config/</code>, <code>*.pem</code>/<code>*.key</code> under
+caddy paths (§11.4.30) + a <code>.gitignore-meta</code> regen note
+(§11.4.77: certs re-issued via ACME).</li>
+<li>containers-submodule <code>pkg/boot</code>/<code>pkg/compose</code>
+entry + <code>pkg/health</code> readiness (TLS handshake +
+<code>/health</code> 200).</li>
+</ul></li>
+<li><strong>Tests (§11.4.169):</strong>
+<ul>
+<li>unit: Caddyfile env-substitution render; secret-NAME-not-value
+assertion.</li>
+<li>integration: boot <code>proxy-caddy</code> (internal CA); assert an
+HTTPS <code>/health</code> 200 with Caddy's internal cert; assert the
+DNS token is present ONLY as <code>/run/secrets/…</code> (never in the
+rendered config).</li>
+<li>security: leak-grep — the token value is absent from tree + history
+(§11.4.10.A).</li>
+</ul></li>
+<li><strong>Guard §11.4.135:</strong>
+<code>caddy-front-serves-https-health</code> +
+<code>dns-token-is-secret-only</code>.</li>
+<li><strong>§1.1 mutations:</strong> (a) inline the token value into
+compose → leak guard FAILs; (b) drop the <code>tls</code>/redirect →
+https-health guard FAILs.</li>
+<li><strong>Evidence:</strong> <code>openssl s_client</code> handshake +
+<code>/health</code> capture; leak-grep output.</li>
+<li><strong>Depends on:</strong> Phase 1 (DNS-01) / Phase 0 (HTTP-01).
+<strong>Blocks:</strong> Phase 3.</li>
+</ul>
+<hr />
+<h2
+id="phase-3--hermetic-local-acme-integration-with-pebble-anti-bluff-core">Phase
+3 — Hermetic local-ACME integration with Pebble (anti-bluff core)</h2>
+<p><strong>Goal:</strong> Caddy issues a <strong>real ACME cert against
+a local Pebble</strong> server with the chosen challenge solved locally
+— hermetic, no network, no rate limits (design §3.4).</p>
+<ul>
+<li><strong>Files:</strong>
+<ul>
+<li><code>tests/letsencrypt/pebble_integration_test.*</code> — boots
+Pebble via the containers submodule; points Caddy
+<code>CADDY_ACME_CA</code> at Pebble's directory; solves DNS-01 against
+a local test resolver (or HTTP-01 against Pebble's challenge port).</li>
+<li>a cert-chain/expiry <strong>analyzer</strong> helper with
+<strong>golden-good + golden-bad</strong> fixtures (§11.4.107(10)).</li>
+</ul></li>
+<li><strong>Tests (§11.4.169):</strong>
+<ul>
+<li>integration (hermetic): assert Caddy serves a leaf whose chain roots
+in Pebble's test CA; assert SAN == chosen hostname.</li>
+<li>unit: expiry-math + chain-verify analyzer table tests; golden-bad
+(expired / wrong-CA) MUST FAIL.</li>
+<li>negative: point Caddy at a bogus ACME dir → issuance fails loudly
+(no plaintext fallback).</li>
+</ul></li>
+<li><strong>Guard §11.4.135:</strong>
+<code>acme-issues-cert-hermetic</code> + analyzer self-validation
+<code>cert-analyzer-golden-good-bad</code>.</li>
+<li><strong>§1.1 mutations:</strong> (a) bogus ACME dir → hermetic guard
+FAILs; (b) make the analyzer accept the golden-bad fixture →
+self-validation FAILs.</li>
+<li><strong>Evidence:</strong> served leaf + chain PEM (public only),
+Pebble logs, analyzer verdicts under
+<code>qa-results/&lt;run-id&gt;/letsencrypt/phase3/</code>.</li>
+<li><strong>Depends on:</strong> Phase 2. <strong>Blocks:</strong> Phase
+4.</li>
+</ul>
+<hr />
+<h2
+id="phase-4--lets-encrypt-staging-end-to-end-real-endpoint-real-dns-01">Phase
+4 — Let's Encrypt STAGING end-to-end (real endpoint, real DNS-01)</h2>
+<p><strong>Goal:</strong> issue a <strong>staging</strong> cert for the
+real operator hostname against <code>acme-staging-v02</code> — real ACME
+protocol, real DNS TXT write/clear, no production rate-limit
+exposure.</p>
+<ul>
+<li><strong>Files:</strong>
+<ul>
+<li><code>tests/letsencrypt/staging_e2e_test.*</code> — sets
+<code>CADDY_ACME_CA</code> = staging; runs the real DNS-01 flow using
+the Podman-secret token; SKIP-with-reason if the token/topology is
+absent (§11.4.3, never fake-PASS).</li>
+</ul></li>
+<li><strong>Tests (§11.4.169):</strong>
+<ul>
+<li>integration (staging): assert a staging-issued cert (valid shape,
+untrusted root) for the hostname; assert the
+<code>_acme-challenge</code> TXT was written AND cleared (§11.4.14
+cleanup).</li>
+<li>e2e: real HTTPS GET to <code>/health</code> → 200 over the staging
+cert; capture SANs + issuer.</li>
+</ul></li>
+<li><strong>Guard §11.4.135:</strong>
+<code>acme-staging-issues-for-hostname</code>.</li>
+<li><strong>§1.1 mutation:</strong> revoke/omit the DNS token → staging
+issuance fails (guard asserts loud failure, not silent PASS).</li>
+<li><strong>Evidence:</strong> <code>openssl s_client</code> chain
+(issuer = LE staging), DNS TXT before/after, <code>/health</code>
+200.</li>
+<li><strong>Depends on:</strong> Phase 3 + operator token (Decision
+B/C). <strong>Blocks:</strong> Phase 5.</li>
+</ul>
+<hr />
+<h2 id="phase-5--renewal--rotation-simulation-zero-downtime">Phase 5 —
+Renewal + rotation simulation (zero-downtime)</h2>
+<p><strong>Goal:</strong> prove the built-in renewal loop <strong>fires
+before expiry</strong> and the front <strong>serves the NEW chain with
+zero downtime</strong> (design §3.3, §6).</p>
+<ul>
+<li><strong>Files:</strong>
+<ul>
+<li><code>tests/letsencrypt/renewal_sim_test.*</code> — seeds a
+<strong>fake near-expiry cert</strong> into <code>caddy-data</code>,
+drives renewal against Pebble/staging, holds a live TLS connection
+across the swap.</li>
+</ul></li>
+<li><strong>Tests (§11.4.169):</strong>
+<ul>
+<li>renewal-simulation: seed near-expiry <code>NotAfter</code>; observe
+renewal; assert new <code>NotAfter</code> &gt; old.</li>
+<li>rotation: assert served leaf <strong>serial changed</strong> after
+renewal AND the held connection was NOT dropped (zero-downtime).</li>
+<li>chaos (§11.4.85): kill/restart Pebble mid-renewal → Caddy retries
+with backoff, keeps serving the still-valid current cert (no outage
+while valid).</li>
+<li>stress: N renewals back-to-back → identical outcome (§11.4.50
+determinism).</li>
+</ul></li>
+<li><strong>Guards §11.4.135:</strong>
+<code>renewal-fires-before-expiry</code> +
+<code>rotation-serves-new-chain</code> +
+<code>failclosed-no-plaintext-fallback</code>.</li>
+<li><strong>§1.1 mutations:</strong> (a) freeze the renewal loop →
+renewal guard FAILs; (b) pin the old cert (skip swap) → rotation guard
+FAILs; (c) add a plaintext fallback on issuance failure → failclosed
+guard FAILs.</li>
+<li><strong>Evidence:</strong> before/after <code>NotAfter</code> +
+serials, held-connection trace, chaos retry log.</li>
+<li><strong>Depends on:</strong> Phase 3 (Pebble) / Phase 4 (staging).
+<strong>Blocks:</strong> Phase 6.</li>
+</ul>
+<hr />
+<h2
+id="phase-6--production-cutover--status-docs--rollback-runbook">Phase 6
+— Production cutover + Status docs + rollback runbook</h2>
+<p><strong>Goal:</strong> the single operator-gated production issuance,
+plus the durable docs + standing guards.</p>
+<ul>
+<li><strong>Files:</strong>
+<ul>
+<li>flip <code>CADDY_ACME_CA</code> → production (operator-approved
+change; one-shot, rate-limit aware — design §3.3).</li>
+<li><code>docs/design/letsencrypt/Status.md</code> +
+<code>Status_Summary.md</code> finalized PASS/FAIL with evidence paths
+(§11.4.45/§11.4.56); README doc-link row (§11.4.57); CONTINUATION §3
+update (§12.10).</li>
+<li>rollback runbook section (design §7.2) verified.</li>
+<li>register all Phase 1–5 guards into the standing regression-guard
+suite (§11.4.135); Challenges/HelixQA bank entry (§11.4.169).</li>
+</ul></li>
+<li><strong>Tests (§11.4.169):</strong>
+<ul>
+<li>e2e (prod): real browser-trusted HTTPS to <code>/health</code> →
+200; capture the <strong>trusted</strong> chain (issuer = LE
+production).</li>
+<li>full §11.4.40 retest of the whole suite on a clean baseline before
+any release tag.</li>
+</ul></li>
+<li><strong>Guard §11.4.135:</strong>
+<code>acme-prod-cert-trusted-for-hostname</code> (standing).</li>
+<li><strong>§1.1 mutation:</strong> point prod issuer at staging →
+trusted-chain guard FAILs (proves it checks the real root).</li>
+<li><strong>Evidence:</strong> trusted-chain capture, full-suite green
+log, Status docs synced (§11.4.60/§11.4.65 exports).</li>
+<li><strong>Depends on:</strong> Phase 5 + operator prod approval
+(Decision C). <strong>Blocks:</strong> release tag.</li>
+</ul>
+<hr />
+<h2
+id="alternative-branch--if-the-operator-rejects-caddy-and-picks-legocertbot">Alternative
+branch — if the operator rejects Caddy and picks lego/certbot</h2>
+<p>Documented for completeness (design §3.1 recommends Caddy). If
+chosen, the renewal mechanism changes and MUST still honor §11.4.156 (no
+cron-in-CI, no git hook):</p>
+<ul>
+<li>Renewal runs as a <strong><code>systemd --user</code> timer</strong>
+on the host (operator-installed), OR a <strong>long-running renewal
+container/loop</strong> — NOT cron-in-CI, NOT a git hook.</li>
+<li>Add a <strong>reload hook</strong>: on successful renewal, reload
+the TLS terminator (SIGHUP or a containers-submodule
+<code>pkg/health</code>-gated restart) — because lego/certbot write cert
+FILES that a separate terminator must pick up (no in-process hot-swap
+like Caddy).</li>
+<li>All Phase 3–5 tests still apply (Pebble hermetic, staging,
+renewal/rotation), retargeted at the lego/certbot + terminator
+pair.</li>
+<li>This branch adds moving parts (timer + reload hook + separate
+terminator) versus Caddy's single self-renewing process — the reason
+Caddy is recommended.</li>
+</ul>
+<hr />
+<h2 id="cross-cutting-requirements-apply-to-every-phase">Cross-cutting
+requirements (apply to every phase)</h2>
+<ul>
+<li><strong>Anti-bluff (§11.4/§11.4.69):</strong> every PASS via
+<code>ab_pass_with_evidence &lt;desc&gt; &lt;path&gt;</code>;
+topology-absent ⇒ <code>ab_skip_with_reason</code> (§11.4.3), never
+fail-open.</li>
+<li><strong>TDD (§11.4.43/§11.4.115):</strong> RED-on-broken (bogus ACME
+/ missing module / near-expiry) → GREEN, with a <code>RED_MODE</code>
+polarity switch where practical.</li>
+<li><strong>containers submodule (§11.4.76):</strong>
+Pebble/step-ca/Caddy all booted via
+<code>pkg/boot</code>/<code>pkg/compose</code>/<code>pkg/health</code>;
+no ad-hoc podman.</li>
+<li><strong>secrets (§11.4.10/§11.4.30):</strong> token = Podman secret
+NAME only; certs/account-key gitignored; pre-store leak audit
+(§11.4.10.A).</li>
+<li><strong>docs sync (§11.4.60/§11.4.65/§11.4.106):</strong> every doc
+change regenerates <code>.html</code>/<code>.pdf</code>; Status docs
+kept in sync.</li>
+<li><strong>review (§11.4.142/§11.4.125/§11.4.134):</strong> every
+change through independent review, iterate to clean GO.</li>
+<li><strong>CONST-033 / no host power / no host network by the
+implementer:</strong> the <code>:443</code> sysctl/NAT and the Podman
+secret creation are <strong>operator-performed host steps</strong>,
+documented in the runbook, never executed autonomously.</li>
+</ul>
+</body>
+</html>
