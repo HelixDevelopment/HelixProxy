@@ -174,16 +174,24 @@
 <body>
 <h1 id="changelog--helix_proxy-010-dev-002">Changelog —
 helix_proxy-0.1.0-dev-0.0.2</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T09:56:36Z <strong>Scope:</strong> Every change on the release
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T11:23:22Z <strong>Scope:</strong> Every change on the release
 surface between the previous release tag
 <code>helix_proxy-0.1.0-dev-0.0.1</code> (commit <code>3f79794</code>,
 2026-07-01 09:24:25 +0300) and the release candidate <code>HEAD</code>
-(<code>bf38c35</code>, 2026-07-01 12:11:30 +0300) — 14 commits.
+(<code>2ed8f38</code>, 2026-07-01 14:20:03 +0300) — 26 commits.</p>
+<blockquote>
+<p><strong>Revision 2 (2026-07-01T11:23:22Z):</strong> extended for the
+12 commits that landed after the Rev-1 draft — the Let's Encrypt
+Phase-2/3 hermetic DNS-01 issuance lane (task #59, live-PROVEN) and the
+observability metrics lane (task #56, LIVE <code>/metrics</code> scrape
+PROVEN). New sections: the extended commit inventory rows 15–26, the LE
++ observability grouped entries, and a "Known-pending at this tag" note.
 <strong>Authority:</strong> Helix Constitution §11.4.151
 (project-prefixed release tags), §11.4.135 (standing regression-guard
 suite), §11.4.44 (revision header), §11.4.65 (universal Markdown
 export), §11.4.6 (no-guessing).</p>
+</blockquote>
 <blockquote>
 <p>Read-only planning/record artefact. It documents what landed;
 creating/pushing the tag is a separate, operator-authorised action gated
@@ -322,6 +330,90 @@ cache)</td>
 <td>helixqa — proxy test bank + runner with honest §11.4.3 harness-build
 SKIP</td>
 </tr>
+<tr>
+<td>15</td>
+<td><code>b2afa7d</code></td>
+<td>feat</td>
+<td>letsencrypt — Phase 2+3 hermetic DNS-01 issuance PROVEN end-to-end
+(task #59)</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>6349c0e</code></td>
+<td>docs</td>
+<td>letsencrypt — hermetic DNS-01 + certmagic-#354 + renewal
+deep-research (§11.4.150)</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>4820da7</code></td>
+<td>docs</td>
+<td>status — feature-status ledger + this changelog (Rev 1) + LE
+hermetic security audit</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>022b78d</code></td>
+<td>feat</td>
+<td>challenges — LE Phase-3 hermetic issuance Challenge, live PASS (task
+#59)</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>d2042ac</code></td>
+<td>test</td>
+<td>letsencrypt — standing §11.4.135 Phase-3 issuance guard (RED+GREEN
+proven)</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>9b209e9</code></td>
+<td>feat</td>
+<td>observability — control-plane metrics overlay +
+<code>RED_MODE</code> scrape guard (task #56)</td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>5d80c00</code></td>
+<td>test</td>
+<td>observability — hermetic mTLS test-cert generator for the #56
+live-scrape</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>7c6b69f</code></td>
+<td>docs</td>
+<td>letsencrypt — Phase-5 renewal-mechanism correction (Caddy 2.8.4
+admin-API JSON)</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>2f1e49d</code></td>
+<td>docs</td>
+<td>letsencrypt — Phase-5 live findings (ARI blocks renewal on Pebble
+2.6.0)</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>401234e</code></td>
+<td>feat</td>
+<td>observability — isolated metrics trio, LIVE <code>/metrics</code>
+scrape PROVEN (task #56)</td>
+</tr>
+<tr>
+<td>25</td>
+<td><code>713d4dd</code></td>
+<td>docs</td>
+<td>letsencrypt — Pebble <code>/set-renewal-info</code> API + Phase-5
+certmagic ARI-cache blocker</td>
+</tr>
+<tr>
+<td>26</td>
+<td><code>2ed8f38</code></td>
+<td>docs</td>
+<td>features — LE hermetic DNS-01 issuance = PASS in the feature ledger
+(task #59)</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -358,6 +450,93 @@ cache-HIT canaries, scoring PASS only on positive captured evidence
 (task #59).</strong> A HelixQA (<code>submodules/helix_qa</code>) test
 bank + runner for the proxy, with an honest §11.4.3 SKIP-with-reason
 when the harness build is unavailable — never a PASS-by-default.</li>
+</ul>
+<h3 id="rev-2-additions--lets-encrypt-phase-23-task-59">Rev-2 additions
+— Let's Encrypt Phase 2/3 (task #59)</h3>
+<ul>
+<li><strong><code>b2afa7d</code> — LE Phase 2+3: hermetic DNS-01
+issuance PROVEN end-to-end (task #59).</strong> Real, re-runnable Let's
+Encrypt DNS-01 certificate issuance against a local Pebble ACME server,
+fully offline, gated on cert-analyzer verdicts (§11.4.98 / §11.4.107 /
+§11.4.108). No bluff: Pebble runs <code>PEBBLE_VA_ALWAYS_VALID=0</code>
+(genuine challenge validation) and the PASS is scored over the leaf
+Caddy actually serves. Infra under <code>deploy/letsencrypt/</code>:
+<code>build.sh</code> (rootless <code>xcaddy</code> build of
+<code>caddy-challtestsrv:2.8.4</code> with a post-build
+<code>list-modules | grep</code> proving the local DNS module linked —
+build ≠ linked, §11.4.6), <code>Dockerfile.caddy</code> (fixes the
+<code>v2.8.4</code> version bug), a libdns DNS-01
+<code>provider.go</code> (POSTs set/clear-txt to challtestsrv; no creds;
+injection-safe; hermetic-test-only), <code>compose.hermetic.yml</code>
+(Pebble + challtestsrv + CoreDNS + Caddy; Caddy loopback-bound per
+security-audit M1), a CoreDNS SOA-front that answers the
+<code>hermetic.test</code> SOA in the ANSWER section so certmagic's
+DNS-01 zone-determination SOA-walk succeeds (challtestsrv NOTIMPs SOA),
+and <code>phase3_hermetic_issue.sh</code> (clean-slate re-runnable proof
+that also avoids certmagic bug #354 via boot ordering). Proof: two clean
+runs with distinct per-run Pebble intermediate CAs,
+<code>cert_not_expired</code> /
+<code>cert_san_matches proxy.hermetic.test</code> / negative-SAN reject
+/ <code>cert_chain_roots_in</code> all PASS; evidence
+<code>qa-results/letsencrypt/phase3_issuance/{20260701T100119Z,…T100434Z}/</code>.
+Status docs → Phases 0–3 PASS.</li>
+<li><strong><code>022b78d</code> — LE Phase-3 hermetic issuance
+Challenge, live PASS (task #59).</strong> A HelixQA-style Challenge
+(<code>challenges/scripts/le_phase3_issuance_challenge.sh</code>,
+§11.4.4(b) layer 4) driving <code>phase3_hermetic_issue.sh</code> and
+scoring PASS only on an anti-bluff re-read of the cert-analyzer verdict
+file (<code>cert_chain_roots_in:PASS</code> AND
+<code>cert_san_matches:PASS</code>, §11.4.116); honest
+<code>topology_unsupported</code> SKIP (§11.4.3) when the built image /
+podman-compose is absent — never a fake pass. Ran LIVE by the conductor:
+<code>OVERALL=PASS</code>, real cert (Pebble CA <code>42f825</code>)
+issued + verified, run <code>20260701T101316Z</code>. Also lands the
+<code>run_proxy_challenges.md</code> §11.4.18 companion missed in
+<code>f2e69e0</code>.</li>
+</ul>
+<h3 id="rev-2-additions--observability-metrics-lane-task-56">Rev-2
+additions — observability metrics lane (task #56)</h3>
+<ul>
+<li><strong><code>9b209e9</code> — Control-plane metrics overlay +
+<code>RED_MODE</code> scrape guard (task #56).</strong>
+<code>docker-compose.observability.yml</code> runs the control-plane API
+as <code>proxy-api</code> with
+<code>CONTROL_API_METRICS_ADDR=0.0.0.0:59090</code> and the network
+alias matching the committed <code>prometheus.yml</code> target; secrets
+are NAME-only (§11.4.10) and the base <code>docker-compose.yml</code>
+stays pristine (§11.4.122).
+<code>tests/observability/metrics_scrape_test.sh</code> is a §11.4.115
+<code>RED_MODE</code> polarity guard: <code>RED_MODE=1</code> reproduces
+"metrics not exposed"; <code>RED_MODE=0</code> scrapes
+<code>/metrics</code> and asserts REAL Prometheus exposition
+(<code># HELP</code>/<code># TYPE</code> + a known metric), asserting
+content not HTTP 200. Honest boundary (§11.4.6): the API counters are
+NOT yet byte-path-wired, so the counter-increment-on-traffic sub-proof
+is an honest <code>feature_disabled_by_config</code> SKIP until that
+wiring lands (flip via <code>HELIX_METRICS_BYTEPATH_WIRED=1</code>).
+Metrics: <code>helix_proxy_vpn_up</code> /
+<code>_acl_decisions_total</code> /
+<code>_tunnel_down_responses_total</code>.</li>
+<li><strong><code>401234e</code> — Isolated metrics trio: LIVE
+<code>/metrics</code> scrape PROVEN (task #56).</strong>
+<code>deploy/observability/compose.metrics.yml</code> — a fully-isolated
+<code>obs-postgres</code> + <code>obs-redis</code> +
+<code>obs-api</code> trio (own network, high ports 55432/56379/59091,
+fresh volume) with a symmetric throwaway test pg password so the
+control-plane API connects with no dependency on the base-stack password
+— the #56 live-scrape blocker removed. Ran LIVE by the conductor (the
+#56 core deliverable): rebuilt the stale control-plane image, booted the
+trio, <code>obs-api</code> came up serving mTLS + the plaintext
+<code>/metrics</code> listener on 59091, and
+<code>metrics_scrape_test.sh</code> PASSED against it — "real Prometheus
+exposition content: <code># HELP</code>/<code># TYPE</code> +
+<code>helix_proxy_acl_decisions_total</code> +
+<code>helix_proxy_tunnel_down_responses_total</code> +
+<code>helix_proxy_vpn_up</code> present". Honest SKIP on the
+counter-increment sub-proof (byte-path→API increment is P5/P10-pending,
+<code>metrics.go:14-17</code>, <code>feature_disabled_by_config</code>),
+never a fake pass. Evidence:
+<code>qa-results/observability/{scrape,metrics_scrape}/</code>.</li>
 </ul>
 <h2 id="fix">fix</h2>
 <p>All six fixes in this window are <strong>test-suite /
@@ -434,12 +613,116 @@ audit</strong> for <code>helix_proxy-0.1.0-dev-0.0.2</code>
 GitHub/GitLab readiness audit and OPERATOR-BLOCKED items
 OB-1..OB-7.</li>
 </ul>
+<h3
+id="rev-2-additions--le-deep-research-security-audit--feature-ledger">Rev-2
+additions — LE deep-research, security audit + feature ledger</h3>
+<ul>
+<li><strong><code>6349c0e</code> — LE hermetic + certmagic-#354 +
+renewal deep-research (§11.4.150).</strong> Three cited deep-research
+analyses backing the LE workstream:
+<code>research/certmagic_chain_panic_20260701/</code> (source-proven
+root cause of the certmagic v0.21.3 <code>selectPreferredChain</code>
+empty-chain panic = upstream bug #354, fixed in certmagic v0.25.1 /
+Caddy 2.11.0; mitigated here via Phase-3 boot ordering),
+<code>research/letsencrypt_hermetic_20260701/</code> (the CoreDNS
+SOA-front design-gap addendum), and
+<code>research/letsencrypt_renewal_20260701/</code> (the Phase-5
+renewal/rotation procedure, 24 sources).</li>
+<li><strong><code>4820da7</code> — Feature-status ledger + this
+changelog (Rev 1) + LE security audit (task #59).</strong> Landed
+<code>docs/features/Status.md</code> + <code>Status_Summary.md</code>
+(§11.4.153/.56 — 9 PASS-with-evidence / 10 PENDING / 3 OPERATOR-BLOCKED
+at that point + a §11.4.169 test-type coverage matrix), the Rev-1 draft
+of THIS changelog,
+<code>docs/audit/le_hermetic_security_audit_20260701</code> (0 secrets
+leaked, CRITICAL 0 / HIGH 0 / MED 1 [Caddy <code>0.0.0.0</code> bind —
+fixed this session] / LOW 3), and
+<code>docs/helixqa/README.md</code>.</li>
+<li><strong><code>7c6b69f</code> — Phase-5 renewal-mechanism correction
+(§11.4.138).</strong> The Rev-1 renewal doc claimed
+<code>renewal_window_ratio</code> is a Caddyfile <code>tls</code>
+subdirective; the conductor's LIVE test disproved it on Caddy 2.8.4
+("unknown subdirective"). Source root cause: that Caddyfile token
+arrived via PR #7473 (milestone v2.11.1), ~2.5y after 2.8.4. Corrected:
+in 2.8.4 the ratio is a JSON field
+<code>apps.tls.automation.policies[].renewal_window_ratio</code>, so the
+Phase-5 force step is an admin-API PATCH/<code>POST /load</code> — the
+Caddyfile line correctly stays commented. Renewal-research doc Rev
+2.</li>
+<li><strong><code>2f1e49d</code> — Phase-5 live findings: ARI blocks
+renewal on Pebble 2.6.0.</strong> Conductor live-test (Caddy 2.8.4 +
+Pebble 2.6.0) disproved three prior assumptions: (1)
+<code>renewal_window_ratio=1</code> via <code>/load</code> does NOT
+force renewal — certmagic v0.21.3 follows the ARI
+<code>selected_time</code>; (2) a short-lifetime Pebble cert is not
+renewed either (Pebble 2.6.0 ARI returns a ~2-day window ignoring the
+short lifetime); (3) the root blocker is ARI, and Pebble 2.6.0 has no
+<code>/set-renewal-info</code> (added v2.8.0). The zero-downtime of the
+<code>/load</code> reload itself IS confirmed (100/100 probes 200).
+Phase 5 stays honestly PENDING — no renewal proven, never a
+metadata-only PASS. Renewal-research doc Rev 3.</li>
+<li><strong><code>713d4dd</code> — Pebble <code>/set-renewal-info</code>
+API + Phase-5 certmagic ARI-cache blocker.</strong>
+<code>docs/research/pebble_set_renewal_info_20260701/</code> —
+source-verified (Pebble v2.8.0/v2.10.1) and conductor-LIVE-verified on
+Pebble 2.10.1: the POST returns 200 and Pebble serves the posted past
+window at the ARI GET path (the Pebble layer works). BUT certmagic
+v0.21.3 (Caddy 2.8.4) caches the ARI persistently and neither
+<code>POST /load</code> nor a Caddy restart forces a re-fetch, so the
+override never reaches certmagic → no renewal. Definitive Phase-5
+conclusion: a fast deterministic zero-downtime hermetic renewal needs
+<strong>Caddy ≥2.11.0 / certmagic ≥v0.25.1</strong> (also fixes #354),
+which requires adapting the custom DNS provider to libdns v1.0.0 (Caddy
+≥2.10). Also <code>deploy/letsencrypt/compose.phase5.yml</code>.</li>
+<li><strong><code>2ed8f38</code> — LE hermetic DNS-01 issuance = PASS in
+the feature ledger (task #59).</strong>
+<code>docs/features/Status.md</code> + <code>Status_Summary.md</code>
+Rev 2 — LE hermetic DNS-01 issuance PENDING → PASS (cites the Phase-3
+issuance verdicts, the live Challenge, the RED+GREEN-proven guard, the
+DNS-module-linked image build); LE renewal/rotation split out as honest
+PENDING (certmagic ARI-cache blocker, needs Caddy ≥2.11.0). Ledger
+tally: 10 PASS-with-evidence / 9 PENDING / 3 OPERATOR-BLOCKED.</li>
+</ul>
 <h2 id="test">test</h2>
-<p>No commit in this window carries a bare <code>test(</code>
-Conventional-Commits prefix; the <code>fix(tests): …</code> commits
-above are classified as fixes (they repair defective tests). Every fix
-additionally lands or wires its §11.4.135 standing guard — audited
-next.</p>
+<p>Rev-1 note (retained): none of the commits 1–14 carried a bare
+<code>test(</code> Conventional-Commits prefix; the
+<code>fix(tests): …</code> commits above are classified as fixes (they
+repair defective tests). Every fix additionally lands or wires its
+§11.4.135 standing guard — audited below.</p>
+<h3
+id="rev-2-additions--phase-3-guard--observability-mtls-generator">Rev-2
+additions — Phase-3 guard + observability mTLS generator</h3>
+<ul>
+<li><strong><code>d2042ac</code> — Standing §11.4.135 regression guard
+for LE Phase-3 issuance (task #59).</strong>
+<code>tests/letsencrypt/phase3_issuance_guard.sh</code> — a §11.4.115
+<code>RED_MODE</code> polarity guard wrapping
+<code>phase3_hermetic_issue.sh</code>, registered in
+<code>run-tests.sh</code> <code>test_regression_guards()</code> with
+3-way exit handling (0=PASS, 2=honest topology SKIP when the built image
+is absent §11.4.3 — collapsing SKIP into FAIL would be a §11.4.1
+false-FAIL). Both polarities PROVEN live by the conductor:
+<code>RED_MODE=0</code> (GREEN standing guard) → real cert issued +
+analyzer- verified (run <code>20260701T101408Z</code>);
+<code>RED_MODE=1</code> (reproduce) → broken resolver bypasses the
+CoreDNS SOA-front → certmagic SOA-walk NOTIMP → Phase-3 FAILS (exit 1) →
+guard PASS (catches the exact regression the fix closes). Evidence:
+<code>qa-results/regression/phase3_issuance_guard/</code>.</li>
+<li><strong><code>5d80c00</code> — Hermetic mTLS test-cert generator for
+the #56 live-scrape.</strong>
+<code>tests/observability/gen_test_mtls.sh</code> — generates a
+self-signed test CA + server cert (CN <code>helix-control-plane</code>,
+SANs <code>proxy-control-plane</code>/localhost/127.0.0.1/::1, EKU
+serverAuth) + client cert (CN <code>admin@helix</code>, clientAuth) + a
+random test pg password into gitignored
+<code>tests/observability/.mtls/</code> (§11.4.10 — key material never
+tracked; <code>.gitignore</code> + <code>umask 077</code>), and prints
+the four NAME-only <code>podman secret create</code> commands the
+observability overlay expects. Unblocks the #56 conductor live-scrape
+(the API is fail-closed: <code>buildTLSConfig</code> runs before the
+<code>/metrics</code> listener). Hermetically dry-run-verified
+(<code>openssl verify</code> OK, keypair matches).</li>
+</ul>
 <hr />
 <h2 id="114135-regression-guard-audit">§11.4.135 regression-guard
 audit</h2>
@@ -520,10 +803,17 @@ extended for governance-doc siblings)</td>
 </tr>
 </tbody>
 </table>
-<p>Additionally, the <strong>Let's Encrypt Phase-1</strong> feature
-(<code>2812f48</code>, not a bugfix but shipped this window) registers a
-self-validation guard <code>cert_analyzer_selfvalidation_test.sh</code>
-(GREEN L687 + <code>RED_MODE=1</code> L693).</p>
+<p>Additionally, two <strong>Let's Encrypt</strong> features (not
+bugfixes but shipped this window) register standing guards in
+<code>test_regression_guards()</code>: the Phase-1
+<code>cert_analyzer_selfvalidation_test.sh</code> self-validation guard
+(GREEN L687 + <code>RED_MODE=1</code> L693, <code>2812f48</code>), and
+the Phase-3 <code>tests/letsencrypt/phase3_issuance_guard.sh</code>
+DNS-01-issuance guard (<code>d2042ac</code>) — a §11.4.115
+<code>RED_MODE</code> polarity guard with 3-way exit handling (0=PASS,
+2=honest topology SKIP §11.4.3), both polarities proven live by the
+conductor (GREEN run <code>20260701T101408Z</code>; RED reproduces the
+SOA-front-bypass regression).</p>
 <p>All 12 guard files referenced by
 <code>test_regression_guards()</code> are present on disk under
 <code>tests/regression/</code> (verified). Each is wired GREEN + RED
@@ -576,6 +866,44 @@ re-run that must be GREEN before the
 <code>helix_proxy-0.1.0-dev-0.0.2</code> tag is created. This changelog
 does not assert a fresh run it did not perform.</p></li>
 </ol>
+<hr />
+<h2 id="known-pending-at-this-tag-1146-honest-boundary">Known-pending at
+this tag (§11.4.6 honest boundary)</h2>
+<p>What genuinely shipped-and-PROVEN this window vs what is
+diagnosed-but-not-yet-done. None of the below is a bluff PASS — each is
+an honestly-tracked gap.</p>
+<ul>
+<li><strong>LE Phase 5 (renewal / rotation) — diagnosed but
+PENDING.</strong> Hermetic DNS-01 <em>issuance</em> (Phases 0–3) is
+live-PROVEN; automatic <em>renewal/rotation</em> is NOT. The conductor's
+live Phase-5 tests (<code>2f1e49d</code>, <code>713d4dd</code>)
+root-caused the blocker to certmagic's persistent <strong>ARI
+cache</strong>: on Caddy 2.8.4 / certmagic v0.21.3 neither
+<code>renewal_window_ratio=1</code> via <code>POST /load</code>, a Caddy
+restart, nor a Pebble <code>/set-renewal-info</code> override (verified
+working at the Pebble layer on 2.10.1) forces certmagic to re-fetch the
+renewal window, so no renewal fires. Definitive path: needs
+<strong>Caddy ≥2.11.0 / certmagic ≥v0.25.1</strong> (which also fixes
+bug #354), which in turn requires adapting the custom challtestsrv DNS
+provider to libdns v1.0.0 (Caddy ≥2.10). Phase 5 stays honestly PENDING
+— never a metadata-only PASS.</li>
+<li><strong>LE Phase 4 and Phase 6 — OPERATOR-BLOCKED.</strong> Per the
+LE phased plan, Phase 4 (real public Let's Encrypt issuance against a
+real domain) and Phase 6 (the production HTTPS proxy front-end cutover)
+require operator-owned inputs (a public domain + DNS control, production
+topology decisions) and remain OPERATOR-BLOCKED (§11.4.21) — outside the
+autonomous hermetic surface.</li>
+<li><strong>Observability #56 — counter-increment-on-traffic sub-proof
+PENDING byte-path wiring.</strong> The LIVE <code>/metrics</code> scrape
+is PROVEN (<code>401234e</code> — real Prometheus exposition served +
+asserted). What remains is the byte-path → API counter increment: the
+API metric counters are not yet wired into the proxy data path, so the
+"counter rises when real traffic flows" sub-proof is an honest
+<code>feature_disabled_by_config</code> SKIP
+(<code>metrics.go:14-17</code>), flippable to a real assertion via
+<code>HELIX_METRICS_BYTEPATH_WIRED=1</code> once that wiring lands
+(P5/P10).</li>
+</ul>
 <hr />
 <h2 id="sources">Sources</h2>
 <ul>
