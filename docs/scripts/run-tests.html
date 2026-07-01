@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>run-tests</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="testsrun-testssh--operator-guide"><code>tests/run-tests.sh</code> —
+operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Authority:</strong> Helix Constitution
+§11.4.3 (topology-aware SKIP), §11.4.35 (inheritance gate), §11.4.135
+(standing regression suite), §11.4.115 (RED_MODE polarity), §11.4.69
+(sink-side security guards)</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source header/comment blocks in the
+script.</p>
+</blockquote>
+<h2 id="overview--purpose">Overview / Purpose</h2>
+<p>The project's <strong>structural + regression + security test
+suite</strong> — the primary <code>bash tests/run-tests.sh</code> entry
+point. It does NOT drive the live data plane; it validates the
+repository layout, the constitution-inheritance gate, the standing
+§11.4.135 regression guards, the live-proxy security guards, and the
+environment/config/runtime/port/cache/VPN topology. Ports are classified
+<strong>topology-aware</strong> (§11.4.3): a port held by the project's
+own running container is the healthy <code>PASS</code> state; a port
+held by a non-project process is <code>SKIP</code> (not attributable to
+the proxy), not a false <code>FAIL</code>.</p>
+<p>It is a self-contained bash script that shells out to sibling
+gate/guard scripts. A <code>SKIP</code> counts as neither pass nor fail;
+only a real <code>FAIL</code> makes the suite exit non-zero.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/run-tests.sh</span></code></pre></div>
+<p>No flags. Behaviour is influenced only by the environment (below) and
+by which sibling guard scripts are present + parseable.</p>
+<h2 id="inputs">Inputs</h2>
+<ul>
+<li><strong><code>.env</code></strong> (optional, gitignored) — sourced
+if present for <code>HTTP_PROXY_PORT</code>,
+<code>SOCKS_PROXY_PORT</code>, <code>PROXY_ADMIN_PORT</code>,
+<code>CACHE_DIR</code>, <code>USE_VPN</code>,
+<code>VPN_OVPN_PATH</code>, <code>VPN_USERNAME</code>,
+<code>VPN_PASSWORD</code>. Absent = fresh-checkout topology → the
+<code>.env</code> checks SKIP and <code>.env.example</code> is validated
+instead.</li>
+<li><strong><code>RUN_STARTUP_TESTS</code></strong> (default
+<code>false</code>) — when <code>true</code>, runs
+<code>./init --check</code> and <code>./start --dry-run</code>.</li>
+<li><strong><code>SKIP_LE_ISSUANCE_GUARD</code></strong> (default
+<code>0</code>) — when <code>1</code>, skips the two expensive hermetic
+Let's Encrypt Phase-3 / Phase-5 issuance guards.</li>
+<li>Port defaults when <code>.env</code> is absent: HTTP
+<code>53128</code>, SOCKS <code>51080</code>, admin
+<code>58080</code>.</li>
+</ul>
+<h2 id="outputs">Outputs</h2>
+<ul>
+<li>Coloured per-test
+<code>PASS</code>/<code>SKIP</code>/<code>FAIL</code> lines and a final
+summary (Tests Run / Passed / Skipped / Failed).</li>
+<li>Exit <code>0</code> — no <code>FAIL</code> (skips allowed); exit
+<code>1</code> — one or more real <code>FAIL</code>.</li>
+<li>Regression/security guards it invokes write their own evidence files
+under <code>qa-results/</code> (this script itself writes none).</li>
+</ul>
+<h2 id="side-effects">Side-effects</h2>
+<p>None of its own. It delegates to read-only gates/guards; the LE
+issuance guards it may invoke boot a hermetic stack (gated by
+<code>SKIP_LE_ISSUANCE_GUARD</code>). It runs
+<code>cd "$PROJECT_ROOT"</code> and, in
+<code>RUN_STARTUP_TESTS=true</code> mode, invokes
+<code>./init --check</code> and <code>./start --dry-run</code>.</p>
+<h2 id="dependencies">Dependencies</h2>
+<ul>
+<li><code>bash</code> (<code>set -euo pipefail</code>),
+<code>grep</code>, <code>awk</code>, <code>ss</code>;
+<code>podman</code> for the topology-aware port + runtime checks;
+<code>docker</code>/<code>podman-compose</code> optionally for the
+compose-syntax check.</li>
+<li>Sibling scripts it runs:
+<code>tests/constitution_inheritance_gate.sh</code>;
+<code>tests/regression/*</code> guards
+(<code>log_dir_writable_test.sh</code>,
+<code>test_result_returns_zero_test.sh</code>,
+<code>port_topology_aware_test.sh</code>,
+<code>cache_cli_present_test.sh</code>,
+<code>comprehensive_admin_topology_test.sh</code>,
+<code>no_suspend_export_sibling_test.sh</code>,
+<code>external_egress_verdict_test.sh</code>,
+<code>proxy_conn_verdict_test.sh</code>,
+<code>ddos_flood_evidence_test.sh</code>,
+<code>benchmark_baseline_ratchet_test.sh</code>,
+<code>assert_egress_ip_host_unknown_test.sh</code>,
+<code>cert_analyzer_selfvalidation_test.sh</code>);
+<code>tests/letsencrypt/phase3_issuance_guard.sh</code>
+<ul>
+<li><code>phase5_rotation_guard.sh</code>;
+<code>tests/security/proxy_acl_security.sh</code>.</li>
+</ul></li>
+</ul>
+<h2 id="internal-behaviour-notes">Internal behaviour notes</h2>
+<ul>
+<li><code>test_result</code> uses assignment-form counters
+(<code>VAR=$((VAR+1))</code>), NOT <code>((VAR++))</code>, and always
+<code>return 0</code> — a post-increment from 0 returns exit 1 under
+<code>set -e</code> and would abort the whole suite (BUGFIX-0001 /
+BUGFIX-0003). Guarded by
+<code>tests/regression/test_result_returns_zero_test.sh</code>.</li>
+<li>Each regression guard is run twice: once as the GREEN guard and once
+with <code>RED_MODE=1</code> to prove the guard genuinely reproduces its
+defect (§11.4.115 / a RED that cannot reproduce is a §11.4.7
+finding).</li>
+<li>The security guard uses <code>|| rc=$?</code> capture so a non-zero
+guard exit does not abort the <code>set -euo pipefail</code> suite
+before the code is read.</li>
+</ul>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>tests/pre_build_verification.sh</code> — the pre-build gate
+runner (runs the same inheritance gate).</li>
+<li><code>tests/comprehensive-test.sh</code> — the live data-plane
+functional suite.</li>
+<li><code>docs/scripts/log_dir_writable_test.md</code>,
+<code>docs/scripts/cache_cli_present_test.md</code> — companion docs for
+guards this suite registers.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — read from source;
+<code>sh -n</code>/<code>bash -n</code> parse discipline mirrored from
+the sibling guards. Behaviour documented from the script body, not
+executed here (the conductor runs the live suite).</p>
+</body>
+</html>

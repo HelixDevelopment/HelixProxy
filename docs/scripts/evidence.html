@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>evidence</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="testslibevidencesh--operator-guide"><code>tests/lib/evidence.sh</code>
+— operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Active sourceable
+data-plane anti-bluff evidence library for the VPN-aware proxy
+extension. The committed canonical oracle (§11.4.69 / §11.4.107).</p>
+<blockquote>
+<p>Companion (§11.4.18) to the in-source documentation block at the top
+of the script. This is a <strong>sourced library</strong>, not a
+runnable script — source it and call its functions.</p>
+</blockquote>
+<h2 id="overview--purpose">Overview / Purpose</h2>
+<p>A sourceable library of DATA-PLANE evidence helpers. Every helper
+returns <code>0</code> (PASS) only when it can cite CAPTURED data-plane
+evidence that the user-visible behaviour really works. Control-plane /
+config / "absence-of-error" signals are NEVER accepted as proof (§11.4 /
+§11.4.69 / §11.4.107). It is the committed canonical oracle that the
+dynamic-mode analyzers under <code>tests/dynamic/</code> source
+read-only and delegate to (reuse, never reimplement — §11.4.74).</p>
+<h3 id="public-function-contract">Public function contract</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>PASS (rc 0) when…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ab_pass_with_evidence &lt;desc&gt; &lt;evidence_path&gt;</code></td>
+<td>the cited evidence artefact EXISTS and is NON-EMPTY (else
+<code>FAIL</code>, rc 1). The canonical §11.4.69 PASS helper.</td>
+</tr>
+<tr>
+<td><code>ab_skip_with_reason &lt;desc&gt; &lt;reason&gt;</code></td>
+<td><code>&lt;reason&gt;</code> is in the §11.4.69 closed set
+(<code>geo_restricted</code>, <code>operator_attended</code>,
+<code>hardware_not_present</code>, <code>topology_unsupported</code>,
+<code>network_unreachable_external</code>,
+<code>feature_disabled_by_config</code>) → honest <code>SKIP</code> (rc
+0); any other reason → <code>FAIL</code> (rc 2).</td>
+</tr>
+<tr>
+<td><code>wg_transfer_delta &lt;iface&gt; &lt;before&gt; &lt;after&gt;</code></td>
+<td>the WireGuard tx delta &gt; 0 AND rx delta &gt; 0 across two
+<code>wg show &lt;if&gt; transfer</code> snapshots; flat/decreasing
+counters <code>FAIL</code>.</td>
+</tr>
+<tr>
+<td><code>assert_egress_ip &lt;proxy_url&gt; &lt;expected_exit&gt; &lt;host_real&gt;</code></td>
+<td>egress observed THROUGH the proxy ==
+<code>&lt;expected_exit&gt;</code> AND !=
+<code>&lt;host_real&gt;</code>; egress==host is the §15 bluff →
+<code>FAIL</code>; host IP unknown/empty/non-IP-shaped →
+<code>OPERATOR-BLOCKED</code> (rc 2), never fail-open (§11.4.68).</td>
+</tr>
+<tr>
+<td><code>assert_cache_hit &lt;access_log&gt; &lt;url&gt;</code></td>
+<td>the Squid access.log carries a <code>TCP_*HIT</code> result code for
+<code>&lt;url&gt;</code> (whole-field, not substring).</td>
+</tr>
+<tr>
+<td><code>assert_graceful_503 &lt;proxy_url&gt; &lt;target&gt; &lt;pid_before&gt; &lt;pid_after&gt;</code></td>
+<td>HTTP 503 + non-blank branded body (marker, default
+<code>tunnel</code>) + PID unchanged (proxy did not crash/restart).</td>
+</tr>
+<tr>
+<td><code>assert_no_leak &lt;capture_file&gt;</code></td>
+<td>zero target packets escaped the real uplink during the tunnel-down
+window (tcpdump <code>0 packets</code>, or <code>/proc/net/dev</code>
+tx-packet delta == 0, or zero IP lines).</td>
+</tr>
+</tbody>
+</table>
+<p>Supporting public helpers:
+<code>procdev_field &lt;file&gt; &lt;iface&gt; &lt;idx&gt;</code> (pure
+<code>/proc/net/dev</code> field accessor),
+<code>proxy_conn_verdict &lt;proxy&gt; &lt;direct&gt; &lt;expected&gt; &lt;listening&gt;</code>
+(PURE connectivity classifier →
+<code>PASS</code>/<code>FAIL</code>/<code>SKIP:…</code>),
+<code>port_is_listening &lt;port&gt;</code> (live listen probe). Helpers
+prefixed <code>_evidence_</code> / <code>_code_in</code> /
+<code>_evidence_ip_shaped</code> are internal.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> tests/lib/evidence.sh                    <span class="co"># source it; do NOT execute</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">assert_egress_ip</span> <span class="st">&quot;</span><span class="va">$PROXY_URL</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$EXPECTED_EXIT</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$HOST_REAL_IP</span><span class="st">&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">ab_pass_with_evidence</span> <span class="st">&quot;cache hit&quot;</span> <span class="st">&quot;</span><span class="va">$access_log</span><span class="st">&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ab_skip_with_reason</span>  <span class="st">&quot;stress&quot;</span> <span class="st">&quot;topology_unsupported&quot;</span></span></code></pre></div>
+<h3 id="unit-test-seams-11427--stubs-only-in-the-unit-layer">Unit-test
+seams (§11.4.27 — stubs only in the unit layer)</h3>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EVIDENCE_OBSERVED_IP_FILE</code></td>
+<td><code>assert_egress_ip</code> reads the observed egress IP from this
+file instead of live curl.</td>
+</tr>
+<tr>
+<td><code>EVIDENCE_503_CODE_OVERRIDE</code></td>
+<td><code>assert_graceful_503</code> uses this HTTP code instead of live
+curl.</td>
+</tr>
+<tr>
+<td><code>EVIDENCE_503_BODY_FILE</code></td>
+<td><code>assert_graceful_503</code> reads the response body from this
+file.</td>
+</tr>
+<tr>
+<td><code>EVIDENCE_503_BODY_MARKER</code></td>
+<td>branded marker the 503 body must contain (default
+<code>tunnel</code>, case-insensitive).</td>
+</tr>
+<tr>
+<td><code>EVIDENCE_LEAK_IFACE</code></td>
+<td>real-uplink iface for the <code>/proc/net/dev</code> no-leak delta
+(default <code>eth0</code>).</td>
+</tr>
+<tr>
+<td><code>EVIDENCE_IP_ECHO_URL</code></td>
+<td>IP-echo endpoint for the live egress probe (default
+<code>https://icanhazip.com</code>).</td>
+</tr>
+<tr>
+<td><code>EVIDENCE_CURL_TIMEOUT</code></td>
+<td>curl <code>--max-time</code> for live probes (default
+<code>15</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="inputs">Inputs</h2>
+<p>Captured artefacts (wg transfer snapshots, Squid
+<code>access.log</code>, 503 body + PID pair, tcpdump capture /
+<code>/proc/net/dev</code> snapshots) plus, for the live probes, real
+curl through the proxy. Unit-test seams (above) feed fixtures with no
+network.</p>
+<h2 id="outputs">Outputs</h2>
+<p>One structured verdict line per call on stdout:</p>
+<pre><code>PASS: &lt;desc&gt; [evidence: &lt;path-or-detail&gt;]
+FAIL: &lt;desc&gt; [reason: &lt;why&gt;]
+SKIP: &lt;desc&gt; [reason: &lt;closed-set-reason&gt;]
+OPERATOR-BLOCKED: &lt;desc&gt; [reason: …]</code></pre>
+<p>Return code: <code>0</code> = PASS / valid-SKIP, <code>1</code> =
+FAIL, <code>2</code> = invalid SKIP / OPERATOR-BLOCKED.</p>
+<h2 id="side-effects">Side-effects</h2>
+<ul>
+<li>The live probes (<code>assert_egress_ip</code>,
+<code>assert_graceful_503</code>) run <code>curl</code> through the
+proxy in real use; <code>assert_graceful_503</code> may create + remove
+a <code>mktemp</code> body file. <code>port_is_listening</code> inspects
+the local network stack.</li>
+<li>The pure classifiers/parsers (<code>ab_*</code>,
+<code>wg_transfer_delta</code>, <code>assert_cache_hit</code>,
+<code>assert_no_leak</code>, <code>procdev_field</code>,
+<code>proxy_conn_verdict</code>) have no side-effects.</li>
+</ul>
+<h2 id="dependencies">Dependencies</h2>
+<p>POSIX <code>sh</code>, <code>awk</code>, <code>grep</code>,
+<code>tr</code>; <code>curl</code> (live probes only);
+<code>ss</code>/<code>netstat</code> (<code>port_is_listening</code>
+only). POSIX-clean — parses under <code>sh -n</code> AND
+<code>bash -n</code> (§11.4.67); no bash-only constructs
+(<code>[[ ]]</code>, <code>&lt;&lt;&lt;</code>, arrays,
+<code>&gt;( )</code>, <code>${v^^}</code>).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong><code>assert_egress_ip</code> fail-open guard (§11.4.68,
+findings F7/F-1)</strong> — when <code>host_real</code> is empty,
+<code>unknown</code>, non-IP-shaped garbage, or a loopback/ unspecified
+sentinel, the <code>egress!=host</code> half cannot be evaluated: a
+definitively-wrong exit still FAILs, but an otherwise-good result
+returns <code>OPERATOR-BLOCKED</code> (rc 2), NEVER a fail-open
+PASS/SKIP.</li>
+<li><strong><code>wg_transfer_delta</code></strong> — a recent handshake
+with flat counters is control-plane-green / data-plane-dead → FAIL.</li>
+<li><strong><code>assert_cache_hit</code></strong> — URL-specific: a
+MISS line for the same URL does NOT satisfy it; the HIT token must be
+the result-code field, not text inside the URL.</li>
+<li><strong><code>proxy_conn_verdict</code></strong> — a positive DIRECT
+signal out-ranks the port probe, so a crashed proxy on a working host
+FAILs rather than fail-opening to SKIP (§11.4.68); a site outage SKIPs
+rather than false-FAILing (§11.4.1).</li>
+<li><strong><code>_code_in</code></strong> matches whole tokens only
+(<code>20</code> does not match <code>200</code>).</li>
+</ul>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>tests/lib/evidence_selftest.sh</code> — TAP self-test proving
+every parser is correct AND fails on its negative fixture (§1.1).</li>
+<li><code>tests/dynamic/lib/analyzer_common.sh</code> — sources this
+library read-only; the six analyzers under
+<code>tests/dynamic/analyzers/*.sh</code> delegate to these
+helpers.</li>
+<li><code>tests/regression/assert_egress_ip_host_unknown_test.sh</code>
+— the F7 fail-open regression guard.</li>
+<li>Design §13/§14
+(<code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>);
+research report C; Constitution §11.4.68 / §11.4.69 / §11.4.107.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-01 — documented against the library source;
+<code>sh -n</code> / <code>bash -n</code> parse-clean. Every parser is
+exercised (no network, via fixtures + seams) by
+<code>evidence_selftest.sh</code>; the live curl probes run against the
+real dynamic stack in P10.</p>
+</body>
+</html>
