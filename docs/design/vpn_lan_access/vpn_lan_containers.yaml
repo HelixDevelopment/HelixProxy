@@ -1,0 +1,101 @@
+# =============================================================================
+# vpn_lan_containers.yaml — project-side service DECLARATION for the VPN-LAN
+# helper services, consumed by submodules/containers (Phase 10, PLAN.md §5:143).
+#
+# This file lives in the PROJECT, never inside submodules/containers (§11.4.28
+# decoupling): it is the config-injection seam. The containers submodule
+# (pkg/boot + pkg/compose + pkg/health) consumes it as a ComposeProject.File to
+# boot the reflector + adb-server ON-DEMAND on the operator-designated remote
+# host (rootless Podman §11.4.161). Nothing here is booted autonomously —
+# remote deployment is operator-gated (§11.4.122; see containerization.md §7).
+#
+# Config-injection ONLY (§11.4.28 / §11.4.10): every deployment-time value is a
+# ${VPN_LAN_*} placeholder resolved from the project's gitignored .env — NO
+# svord path, NO secret, NO helix_proxy literal is baked in. Names/paths only.
+#
+# Cross-references:
+#   docs/design/vpn_lan_access/containerization.md   (this file's design)
+#   docs/design/vpn_lan_access/reflector_design.md   §3.4 (the reflector)
+#   docs/design/vpn_lan_access/PLAN.md §5 Phase 5/7/10
+#   tests/vpn_lan/container_boot.sh                  (local availability probe)
+#   constitution §11.4.28 / §11.4.74 / §11.4.76 / §11.4.122 / §11.4.161
+# =============================================================================
+version: "3.9"
+
+# All VPN-LAN helper services live on one project-scoped bridge network so the
+# submodule can name-resolve them; the reflector additionally needs the host's
+# multicast-visible interface (see vpn-lan-reflector.network_mode below).
+networks:
+  vpn-lan:
+    name: vpn-lan
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # vpn-lan-reflector — Avahi mDNS reflector + SSDP/WS-Discovery relay
+  # (reflector_design.md §3). Runs on the REMOTE subnet so it can see
+  # 224.0.0.251:5353 and 239.255.255.250:1900/3702 locally, and re-emits toward
+  # the helix_proxy-reachable side, rewriting SSDP LOCATION to a routable 10.x.
+  # ---------------------------------------------------------------------------
+  vpn-lan-reflector:
+    # Image is injected (pinned + cited at deploy time per §11.4.150) — never a
+    # hardcoded tag here (§11.4.6: the exact image is a deployment-time choice).
+    image: "${VPN_LAN_REFLECTOR_IMAGE}"
+    # Host networking so the reflector can join the link-local multicast groups
+    # on the remote subnet (rootless Podman supports host mode, §11.4.161).
+    network_mode: host
+    environment:
+      # The remote subnet + allowed interfaces + the SSDP LOCATION-rewrite
+      # target are all INJECTED from the project .env (§11.4.28), never baked.
+      VPN_LAN_SUBNET: "${VPN_LAN_SUBNET}"
+      VPN_LAN_REFLECT_INTERFACES: "${VPN_LAN_REFLECT_INTERFACES}"
+      VPN_LAN_SSDP_LOCATION_REWRITE: "${VPN_LAN_SSDP_LOCATION_REWRITE}"
+      AVAHI_ENABLE_REFLECTOR: "yes"
+    # TCP readiness on the SSDP relay port — the pkg/health TCP checker probes
+    # this; a config-parse/plan check (container_boot.sh) never runs it.
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${VPN_LAN_SSDP_PORT:-1900} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    labels:
+      helix.vpn_lan.role: "discovery-reflector"
+      helix.vpn_lan.phase: "5"
+    # Bounded per §12.6 posture (carries to the remote host).
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  # ---------------------------------------------------------------------------
+  # vpn-lan-adb-server — a central `adb server` fronting many remote devices,
+  # reachable over routed TCP 5555 (PLAN.md §5 Phase 7 T7.1/T7.2). helix_proxy
+  # side runs `adb connect 10.x:5555` with no proxy hop.
+  # ---------------------------------------------------------------------------
+  vpn-lan-adb-server:
+    image: "${VPN_LAN_ADB_SERVER_IMAGE}"
+    networks:
+      - vpn-lan
+    ports:
+      # adb server control port — bind address is injected so it can be scoped
+      # to the remote subnet interface (§11.4.28), never 0.0.0.0 by default.
+      - "${VPN_LAN_ADB_BIND:-127.0.0.1}:5555:5555/tcp"
+    environment:
+      VPN_LAN_SUBNET: "${VPN_LAN_SUBNET}"
+      ADB_SERVER_PORT: "5555"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5555 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    labels:
+      helix.vpn_lan.role: "adb-server"
+      helix.vpn_lan.phase: "7"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M

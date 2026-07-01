@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>containerization</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="vpn-lan-containerization--on-demand-reflector--adb-server-boot-phase-10">VPN-LAN
+Containerization — On-Demand Reflector + ADB-Server Boot (Phase 10)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:31:40Z <strong>Status:</strong> Design — nothing deployed
+(remote deployment operator-gated §11.4.122); the local availability
+probe <a
+href="../../../tests/vpn_lan/container_boot.sh"><code>../../../tests/vpn_lan/container_boot.sh</code></a>
+honest-SKIPs until the svord bridge is up and the containers primitives
+are present (§11.4.3) <strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Phase 10 of <a
+href="PLAN.md"><code>PLAN.md</code></a> §5 (line 143) — how the VPN-LAN
+helper services are packaged and booted <strong>only</strong> through
+the <code>submodules/containers</code> orchestration layer (§11.4.76),
+rootless Podman (§11.4.161), config-injected (§11.4.28). <strong>Feature
+workstream:</strong> <code>feature/vpn-aware-dynamic-routing</code>
+(§11.4.167) <strong>Companion:</strong> plan <a
+href="PLAN.md"><code>PLAN.md</code></a> §2 routing map + §5 Phase 5/7/10
+· the service this containerizes is designed in <a
+href="reflector_design.md"><code>reflector_design.md</code></a> §3.4 ·
+the ADB-over-VPN consumer is <a href="PLAN.md"><code>PLAN.md</code></a>
+§5 Phase 7 · the project-side service declaration is <a
+href="vpn_lan_containers.yaml"><code>vpn_lan_containers.yaml</code></a>
+· local proof: <a
+href="../../../tests/vpn_lan/container_boot.sh"><code>../../../tests/vpn_lan/container_boot.sh</code></a></p>
+<hr />
+<h2 id="1-scope--what-this-phase-delivers-fact-1146">1. Scope + what
+this phase delivers (FACT, §11.4.6)</h2>
+<p>Phase 10 packages the two long-running helper services the VPN-LAN
+feature needs on the <strong>remote (device-side)</strong> subnet so
+helix_proxy-side clients can use them over the routed L3 VPN:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Why it must run on the remote subnet</th>
+<th>Designed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Discovery reflector</strong> (Avahi
+<code>enable-reflector</code> for mDNS + an SSDP/WS-Discovery
+relay)</td>
+<td>multicast discovery does not cross an L3 VPN — a reflector must sit
+where <code>224.0.0.251</code> / <code>239.255.255.250</code> are
+locally visible (<a
+href="reflector_design.md"><code>reflector_design.md</code></a>
+§2/§3)</td>
+<td>Phase 5</td>
+</tr>
+<tr>
+<td><strong>ADB server helper</strong> (a central
+<code>adb server</code> reachable over routed TCP 5555)</td>
+<td>one adb server fronts many remote devices, so helix_proxy-side
+<code>adb connect 10.x:5555</code> needs no proxy hop (<a
+href="PLAN.md"><code>PLAN.md</code></a> §5 Phase 7 T7.1/T7.2)</td>
+<td>Phase 7</td>
+</tr>
+</tbody>
+</table>
+<p><strong>This phase delivers, autonomously, exactly three artifacts —
+a design (this document), a project-side service declaration (<a
+href="vpn_lan_containers.yaml"><code>vpn_lan_containers.yaml</code></a>),
+and a local availability probe (<a
+href="../../../tests/vpn_lan/container_boot.sh"><code>container_boot.sh</code></a>)
+that honest-SKIPs when it cannot prove readiness.</strong> It does
+<strong>NOT</strong> boot any container and does <strong>NOT</strong>
+deploy anything on any remote host — remote deployment changes a remote
+host and is therefore <strong>operator-gated</strong> (§11.4.122, §7
+below). The honest boundary is §7.</p>
+<hr />
+<h2 id="2-orchestration-layer--submodulescontainers-only-11476">2.
+Orchestration layer — <code>submodules/containers</code> only
+(§11.4.76)</h2>
+<p>Every containerized VPN-LAN workload boots <strong>on-demand</strong>
+through the <code>submodules/containers</code> primitives —
+<strong>never</strong> an ad-hoc <code>podman</code>/<code>docker</code>
+invocation in this repo (Hard Stop #3 / §11.4.76 / §11.4.161). The three
+primitives Phase 10 composes, all present in the submodule (FACT —
+verified on disk):</p>
+<ul>
+<li><strong><code>pkg/compose</code></strong> — the service model +
+compose orchestration. <code>HelixService</code> (name, image, ports,
+env, volumes, <code>DependsOn</code>, <code>HealthCheck</code>,
+<code>ResourceLimits</code>) grouped into a
+<code>HelixComposeProject</code>; the <code>ComposeOrchestrator</code>
+(<code>Up</code>/<code>Down</code>/<code>Status</code>/<code>Logs</code>)
+shells out to the detected compose provider. On this host the detected
+provider is <strong><code>podman compose</code></strong> (the podman
+CLI's docker-compose-compatible provider — rootless, §11.4.161).</li>
+<li><strong><code>pkg/boot</code></strong> — the high-level
+<code>BootManager</code> that registers endpoints (name + compose file +
+health check), brings each service up via the orchestrator, and gates
+readiness on the health checker. Constructed with functional options
+(<code>WithOrchestrator</code>, <code>WithHealthChecker</code>,
+<code>WithRuntime</code>, <code>WithProjectDir</code>, …).</li>
+<li><strong><code>pkg/health</code></strong> — the
+<code>HealthChecker</code> (TCP / HTTP / gRPC / custom, with retry) that
+decides a service is genuinely up. The reflector's readiness is a
+<strong>TCP</strong> probe on the SSDP/mDNS relay ports; the
+adb-server's is a <strong>TCP</strong> probe on 5555.</li>
+</ul>
+<p>The <code>cmd/boot</code> CLI is the operator-facing entry point that
+composes the three; the project never re-implements orchestration
+(§11.4.74).</p>
+<h3 id="21-the-on-demand-infra-invariant-11476">2.1 The on-demand-infra
+invariant (§11.4.76)</h3>
+<p>The reflector + adb-server are <strong>not</strong> started by hand.
+Boot is part of the <strong>test/deploy entry point</strong>: the entry
+point asks <code>pkg/boot</code> to bring the declared services up (once
+the operator has approved the remote host, §7), and the operator is
+<strong>never</strong> required to run <code>podman</code> /
+<code>podman compose up</code> manually. Symmetrically, an integration
+test that claims to exercise the reflector MUST actually boot it via the
+submodule — a short-circuit fake that skips boot is a §11.4 violation.
+This local phase honours the invariant by making its readiness probe (<a
+href="../../../tests/vpn_lan/container_boot.sh"><code>container_boot.sh</code></a>)
+the single entry point that validates the boot plan (config-parse / plan
+level) without starting a container.</p>
+<hr />
+<h2
+id="3-topology--project--containers-submodule-boot--remote-subnet-containers">3.
+Topology — project → containers-submodule boot → remote-subnet
+containers</h2>
+<pre><code>  helix_proxy repo (this project)                    L3 VPN                REMOTE device subnet (10.0.0.0/8)
+ ┌──────────────────────────────────┐        (WireGuard + ppp0,       ┌──────────────────────────────────────┐
+ │ vpn_lan_containers.yaml           │         unicast IP only,        │            REFLECTOR / ADB host        │
+ │  (service DECLARATION, §11.4.28   │         NO multicast fwd)       │  ┌──────────────────────────────────┐  │
+ │   config-injected, no svord path) │                                 │  │ podman compose (rootless §11.4.161)│  │
+ │              │                    │                                 │  │  ┌──────────────┐ ┌──────────────┐ │  │
+ │              ▼ inject env/config  │                                 │  │  │ reflector    │ │ adb-server   │ │  │
+ │   submodules/containers           │   operator-approved boot (§7)   │  │  │  - Avahi     │ │  - adb 5555  │ │  │
+ │     pkg/boot  BootManager  ───────┼────────────────────────────────►│  │  │  - SSDP/WS-D │ │  (central)   │ │  │
+ │     pkg/compose ComposeOrch       │                                 │  │  └──────┬───────┘ └──────┬───────┘ │  │
+ │     pkg/health  HealthChecker     │◄────────────────────────────────┤  └────────┼─────────────────┼─────────┘  │
+ │              │                    │   routed unicast: adb 5555,      │   224.0.0.251:5353 (mDNS)  routed 5555   │
+ │              ▼                    │   reflected discovery + routable │   239.255.255.250:1900/3702             │
+ │  container_boot.sh (local probe)  │   LOCATION/SRV targets           │   ┌──────────┐   ┌────────────┐          │
+ │   config-parse/plan, NO boot      │                                 │   │ Cast/TV  │   │ NAS / UPnP │ …devices │
+ └──────────────────────────────────┘                                 │   └──────────┘   └────────────┘          │
+                                                                        └──────────────────────────────────────┘</code></pre>
+<p>The <strong>declaration</strong>
+(<code>vpn_lan_containers.yaml</code>) lives in the project; the
+<strong>orchestration engine</strong> lives in
+<code>submodules/containers</code>; the <strong>containers</strong> run
+on the operator-designated remote host where physics lets the reflector
+see the local multicast groups. The project injects config INTO the
+submodule at boot time (§4) — it never writes project context INTO the
+submodule tree.</p>
+<hr />
+<h2 id="4-config-injection-not-coupling-11428--11474">4.
+Config-injection, not coupling (§11.4.28 + §11.4.74)</h2>
+<p>The submodule stays <strong>project-agnostic</strong>. Everything
+VPN-LAN-specific is <strong>injected</strong> and lives in the
+project:</p>
+<ul>
+<li>The service <strong>declaration</strong> (<a
+href="vpn_lan_containers.yaml"><code>vpn_lan_containers.yaml</code></a>)
+is a project file, <strong>NOT</strong> a file inside
+<code>submodules/containers</code>. The submodule consumes it as a
+<code>ComposeProject.File</code> (or the equivalent
+<code>HelixService</code> set) — it carries <strong>no</strong>
+helix_proxy hardcoding.</li>
+<li>Deployment-time values — the remote subnet, the allowed reflector
+interfaces, the SSDP <code>LOCATION</code>-rewrite target, the
+adb-server bind address — are supplied as <strong>environment / config
+injected into the container</strong> (the <code>${VPN_LAN_*}</code>
+placeholders in the YAML), resolved from the project's gitignored
+<code>.env</code> (per the <a href="PLAN.md"><code>PLAN.md</code></a> §3
+bridge contract). <strong>No svord path, no secret, and no
+project-specific literal ever lands inside the submodule</strong>
+(§11.4.28, §11.4.10 — names/paths only).</li>
+<li><strong>No nested own-org submodule</strong> (§11.4.28(C)):
+<code>submodules/containers</code> is reached from the project root; it
+does not pull the reflector image definitions in as its own nested
+submodule.</li>
+<li>If the submodule cannot yet model a capability (e.g. the SSDP relay
+is not an image it can boot, or a rootless multicast/host-network mode
+is unsupported), the fix is to <strong>extend
+<code>submodules/containers</code> upstream</strong> (§11.4.74
+extend-don't-reimplement) — <strong>never</strong> a raw
+<code>podman</code> command worked around in this repo, and never a fork
+of the orchestration logic here.</li>
+</ul>
+<hr />
+<h2
+id="5-readiness-verification--the-local-availability-probe-autonomous-slice">5.
+Readiness verification — the local availability probe (autonomous
+slice)</h2>
+<p><a
+href="../../../tests/vpn_lan/container_boot.sh"><code>container_boot.sh</code></a>
+proves the boot <strong>plan</strong> is ready without starting a
+container, with the exact anti-bluff discipline of every VPN-LAN test
+(it mirrors <a
+href="../../../tests/vpn_lan/discovery_reflect.sh"><code>discovery_reflect.sh</code></a>):</p>
+<ul>
+<li><strong>Bridge gate first (§11.4.3 / §11.4.69):</strong> sources
+<code>tests/lib/svord_bridge.sh</code>, calls
+<code>bridge_require</code>; svord bridge
+<strong>down/misconfigured</strong> (the default autonomous state, no
+<code>.env</code>) ⇒ honest SKIP + exit 0 — the path that runs now. No
+container is planned or contacted.</li>
+<li><strong>Scored check (bridge up) — a config-parse / plan-level
+readiness proof, NEVER a boot:</strong> asserts the containers-submodule
+boot primitive is <strong>invocable for the declared services</strong> —
+(a) <code>pkg/boot</code> + <code>pkg/compose</code> +
+<code>pkg/health</code> are present in the submodule, (b) a rootless
+container runtime (<code>podman</code>) is on <code>PATH</code>
+(presence-checked, <strong>never invoked</strong> — the probe never runs
+<code>podman</code>), and (c) the project-side <a
+href="vpn_lan_containers.yaml"><code>vpn_lan_containers.yaml</code></a>
+<strong>parses</strong> and declares both services
+(<code>vpn-lan-reflector</code> + <code>vpn-lan-adb-server</code>) with
+the required fields (image, ports, healthcheck) and only injected
+(<code>${…}</code>) config — a config-parse / plan check that starts
+nothing.</li>
+<li><strong>Honest SKIP, never a fake PASS:</strong> containers
+submodule primitives absent ⇒ <code>topology_unsupported</code>;
+<code>podman</code> absent ⇒ <code>hardware_not_present</code>; no YAML
+parser (<code>python3</code>) available ⇒
+<code>topology_unsupported</code>; bridge down ⇒ the gate's
+<code>network_unreachable_external</code>.</li>
+<li><strong>Fail-closed:</strong> a genuinely <strong>malformed</strong>
+declaration (unparseable YAML, or a missing required service/field) ⇒
+<strong>FAIL</strong> — a broken deliverable is never SKIPped away.</li>
+<li><strong>Never boots, never kills:</strong> the probe starts no
+container, runs no <code>podman</code>/<code>docker</code>, issues no
+<code>pkill</code>/<code>kill</code>, and never touches the data-plane
+proxy config or Squid (invocation-only, §11.4.122 / §11.4.119).</li>
+</ul>
+<p>The PASS evidence is a captured <code>readiness.evidence</code> file
+under <code>qa-results/vpn_lan/phase10/&lt;UTC-ts&gt;/</code>
+enumerating the present primitives, the runtime, and the parsed service
+set (§11.4.5 / §11.4.69).</p>
+<hr />
+<h2 id="6-resource--safety-posture">6. Resource + safety posture</h2>
+<ul>
+<li><strong>Rootless Podman only</strong> (§11.4.161) — no
+<code>sudo</code>, no rootful Docker; the runtime is presence-checked,
+never invoked, by the local probe.</li>
+<li><strong>Resource limits</strong> are declared per service
+(<code>ResourceLimits</code> / compose <code>deploy.resources</code>) so
+a booted reflector stays bounded (§12.6 host-memory posture carries to
+the remote host too).</li>
+<li><strong>No host-power operations</strong> anywhere in the boot path
+(CONST-033).</li>
+<li><strong>No data-plane contact</strong> — the VPN-LAN helper services
+are additive; the boot path never touches the base proxy config, Squid,
+Dante, or <code>:53128</code> (§11.4.119 single-resource-owner).</li>
+</ul>
+<hr />
+<h2
+id="7-honest-boundary--remote-deployment-is-operator-gated-114122--1146">7.
+Honest boundary — remote deployment is operator-gated (§11.4.122 /
+§11.4.6)</h2>
+<p><strong>Booting these containers on a remote host CHANGES that
+host</strong> — it starts daemons, joins multicast groups (reflector),
+and opens an adb control surface (adb-server). Under §11.4.122 (no
+silent change to any remote/connected host) and <a
+href="PLAN.md"><code>PLAN.md</code></a> §1 hard-constraint 2,
+helix_proxy MUST NOT deploy autonomously. The sequence:</p>
+<ol type="1">
+<li><strong>Ask first (§11.4.66 interactive options), BEFORE any remote
+deployment</strong> — present the operator a keep/deploy decision with
+the concrete blast radius (which host, which subnet, which interfaces,
+which ports; that daemons start and a device-control surface opens) and
+the teardown path (<code>ComposeDown</code>).</li>
+<li><strong>Only on explicit operator approval</strong> does
+<code>pkg/boot</code> bring the declared services up on the
+operator-designated remote host via
+<code>submodules/containers</code>.</li>
+<li><strong>Until then nothing is deployed</strong>, and <a
+href="../../../tests/vpn_lan/container_boot.sh"><code>container_boot.sh</code></a>
+validates the <strong>plan</strong> only (§5) and honest-SKIPs the live
+paths (§11.4.3).</li>
+</ol>
+<p><strong>What this design guarantees vs. does not (§11.4.6):</strong>
+it guarantees a <strong>correct, standards-grounded, config-injected
+containerization design</strong> and a <strong>local probe that proves
+the boot plan is well-formed or honest-SKIPs</strong> — it does
+<strong>NOT</strong> guarantee a live reflector/adb-server until the
+operator approves and the services are actually booted on the remote
+subnet (§7 step 2). No phase is "done" until its runtime signature
+verifies with captured evidence (§11.4.108) and it crosses independent
+review (§11.4.142) + the §11.4.169 test-type matrix.</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li><strong><code>submodules/containers</code>
+<code>pkg/compose</code></strong> — <code>HelixService</code> /
+<code>HelixComposeProject</code> service model +
+<code>ComposeOrchestrator</code>
+(<code>Up</code>/<code>Down</code>/<code>Status</code>/<code>Logs</code>)
++ <code>detectComposeCmd</code> (docker compose / docker-compose /
+podman-compose / <strong>podman compose</strong> providers): on-disk
+FACT,
+<code>submodules/containers/pkg/compose/{helix_project.go,orchestrator.go,types.go}</code>.</li>
+<li><strong><code>submodules/containers</code>
+<code>pkg/boot</code></strong> — <code>BootManager</code> + functional
+options (<code>WithOrchestrator</code> / <code>WithHealthChecker</code>
+/ <code>WithRuntime</code> / <code>WithProjectDir</code>): on-disk FACT,
+<code>submodules/containers/pkg/boot/{manager.go,options.go}</code>.</li>
+<li><strong><code>submodules/containers</code>
+<code>pkg/health</code></strong> — <code>HealthChecker</code> (TCP /
+HTTP / gRPC / custom + retry): on-disk FACT,
+<code>submodules/containers/pkg/health/{checker.go,tcp.go,http.go,grpc.go,custom.go}</code>.</li>
+<li><strong><code>submodules/containers/CLAUDE.md</code></strong> — the
+mandatory orchestration flow (<code>make build → ./bin/…</code>, never
+manual <code>podman compose up</code>), the on-demand-infra invariant,
+rootless runtime, and config-injection seam: on-disk FACT.</li>
+<li><strong>Avahi reflector + SSDP relay design</strong> — the reflector
+this containerizes: <a
+href="reflector_design.md"><code>reflector_design.md</code></a> §3.4
+(containerization) + its cited RFC 6762/6763/5771/2365 +
+Avahi/UPnP/WS-Discovery sources.</li>
+</ul>
+<p><em>Access date for all sources: 2026-07-01. FACT items (the
+submodule package/API set, the podman-compose provider path, the
+rootless mandate) are grounded in the on-disk submodule code +
+<code>submodules/containers/CLAUDE.md</code>. The exact
+reflector/adb-server container images are a deployment-time choice
+pinned + cited when the operator approves deployment (§11.4.150 / §7),
+never asserted as settled here (§11.4.6). Deep-research (§11.4.150),
+multi-angle: orchestration-layer (the submodule API), routing-layer (why
+the services live on the remote subnet, <a
+href="reflector_design.md"><code>reflector_design.md</code></a> §2),
+safety-layer (operator-gated remote change §11.4.122) — access date
+2026-07-01.</em></p>
+</body>
+</html>
