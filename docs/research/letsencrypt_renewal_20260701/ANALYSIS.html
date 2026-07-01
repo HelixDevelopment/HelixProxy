@@ -176,8 +176,8 @@
 id="lets-encrypt-phase-5-renewal--rotation--deep-research-caddy-in-process-renewal-vs-pebble-ari-zero-downtime-rotation-proof">Let's
 Encrypt Phase-5 RENEWAL + ROTATION — Deep Research (Caddy in-process
 renewal vs Pebble ARI, zero-downtime rotation proof)</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T09:45:35Z <strong>Authority:</strong> Helix Constitution
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T13:20:00Z <strong>Authority:</strong> Helix Constitution
 §11.4.150 (deep multi-angle research before workstream commitment) +
 §11.4.99 (latest-source cross-reference) + §11.4.6 (no-guessing — every
 claim cited or marked UNCONFIRMED) + §11.4.107/§11.4.115 (rock-solid
@@ -218,17 +218,225 @@ path cannot be proven from source, it is marked
 — never guessed.</p>
 </blockquote>
 <hr />
+<h2
+id="correction-2026-07-01--renewal_window_ratio-is-not-a-caddyfile-tls-subdirective-live-verified">Correction
+2026-07-01 — <code>renewal_window_ratio</code> is NOT a Caddyfile
+<code>tls</code> subdirective (live-verified)</h2>
+<blockquote>
+<p><strong>READ THIS FIRST. It supersedes the "uncomment the
+<code>renewal_window_ratio</code> lever in the Caddyfile" recommendation
+in the Executive answer (#1), Q1 (Lever A), and the Phase-5 PROCEDURE
+step 4 below.</strong> The <em>certmagic mechanism analysis</em> in Q1
+(ratio <code>1</code> → <code>currentlyInRenewalWindow</code> returns
+true immediately, unaffected by ARI) remains <strong>valid and
+version-correct</strong>. Only the <strong>config surface</strong> —
+<em>how you set the ratio</em> — was wrong for Caddy 2.8.4. This section
+replaces the Caddyfile lever with the JSON-config lever.</p>
+</blockquote>
+<h3 id="the-fact-conductors-live-test-reproduced-from-source">The FACT
+(conductor's live test, reproduced from source)</h3>
+<p>Adapting the deployed Caddyfile with
+<code>renewal_window_ratio</code> uncommented under the
+<code>tls { … }</code> block makes Caddy <strong>2.8.4</strong> exit at
+config-adaptation time:</p>
+<pre><code>adapting config using caddyfile: parsing caddyfile tokens for &#39;tls&#39;: unknown subdirective: renewal_window_ratio</code></pre>
+<p>This is <strong>correct behaviour for 2.8.4</strong> —
+<code>renewal_window_ratio</code> is not a Caddyfile token in that
+release, in <strong>either</strong> position:</p>
+<ul>
+<li><strong>NOT a <code>tls</code> directive subdirective.</strong>
+<code>caddyconfig/httpcaddyfile/builtins.go@v2.8.4</code>
+<code>parseTLS</code> accepts exactly: <code>protocols</code>,
+<code>ciphers</code>, <code>curves</code>, <code>client_auth</code>,
+<code>alpn</code>, <code>load</code>, <code>ca</code>,
+<code>key_type</code>, <code>eab</code>, <code>issuer</code>,
+<code>get_certificate</code>, <code>dns</code>, <code>resolvers</code>,
+<code>propagation_delay</code>, <code>propagation_timeout</code>,
+<code>dns_ttl</code>, <code>dns_challenge_override_domain</code>,
+<code>ca_root</code>, <code>on_demand</code>,
+<code>reuse_private_keys</code>, <code>insecure_secrets_log</code>.
+<strong><code>renewal_window_ratio</code> is absent.</strong></li>
+<li><strong>NOT a global option</strong> either.
+<code>caddyconfig/httpcaddyfile/options.go@v2.8.4</code> registers
+(TLS/ACME-relevant): <code>acme_ca</code>, <code>acme_ca_root</code>,
+<code>acme_dns</code>, <code>acme_eab</code>, <code>cert_issuer</code>,
+<code>cert_lifetime</code>, <code>key_type</code>,
+<code>local_certs</code>, <code>on_demand_tls</code>,
+<code>ocsp_interval</code>, <code>ocsp_stapling</code>,
+<code>renew_interval</code>, <code>skip_install_trust</code>,
+<code>preferred_chains</code>, <code>default_sni</code>,
+<code>fallback_sni</code>. <strong><code>renewal_window_ratio</code> is
+absent.</strong></li>
+<li><strong>The Caddyfile token was added ~2.5 years later.</strong> PR
+<a
+href="https://github.com/caddyserver/caddy/pull/7473">caddyserver/caddy#7473</a>
+"caddyfile: Add renewal_window_ratio" (both as a global option
+<strong>and</strong> a per-site <code>tls</code> subdirective) merged
+<strong>2026-02-13</strong>, milestone <strong>v2.11.1</strong>. The
+<em>current</em> <code>caddyserver.com</code>
+<code>tls</code>/global-options docs (cited in Revision 1) reflect
+<strong>latest</strong> Caddy, which is exactly why Revision 1 mistook a
+≥2.11 token for a 2.8.4 one. On the deployed 2.8.4 image it does not
+exist. <strong>The commented line
+<code># renewal_window_ratio {$CADDY_RENEWAL_RATIO}</code> at
+<code>deploy/letsencrypt/Caddyfile:110</code> MUST stay commented on
+2.8.4 — uncommenting it breaks config adaptation (the error above). Any
+Caddyfile-lever instruction in this doc is void for 2.8.4.</strong></li>
+</ul>
+<h3
+id="what-is-reachable-in-284--the-ratio-is-a-json-field-not-a-caddyfile-token">What
+IS reachable in 2.8.4 — the ratio is a JSON field, not a Caddyfile
+token</h3>
+<p><code>modules/caddytls/automation.go@v2.8.4</code> carries it on the
+<strong>automation policy</strong> as
+<code>RenewalWindowRatio float64 </code>json:"renewal_window_ratio,omitempty"<code> (path `apps.tls.automation.policies[].renewal_window_ratio`), and the sibling `RenewCheckInterval caddy.Duration `json:"renew_interval,omitempty"</code>
+(default <code>10m</code>) on <code>apps.tls.automation</code>. So the
+<strong>exact certmagic v0.21.3 codepath Q1 analyses is fully reachable
+on 2.8.4 — you set the field via JSON, never via the Caddyfile.</strong>
+Setting the ratio to <code>1</code> on the policy that manages
+<code>proxy.hermetic.test</code> forces <code>certNeedsRenewal</code>
+true immediately on the next config load, exactly as Q1 proves.</p>
+<h3
+id="corrected-force-renewal-mechanism-ranked-deployed-stack--caddy-284--pebble-v260">CORRECTED
+force-renewal mechanism (ranked, deployed stack = Caddy 2.8.4 + Pebble
+v2.6.0)</h3>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Mechanism (2.8.4-valid)</th>
+<th>Deterministic?</th>
+<th>Zero-downtime?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1 (RECOMMENDED)</strong></td>
+<td><strong>JSON <code>renewal_window_ratio: 1</code> applied via the
+admin API</strong> — either granular
+<code>PATCH /config/apps/tls/automation/policies/&lt;i&gt;/renewal_window_ratio</code>
+(body <code>1</code>), or full <code>POST /load</code> of the
+adapted-then-edited JSON with
+<code>Content-Type: application/json</code></td>
+<td><strong>YES</strong> — ratio <code>1</code> ⇒
+<code>currentlyInRenewalWindow</code> true for any issued cert, ARI
+cannot suppress it (Q1, certmagic v0.21.3, unchanged)</td>
+<td><strong>YES</strong> — admin config change is graceful with
+rollback; the in-process renewal hot-swaps the leaf</td>
+<td>Same mechanism as Revision 1's "Lever A", <strong>JSON
+surface</strong> instead of Caddyfile. No Pebble bump, no revocation, no
+storage surgery.</td>
+</tr>
+<tr>
+<td>2 (Caddyfile-only fallback)</td>
+<td>Short <strong><code>cert_lifetime</code></strong> + short
+<strong><code>renew_interval</code></strong> (BOTH valid 2.8.4 global
+options), default ratio <code>0.3333</code> — Caddy renews at
+<code>notAfter − lifetime/3</code>, caught within
+<code>renew_interval</code></td>
+<td>Partial — time-based, not instant</td>
+<td>YES (in-process)</td>
+<td>Uses only valid 2.8.4 Caddyfile tokens (no admin API).
+<strong>UNCONFIRMED (§11.4.6):</strong> whether certmagic v0.21.3
+populates the ACME order <code>notAfter</code> from
+<code>cert_lifetime</code> (Q3.3 gap) — if it does not, Pebble issues
+its ~5 y default and this lever never fires. Verify with
+<code>openssl x509 -enddate</code> on an issued leaf before relying on
+it.</td>
+</tr>
+<tr>
+<td>3 (issuance proof only)</td>
+<td>Delete the stored cert + <strong>restart</strong> Caddy (fresh
+issuance)</td>
+<td>YES</td>
+<td><strong>NO</strong> — restart drops connections</td>
+<td>Revision 1's Lever D, unchanged. Proves <em>rotation/re-issue</em>,
+cannot prove <em>zero-downtime</em>.</td>
+</tr>
+</tbody>
+</table>
+<p>There is <strong>no dedicated imperative "force renew now" admin
+endpoint</strong> in Caddy 2.8.4 — certmagic/Caddy expose <em>config
+manipulation</em> (Rank 1), not a force-renew RPC. Candidate "admin
+endpoint to force renewal" therefore collapses into Rank 1. Pebble's
+<code>/set-renewal-info/</code> ARI-override endpoint is <strong>absent
+in v2.6.0</strong> (added by PR #501 → v2.8.0), so the ARI-override
+lever remains unavailable without an operator Pebble bump (Revision 1
+Lever B, unchanged).</p>
+<h3
+id="corrected-phase-5-force-step-replaces-procedure-step-4">CORRECTED
+Phase-5 force step (replaces PROCEDURE step 4)</h3>
+<p>Determinism prerequisite is unchanged: enable the admin API for the
+test (<code>CADDY_ADMIN=0.0.0.0:2019</code>, publish
+<code>127.0.0.1:2019:2019</code>). Then force one renewal with JSON,
+<strong>not</strong> a <code>text/caddyfile</code> body:</p>
+<pre><code># (i) capture the running config as JSON (adapter already ran at boot; this is the live tree)
+curl -sf http://127.0.0.1:2019/config/ -o caddy_running.json
+
+# (ii) find the automation policy index managing proxy.hermetic.test, then set ratio=1 on it.
+#      Method A — granular PATCH (minimal blast radius; &lt;i&gt; from the GET above, usually 0):
+curl -sf -X PATCH -H &#39;Content-Type: application/json&#39; \
+     --data &#39;1&#39; \
+     http://127.0.0.1:2019/config/apps/tls/automation/policies/0/renewal_window_ratio
+
+#      Method B — full graceful reload (robust if the policy/field must be created):
+#      edit caddy_running.json so apps.tls.automation.policies[&lt;i&gt;].renewal_window_ratio = 1, then:
+curl -sf -X POST -H &#39;Content-Type: application/json&#39; \
+     --data-binary @caddy_ratio1.json \
+     http://127.0.0.1:2019/load</code></pre>
+<p>Either call re-manages the cert at config-apply time →
+<code>certNeedsRenewal</code> returns true via the unconditional ratio
+check (Q1) → in-process renewal + hot-swap, zero downtime. <strong>Reset
+step 8</strong> identically: <code>PATCH … /renewal_window_ratio</code>
+back to the default (<code>0.3333</code>) or <code>POST /load</code> the
+original JSON.</p>
+<p><strong>UNCONFIRMED (§11.4.6), runtime-checkable, none block
+Phase-5:</strong> (a) the concrete policy index <code>&lt;i&gt;</code>
+and whether the Caddyfile-adapted tree already carries an
+<code>apps.tls.automation.policies[]</code> entry for the explicit
+<code>tls { issuer acme … }</code> block — resolve by reading
+<code>caddy_running.json</code> from step (i) (the explicit issuer
+forces a policy, so index <code>0</code> is expected but MUST be read,
+not assumed); (b) whether <code>PATCH</code> on an absent
+<code>renewal_window_ratio</code> key requires <code>POST</code> instead
+(PATCH strictly replaces an existing value; <code>POST</code> to an
+object path creates-or-replaces) — if the granular PATCH returns a "not
+found"/"unknown key" error, use Method B (full <code>POST /load</code>),
+which is unconditionally correct.</p>
+<h3 id="what-is-unchanged-and-still-correct">What is UNCHANGED and still
+correct</h3>
+<p>The <strong>zero-downtime observable</strong> (Q2 / PROCEDURE step 5)
+is independent of the force mechanism and stands verbatim: served-leaf
+<strong>serial</strong> and <strong>notBefore</strong> both change while
+a tight continuous TLS probe records <strong>0 failed requests</strong>.
+The <code>openssl</code> capture —
+<code>openssl s_client -connect 127.0.0.1:8443 -servername proxy.hermetic.test &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -serial -startdate</code>
+— is correct; PASS requires <code>serial_after != serial_before</code>
+<strong>and</strong> <code>notBefore_after &gt; notBefore_before</code>
+with <code>fail == 0</code>. All <code>cert_analyzer.sh</code>
+assertions (Q4), the Pebble per-boot-CA handling (Q3), and the certmagic
+ratio/ARI analysis (Q1) are unaffected by this correction.</p>
+<hr />
 <h2 id="executive-answer-the-three-asks">Executive answer (the three
 asks)</h2>
 <ol type="1">
 <li><strong>Recommended force-renewal mechanism:</strong>
-<strong><code>renewal_window_ratio 1</code> loaded via the admin API
-<code>POST /load</code> graceful reload</strong> (the
-<code>CADDY_RENEWAL_RATIO</code> lever already stubbed in
-<code>deploy/letsencrypt/Caddyfile</code>). <strong>Winning rationale
-(source-proven for Caddy 2.8.4 / certmagic v0.21.3):</strong> on config
-load Caddy re-manages the cert and runs <code>certNeedsRenewal</code>;
-with ratio <code>1</code>,
+<strong><code>renewal_window_ratio 1</code> forced via the admin
+API.</strong> ⚠ <strong>CORRECTED (see the Correction 2026-07-01 section
+above):</strong> on Caddy <strong>2.8.4</strong> the ratio is a
+<strong>JSON field</strong>
+(<code>apps.tls.automation.policies[].renewal_window_ratio</code>),
+<strong>NOT</strong> a Caddyfile token — apply it via granular
+<code>PATCH /config/…/renewal_window_ratio</code> or full
+<code>POST /load</code> with
+<code>Content-Type: application/json</code>, never a
+<code>text/caddyfile</code> body and never by uncommenting the stubbed
+<code>deploy/letsencrypt/Caddyfile</code> line (that breaks config
+adaptation on 2.8.4). The certmagic rationale below is unchanged.
+<strong>Winning rationale (source-proven for Caddy 2.8.4 / certmagic
+v0.21.3):</strong> on config load Caddy re-manages the cert and runs
+<code>certNeedsRenewal</code>; with ratio <code>1</code>,
 <code>currentlyInRenewalWindow(notBefore, notAfter, 1.0)</code> computes
 <code>renewalWindowStart = notAfter - lifetime = notBefore</code>, so it
 returns <code>time.Now().After(notBefore)</code> = <strong>TRUE for any
@@ -259,6 +467,15 @@ reads at exact version tags.</li>
 <h2
 id="q1--forcing-an-immediate-deterministic-renewal-four-levers-compared">Q1
 — Forcing an immediate, deterministic renewal: four levers compared</h2>
+<blockquote>
+<p>⚠ <strong>CORRECTED CONFIG SURFACE (see Correction 2026-07-01
+above):</strong> the certmagic decision logic in this section is valid
+for Caddy 2.8.4, but every "Caddyfile <code>renewal_window_ratio</code>"
+/ <code>Content-Type: text/caddyfile</code> instruction below is
+<strong>void on 2.8.4</strong> — the token does not exist until v2.11.1.
+Set the ratio via the <strong>JSON admin API</strong> instead. Lever A's
+<em>mechanism</em> wins; its <em>Caddyfile surface</em> does not.</p>
+</blockquote>
 <h3
 id="the-core-mechanism-source-confirmed-caddy-284--certmagic-v0213">The
 core mechanism (source-confirmed, Caddy 2.8.4 = certmagic v0.21.3)</h3>
@@ -726,15 +943,21 @@ loop (~0.2 s)
 <code>curl -sf --max-time 2 --resolve proxy.hermetic.test:8443:127.0.0.1 --cacert pebble_ca_bundle.pem https://proxy.hermetic.test:8443/health</code>,
 incrementing <code>ok</code>/<code>fail</code>. Keep it running through
 steps 4-5.</li>
-<li><strong>Force renewal (Lever A).</strong> <code>POST</code> to the
-admin API a config identical to the running one except the site's
-<code>renewal_window_ratio</code> is the literal <code>1</code>:
-<code>curl -X POST -H 'Content-Type: text/caddyfile' --data-binary @Caddyfile.ratio1 http://127.0.0.1:2019/load</code>
-(where <code>Caddyfile.ratio1</code> is the deployed Caddyfile with the
-<code>renewal_window_ratio {$CADDY_RENEWAL_RATIO}</code> line
-uncommented and set to literal <code>1</code>). The graceful reload
+<li><strong>Force renewal (Lever A).</strong> ⚠ <strong>CORRECTED — use
+the JSON step, NOT the <code>text/caddyfile</code> body shown
+here.</strong> The <code>Content-Type: text/caddyfile</code> +
+uncommented-Caddyfile form below is <strong>void on Caddy 2.8.4</strong>
+(config adaptation fails:
+<code>unknown subdirective: renewal_window_ratio</code>). Use instead
+the "CORRECTED Phase-5 force step" in the Correction 2026-07-01 section:
+<code>PATCH -H 'Content-Type: application/json' --data '1' http://127.0.0.1:2019/config/apps/tls/automation/policies/0/renewal_window_ratio</code>
+(or full <code>POST /load</code> of the adapted-then-edited JSON with
+<code>Content-Type: application/json</code>). The graceful config change
 re-manages the cert -&gt; <code>certNeedsRenewal</code> returns true via
-the unconditional ratio check -&gt; in-process renewal + hot-swap.</li>
+the unconditional ratio check -&gt; in-process renewal + hot-swap.
+<br><del><code>curl -X POST -H 'Content-Type: text/caddyfile' --data-binary @Caddyfile.ratio1 http://127.0.0.1:2019/load</code></del>
+(VOID on 2.8.4 — retained struck-through only to mark what was
+corrected).</li>
 <li><strong>Observe the rotation.</strong> Poll
 <code>openssl s_client ... | openssl x509 -noout -serial -startdate</code>
 (bounded timeout, e.g. 60 s) until the serial differs from
@@ -812,9 +1035,43 @@ context). The poll-until-serial-changes design is robust to either.</li>
 </ul>
 <hr />
 <h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<p><strong>Added for the Correction 2026-07-01 (renewal_window_ratio
+config surface, live-verified at v2.8.4):</strong></p>
+<ul>
+<li>Caddy <code>caddyconfig/httpcaddyfile/builtins.go</code> @v2.8.4
+(<code>parseTLS</code> subdirective switch —
+<code>renewal_window_ratio</code> ABSENT) — <a
+href="https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/caddyconfig/httpcaddyfile/builtins.go">https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/caddyconfig/httpcaddyfile/builtins.go</a></li>
+<li>Caddy <code>caddyconfig/httpcaddyfile/options.go</code> @v2.8.4
+(registered global options — <code>renewal_window_ratio</code> ABSENT;
+<code>renew_interval</code> + <code>cert_lifetime</code> PRESENT) — <a
+href="https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/caddyconfig/httpcaddyfile/options.go">https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/caddyconfig/httpcaddyfile/options.go</a></li>
+<li>Caddy <code>modules/caddytls/automation.go</code> @v2.8.4
+(<code>RenewalWindowRatio float64 json:"renewal_window_ratio,omitempty"</code>
+on AutomationPolicy;
+<code>RenewCheckInterval json:"renew_interval,omitempty"</code> default
+10m) — <a
+href="https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/modules/caddytls/automation.go">https://raw.githubusercontent.com/caddyserver/caddy/v2.8.4/modules/caddytls/automation.go</a></li>
+<li>Caddy PR #7473 "caddyfile: Add renewal_window_ratio" (Caddyfile
+global option + <code>tls</code> subdirective; merged 2026-02-13;
+milestone v2.11.1 — i.e. added ~2.5 y AFTER 2.8.4) — <a
+href="https://github.com/caddyserver/caddy/pull/7473">https://github.com/caddyserver/caddy/pull/7473</a></li>
+<li>Caddy JSON config —
+<code>apps/tls/automation/policies/renewal_window_ratio</code> (the
+JSON-only surface in 2.8.4) — <a
+href="https://caddyserver.com/docs/json/apps/tls/automation/policies/renewal_window_ratio/">https://caddyserver.com/docs/json/apps/tls/automation/policies/renewal_window_ratio/</a></li>
+<li>Caddy API — granular <code>PATCH /config/[path]</code> (strict
+replace) / <code>POST /config/[path]</code> (create-or-append) /
+<code>POST /load</code> Content-Types (application/json, text/caddyfile,
+application/json5); "zero downtime … rolled back … without downtime" —
+<a
+href="https://caddyserver.com/docs/api">https://caddyserver.com/docs/api</a></li>
+</ul>
+<p><strong>Revision 1 sources (unchanged):</strong></p>
 <ul>
 <li>Caddy <code>tls</code> directive (renewal_window_ratio, dns,
-resolvers, trusted_roots; ARI "is a suggestion") — <a
+resolvers, trusted_roots; ARI "is a suggestion") — reflects LATEST Caddy
+(≥2.11), NOT 2.8.4 — <a
 href="https://caddyserver.com/docs/caddyfile/directives/tls">https://caddyserver.com/docs/caddyfile/directives/tls</a></li>
 <li>Caddy global options (renewal_window_ratio default 0.3333; ARI/ratio
 note) — <a
@@ -892,12 +1149,16 @@ Existing ACME Clients" (2024-04-25) — <a
 href="https://letsencrypt.org/2024/04/25/guide-to-integrating-ari-into-existing-acme-clients">https://letsencrypt.org/2024/04/25/guide-to-integrating-ari-into-existing-acme-clients</a></li>
 </ul>
 <p><strong>Source-file reads at pinned version tags (via
-<code>gh api</code>, 2026-07-01):</strong>
+<code>gh api</code> / raw.githubusercontent.com, 2026-07-01):</strong>
 <code>letsencrypt/pebble@v2.6.0</code>: <code>wfe/wfe.go</code>,
 <code>core/types.go</code>, <code>ca/ca.go</code>,
 <code>test/config/pebble-config.json</code>.
-<code>caddyserver/caddy@v2.8.4</code>: <code>go.mod</code>.
-<code>caddyserver/certmagic@v0.21.3</code>:
+<code>caddyserver/caddy@v2.8.4</code>: <code>go.mod</code>,
+<strong><code>caddyconfig/httpcaddyfile/builtins.go</code>,
+<code>caddyconfig/httpcaddyfile/options.go</code>,
+<code>modules/caddytls/automation.go</code> (Correction 2026-07-01 —
+proving <code>renewal_window_ratio</code> is JSON-only in
+2.8.4)</strong>. <code>caddyserver/certmagic@v0.21.3</code>:
 <code>certificates.go</code>, <code>config.go</code> (+
 <code>maintain.go</code>/<code>certificates.go</code> @master for
 cross-check).</p>
