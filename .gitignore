@@ -30,6 +30,10 @@ config/htpasswd
 *.sock
 *.tmp
 
+# Doc-export scratch (pandoc/weasyprint TMPDIR redirect — §11.4.30/§11.4.77:
+# regenerated on demand by the export pipeline, never versioned)
+.tmp_export/
+
 # OS files
 .DS_Store
 Thumbs.db
