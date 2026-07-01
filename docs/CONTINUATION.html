@@ -179,11 +179,35 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
-2026-07-02T00:00:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
+2026-07-02T01:00:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-12 wave (HEAD
+future work on <code>main</code>"</strong>). <strong>Rev-13 wave (HEAD
+<code>b76065c</code>, branch <code>main</code>, all FF to
+origin):</strong> <strong>hermetic-harness H0-FULL DONE — a REAL
+encrypted kernel-WireGuard tunnel round-trip proven autonomously
+(<code>b76065c</code>).</strong> The planned <code>wireguard-go</code>
+build was unnecessary: the host <code>wireguard</code> <strong>kernel
+module</strong> works inside an unprivileged userns netns
+(<code>ip link add wg0 type wireguard</code> + <code>wg set</code>
+succeed under <code>unshare -Ur</code>; <code>/usr/sbin/wg</code>
+present) — so H0-full is
+zero-build/zero-dep/no-package-install/no-podman/no-Mullvad/no-root.
+<code>tests/vpn_lan/hermetic_wg_roundtrip.sh</code>: veth underlay
+(10.9.0.x) carries the encrypted WG UDP, wg0 overlay (10.10.0.x) is the
+tunnel, a real HTTP payload served on the WG-only <code>10.10.0.2</code>
+and fetched over the tunnel — <strong><code>wg show</code>:
+latest-handshake=1782947082 rx=452 tx=752</strong>, sha256 verified,
+<strong>3/3 deterministic (§11.4.50)</strong>; <strong>golden-bad
+<code>WG_MUT=badkey</code> → hs=0/rx=0 → round-trip breaks</strong>
+(§11.4.107(10)/§11.4.68 — <code>rx=0</code> proves the WG crypto gates
+the traffic, not the veth underlay). <strong>Next: H1/H2</strong> — run
+real peer services (smbd/vsftpd/webdav/eureka/mDNS, unprivileged) + wire
+<code>HELIX_BRIDGE_MODE=hermetic</code> into
+<code>tests/lib/svord_bridge.sh</code> so the protocol tests run INSIDE
+the namespace over the tunnel, promoting the 16 operator-gated SKIPs to
+AUTONOMOUS (§11.4.52). <strong>Rev-12 wave (was HEAD
 <code>f96da56</code>, branch <code>main</code>, all FF to
 origin):</strong> consolidation + a game-changing autonomous-validation
 path. <code>70f0636</code> <strong>README §11.4.57 doc-link table
@@ -936,19 +960,24 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>f96da56</code> (== <code>main</code> == origin; integrate any
+HEAD <code>b76065c</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Top non-operator-gated actionable:
-hermetic-harness H0-full</strong> — build <code>wireguard-go</code>
-(rootless <code>go build</code>), swap the veth in
-<code>tests/vpn_lan/hermetic_netns_poc.sh</code> for a userspace
-WireGuard tunnel, then H1/H2 add real peer services +
-<code>HELIX_BRIDGE_MODE=hermetic</code> to promote the 16 operator-gated
-protocol tests to AUTONOMOUS (§11.4.52); design
-<code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code>. Run
-only with host process-headroom (§12 — transient fork exhaustion
-observed 2026-07-02).</li>
+hermetic-harness H1/H2</strong> — H0 (veth) + H0-full (real
+kernel-WireGuard tunnel) are DONE + proven
+(<code>tests/vpn_lan/hermetic_netns_poc.sh</code> +
+<code>hermetic_wg_roundtrip.sh</code>, both deterministic + golden-bad
+teeth). NEXT: run real peer services unprivileged
+(smbd/vsftpd/webdav/eureka JSON/mDNS Go responder) inside the peer netns
++ wire <code>HELIX_BRIDGE_MODE=hermetic</code> into
+<code>tests/lib/svord_bridge.sh</code> and invoke the protocol tests
+INSIDE the namespace (model A — the peer at 10.10.0.2 is only reachable
+from within <code>unshare</code>), promoting the 16 operator-gated SKIPs
+to AUTONOMOUS (§11.4.52). Design
+<code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
+2. Kernel-WG-in-userns confirmed (no build); host headroom healthy
+post-restart.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
 (operator: "keep hardening, don't tag yet"). Base proxy UP
 <code>:53128</code> (204); ~43% host; 4 <code>helixproxy_*</code> Podman
