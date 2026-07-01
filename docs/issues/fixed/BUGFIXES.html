@@ -1702,5 +1702,84 @@ the seeded baseline to arm the ratchet — documented in
 <code>tests/regression/benchmark_baseline_ratchet_test.sh</code>;
 companion
 <code>docs/scripts/benchmark_baseline_ratchet_test.md</code>.</p>
+<hr />
+<h2
+id="bugfix-0017--comprehensive-testsh-proxy-canaries-false-fail-on-a-third-party--local-internet-outage-f1">BUGFIX-0017
+— comprehensive-test.sh proxy canaries false-FAIL on a third-party /
+local-internet outage (F1)</h2>
+<ul>
+<li><strong>Type:</strong> Bug (test-suite integrity — Helix
+Constitution §11.4.1 false-FAIL: a healthy proxy hard-FAILs when an
+external site is down)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong>
+<code>tests/comprehensive-test.sh</code> only (new
+<code>conn_check</code> wrapper; <code>test_http_proxy</code> basic +
+HTTPS-through-proxy canaries; <code>test_socks_proxy</code> basic +
+HTTPS-through-SOCKS canaries; <code>test_dns</code> DoH-Answer canary
+re-routed through the same classifier via synthetic
+<code>ANSWER</code>/<code>MISS</code> tokens;
+<code>test_network_client</code> HTTP + SOCKS canaries driven on the
+real interface IP via a 6th <code>proxy_host</code> arg). Consumes the
+already-committed <code>tests/lib/evidence.sh</code> classifier from
+BUGFIX-0014 — no library change in this lane.</li>
+<li><strong>Discovered by:</strong> the §11.4.118 anti-bluff discovery
+sweep (finding F1, CONFIRMED).</li>
+</ul>
+<p>Root cause: seven proxy canaries in
+<code>comprehensive-test.sh</code> used the pre-BUGFIX-0014 pattern
+<code>code != expected -&gt; FAIL</code> with no direct-reachability /
+port gate. So when a third-party endpoint
+(<code>connectivitycheck.gstatic.com</code>,
+<code>www.google.com</code>, <code>dns.google</code>) was momentarily
+down, or the local internet uplink dropped, the canary hard-FAILed a
+perfectly healthy proxy — a §11.4.1 false-FAIL, non-deterministic
+(§11.4.50), not re-runnable (§11.4.98). The exact class BUGFIX-0014
+already de-bluffed in <code>verify-proxy.sh</code> /
+<code>final-verify.sh</code>, still live in this suite.</p>
+<p>Fix: a
+<code>conn_check &lt;label&gt; &lt;scheme&gt; &lt;port&gt; &lt;url&gt; &lt;expected-codes&gt; [proxy_host]</code>
+wrapper routes each canary through the same anti-bluff classifier as
+verify-proxy/final-verify — curl through the proxy →
+<code>_code_in</code> → on a miss, curl the SAME url DIRECTLY +
+<code>port_is_listening</code> → <code>proxy_conn_verdict</code> → PASS
+/ FAIL (proxy miss but url reachable directly = real defect, §11.4.68 —
+never fail-open) / SKIP (proxy miss AND direct miss = external outage,
+§11.4.3 — never a false-FAIL). The DoH canary asserts BODY content (a
+JSON <code>Answer</code> field), not an HTTP code, so it encodes
+answer-present/absent as synthetic <code>ANSWER</code>/<code>MISS</code>
+tokens and reuses <code>proxy_conn_verdict</code> (the classifier is
+domain-agnostic set-membership via <code>_code_in</code>, so the tokens
+behave exactly like codes) — the content assertion is preserved: a
+200-with-no-Answer proxy reply is still a MISS. The
+<code>_external_egress_verdict</code> "various sites" loop was already
+de-bluffed and left unchanged.</p>
+<h3
+id="verification-captured-conductor-live-smoke-against-the-real-data-plane-114142--go">Verification
+(captured, conductor live smoke against the real data plane §11.4.142 —
+GO)</h3>
+<pre><code># data plane :53128 listening=yes (live proxy)
+CASE1 working-proxy real-endpoint (connectivitycheck.gstatic.com/generate_204):
+       proxy_code=204  verdict=PASS                              (expect PASS)
+CASE2 working-proxy simulated outage (203.0.113.253 TEST-NET-3):
+       proxy_code=000000 direct=000000 verdict=SKIP:network_unreachable_external
+       (expect SKIP:* — the old blind `code!=expected-&gt;FAIL` produced a false-FAIL here)
+$ bash -n tests/comprehensive-test.sh   -&gt; OK
+evidence: qa-results/regression/comprehensive_f1_conductor_smoke/smoke.*.txt</code></pre>
+<p>No new §11.4.135 guard in this lane: the classifier
+<code>proxy_conn_verdict</code> is already covered by BUGFIX-0014's
+committed guard <code>tests/regression/proxy_conn_verdict_test.sh</code>
+(full truth-table, RED/GREEN polarity, §1.1 mutation). This lane only
+re-wires callers onto that already-guarded classifier; the conductor
+live smoke above is its runtime proof.</p>
+<p>Honest boundary (§11.4.6): a test-suite-integrity fix — it stops
+healthy-proxy false-FAILs on external outages while preserving every
+real proxy-defect FAIL. It does not change proxy behaviour.</p>
+<p>Evidence: conductor smoke
+<code>qa-results/regression/comprehensive_f1_conductor_smoke/</code>;
+classifier guard
+<code>tests/regression/proxy_conn_verdict_test.sh</code>
+(BUGFIX-0014).</p>
 </body>
 </html>

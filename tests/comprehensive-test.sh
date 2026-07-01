@@ -368,6 +368,50 @@ _external_egress_verdict() {
 }
 
 #######################################
+# conn_check <label> <scheme> <port> <url> <expected-codes> [proxy_host]
+#
+# §11.4.1 / discovery-sweep F1 (BUGFIX-0017): anti-bluff through-proxy
+# connectivity CANARY. Replaces the old `code != expected -> FAIL` canaries that
+# BUGFIX-0014 already de-bluffed in verify-proxy.sh / final-verify.sh. Verdict:
+#   - proxy returns an EXPECTED code                       -> PASS
+#   - proxy miss BUT the SAME url answers DIRECTLY          -> FAIL (real proxy
+#     defect — a listening-but-broken proxy can never fail-open to SKIP; §11.4.68)
+#   - proxy miss AND direct also fails, port listening      -> SKIP
+#     (network_unreachable_external — a third-party/local outage is NOT a proxy
+#     defect, so NEVER a §11.4.1 false-FAIL)
+#   - proxy miss AND direct fails, port NOT listening       -> SKIP
+#     (topology_unsupported)
+# Mirrors the conn_check in verify-proxy.sh (same classifier: _code_in ->
+# proxy_conn_verdict from tests/lib/evidence.sh, already sourced line 15), but
+# routes the verdict through this suite's test_result so the PASS/FAIL/SKIP
+# accounting + SKIP-counts-as-neither semantics (§11.4.3) are preserved.
+# [proxy_host] defaults to localhost (the network_client canaries pass $host_ip).
+#######################################
+conn_check() {
+    local label="$1" scheme="$2" port="$3" url="$4" expected="$5" phost="${6:-localhost}"
+    local pc dc listen verdict
+    pc=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+        --proxy "${scheme}://${phost}:${port}" "$url" 2>/dev/null || echo "000")
+    if _code_in "$pc" "$expected"; then
+        test_result "$label" "PASS" "code: $pc"
+        return 0
+    fi
+    dc=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url" 2>/dev/null || echo "000")
+    listen=no
+    if port_is_listening "$port"; then listen=yes; fi
+    verdict=$(proxy_conn_verdict "$pc" "$dc" "$expected" "$listen")
+    case "$verdict" in
+        PASS)
+            test_result "$label" "PASS" "code: $pc" ;;
+        FAIL)
+            test_result "$label" "FAIL" "proxy code: $pc but url reachable directly ($dc) — real proxy defect (§11.4.68)" ;;
+        SKIP:*)
+            ab_skip_with_reason "$label (proxy code: $pc, direct: $dc)" "${verdict#SKIP:}" || true
+            test_result "$label" "SKIP" "proxy=$pc direct=$dc — external outage, not a proxy defect (§11.4.3)" ;;
+    esac
+}
+
+#######################################
 # Test: HTTP Proxy functionality
 #######################################
 test_http_proxy() {
@@ -375,32 +419,19 @@ test_http_proxy() {
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     local port="${HTTP_PROXY_PORT:-53128}"
-    
-    # Test basic connectivity
-    local response
-    response=$(curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 15 \
-        --proxy "http://localhost:$port" \
-        "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null || echo "000")
-    
-    if [[ "$response" == "204" || "$response" == "200" ]]; then
-        test_result "HTTP proxy connectivity" "PASS"
-    else
-        test_result "HTTP proxy connectivity" "FAIL" "HTTP code: $response"
-    fi
-    
+
+    # §11.4.1 / F1 (BUGFIX-0017): basic connectivity + HTTPS-through-proxy canaries
+    # now classify a proxy miss (outage -> SKIP; directly-reachable-but-proxy-fails
+    # -> FAIL) instead of the old blind `code != expected -> FAIL`.
+    # Test basic connectivity (204 no-content endpoint; some caches answer 200)
+    conn_check "HTTP proxy connectivity" http "$port" \
+        "http://connectivitycheck.gstatic.com/generate_204" "204 200"
+
     # Test HTTPS through proxy
-    response=$(curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 15 \
-        --proxy "http://localhost:$port" \
-        "https://www.google.com" 2>/dev/null || echo "000")
-    
-    if [[ "$response" == "200" || "$response" == "301" || "$response" == "302" ]]; then
-        test_result "HTTPS through HTTP proxy" "PASS"
-    else
-        test_result "HTTPS through HTTP proxy" "FAIL" "HTTP code: $response"
-    fi
-    
+    conn_check "HTTPS through HTTP proxy" http "$port" \
+        "https://www.google.com" "200 301 302"
+
+    local response
     # Test various sites. §11.4.3/§11.4.68: a proxy 200 is PASS; a proxy failure on a
     # site the host reaches DIRECTLY is a real proxy defect (FAIL); a site unreachable
     # BOTH via proxy AND directly is an external outage (SKIP — not a proxy defect).
@@ -438,31 +469,17 @@ test_socks_proxy() {
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     local port="${SOCKS_PROXY_PORT:-51080}"
-    
+
+    # §11.4.1 / F1 (BUGFIX-0017): SOCKS connectivity + HTTPS-through-SOCKS canaries
+    # classify a proxy miss (outage -> SKIP; directly-reachable-but-proxy-fails ->
+    # FAIL) instead of the old blind `code != expected -> FAIL`.
     # Test basic connectivity
-    local response
-    response=$(curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 15 \
-        --proxy "socks5://localhost:$port" \
-        "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null || echo "000")
-    
-    if [[ "$response" == "204" || "$response" == "200" ]]; then
-        test_result "SOCKS proxy connectivity" "PASS"
-    else
-        test_result "SOCKS proxy connectivity" "FAIL" "HTTP code: $response"
-    fi
-    
+    conn_check "SOCKS proxy connectivity" socks5 "$port" \
+        "http://connectivitycheck.gstatic.com/generate_204" "204 200"
+
     # Test HTTPS through SOCKS
-    response=$(curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 15 \
-        --proxy "socks5://localhost:$port" \
-        "https://www.google.com" 2>/dev/null || echo "000")
-    
-    if [[ "$response" == "200" || "$response" == "301" || "$response" == "302" ]]; then
-        test_result "HTTPS through SOCKS proxy" "PASS"
-    else
-        test_result "HTTPS through SOCKS proxy" "FAIL" "HTTP code: $response"
-    fi
+    conn_check "HTTPS through SOCKS proxy" socks5 "$port" \
+        "https://www.google.com" "200 301 302"
 }
 
 #######################################
@@ -720,17 +737,45 @@ test_dns() {
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
     local port="${HTTP_PROXY_PORT:-53128}"
-    
-    # Test DNS through proxy
-    local response
-    response=$(curl -s --max-time 10 \
-        --proxy "http://localhost:$port" \
-        "https://dns.google/resolve?name=google.com" 2>/dev/null)
-    
-    if echo "$response" | grep -q "Answer"; then
-        test_result "DNS resolution through proxy" "PASS"
+    local dns_url="https://dns.google/resolve?name=google.com"
+
+    # §11.4.6 / §11.4.1 / F1 (BUGFIX-0017): this canary asserts BODY content (a
+    # DoH JSON "Answer" field) fetched THROUGH the proxy — NOT an HTTP code — so
+    # it cannot use the HTTP-code conn_check wrapper. But the SAME false-FAIL
+    # applies: a dns.google OUTAGE (external, not ours) must SKIP, never FAIL a
+    # healthy proxy (the old `grep Answer || FAIL` was the exact §11.4.1 bug).
+    # Encode "answer present/absent" as synthetic tokens and reuse the
+    # proxy_conn_verdict classifier so the semantics match every other canary:
+    #   proxy relays a DoH Answer                          -> PASS
+    #   proxy no-Answer BUT the SAME query answers DIRECTLY -> FAIL (real proxy
+    #     defect — proxy cannot relay a directly-working DoH query; §11.4.68)
+    #   proxy no-Answer AND direct no-Answer                -> SKIP
+    #     (network_unreachable_external / topology_unsupported — dns.google down,
+    #      not a proxy defect; §11.4.3). The content assertion is preserved.
+    local proxy_body direct_body proxy_tok direct_tok listen verdict
+    proxy_body=$(curl -s --max-time 10 --proxy "http://localhost:$port" "$dns_url" 2>/dev/null || true)
+    proxy_tok=MISS
+    if echo "$proxy_body" | grep -q "Answer"; then proxy_tok=ANSWER; fi
+    if [[ "$proxy_tok" == "ANSWER" ]]; then
+        test_result "DNS resolution through proxy" "PASS" "DoH Answer relayed via proxy"
     else
-        test_result "DNS resolution through proxy" "FAIL"
+        direct_body=$(curl -s --max-time 10 "$dns_url" 2>/dev/null || true)
+        direct_tok=MISS
+        if echo "$direct_body" | grep -q "Answer"; then direct_tok=ANSWER; fi
+        listen=no
+        if port_is_listening "$port"; then listen=yes; fi
+        verdict=$(proxy_conn_verdict "$proxy_tok" "$direct_tok" "ANSWER" "$listen")
+        case "$verdict" in
+            PASS)
+                test_result "DNS resolution through proxy" "PASS" "DoH Answer relayed via proxy" ;;
+            FAIL)
+                test_result "DNS resolution through proxy" "FAIL" \
+                    "proxy relayed no DoH Answer but dns.google answers directly — real proxy defect (§11.4.68)" ;;
+            SKIP:*)
+                ab_skip_with_reason "DNS resolution through proxy (proxy=$proxy_tok direct=$direct_tok)" "${verdict#SKIP:}" || true
+                test_result "DNS resolution through proxy" "SKIP" \
+                    "dns.google unreachable via proxy AND directly — external outage, not a proxy defect (§11.4.3)" ;;
+        esac
     fi
 }
 
@@ -867,31 +912,18 @@ test_network_client() {
     fi
     
     echo -e "  ${BLUE}Testing from network IP: $host_ip${NC}"
-    
+
+    # §11.4.1 / F1 (BUGFIX-0017): network-client canaries drive the proxy on the
+    # host's real interface IP (not localhost) — pass $host_ip as conn_check's
+    # proxy_host. A directly-reachable endpoint the proxy cannot fetch -> FAIL;
+    # an external outage -> SKIP; never the old blind `code != expected -> FAIL`.
     # Test HTTP proxy from network
-    local response
-    response=$(curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 15 \
-        --proxy "http://${host_ip}:${http_port}" \
-        "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null || echo "000")
-    
-    if [[ "$response" == "204" || "$response" == "200" ]]; then
-        test_result "Network client HTTP proxy access" "PASS"
-    else
-        test_result "Network client HTTP proxy access" "FAIL" "HTTP code: $response"
-    fi
-    
+    conn_check "Network client HTTP proxy access" http "$http_port" \
+        "http://connectivitycheck.gstatic.com/generate_204" "204 200" "$host_ip"
+
     # Test SOCKS proxy from network
-    response=$(curl -s -o /dev/null -w "%{http_code}" \
-        --max-time 15 \
-        --proxy "socks5://${host_ip}:${socks_port}" \
-        "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null || echo "000")
-    
-    if [[ "$response" == "204" || "$response" == "200" ]]; then
-        test_result "Network client SOCKS proxy access" "PASS"
-    else
-        test_result "Network client SOCKS proxy access" "FAIL" "HTTP code: $response"
-    fi
+    conn_check "Network client SOCKS proxy access" socks5 "$socks_port" \
+        "http://connectivitycheck.gstatic.com/generate_204" "204 200" "$host_ip"
 }
 
 #######################################

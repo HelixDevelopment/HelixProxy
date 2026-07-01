@@ -1196,3 +1196,65 @@ the operator commits the seeded baseline to arm the ratchet — documented in
 
 Evidence: guard `tests/regression/benchmark_baseline_ratchet_test.sh`; companion
 `docs/scripts/benchmark_baseline_ratchet_test.md`.
+
+---
+
+## BUGFIX-0017 — comprehensive-test.sh proxy canaries false-FAIL on a third-party / local-internet outage (F1)
+
+- **Type:** Bug (test-suite integrity — Helix Constitution §11.4.1 false-FAIL: a healthy proxy hard-FAILs when an external site is down)
+- **Status:** Fixed
+- **Date:** 2026-07-01
+- **Affected files:** `tests/comprehensive-test.sh` only (new `conn_check` wrapper;
+  `test_http_proxy` basic + HTTPS-through-proxy canaries; `test_socks_proxy` basic +
+  HTTPS-through-SOCKS canaries; `test_dns` DoH-Answer canary re-routed through the
+  same classifier via synthetic `ANSWER`/`MISS` tokens; `test_network_client` HTTP +
+  SOCKS canaries driven on the real interface IP via a 6th `proxy_host` arg). Consumes
+  the already-committed `tests/lib/evidence.sh` classifier from BUGFIX-0014 — no library
+  change in this lane.
+- **Discovered by:** the §11.4.118 anti-bluff discovery sweep (finding F1, CONFIRMED).
+
+Root cause: seven proxy canaries in `comprehensive-test.sh` used the pre-BUGFIX-0014
+pattern `code != expected -> FAIL` with no direct-reachability / port gate. So when a
+third-party endpoint (`connectivitycheck.gstatic.com`, `www.google.com`, `dns.google`)
+was momentarily down, or the local internet uplink dropped, the canary hard-FAILed a
+perfectly healthy proxy — a §11.4.1 false-FAIL, non-deterministic (§11.4.50), not
+re-runnable (§11.4.98). The exact class BUGFIX-0014 already de-bluffed in
+`verify-proxy.sh` / `final-verify.sh`, still live in this suite.
+
+Fix: a `conn_check <label> <scheme> <port> <url> <expected-codes> [proxy_host]` wrapper
+routes each canary through the same anti-bluff classifier as verify-proxy/final-verify —
+curl through the proxy → `_code_in` → on a miss, curl the SAME url DIRECTLY +
+`port_is_listening` → `proxy_conn_verdict` → PASS / FAIL (proxy miss but url reachable
+directly = real defect, §11.4.68 — never fail-open) / SKIP (proxy miss AND direct miss =
+external outage, §11.4.3 — never a false-FAIL). The DoH canary asserts BODY content (a
+JSON `Answer` field), not an HTTP code, so it encodes answer-present/absent as synthetic
+`ANSWER`/`MISS` tokens and reuses `proxy_conn_verdict` (the classifier is
+domain-agnostic set-membership via `_code_in`, so the tokens behave exactly like codes) —
+the content assertion is preserved: a 200-with-no-Answer proxy reply is still a MISS.
+The `_external_egress_verdict` "various sites" loop was already de-bluffed and left
+unchanged.
+
+### Verification (captured, conductor live smoke against the real data plane §11.4.142 — GO)
+
+```
+# data plane :53128 listening=yes (live proxy)
+CASE1 working-proxy real-endpoint (connectivitycheck.gstatic.com/generate_204):
+       proxy_code=204  verdict=PASS                              (expect PASS)
+CASE2 working-proxy simulated outage (203.0.113.253 TEST-NET-3):
+       proxy_code=000000 direct=000000 verdict=SKIP:network_unreachable_external
+       (expect SKIP:* — the old blind `code!=expected->FAIL` produced a false-FAIL here)
+$ bash -n tests/comprehensive-test.sh   -> OK
+evidence: qa-results/regression/comprehensive_f1_conductor_smoke/smoke.*.txt
+```
+
+No new §11.4.135 guard in this lane: the classifier `proxy_conn_verdict` is already
+covered by BUGFIX-0014's committed guard `tests/regression/proxy_conn_verdict_test.sh`
+(full truth-table, RED/GREEN polarity, §1.1 mutation). This lane only re-wires callers
+onto that already-guarded classifier; the conductor live smoke above is its runtime proof.
+
+Honest boundary (§11.4.6): a test-suite-integrity fix — it stops healthy-proxy
+false-FAILs on external outages while preserving every real proxy-defect FAIL. It does
+not change proxy behaviour.
+
+Evidence: conductor smoke `qa-results/regression/comprehensive_f1_conductor_smoke/`;
+classifier guard `tests/regression/proxy_conn_verdict_test.sh` (BUGFIX-0014).
