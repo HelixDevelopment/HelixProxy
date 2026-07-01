@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Route-execution slice of tools/helixqa/banks/proxy.yaml — HTTP forward proxy.
+# Runner drives this via: helixqa http --bank <this> \
+#   --base-url http://connectivitycheck.gstatic.com   (HTTP_PROXY=http://127.0.0.1:53128)
+# Every http: step is forwarded THROUGH Squid :53128 to the upstream.
+version: "1.0"
+name: "helix_proxy route: HTTP forward (Squid :53128)"
+description: "HTTP forward-proxy cases; base-url http://connectivitycheck.gstatic.com via HTTP_PROXY=http://127.0.0.1:53128."
+test_cases:
+  - id: PRX-HTTP-001
+    name: "HTTP forward: GET generate_204 through Squid returns 204"
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    steps:
+      - name: "Forward GET /generate_204 through the HTTP proxy"
+        action: "http: GET /generate_204"
+        expected: "204 relayed by Squid from the upstream"
+        expect_status: 204

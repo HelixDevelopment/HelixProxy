@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Route-execution slice of tools/helixqa/banks/proxy.yaml — SOCKS5 (Dante), HTTP scheme.
+# Runner drives this via: helixqa http --bank <this> \
+#   --base-url http://connectivitycheck.gstatic.com  (HTTP_PROXY=socks5://127.0.0.1:51080)
+# Go Transport dials the target via SOCKS5 when the proxy URL scheme is socks5.
+# One base-url per invocation, so the HTTPS-over-SOCKS5 case lives in
+# proxy_socks5_https.yaml.
+version: "1.0"
+name: "helix_proxy route: SOCKS5 HTTP (Dante :51080)"
+description: "SOCKS5 relay of a plain-HTTP request; base-url http://connectivitycheck.gstatic.com via HTTP_PROXY=socks5://127.0.0.1:51080."
+test_cases:
+  - id: PRX-SOCKS5-001
+    name: "SOCKS5: GET generate_204 through Dante returns 204"
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    steps:
+      - name: "SOCKS5-relay GET /generate_204"
+        action: "http: GET /generate_204"
+        expected: "204 relayed through Dante SOCKS5"
+        expect_status: 204

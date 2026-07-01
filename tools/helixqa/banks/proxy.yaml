@@ -1,0 +1,200 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# HelixQA test bank — helix_proxy data-plane proxy features.
+#
+# Format: HelixQA YAML test bank (submodules/helix_qa/pkg/testbank/schema.go).
+#   Required top-level keys: version, name, test_cases.
+#   Per-step executable action: "http: <METHOD> <PATH>" (ActionTypeHTTP,
+#   schema.go:224 / :376). The executor (pkg/autonomous/http_executor.go)
+#   issues a REAL request to <base-url><path> and asserts on the response
+#   (expect_status / expect_body_contains / expect_json_path).
+#
+# HOW THIS BANK TARGETS A PROXY (the load-bearing mechanism, proven this run):
+#   HelixQA's HTTPExecutor builds `&http.Client{Timeout: 30s}` with a nil
+#   Transport (http_executor.go:110), so Go uses http.DefaultTransport whose
+#   `Proxy: http.ProxyFromEnvironment` reads HTTP_PROXY / HTTPS_PROXY. The
+#   runner (tools/helixqa/runner/run_proxy_bank.sh) sets those env vars to the
+#   live proxy, so every request in a route bank is forwarded THROUGH the proxy
+#   to the upstream `--base-url`. The upstream's real status code is the proof
+#   the proxy forwarded it. Empirically verified 2026-07-01 with a stdlib
+#   replica of the executor's client: HTTP fwd -> 204, HTTPS CONNECT -> 200,
+#   SOCKS5 -> 204 (evidence: qa-results/helixqa/<run-ts>/mech_*.txt).
+#
+# EXECUTION NOTE: `helixqa http` runs every loaded case against ONE --base-url
+#   with ONE proxy env. Because the four features use different upstreams and
+#   proxy transports, ROUTE-CORRECT execution is driven per-route by
+#   tools/helixqa/banks/routes/*.yaml (this file is the canonical human /
+#   inventory / `helixqa list` bank enumerating all features; the routes/
+#   banks are the per-transport execution slices the runner feeds one at a
+#   time). See tools/helixqa/runner/run_proxy_bank.sh.
+#
+# Sanctioned upstream targets + expected results are taken from the project's
+# own verification script (tests/verify-proxy.sh) and cache test
+# (tests/comprehensive-test.sh): external egress through the proxy IS the
+# feature under test.
+
+version: "1.0"
+name: "helix_proxy — data-plane proxy features (HTTP forward / HTTPS-through / SOCKS5 / cache)"
+description: >-
+  Anti-bluff HelixQA bank for the helix_proxy Squid(HTTP/HTTPS, :53128) +
+  Dante(SOCKS5, :51080) data plane. Every case drives a REAL request through
+  the live proxy to a real upstream and asserts the real status code returned
+  by that upstream (positive sink-side evidence per Helix Constitution
+  §11.4.68/§11.4.69). No metadata-only checks. Cache HIT is a Squid TCP_*HIT
+  access.log fact (§11.4.69) captured sink-side by the runner — it is NOT an
+  HTTP-response-header assertion, because the HTTPExecutor asserts only
+  status/body/json-path.
+
+metadata:
+  proxy_http_port: "53128"
+  proxy_socks_port: "51080"
+  http_executor: "submodules/helix_qa/pkg/autonomous/http_executor.go"
+  route_banks_dir: "tools/helixqa/banks/routes/"
+  runner: "tools/helixqa/runner/run_proxy_bank.sh"
+  squid_container: "proxy-squid"
+
+test_cases:
+  # ── Feature 1: HTTP forward proxy (Squid :53128) ────────────────────────
+  - id: PRX-HTTP-001
+    name: "HTTP forward: GET generate_204 through Squid returns 204"
+    description: >-
+      Proves the Squid HTTP forward proxy on :53128 forwards a plain-HTTP GET
+      to the upstream and relays the upstream's 204. Route bank base-url
+      http://connectivitycheck.gstatic.com with HTTP_PROXY=http://127.0.0.1:53128.
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    domains: [http_forward]
+    tags: [proxy, http, forward, smoke]
+    steps:
+      - name: "Forward GET /generate_204 through the HTTP proxy"
+        action: "http: GET /generate_204"
+        expected: "Upstream returns 204 No Content, relayed by Squid (proves HTTP forwarding + egress)"
+        expect_status: 204
+    expected_result: "HTTP 204 relayed through Squid :53128 from connectivitycheck.gstatic.com"
+    documentation_refs:
+      - type: verification_script
+        section: "conn_check HTTP Proxy"
+        path: "tests/verify-proxy.sh"
+
+  # ── Feature 2: HTTPS through the HTTP proxy (CONNECT tunnel via Squid) ───
+  - id: PRX-HTTPS-001
+    name: "HTTPS-through-proxy: CONNECT tunnel to generate_204 returns 204"
+    description: >-
+      Proves Squid :53128 establishes a CONNECT tunnel for an HTTPS upstream
+      and the TLS request succeeds end-to-end. Route bank base-url
+      https://connectivitycheck.gstatic.com with HTTPS_PROXY=http://127.0.0.1:53128
+      (Go DefaultTransport issues CONNECT for https:// targets).
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    domains: [https_through]
+    tags: [proxy, https, connect, tunnel, smoke]
+    steps:
+      - name: "CONNECT-tunnel GET /generate_204 over TLS through the HTTP proxy"
+        action: "http: GET /generate_204"
+        expected: "204 over TLS via Squid CONNECT tunnel (proves HTTPS-through-proxy)"
+        expect_status: 204
+    expected_result: "HTTP 204 over a Squid CONNECT tunnel to https://connectivitycheck.gstatic.com"
+    documentation_refs:
+      - type: verification_script
+        section: "conn_check HTTPS through HTTP Proxy"
+        path: "tests/verify-proxy.sh"
+
+  # ── Feature 3: SOCKS5 proxy (Dante :51080) ──────────────────────────────
+  - id: PRX-SOCKS5-001
+    name: "SOCKS5: GET generate_204 through Dante returns 204"
+    description: >-
+      Proves the Dante SOCKS5 proxy on :51080 relays an HTTP GET to the
+      upstream. Route bank base-url http://connectivitycheck.gstatic.com with
+      HTTP_PROXY=socks5://127.0.0.1:51080 (Go Transport dials the target via
+      SOCKS5 when the proxy URL scheme is socks5).
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    domains: [socks5]
+    tags: [proxy, socks5, dante, smoke]
+    steps:
+      - name: "SOCKS5-relay GET /generate_204"
+        action: "http: GET /generate_204"
+        expected: "204 relayed through Dante SOCKS5 :51080 (proves SOCKS5 forwarding + egress)"
+        expect_status: 204
+    expected_result: "HTTP 204 relayed through Dante SOCKS5 :51080 from connectivitycheck.gstatic.com"
+    documentation_refs:
+      - type: verification_script
+        section: "conn_check SOCKS5 Proxy"
+        path: "tests/verify-proxy.sh"
+
+  - id: PRX-SOCKS5-002
+    name: "SOCKS5: HTTPS CONNECT to generate_204 returns 204"
+    description: >-
+      Proves Dante SOCKS5 :51080 carries a TLS (https) upstream request.
+      Route bank base-url https://connectivitycheck.gstatic.com with
+      HTTPS_PROXY=socks5://127.0.0.1:51080.
+    category: functional
+    priority: high
+    platforms: [desktop]
+    domains: [socks5]
+    tags: [proxy, socks5, https, tunnel]
+    steps:
+      - name: "SOCKS5 HTTPS GET /generate_204"
+        action: "http: GET /generate_204"
+        expected: "204 over TLS through Dante SOCKS5 (proves HTTPS-over-SOCKS5)"
+        expect_status: 204
+    expected_result: "HTTP 204 over TLS through Dante SOCKS5 :51080"
+    documentation_refs:
+      - type: verification_script
+        section: "conn_check HTTPS through SOCKS5"
+        path: "tests/verify-proxy.sh"
+
+  # ── Feature 4: caching (Squid) ──────────────────────────────────────────
+  # The HTTPExecutor asserts only status/body/json-path, NOT response headers
+  # or Squid access.log, so a cache-HIT header cannot be asserted here. These
+  # two http: steps prove the cacheable object is fetched+served consistently
+  # THROUGH the proxy (functional). The DECISIVE cache-HIT proof is a Squid
+  # TCP_*HIT in proxy-squid:/var/log/squid/access.log for this exact URL,
+  # captured sink-side by the runner (mirrors tests/comprehensive-test.sh
+  # assert_cache_hit, §11.4.69). HTTPS bodies are CONNECT-tunnelled and never
+  # cacheable by Squid, so the cache target is deliberately plain HTTP.
+  - id: PRX-CACHE-001
+    name: "Cache warm: first GET of a cacheable object is served (MISS)"
+    description: >-
+      Warms the Squid cache with a cacheable HTTP image. Route bank base-url
+      http://www.gnu.org with HTTP_PROXY=http://127.0.0.1:53128.
+    category: performance
+    priority: high
+    platforms: [desktop]
+    domains: [cache]
+    tags: [proxy, cache, warm]
+    steps:
+      - name: "Warm GET of cacheable image through the proxy"
+        action: "http: GET /graphics/heckert_gnu.transp.small.png"
+        expected: "200 with the PNG body (first fetch = cache MISS, object now stored)"
+        expect_status: 200
+    expected_result: "HTTP 200 (~33 KB PNG) fetched through Squid; object cached for PRX-CACHE-002"
+    documentation_refs:
+      - type: verification_script
+        section: "cache HIT (assert_cache_hit)"
+        path: "tests/comprehensive-test.sh"
+
+  - id: PRX-CACHE-002
+    name: "Cache verify: second GET of the same object is served (expect TCP_*HIT sink-side)"
+    description: >-
+      Re-fetches the warmed object. The http: step asserts consistent 200
+      through the proxy; the runner then asserts a Squid TCP_*HIT for this URL
+      in proxy-squid's access.log as the decisive cache-HIT evidence (§11.4.69).
+    category: performance
+    priority: critical
+    platforms: [desktop]
+    domains: [cache]
+    tags: [proxy, cache, hit]
+    steps:
+      - name: "Repeat GET of the same cacheable image through the proxy"
+        action: "http: GET /graphics/heckert_gnu.transp.small.png"
+        expected: "200 served again; runner confirms Squid TCP_*HIT in access.log (cache serving)"
+        expect_status: 200
+    expected_result: "HTTP 200 served from cache; Squid TCP_*HIT recorded for the URL (sink-side proof)"
+    documentation_refs:
+      - type: verification_script
+        section: "cache HIT (assert_cache_hit) + cachectl stats"
+        path: "tests/comprehensive-test.sh"
