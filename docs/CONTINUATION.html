@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>CONTINUATION</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -175,24 +179,56 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 11 <strong>Last modified:</strong>
-2026-07-01T18:15:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
+2026-07-02T00:00:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
-"3-4 parallel subagents, rock-solid evidence, no bluff"). <strong>Rev-11
-wave (HEAD <code>4e2810c</code>, all FF to origin):</strong> the
-<strong>VPN-LAN service-access feature is COMPLETE — all Phases 0-12
-committed</strong> incl. the operator's <strong>Phase 12 bidirectional
-exposure</strong> (<code>2ed0fed</code> bidirectional_exposure.md +
-ingress_allowlist_teeth.sh, wired into the standing suite) and
-<strong>Phase 1 SSRF carve-out teeth</strong> (suite-wired). <strong>All
-5 autonomous VPN-LAN teeth GREEN</strong> (SSRF carve-out + SSRF_MUT,
-ingress-allowlist + INGRESS_MUT, bridge). Landed also: DNS-rebinding
-SSRF gap demo + smokescreen design (<code>4e2810c</code>, 7 sources
-§11.4.150), control-plane coverage <strong>acl-helper 0→53.8%</strong>
-(<code>4a9b75f</code>) + <strong>cmd/api 0→61.1%</strong>
-(<code>4e2810c</code>, -race clean, go.sum untouched), §11.4.169
-<strong>stress+chaos</strong> (<code>97d9733</code>, 100-iter identical
-hash) + <strong>benchmark+memory</strong> (<code>4e2810c</code>), deep
+"3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
+future work on <code>main</code>"</strong>). <strong>Rev-12 wave (HEAD
+<code>f96da56</code>, branch <code>main</code>, all FF to
+origin):</strong> consolidation + a game-changing autonomous-validation
+path. <code>70f0636</code> <strong>README §11.4.57 doc-link table
+completed</strong> — all 6 Status pairs listed (the 2 VPN-LAN pairs were
+missing). <code>89cfd21</code> <code>.gitignore</code>
+<code>.tmp_export/</code> doc-export scratch (§11.4.30).
+<strong><code>1faead5</code> + <code>f96da56</code> — the
+hermetic-WireGuard test-harness path (deep research,
+§11.4.150/§11.4.52):</strong> a loopback WireGuard pair in
+<strong>unprivileged</strong> network namespaces
+(<code>unshare -Ur -n</code> ⇒ root-in-userns + userspace
+<code>wireguard-go</code>, the <code>cmusatyalab/wireguard4netns</code>
+pattern) would let the <strong>16 operator-gated protocol tests run
+AUTONOMOUSLY</strong> against a controlled peer — <strong>gated on
+NEITHER the broken podman NOR the live Mullvad bridge</strong>. Design
+doc <code>1faead5</code> (FACT-probe:
+<code>kernel.unprivileged_userns_clone=1</code>,
+<code>max_user/net_namespaces=255793</code>, <code>unshare -Ur -n</code>
+rc=0, <code>/dev/net/tun</code> present). <strong>H0 feasibility PROVEN
+with real physical evidence <code>f96da56</code>:</strong>
+<code>tests/vpn_lan/hermetic_netns_poc.sh</code> — 2 netns + L3 veth + a
+real python3 HTTP payload served in the peer, fetched +
+<strong>sha256-verified byte-for-byte, 3/3 deterministic (§11.4.50),
+golden-bad <code>POC_MUT=1</code> FAILs at the sha256 check
+(§11.4.107(10) teeth load-bearing)</strong>, fully rootless, host-safe
+(§12, torn down with <code>unshare</code>). Honest scope (§11.4.6): veth
+not yet WireGuard — proves the substrate; real Mullvad topology stays a
+§11.4.3 operator-gated confirmation. Next: H0-full (build
+<code>wireguard-go</code>, swap veth→WG tunnel) — deferred pending host
+process-headroom (transient fork exhaustion observed §12).
+<strong>Rev-11 wave (was HEAD <code>4e2810c</code>, all FF to
+origin):</strong> the <strong>VPN-LAN service-access feature is COMPLETE
+— all Phases 0-12 committed</strong> incl. the operator's <strong>Phase
+12 bidirectional exposure</strong> (<code>2ed0fed</code>
+bidirectional_exposure.md + ingress_allowlist_teeth.sh, wired into the
+standing suite) and <strong>Phase 1 SSRF carve-out teeth</strong>
+(suite-wired). <strong>All 5 autonomous VPN-LAN teeth GREEN</strong>
+(SSRF carve-out + SSRF_MUT, ingress-allowlist + INGRESS_MUT, bridge).
+Landed also: DNS-rebinding SSRF gap demo + smokescreen design
+(<code>4e2810c</code>, 7 sources §11.4.150), control-plane coverage
+<strong>acl-helper 0→53.8%</strong> (<code>4a9b75f</code>) +
+<strong>cmd/api 0→61.1%</strong> (<code>4e2810c</code>, -race clean,
+go.sum untouched), §11.4.169 <strong>stress+chaos</strong>
+(<code>97d9733</code>, 100-iter identical hash) +
+<strong>benchmark+memory</strong> (<code>4e2810c</code>), deep
 <strong>OSS survey</strong> (<code>958d110</code>, 28 projects/50 URLs).
 <strong>§11.4.1 anti-bluff win
 (<code>7c4345d</code>+<code>4a007a0</code>+<code>30ec5b5</code>):</strong>
@@ -298,7 +334,8 @@ source §11.4.6); <code>0e987f1</code> raised control-plane
 error/fail-closed/500/mTLS-bootstrap branches, race-clean,
 <code>go.mod</code>/<code>go.sum</code> unchanged). HEAD
 <code>0e987f1</code> (== <code>main</code> == github/origin/upstream).
-<strong>Branch:</strong> <code>feature/vpn-aware-dynamic-routing</code>
+<strong>Branch:</strong> <code>main</code> (operator directive
+2026-07-01: "all work merged to main, all future work on main")
 <strong>Spec:</strong>
 <code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>
 (Rev 4) <strong>Plan:</strong>
@@ -898,11 +935,20 @@ power-state commands (CONST-033); pull images sequentially;
 actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
-<code>feature/vpn-aware-dynamic-routing</code>; confirm HEAD
-<code>0e987f1</code> (== <code>main</code> == all 3 remotes
-github/origin/upstream; integrate any newer foreign commit per §11.4.71,
-no force §11.4.113). The single canonical moment-valid resume file is
-<code>.remember/remember.md</code> (§11.4.131) — read it first.</li>
+<strong><code>main</code></strong> (operator: all work on main); confirm
+HEAD <code>f96da56</code> (== <code>main</code> == origin; integrate any
+newer foreign commit per §11.4.71, no force §11.4.113). The single
+canonical moment-valid resume file is <code>.remember/remember.md</code>
+(§11.4.131) — read it first. <strong>Top non-operator-gated actionable:
+hermetic-harness H0-full</strong> — build <code>wireguard-go</code>
+(rootless <code>go build</code>), swap the veth in
+<code>tests/vpn_lan/hermetic_netns_poc.sh</code> for a userspace
+WireGuard tunnel, then H1/H2 add real peer services +
+<code>HELIX_BRIDGE_MODE=hermetic</code> to promote the 16 operator-gated
+protocol tests to AUTONOMOUS (§11.4.52); design
+<code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code>. Run
+only with host process-headroom (§12 — transient fork exhaustion
+observed 2026-07-02).</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
 (operator: "keep hardening, don't tag yet"). Base proxy UP
 <code>:53128</code> (204); ~43% host; 4 <code>helixproxy_*</code> Podman
