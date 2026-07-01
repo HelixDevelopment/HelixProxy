@@ -1,0 +1,320 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# HelixQA test bank — helix_proxy VPN-LAN service-access feature (PLAN.md §5).
+#
+# Format: HelixQA YAML test bank (submodules/helix_qa/pkg/testbank/schema.go).
+#   Required top-level keys: version, name, test_cases.
+#   Per-step executable action: "shell: <command>" (ActionTypeShell,
+#   schema.go:180 — "a bank case's `action: \"shell: <command>\"` is genuinely
+#   run; the real exit code drives the PASS/FAIL verdict"). Each case dispatches
+#   to the corresponding VPN-LAN protocol test under tests/vpn_lan/ (or the
+#   Phase-0 preflight scripts/svord_doctor.sh) so the case's verdict IS the real
+#   test's verdict, not a metadata-only assertion.
+#
+# EXIT-CODE -> VERDICT MAPPING (the load-bearing anti-bluff mechanism):
+#   The VPN-LAN scripts follow the PLAN.md §6 honest-SKIP contract, NOT a plain
+#   exit-0-is-PASS contract:
+#     scripts/svord_doctor.sh : 0 = UP, 2 = SKIP (bridge down / host-probe),
+#                               3 = MISCONFIGURED (contract unset — no .env).
+#     tests/vpn_lan/*.sh      : 0 = no FAIL (all round-trips PASSed OR every
+#                               protocol honestly SKIPped, e.g. bridge down),
+#                               1 = a real round-trip FAILed.
+#   A svord bridge that is DOWN/misconfigured (the path that runs NOW — no live
+#   VPN, no secrets) is an honest SKIP (§11.4.3 / §11.4.68 / §11.4.69), NEVER a
+#   fake PASS and NEVER a FAIL. HelixQA's raw ActionTypeShell scores only exit 0
+#   as PASS, so a VPN-LAN-aware runner (mirroring
+#   tools/helixqa/runner/run_proxy_bank.sh) maps exit 2/3 -> SKIP and exit 1 ->
+#   FAIL. The canonical runnable anti-bluff harness for this bank TODAY is
+#   challenges/scripts/run_vpn_lan_challenges.sh, which performs exactly this
+#   mapping and tallies PASS/FAIL/SKIP with real captured logs.
+#
+# RUN-BLOCKED (honest §11.4.3 boundary): the `helixqa` binary is currently
+#   blocked from building (6 un-vendored own-org sibling submodules), so this
+#   bank is AUTHORED-BUT-RUN-BLOCKED — no autonomous HelixQA session has been
+#   executed against it, and none is claimed. The bank + the Challenge script are
+#   the Phase-11 deliverables; the Challenge script is the runnable proof NOW.
+#
+# NOT-YET-AUTHORED protocol tests: VLA-CAST (Phase 6, tests/vpn_lan/
+#   chromecast_dial.sh) and VLA-ADB (Phase 7, tests/vpn_lan/adb_over_vpn.sh) are
+#   enumerated here for completeness but their test scripts are not yet written;
+#   the Challenge runner reports them as an honest SKIP (test-not-present),
+#   never a fake PASS (§11.4.6). Their cases below document the expected
+#   round-trip once the Phase-6/7 scripts land.
+
+version: "1.0"
+name: "helix_proxy — VPN-LAN service access (SMB/NFS/FTP/SFTP/WebDAV/email/cast/ADB via the svord bridge)"
+description: >-
+  Anti-bluff HelixQA bank for the helix_proxy VPN-LAN feature: mainstream
+  services exposed on the svord VPN-internal network, reached + used through
+  helix_proxy's L3-routed gateway (PLAN.md §2 routing map). Every case dispatches
+  to a REAL protocol round-trip test under tests/vpn_lan/ whose PASS is gated on
+  captured byte-integrity / sink-side evidence (sha256 match, mailbox LIST body,
+  device serial — §11.4.5 / §11.4.69), never a metadata-only check. The svord
+  bridge is the gate: when it is DOWN/misconfigured (no live VPN, no secrets)
+  every case honestly SKIPs with reason network_unreachable_external
+  (§11.4.3 / §11.4.68), never a fake PASS. See the header comment for the exact
+  exit-code -> verdict mapping and the authored-but-run-blocked status.
+
+metadata:
+  feature: "VPN-LAN service access"
+  plan_doc: "docs/design/vpn_lan_access/PLAN.md"
+  bridge_contract_doc: "docs/design/vpn_lan_access/PLAN.md#3-the-env-var-bridge-contract"
+  bridge_lib: "tests/lib/svord_bridge.sh"
+  preflight_doctor: "scripts/svord_doctor.sh"
+  protocol_tests_dir: "tests/vpn_lan/"
+  challenge_runner: "challenges/scripts/run_vpn_lan_challenges.sh"
+  action_type: "shell (submodules/helix_qa/pkg/testbank/schema.go ActionTypeShell)"
+  skip_reason_when_bridge_down: "network_unreachable_external"
+  run_status: "authored-but-run-blocked (helixqa binary blocked by 6 un-vendored own-org siblings; §11.4.3)"
+
+test_cases:
+  # ── Phase 0: svord bridge preflight ─────────────────────────────────────
+  - id: VLA-BRIDGE-PREFLIGHT
+    name: "svord bridge preflight: doctor resolves the contract and reports UP/SKIP honestly"
+    description: >-
+      Runs scripts/svord_doctor.sh, the Phase-0 preflight that resolves the
+      PLAN.md §3 env-var bridge contract, checks each hook is executable, runs
+      the authoritative HELIX_BRIDGE_HEALTH probe, and smoke-probes the remote
+      host. Emits exactly one `BRIDGE:` verdict. Exit 0 = genuinely UP; exit 2 =
+      down / host-probe-unavailable (honest SKIP); exit 3 = MISCONFIGURED
+      (contract unset — the autonomous NOW state without a .env). The doctor
+      never fakes UP.
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    domains: [bridge]
+    tags: [vpn_lan, bridge, preflight, svord, smoke]
+    steps:
+      - name: "Run the svord bridge preflight doctor"
+        action: "shell: sh scripts/svord_doctor.sh"
+        expected: "One `BRIDGE:` verdict; exit 0 UP (PASS), exit 2 down (SKIP), exit 3 misconfigured (SKIP). Never a fake UP."
+    expected_result: "BRIDGE: UP when the svord VPN is up; otherwise BRIDGE: SKIP:network_unreachable_external / MISCONFIGURED:env_unset — an honest SKIP, never a fake PASS"
+    documentation_refs:
+      - type: test_script
+        section: "Phase 0 — bridge scaffold + svord-doctor preflight"
+        path: "scripts/svord_doctor.sh"
+      - type: design_doc
+        section: "§3 env-var bridge contract + §5 Phase 0"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  # ── Phase 2: file shares — SMB/CIFS/NMB + NFS ───────────────────────────
+  - id: VLA-SMB
+    name: "SMB/CIFS round-trip: write -> read-back -> sha256 match over the VPN share"
+    description: >-
+      Dispatches to tests/vpn_lan/smb_nfs_roundtrip.sh, which mounts/opens a
+      VPN-internal SMB/CIFS share (smbclient / mount.cifs), writes a known file,
+      reads it back, and PASSes only when the read-back sha256 matches the
+      written bytes (§11.4.5 byte-integrity). NMB unicast name-resolution is the
+      fallback. Requires L3 routing (Phase 1), NOT SOCKS5. Bridge down or share
+      unset -> honest SKIP.
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    domains: [file_share]
+    tags: [vpn_lan, smb, cifs, nmb, roundtrip, file_share]
+    steps:
+      - name: "SMB/CIFS write -> read-back -> sha256 round-trip through the VPN share"
+        action: "shell: sh tests/vpn_lan/smb_nfs_roundtrip.sh"
+        expected: "PASS on matching sha256 of the written file read back over SMB; bridge/share absent -> SKIP:network_unreachable_external (never a fake PASS)"
+    expected_result: "SMB round-trip sha256 matches (bridge up + share configured), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T2.1 SMB/CIFS mount + list + read + write-back round-trip"
+        path: "tests/vpn_lan/smb_nfs_roundtrip.sh"
+      - type: design_doc
+        section: "§5 Phase 2 — SMB/CIFS/NMB + NFS"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  - id: VLA-NFS
+    name: "NFS round-trip: write -> read -> sha256 match over the VPN export"
+    description: >-
+      Dispatches to tests/vpn_lan/smb_nfs_roundtrip.sh (NFS slice), which uses an
+      already-mounted NFS export (HELIX_VPN_NFS_MOUNTED) or mounts
+      server:/export (HELIX_VPN_NFS_EXPORT, root), writes a known file, reads it
+      back, and PASSes only on a matching sha256; the temp mount is unmounted +
+      removed on every exit path (§11.4.14). Bridge down or export unset ->
+      honest SKIP.
+    category: functional
+    priority: critical
+    platforms: [desktop]
+    domains: [nfs]
+    tags: [vpn_lan, nfs, roundtrip, file_share]
+    steps:
+      - name: "NFS write -> read -> sha256 round-trip over the VPN export"
+        action: "shell: sh tests/vpn_lan/smb_nfs_roundtrip.sh"
+        expected: "PASS on matching sha256 over NFS; bridge/export absent -> SKIP:network_unreachable_external (never a fake PASS)"
+    expected_result: "NFS round-trip sha256 matches (bridge up + export configured), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T2.2 NFS mount + read + write round-trip"
+        path: "tests/vpn_lan/smb_nfs_roundtrip.sh"
+      - type: design_doc
+        section: "§5 Phase 2 — SMB/CIFS/NMB + NFS"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  # ── Phase 3: file transfer — FTP/FTPS + SFTP + WebDAV ───────────────────
+  - id: VLA-FTP
+    name: "FTP/FTPS passive round-trip over the routed VPN"
+    description: >-
+      Dispatches to tests/vpn_lan/ftp_sftp_webdav.sh (FTP slice): FTP passive
+      round-trip (route control :21 + the server's pinned passive-port range;
+      PASV must advertise the 10.x address) and FTPS explicit (AUTH TLS) /
+      implicit (:990). PASSes only on captured directory-listing / byte
+      round-trip evidence. Bridge down or server unset -> honest SKIP.
+    category: functional
+    priority: high
+    platforms: [desktop]
+    domains: [file_transfer]
+    tags: [vpn_lan, ftp, ftps, passive, file_transfer]
+    steps:
+      - name: "FTP passive (+ FTPS) round-trip over the routed VPN"
+        action: "shell: sh tests/vpn_lan/ftp_sftp_webdav.sh"
+        expected: "PASS on FTP/FTPS listing + byte round-trip; bridge/server absent -> SKIP:network_unreachable_external"
+    expected_result: "FTP/FTPS passive round-trip succeeds (bridge up + server configured), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T3.1 FTP passive round-trip + FTPS explicit/implicit"
+        path: "tests/vpn_lan/ftp_sftp_webdav.sh"
+      - type: design_doc
+        section: "§5 Phase 3 — FTP/FTPS/SFTP + WebDAV"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  - id: VLA-SFTP
+    name: "SFTP round-trip: single-channel byte round-trip + sha256 over the VPN"
+    description: >-
+      Dispatches to tests/vpn_lan/ftp_sftp_webdav.sh (SFTP slice): SFTP round-trip
+      over :22 — the recommended modern path (single connection, routes/tunnels
+      trivially). PASSes only when the read-back sha256 matches the written bytes
+      (§11.4.5). Bridge down or server unset -> honest SKIP.
+    category: functional
+    priority: high
+    platforms: [desktop]
+    domains: [sftp]
+    tags: [vpn_lan, sftp, ssh, roundtrip, file_transfer]
+    steps:
+      - name: "SFTP byte round-trip + sha256 over the routed VPN"
+        action: "shell: sh tests/vpn_lan/ftp_sftp_webdav.sh"
+        expected: "PASS on matching SFTP sha256 round-trip; bridge/server absent -> SKIP:network_unreachable_external"
+    expected_result: "SFTP round-trip sha256 matches (bridge up + server configured), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T3.2 SFTP round-trip (22)"
+        path: "tests/vpn_lan/ftp_sftp_webdav.sh"
+      - type: design_doc
+        section: "§5 Phase 3 — FTP/FTPS/SFTP + WebDAV"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  - id: VLA-WEBDAV
+    name: "WebDAV via existing Squid: PROPFIND 207 + MKCOL 201"
+    description: >-
+      Dispatches to tests/vpn_lan/ftp_sftp_webdav.sh (WebDAV slice): WebDAV
+      through the EXISTING Squid (no new component) — a PROPFIND returning 207
+      Multi-Status and MKCOL returning 201 Created, with the 207 XML body as
+      captured evidence. Requires Squid extension_methods for old builds and the
+      WebDAV origin's TLS port in SSL_Ports for CONNECT. Bridge down or origin
+      unset -> honest SKIP.
+    category: functional
+    priority: high
+    platforms: [desktop]
+    domains: [webdav]
+    tags: [vpn_lan, webdav, squid, propfind, file_transfer]
+    steps:
+      - name: "WebDAV PROPFIND 207 + MKCOL 201 through the existing Squid"
+        action: "shell: sh tests/vpn_lan/ftp_sftp_webdav.sh"
+        expected: "PASS on 207 PROPFIND + 201 MKCOL with captured XML body; bridge/origin absent -> SKIP:network_unreachable_external"
+    expected_result: "WebDAV PROPFIND 207 + MKCOL 201 confirmed via Squid (bridge up + origin configured), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T3.3 WebDAV via existing Squid (PROPFIND 207 + MKCOL 201)"
+        path: "tests/vpn_lan/ftp_sftp_webdav.sh"
+      - type: design_doc
+        section: "§5 Phase 3 — FTP/FTPS/SFTP + WebDAV"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  # ── Phase 4: email — IMAP(S) / SMTP-submission / POP3(S) + open-relay guard
+  - id: VLA-EMAIL
+    name: "Email round-trip: IMAPS LIST + authenticated submission 250 + open-relay refused"
+    description: >-
+      Dispatches to tests/vpn_lan/email_roundtrip.sh: IMAPS LOGIN + LIST mailbox
+      content (:993), SMTP authenticated submission accepted with 250 (587/465),
+      POP3S retrieve (:995), AND the decisive NEGATIVE test — an unauthenticated
+      relay to an external domain MUST be refused, proving helix_proxy is NOT an
+      open relay (PLAN.md §4.3). PASSes only on captured mailbox LIST body + the
+      250-accepted + the relay-refused proof. An ACCEPTED open relay is a
+      decisive FAIL (exit 1). Bridge down or mail-server unset -> honest SKIP.
+    category: security
+    priority: critical
+    platforms: [desktop]
+    domains: [email]
+    tags: [vpn_lan, email, imaps, smtp, submission, pop3s, open_relay, security]
+    steps:
+      - name: "IMAPS LIST + authenticated submission 250 + open-relay-refused round-trip"
+        action: "shell: sh tests/vpn_lan/email_roundtrip.sh"
+        expected: "PASS on mailbox LIST + 250-accepted submission + relay REFUSED; an accepted open relay is a decisive FAIL; bridge/server absent -> SKIP:network_unreachable_external"
+    expected_result: "IMAPS LIST body + SMTP 250 + open-relay refused (bridge up + mail server configured), else honest SKIP; open relay accepted = FAIL"
+    documentation_refs:
+      - type: test_script
+        section: "T4.1-T4.4 IMAPS/SMTP-submission/POP3S + open-relay negative"
+        path: "tests/vpn_lan/email_roundtrip.sh"
+      - type: design_doc
+        section: "§5 Phase 4 — Email + §4.3 open-relay guard"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  # ── Phase 6: casting — Chromecast / DIAL (test script Phase-6-pending) ────
+  - id: VLA-CAST
+    name: "Chromecast/DIAL control routed: eureka_info name + cast status transition"
+    description: >-
+      Dispatches to tests/vpn_lan/chromecast_dial.sh (Phase 6 — NOT YET AUTHORED;
+      the Challenge runner reports an honest SKIP:test-not-present until it lands,
+      never a fake PASS). Once authored: discovery via the Phase-5 reflector
+      (_googlecast._tcp mDNS + DIAL SSDP M-SEARCH), routed control GET
+      http://<ip>:8008/setup/eureka_info (device-name JSON) + CASTV2 status
+      (:8009 TLS), PASSing on a cast STATUS TRANSITION (§11.4.107 liveness), not a
+      single frame. Bridge / cast device / reflector absent -> honest SKIP.
+    category: functional
+    priority: high
+    platforms: [desktop]
+    domains: [casting]
+    tags: [vpn_lan, chromecast, dial, castv2, casting, phase6_pending]
+    steps:
+      - name: "Chromecast eureka_info name read + cast status transition (routed control)"
+        action: "shell: sh tests/vpn_lan/chromecast_dial.sh"
+        expected: "PASS on eureka_info name + cast status transition; script not yet authored OR no cast device/reflector -> honest SKIP (never a fake PASS)"
+    expected_result: "Chromecast eureka_info name + cast status transition (Phase-6 script + cast device present), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T6.1-T6.3 Chromecast/DIAL discovery + routed control + liveness (Phase-6-pending)"
+        path: "tests/vpn_lan/chromecast_dial.sh"
+      - type: design_doc
+        section: "§5 Phase 6 — Chromecast / DIAL casting"
+        path: "docs/design/vpn_lan_access/PLAN.md"
+
+  # ── Phase 7: device bridge — ADB over VPN (test script Phase-7-pending) ───
+  - id: VLA-ADB
+    name: "ADB over VPN: routed 5555 connect + remote serial + getprop content"
+    description: >-
+      Dispatches to tests/vpn_lan/adb_over_vpn.sh (Phase 7 — NOT YET AUTHORED;
+      the Challenge runner reports an honest SKIP:test-not-present until it lands,
+      never a fake PASS). Once authored: routed TCP 5555 `adb connect 10.x:5555`
+      (no proxy hop), central adb-server model, and debug round-trip evidence
+      (`adb devices` shows the remote serial; `adb shell getprop` content).
+      fastboot flash is USB-level -> routed via usbip (operator-gated, §11.4.133);
+      network fastboot is honestly USB-bound. Bridge / remote device absent ->
+      honest SKIP.
+    category: functional
+    priority: high
+    platforms: [desktop]
+    domains: [device_bridge]
+    tags: [vpn_lan, adb, usbip, device_bridge, phase7_pending]
+    steps:
+      - name: "adb connect routed 5555 + remote serial + getprop round-trip"
+        action: "shell: sh tests/vpn_lan/adb_over_vpn.sh"
+        expected: "PASS on remote serial in `adb devices` + getprop content; script not yet authored OR no remote device -> honest SKIP (never a fake PASS)"
+    expected_result: "adb over VPN shows the remote serial + getprop content (Phase-7 script + remote device present), else honest SKIP"
+    documentation_refs:
+      - type: test_script
+        section: "T7.1-T7.4 ADB routed 5555 + debug round-trip + usbip flash boundary (Phase-7-pending)"
+        path: "tests/vpn_lan/adb_over_vpn.sh"
+      - type: design_doc
+        section: "§5 Phase 7 — ADB over VPN"
+        path: "docs/design/vpn_lan_access/PLAN.md"
