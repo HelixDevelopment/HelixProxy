@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>SURVEY</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="vpn-lan--proxy--open-source-incorporation-survey">VPN-LAN +
+Proxy — Open-Source Incorporation Survey</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:55:35Z <strong>Status:</strong> Research deliverable —
+deep multi-angle open-source survey (§11.4.150 + §11.4.8 + §11.4.99) for
+the VPN-LAN service-access feature on branch
+<code>feature/vpn-aware-dynamic-routing</code>. RESEARCH + DOC ONLY — no
+code written, nothing incorporated, no data-plane touched.
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Companion to the
+design set: <a
+href="../../design/vpn_lan_access/PLAN.md"><code>../../design/vpn_lan_access/PLAN.md</code></a>,
+<a
+href="../../design/vpn_lan_access/architecture.md"><code>../../design/vpn_lan_access/architecture.md</code></a>,
+<a
+href="../../design/vpn_lan_access/reflector_design.md"><code>../../design/vpn_lan_access/reflector_design.md</code></a>,
+and the current data-plane <code>config/dante/sockd.conf</code> +
+<code>config/squid/squid.conf</code>. <strong>Scope note:</strong> Every
+project claim carries a citation to the LATEST authoritative source
+(access date 2026-07-01, §11.4.99). Every deduction the sources do not
+directly state is marked <strong>INFERENCE</strong> (§11.4.6). §11.4.74
+catalogue-check: none of these projects live in our own orgs
+(<code>vasic-digital</code> / <code>HelixDevelopment</code>), so each
+verdict is framed as <em>external reuse</em> — consumed as a deployed
+daemon or a rootless-Podman image booted via the containers submodule
+(§11.4.76), config-injected + decoupled (§11.4.28), never a git
+submodule of third-party code and never a project-specific hardcode. No
+recommendation here violates our constraints: rootless containers
+(§11.4.161), no CI/CD (§11.4.156), SSH-only git, decoupled submodules
+(§11.4.28).</p>
+<hr />
+<h2
+id="0-executive-summary--top-incorporations-ranked-by-leveragerisk">0.
+Executive summary — top incorporations, ranked by leverage/risk</h2>
+<p>We already have a defensible core: an L3-routed VPN owned by
+<code>svord_toolkit</code>, a first-match Dante SOCKS ACL + Squid
+HTTP-CONNECT floor with an RFC1918/metadata SSRF block, and a
+standards-grounded reflector design. This survey looked for what would
+<strong>materially strengthen or simplify</strong> that, honestly
+(§11.4.6): where we already have the best fit, it says so.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Incorporation</th>
+<th>What it buys us</th>
+<th>Leverage</th>
+<th>Risk</th>
+<th>Adopt now vs operator-gated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>smokescreen</strong> (Stripe)</td>
+<td>DNS-rebinding / TOCTOU-safe egress: re-resolves the hostname and
+re-checks the resolved IP against the allowlist <em>after</em> DNS, plus
+allowlist-by-default + report/enforce modes — closes a gap our Squid ACL
+floor does <strong>not</strong> cover for the HTTP-CONNECT path</td>
+<td>HIGH</td>
+<td>LOW (MIT, Go, single daemon, local-stub testable like our existing
+SSRF teeth)</td>
+<td><strong>Adopt now</strong> (autonomous; complements Squid, does not
+replace the Dante L3 floor)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>alsmith/multicast-relay</strong></td>
+<td>Pins the open <strong>INFERENCE</strong> in
+<code>reflector_design.md</code> §3.2 — one daemon relays SSDP 1900
+<strong>and</strong> mDNS 5353 (and Sonos 6969) across the interface
+boundary</td>
+<td>MEDIUM-HIGH</td>
+<td>LOW-MED (GPL-3.0 deployed-daemon → no linking contamination; but
+<strong>LOCATION-rewrite is NOT documented</strong> — a real residual
+gap)</td>
+<td>Deploy is <strong>operator-gated</strong> (§11.4.122 remote host);
+tool-selection + local-stub proof autonomous now</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>toxiproxy</strong> (Shopify)</td>
+<td>Deterministic network-fault injection (latency / bandwidth / timeout
+/ slicer / black-hole) as a TCP shim in front of every routed protocol —
+directly feeds §11.4.85 stress+chaos and §11.4.169 coverage, and is
+deterministic (§11.4.50)</td>
+<td>HIGH (for the test mandate)</td>
+<td>LOW (MIT, Go, API-driven, runs on loopback stubs — no live VPN
+needed)</td>
+<td><strong>Adopt now</strong> (fully autonomous test tooling)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>WireGuard mesh overlay</strong> — Headscale or NetBird</td>
+<td>GAME-CHANGER: collapses Phase 1 (routing) <strong>and</strong> Phase
+12 (bidirectional ingress allowlist) into one battle-tested both-way L3
+control plane with per-host/-service ACLs, NAT traversal, and device
+posture — instead of hand-building return-routes + an
+ingress-allowlist</td>
+<td>HIGH (architectural)</td>
+<td>MED-HIGH (changes the VPN substrate that <code>svord_toolkit</code>
+owns)</td>
+<td><strong>Operator-gated</strong> (§11.4.122 — propose, do not adopt
+autonomously)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>gvisor-tap-vsock / gvproxy</strong> (containers org)</td>
+<td>Rootless userspace network stack with dynamic port-forwarding over
+an HTTP API — a data-plane that forwards unicast without editing host
+route tables (§11.4.133-friendly) and is rootless-native
+(§11.4.161)</td>
+<td>MEDIUM (INFERENCE — fit depends on topology)</td>
+<td>MED (new moving part; userspace-netstack throughput ceiling)</td>
+<td>Prototype-worthy; not on the critical path</td>
+</tr>
+</tbody>
+</table>
+<p><strong>One-line verdict:</strong> incorporate
+<strong>smokescreen</strong> (harden egress) and
+<strong>toxiproxy</strong> (chaos coverage) now — both are low-risk,
+autonomous, and slot cleanly beside what we have; <strong>pin
+multicast-relay</strong> as the reflector tool (deploy operator-gated);
+and <strong>surface the WireGuard mesh overlay to the operator</strong>
+as the highest-leverage architectural simplification of the whole
+bidirectional design (§11.4.66), because it touches the
+<code>svord</code>-owned substrate and must not be adopted silently
+(§11.4.122).</p>
+<hr />
+<h2 id="1-bidirectional-l3-exposure-over-vpn--userspace-networking">1.
+Bidirectional L3 exposure over VPN / userspace networking</h2>
+<p>Our substrate is a <code>svord_toolkit</code>-owned WireGuard +
+L2TP/PPP L3 tunnel (<code>ppp0</code>, subnet <code>10.0.0.0/8</code>).
+PLAN §4.6 + Phase 12 require the exposure to work <strong>both
+ways</strong> with a default-deny ingress allowlist. The core question:
+is there an off-the-shelf control plane that gives clean two-way routing
++ per-service ACLs so we do not hand-build return-routes and ingress
+plumbing?</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>What it does</th>
+<th>License</th>
+<th>Maturity</th>
+<th>Catalogue-check verdict</th>
+<th>How it slots into helix_proxy</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tailscale + Headscale</strong></td>
+<td>WireGuard mesh; <strong>subnet routers</strong> = L3 site-to-site
+(bridge two subnets both ways); HuJSON ACL policy; NAT traversal</td>
+<td>Tailscale client BSD-3; <strong>Headscale</strong> control server
+BSD-3</td>
+<td>Headscale v0.28.0 (2026-02-04), 38.5k★, very active</td>
+<td>External reuse (self-hosted control plane, rootless-capable)</td>
+<td>A subnet router on the remote side + one on our side gives
+bidirectional <code>10/8</code>↔︎proxy routing + policy ACLs — collapses
+PLAN Phase 1 + Phase 12</td>
+<td>Changes the <code>svord</code>-owned substrate → operator-gated
+(§11.4.122)</td>
+</tr>
+<tr>
+<td><strong>NetBird</strong></td>
+<td>WireGuard overlay; groups + rules ACLs; <strong>device posture
+checks</strong>; self-hostable control plane; polished web UI</td>
+<td>BSD-3 (except
+<code>management/</code>,<code>signal/</code>,<code>relay/</code> =
+AGPLv3), Go</td>
+<td>26.6k★, active</td>
+<td>External reuse</td>
+<td>Same both-way + ACL win as Headscale, with posture checks (maps to
+our allowlist-of-hosts requirement) and a management UI</td>
+<td>AGPLv3 on the self-hosted control components — acceptable as a
+<em>deployed service</em> (no linking into our Go binary), but note the
+copyleft if we ever modify+distribute it; substrate change →
+operator-gated</td>
+</tr>
+<tr>
+<td><strong>Nebula</strong> (Slack)</td>
+<td>Certificate-embedded group firewall (policy-as-code in the cert), no
+coordination-server ACLs, scales to tens of thousands</td>
+<td>MIT, Go</td>
+<td>Mature, widely deployed</td>
+<td>External reuse</td>
+<td>Cert-group model maps well to "allowlist host X → service Y"; no web
+UI, heavy cert-rotation ops</td>
+<td>Operationally heavy (manual cert rotation, no UI); substrate change
+→ operator-gated</td>
+</tr>
+<tr>
+<td><strong>OpenZiti</strong></td>
+<td>App-layer zero-trust overlay — services advertise into a fabric,
+<strong>no listening ports</strong> on protected hosts,
+identity-authorized</td>
+<td>Apache-2.0, Go + multi-language SDKs</td>
+<td>Active, SDK-rich</td>
+<td>External reuse (different model)</td>
+<td>The "no open ports" property is attractive for the
+<strong>ingress</strong> surface (Phase 12) — a VPN host reaches an
+exposed proxy-side service only via authorized identity, not an open
+port</td>
+<td>Biggest adoption cost (app-layer, SDK-embed or tunneler); not a
+drop-in L3 router</td>
+</tr>
+<tr>
+<td><strong>gvisor-tap-vsock / gvproxy</strong></td>
+<td>Pure-Go userspace netstack (gVisor), rootless, DNS + <strong>dynamic
+port-forwarding via HTTP API</strong></td>
+<td>Apache-2.0, Go</td>
+<td>v0.8.x, maintained (containers org)</td>
+<td>External reuse (rootless image via containers submodule)</td>
+<td>Forward unicast paths from inside a rootless container
+<strong>without editing host route tables</strong> (§11.4.133-safe);
+dynamic port-forward API fits an ingress-allowlist that is
+programmatic</td>
+<td>Userspace-netstack throughput ceiling (INFERENCE); new moving
+part</td>
+</tr>
+<tr>
+<td><strong>wireguard-go</strong> / <strong>BoringTun</strong></td>
+<td>Userspace WireGuard data-plane implementations (Go / Rust)</td>
+<td>wireguard-go MIT; BoringTun BSD-3 (Cloudflare)</td>
+<td>Mature</td>
+<td>External reuse</td>
+<td>Only relevant if we ever need rootless WireGuard <em>inside</em> a
+container rather than the kernel module</td>
+<td>Lower throughput than kernel WG (INFERENCE); not needed while
+<code>svord</code> owns the tunnel</td>
+</tr>
+<tr>
+<td><strong>sshuttle</strong></td>
+<td>TCP + DNS over SSH ("poor-man's VPN"); not L3; UDP weak</td>
+<td>GPL-2.0, Python</td>
+<td>Mature</td>
+<td>No-match for our need</td>
+<td>Could bootstrap quick TCP-only access with zero server install, but
+<strong>does not route UDP/NFS-aux/multicast</strong> and is not
+bidirectional — strictly weaker than our existing WG+L2TP tunnel</td>
+<td>Would be a downgrade; do not adopt</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest finding (§11.4.6):</strong> for the <em>substrate
+itself</em> we already have a real L3 WireGuard tunnel via
+<code>svord_toolkit</code>, so sshuttle/wireguard-go/BoringTun are not
+upgrades. The genuine opportunity is the <strong>control plane</strong>:
+a mesh overlay (Headscale or NetBird) would replace the bespoke Phase-1
+route-injection + Phase-12 return-route/ingress-allowlist plumbing with
+a battle-tested both-way router + policy engine. That is high leverage
+but <strong>operator-gated</strong> — it changes the
+<code>svord</code>-owned substrate and must be proposed via §11.4.66,
+never adopted silently (§11.4.122). <strong>INFERENCE:</strong>
+OpenZiti's "no listening ports" model is the single most interesting
+idea for our <em>ingress</em> attack surface (Phase 12), because it
+removes the open-port surface entirely instead of allowlisting it —
+worth a spike, but it is an app-layer rewrite, not a drop-in.</p>
+<hr />
+<h2 id="2-multicast-discovery-reflection-across-l3">2. Multicast
+discovery reflection across L3</h2>
+<p><code>reflector_design.md</code> already fixes Avahi
+(<code>enable-reflector=yes</code>) for mDNS and leaves an explicit
+<strong>INFERENCE</strong> open in §3.2: the exact SSDP/WS-Discovery
+relay tool (and the <code>LOCATION</code>-rewrite requirement) is
+unpinned. This angle pins it.</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>What it does</th>
+<th>License</th>
+<th>Maturity</th>
+<th>Catalogue-check verdict</th>
+<th>How it slots in</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Avahi</strong> (<code>enable-reflector=yes</code>)</td>
+<td>Repeats mDNS <code>224.0.0.251:5353</code> across managed
+interfaces</td>
+<td>LGPL-2.1, C</td>
+<td>Standard Linux mDNS stack</td>
+<td>External reuse (already in our design)</td>
+<td>Already the Phase-5 mDNS reflector; constrain with
+<code>allow-interfaces</code></td>
+<td>mDNS-only — does <strong>not</strong> handle SSDP 1900 (documented
+limitation)</td>
+</tr>
+<tr>
+<td><strong>alsmith/multicast-relay</strong></td>
+<td>One daemon relays <strong>SSDP 1900 + mDNS 5353 + Sonos
+6969</strong> between interfaces</td>
+<td><strong>GPL-3.0</strong>, Python (needs <code>netifaces</code>)</td>
+<td>Actively used (Firewalla/UDM community), maintained</td>
+<td>External reuse (deployed daemon on remote side)</td>
+<td><strong>Pins the §3.2 INFERENCE</strong>: a single relay covering
+SSDP + mDNS, so the reflector host runs one tool instead of Avahi + a
+separate SSDP relay</td>
+<td>GPL-3.0 is fine for a <em>separately-deployed daemon</em> (mere
+aggregation, no linking into our code); <strong>but LOCATION-rewrite is
+NOT documented</strong> (WebFetch of README confirms it is unmentioned)
+— the <code>LOCATION</code>→routable-<code>10.x</code> rewrite our
+design requires may need a companion shim or a verified
+<code>--relay</code>/proxy mode</td>
+</tr>
+<tr>
+<td><strong>smcroute</strong></td>
+<td>Static multicast routing between two interfaces (group forward, no
+app awareness)</td>
+<td>GPL-2.0, C</td>
+<td>Mature</td>
+<td>External reuse (fallback)</td>
+<td>Generic <code>239.255.255.250</code> forwarding when advertised URLs
+already carry routable addresses</td>
+<td>No <code>LOCATION</code> rewrite → only helps when URLs are already
+routable</td>
+</tr>
+<tr>
+<td><strong>igmpproxy</strong></td>
+<td>IGMP-based multicast forwarding (upstream/downstream)</td>
+<td>GPL-2.0, C</td>
+<td>Mature</td>
+<td>No-match (discovery)</td>
+<td>IGMP membership forwarding, not SSDP/mDNS app relay</td>
+<td>Wrong layer for discovery rewrite</td>
+</tr>
+<tr>
+<td><strong>nberlee/bonjour-reflector</strong> /
+<strong>mdns-repeater</strong></td>
+<td>VLAN-aware Bonjour reflectors</td>
+<td>permissive (varies)</td>
+<td>Community</td>
+<td>External reuse (alt to Avahi)</td>
+<td>Alternative mDNS reflectors if Avahi's interface model is
+awkward</td>
+<td>mDNS-only; less standard than Avahi</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Finding:</strong> <strong>multicast-relay resolves the
+design's open INFERENCE</strong> — it is the best single-tool fit for
+the "SSDP + mDNS on one reflector host" requirement, and it is what the
+Firewalla/UniFi community actually deploys for Roku/Sonos/DIAL
+discovery. Two honest caveats to record before pinning it (§11.4.6): (a)
+<strong>GPL-3.0</strong> — acceptable because it is a standalone daemon
+booted via the containers submodule, not linked into helix_proxy; (b)
+the <strong><code>LOCATION</code>-rewrite</strong> our reflector design
+demands (so the advertised URL is a routable <code>10.x</code>) is
+<strong>not documented</strong> in its README — we must verify its
+relay/proxy mode does this, or pair it with a small rewrite shim, before
+claiming the Cast/DIAL discovery path works end-to-end. Deployment stays
+operator-gated (§11.4.122). Update <code>reflector_design.md</code> §3.2
+from "INFERENCE, tool unpinned" to "candidate = multicast-relay,
+LOCATION-rewrite pending verification".</p>
+<hr />
+<h2 id="3-reverse-tunneling--ingress-exposure">3. Reverse tunneling /
+ingress exposure</h2>
+<p>For Phase 12 ingress (VPN-host → an exposed proxy-side service).
+Honest framing first: if we adopt a <strong>mesh overlay</strong> (Angle
+1 #4), bidirectional reach is native and a separate reverse-tunnel is
+<strong>redundant</strong>. Reverse tunnels matter only if we expose
+<em>one</em> proxy-side service to VPN hosts <strong>without</strong> a
+full overlay.</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>What it does</th>
+<th>License</th>
+<th>Maturity</th>
+<th>Catalogue-check verdict</th>
+<th>How it slots in</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>frp</strong> (fast reverse proxy)</td>
+<td>HTTP/HTTPS/TCP/UDP tunnels, subdomain routing, dashboard +
+Prometheus metrics</td>
+<td>Apache-2.0, Go</td>
+<td>~85k★, most feature-complete</td>
+<td>External reuse (rootless image via containers submodule)</td>
+<td>Expose a single proxy-side service inbound to VPN hosts with a
+client/server pair; metrics fit our observability mandate</td>
+<td>Another listening surface to allowlist (mirror of the egress
+floor)</td>
+</tr>
+<tr>
+<td><strong>rathole</strong></td>
+<td>High-perf NAT-traversal reverse proxy; tokens + Noise/TLS;
+hot-reload</td>
+<td>Apache-2.0 (dual MIT), Rust</td>
+<td>~12k★, active</td>
+<td>External reuse</td>
+<td>Same role as frp, lighter/faster, mandatory service tokens (good
+default-deny posture)</td>
+<td>Fewer features than frp; smaller ecosystem</td>
+</tr>
+<tr>
+<td><strong>chisel</strong></td>
+<td>TCP/UDP over HTTP/WebSocket; works through HTTP proxies</td>
+<td>MIT, Go</td>
+<td>Mature, popular</td>
+<td>External reuse</td>
+<td>Ingress that survives restrictive middle-boxes; single portable
+binary</td>
+<td>WebSocket framing overhead</td>
+</tr>
+<tr>
+<td><strong>wstunnel</strong> (erebe)</td>
+<td>TCP/UDP/SOCKS5/stdio over WS or HTTP2, static binary</td>
+<td>BSD-3, Rust</td>
+<td>Active</td>
+<td>External reuse</td>
+<td>DPI/firewall-bypass ingress if the path is HTTP-only</td>
+<td>Overkill unless a middle-box blocks WG</td>
+</tr>
+<tr>
+<td><strong>bore</strong></td>
+<td>Minimal TCP tunnel</td>
+<td>MIT, Rust</td>
+<td>Popular, tiny</td>
+<td>External reuse</td>
+<td>Simplest possible single-port expose</td>
+<td>Minimal features; no ACL layer of its own</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Finding (§11.4.6):</strong> for our design, a reverse tunnel
+is a <strong>narrower</strong> tool than what Phase 12 needs — the
+ingress requirement is <em>default-deny allowlist of (VPN-host →
+proxy-side-service) pairs</em>, which an overlay's policy engine (Angle
+1) expresses natively and a point tunnel does not. If the operator
+declines the overlay, <strong>rathole</strong> (mandatory tokens,
+Noise/TLS, tiny footprint) or <strong>frp</strong> (metrics, maturity)
+is the cleanest single-service ingress — packaged rootless via the
+containers submodule, with its listening surface governed by the same
+default-deny allowlist + paired §1.1 teeth as the egress floor.
+<strong>INFERENCE:</strong> we likely do <strong>not</strong> need a
+reverse-tunnel at all if bidirectional overlay routing lands; keep this
+angle as a fallback, not a primary.</p>
+<hr />
+<h2 id="4-proxy-hardening--ssrf-egress-control">4. Proxy hardening /
+SSRF egress control</h2>
+<p>Our floor today is Dante first-match SOCKS ACL + Squid HTTP-CONNECT
+ACL with an RFC1918/link-local/loopback/metadata block. The question: is
+anything stronger than our current floor for the <strong>egress
+carve-out</strong> that Phase 1 opens?</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>What it does</th>
+<th>License</th>
+<th>Maturity</th>
+<th>Catalogue-check verdict</th>
+<th>How it slots in</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>smokescreen</strong> (Stripe)</td>
+<td>HTTP CONNECT egress proxy: hostname ACL (allow/report/enforce),
+<strong>re-resolves DNS and re-checks the resolved IP</strong> against
+internal/deny ranges, blocks non-routable IPs, mTLS client auth</td>
+<td>MIT, Go</td>
+<td>1.3k★, production at Stripe/Fly/pretix, active</td>
+<td>External reuse (rootless image via containers submodule)</td>
+<td>Sits on the <strong>HTTP-CONNECT egress path</strong> (beside or
+behind Squid) for the <code>10/8</code> carve-out; adds the one thing
+Squid ACLs miss — <strong>post-DNS IP re-check</strong> that defeats
+DNS-rebinding / TOCTOU where a hostname resolves to an internal IP after
+the ACL check; allowlist-by-default + <code>report</code> mode for safe
+rollout</td>
+<td>Covers only HTTP(S) CONNECT — <strong>does not</strong> protect the
+L3-routed SMB/NFS/FTP/etc. paths (those stay governed by the Dante ACL +
+host firewall)</td>
+</tr>
+<tr>
+<td><strong>OpenBSD relayd</strong></td>
+<td>App-layer gateway / transparent proxy / load-balancer with protocol
+filters</td>
+<td>ISC, C</td>
+<td>Very mature, OpenBSD base</td>
+<td>External reuse</td>
+<td>A hardened transparent-proxy option if we ever move off Squid</td>
+<td>BSD-centric; smaller Linux footprint</td>
+</tr>
+<tr>
+<td><strong>Envoy</strong></td>
+<td>Universal L4/L7 data plane, rich egress filtering, programmable</td>
+<td>Apache-2.0, C++</td>
+<td>Mature, heavy</td>
+<td>External reuse</td>
+<td>Powerful egress policy (RBAC, ext-authz) if we need a
+service-mesh-grade data plane</td>
+<td>Large operational surface; overkill for our floor</td>
+</tr>
+<tr>
+<td><strong>HAProxy</strong></td>
+<td>High-perf TCP/HTTP proxy, ACLs, ~10-20% less CPU than Envoy for
+HTTP</td>
+<td>GPL-2.0/LGPL, C</td>
+<td>Battle-tested (15+ yr)</td>
+<td>External reuse</td>
+<td>Efficient egress ACL front-end if we outgrow Squid</td>
+<td>Reverse-proxy-shaped; egress-forward is a less common pattern</td>
+</tr>
+<tr>
+<td><strong>Squid ACL best-practice</strong></td>
+<td>Our current HTTP floor</td>
+<td>GPL-2.0, C</td>
+<td>In place</td>
+<td>Already used</td>
+<td>Keep — the RFC1918/metadata deny +
+<code>SSL_Ports</code>/<code>extension_methods</code> work is
+correct</td>
+<td>STARTTLS-strip / stale-cache pitfalls (already noted in PLAN
+§4.4)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Finding:</strong> our Dante + Squid floor is a <strong>sound
+baseline</strong> — but <strong>smokescreen adds a genuinely stronger
+guarantee on the HTTP-CONNECT path</strong>: it re-resolves the hostname
+and re-validates the <em>resolved IP</em> against the deny ranges after
+DNS, which our static Squid ACL does not do, closing the DNS-rebinding /
+TOCTOU sub-class of SSRF (the exact class OWASP SSRF Case-1 warns about,
+which PLAN §4 already references). It is MIT, single-binary Go, and —
+crucially — <strong>testable exactly like our existing SSRF
+teeth</strong> (<code>report</code>/<code>enforce</code> modes +
+local-stub targets), so it lands autonomously with a paired §1.1
+mutation proving an out-of-allowlist resolved-IP still denies. Honest
+boundary (§11.4.6): smokescreen helps <strong>only</strong> the HTTP(S)
+egress path; the L3-routed protocols (SMB/NFS/FTP/mail/ADB) are not HTTP
+and stay governed by the Dante first-match ACL + a host-level firewall
+(nftables) — smokescreen is a <strong>complement</strong>, not a
+replacement for the whole floor. relayd/Envoy/HAProxy are viable if we
+ever replace Squid, but none is a compelling reason to churn a working
+floor now.</p>
+<hr />
+<h2 id="5-anti-bluff--test-oracle--discovery-tooling">5. Anti-bluff /
+test-oracle &amp; discovery tooling</h2>
+<p>For §11.4.85 stress+chaos and §11.4.169 comprehensive coverage of the
+routed data-plane, plus discovery oracles.</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>What it does</th>
+<th>License</th>
+<th>Maturity</th>
+<th>Catalogue-check verdict</th>
+<th>How it slots in</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>toxiproxy</strong> (Shopify)</td>
+<td>TCP proxy with deterministic <strong>toxics</strong> (latency,
+bandwidth, timeout, slicer, slow_close, black-hole, limit_data),
+API-driven</td>
+<td>MIT, Go</td>
+<td>Widely used, active</td>
+<td>External reuse (test tooling)</td>
+<td>A shim in front of any routed protocol
+(SMB/NFS/FTP/mail/ADB/Cast-control) to inject faults deterministically →
+§11.4.85 chaos + §11.4.50 determinism; runs on <strong>loopback stubs,
+no live VPN</strong> → fully autonomous</td>
+<td>None material — it is a test-only dependency</td>
+</tr>
+<tr>
+<td><strong>pumba</strong></td>
+<td>Container chaos: kill/stop/pause + <code>netem</code>
+delay/loss/corrupt; <strong>supports Podman</strong></td>
+<td>Apache-2.0, Go</td>
+<td>Active</td>
+<td>External reuse (rootless via containers submodule)</td>
+<td>Inject container-level network faults (delay/loss) against our
+reflector/adb-server containers → §11.4.85 process-death + network-fault
+classes on rootless Podman (§11.4.161)</td>
+<td>Needs access to the container runtime socket (scope carefully)</td>
+</tr>
+<tr>
+<td><strong>blockade</strong></td>
+<td>Docker network partitions / splits for distributed-failure
+testing</td>
+<td>Apache-2.0, Python</td>
+<td>Older, less active</td>
+<td>External reuse (niche)</td>
+<td>Partition-testing if we run a multi-container reflector+adb
+topology</td>
+<td>Docker-oriented, less maintained than pumba</td>
+</tr>
+<tr>
+<td><strong>avahi-browse / gssdp-discover / nmap</strong></td>
+<td>Discovery + scan oracles</td>
+<td>LGPL/GPL</td>
+<td>Standard</td>
+<td>Already implied in tests</td>
+<td>The read-side oracle our <code>discovery_reflect.sh</code> already
+uses; <code>nmap</code> for routed-port reachability evidence</td>
+<td>None — standard tooling</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Finding:</strong> <strong>toxiproxy is the strongest single
+incorporation for the test mandate</strong> — deterministic, API-driven,
+loopback-capable, and it directly satisfies §11.4.85's
+latency/bandwidth/black-hole classes on our routed TCP paths
+<strong>without needing the live VPN</strong>, so it lands on the
+autonomous slate today with paired §1.1 mutations proving each toxic
+actually degrades the path (an analyzer that PASSes with the toxic
+active is a bluff gate, §11.4.107(10)). <strong>pumba</strong>
+complements it for container-level chaos against the
+reflector/adb-server images on rootless Podman. Together they close the
+§11.4.85 + §11.4.169 chaos/coverage requirement with real captured
+evidence rather than a happy-path-only suite.</p>
+<hr />
+<h2 id="6-game-changing-approaches">6. Game-changing approaches</h2>
+<p>Two ideas would materially change the shape of the whole design, and
+one resolves an open design gap.</p>
+<p><strong>A. WireGuard mesh overlay as the bidirectional substrate
+(GAME-CHANGER, operator-gated).</strong> The single biggest
+simplification: instead of hand-building Phase-1 route injection +
+Phase-12 return-routes + an ingress-allowlist state machine, adopt a
+self-hosted overlay control plane (<strong>Headscale</strong> BSD-3 or
+<strong>NetBird</strong> BSD-3/AGPLv3) whose <em>subnet-router</em>
+feature is exactly bidirectional L3 site-to-site, and whose policy
+engine expresses "allow VPN-host X → proxy-side service Y" natively —
+the precise Phase-12 requirement — with NAT traversal and device posture
+as bonuses. This would fold two of our security-critical phases into one
+battle-tested, widely-audited component. <strong>The catch
+(§11.4.6/§11.4.122):</strong> it changes the VPN substrate that
+<code>svord_toolkit</code> owns, and PLAN §1 hard-constraint 2 forbids
+changing <code>svord</code>/remote hosts without an interactive operator
+decision. So this is a <strong>proposal to surface via
+§11.4.66</strong>, not an autonomous adoption. It is the
+highest-leverage architectural idea in this survey.</p>
+<p><strong>B. Rootless userspace data-plane (gvisor-tap-vsock / gvproxy)
+(INFERENCE — spike-worthy).</strong> A pure-Go userspace netstack with a
+dynamic port-forwarding HTTP API lets a rootless container forward
+unicast <strong>without touching host route tables</strong> — which
+aligns with §11.4.133 (never mutate host/target routing autonomously)
+and §11.4.161 (rootless). <strong>INFERENCE:</strong> whether its
+throughput ceiling suits bulk SMB/NFS transfer is unproven and needs a
+benchmark; but for the <em>control/ingress</em> plane (programmatic
+port-forward = programmatic ingress-allowlist) it is an elegant fit
+worth a spike.</p>
+<p><strong>C. Pin the reflector tool (resolves an open design
+INFERENCE).</strong> <code>reflector_design.md</code> §3.2 leaves the
+SSDP relay unpinned; <strong>multicast-relay</strong> (Angle 2) is the
+community-proven single-daemon answer for SSDP + mDNS, closing that gap
+the moment its <code>LOCATION</code>-rewrite behaviour is verified. Not
+architecture-changing, but it converts an open design question into a
+decided one.</p>
+<p><strong>Non-game-changers, stated honestly (§11.4.6):</strong> we do
+<strong>not</strong> need sshuttle (weaker than our WG tunnel), we do
+<strong>not</strong> need a reverse-tunnel if the overlay lands
+(redundant), and we should <strong>not</strong> churn the working
+Squid/Dante floor for Envoy/HAProxy without a driving requirement. The
+floor is sound; smokescreen sharpens its weakest sub-class (HTTP-CONNECT
+DNS-rebinding), and that is the only egress change worth making now.</p>
+<hr />
+<h2 id="7-recommended-next-steps-what-to-prototype-first--why">7.
+Recommended next steps (what to prototype first + why)</h2>
+<ol type="1">
+<li><strong>Prototype smokescreen on the HTTP-CONNECT egress path
+(autonomous, now).</strong> Boot it as a rootless-Podman image via the
+containers submodule (§11.4.76), config-injected with the
+<code>HELIX_BRIDGE_SUBNET</code> allowlist. Prove the DNS-rebinding
+re-check with a local-stub target that resolves to an internal IP →
+<code>enforce</code> denies; ship a paired §1.1 mutation (an
+out-of-allowlist resolved IP still denies). This mirrors our existing
+<code>ssrf_carveout_teeth.sh</code> discipline and needs no live VPN.
+<strong>Why first:</strong> highest leverage-to-risk, closes a real SSRF
+sub-class, fully autonomous.</li>
+<li><strong>Wire toxiproxy into the §11.4.85 chaos layer (autonomous,
+now).</strong> Put a toxiproxy shim in front of each routed protocol's
+<em>local stub</em> and assert every toxic (latency/black-hole/timeout)
+genuinely degrades the path, with a paired §1.1 mutation so the analyzer
+cannot bluff. <strong>Why:</strong> satisfies the stress+chaos +
+determinism mandate today without the operator-gated live paths.</li>
+<li><strong>Verify multicast-relay's <code>LOCATION</code>-rewrite, then
+pin it in <code>reflector_design.md</code> §3.2.</strong> Stand it up
+against a local SSDP/mDNS stub; confirm whether it rewrites
+<code>LOCATION</code> to a routable address or needs a shim. Update the
+design doc from INFERENCE to a decided tool. <strong>Why:</strong>
+converts an open design gap into a fact; deploy stays
+operator-gated.</li>
+<li><strong>Surface the WireGuard mesh overlay to the operator
+(§11.4.66).</strong> Present Headscale vs NetBird as options with the
+blast radius (it replaces <code>svord</code>-owned routing + the
+Phase-12 ingress plumbing) and the trade-off, and let the operator
+decide keep-current vs adopt-overlay. <strong>Why:</strong> it is the
+biggest architectural simplification but it touches the substrate we are
+forbidden to change silently (§11.4.122).</li>
+<li><strong>(Optional) Spike gvproxy for the rootless forward/ingress
+plane</strong> with a throughput benchmark vs the kernel-routed path.
+<strong>Why:</strong> promising for §11.4.133-safe routing, but unproven
+for bulk transfer — measure before betting.</li>
+</ol>
+<p>Nothing above is incorporated by this document; each is a scoped,
+evidence-first prototype that would cross independent review (§11.4.142)
++ the §11.4.169 test matrix before landing, and each respects
+rootless-containers (§11.4.161), no-CI (§11.4.156), SSH-only git, and
+decoupled-submodule (§11.4.28) constraints.</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>Headscale (self-hosted Tailscale control server, BSD-3, v0.28.0): <a
+href="https://github.com/juanfont/headscale">https://github.com/juanfont/headscale</a></li>
+<li>Tailscale subnet routers (L3 site-to-site): <a
+href="https://tailscale.com/docs/features/subnet-routers">https://tailscale.com/docs/features/subnet-routers</a>
+· <a
+href="https://tailscale.com/docs/features/site-to-site">https://tailscale.com/docs/features/site-to-site</a>
+· <a
+href="https://headscale.net/stable/ref/routes/">https://headscale.net/stable/ref/routes/</a></li>
+<li>Tailscale open source: <a
+href="https://tailscale.com/opensource">https://tailscale.com/opensource</a></li>
+<li>NetBird (WireGuard overlay, BSD-3 + AGPLv3 for
+management/signal/relay, ACLs, posture checks): <a
+href="https://github.com/netbirdio/netbird">https://github.com/netbirdio/netbird</a>
+· <a
+href="https://netbird.io/knowledge-hub/top-5-opensource-alternatives-to-tailscale2">https://netbird.io/knowledge-hub/top-5-opensource-alternatives-to-tailscale2</a></li>
+<li>Nebula (Slack overlay, MIT, cert-group firewall): <a
+href="https://github.com/slackhq/nebula">https://github.com/slackhq/nebula</a>
+(via <a
+href="https://netbird.io/knowledge-hub/top-5-tailscale-alternatives">https://netbird.io/knowledge-hub/top-5-tailscale-alternatives</a>)</li>
+<li>OpenZiti (Apache-2.0, app-layer zero-trust, no listening ports): <a
+href="https://github.com/openziti/ziti">https://github.com/openziti/ziti</a>
+· <a
+href="https://github.com/openziti/ziti/blob/main/README.md">https://github.com/openziti/ziti/blob/main/README.md</a></li>
+<li>gvisor-tap-vsock / gvproxy (Apache-2.0, userspace netstack, dynamic
+port-forward): <a
+href="https://github.com/containers/gvisor-tap-vsock">https://github.com/containers/gvisor-tap-vsock</a>
+· <a
+href="https://github.com/containers/gvisor-tap-vsock/blob/main/README.md">https://github.com/containers/gvisor-tap-vsock/blob/main/README.md</a>
+· <a
+href="https://deepwiki.com/containers/gvisor-tap-vsock/2.1-gvproxy">https://deepwiki.com/containers/gvisor-tap-vsock/2.1-gvproxy</a></li>
+<li>gVisor networking / netstack: <a
+href="https://gvisor.dev/docs/user_guide/networking/">https://gvisor.dev/docs/user_guide/networking/</a></li>
+<li>wireguard-go (MIT userspace WireGuard): <a
+href="https://github.com/WireGuard/wireguard-go">https://github.com/WireGuard/wireguard-go</a>
+(via <a
+href="https://www.saashub.com/compare-wireguard-vs-sshuttle">https://www.saashub.com/compare-wireguard-vs-sshuttle</a>)</li>
+<li>BoringTun (Cloudflare, BSD-3 userspace WireGuard): <a
+href="https://github.com/cloudflare/boringtun">https://github.com/cloudflare/boringtun</a>
+(via <a
+href="https://pinggy.io/blog/top_open_source_tailscale_alternatives/">https://pinggy.io/blog/top_open_source_tailscale_alternatives/</a>)</li>
+<li>sshuttle (GPL-2.0, TCP+DNS over SSH, not L3): <a
+href="https://github.com/sshuttle/sshuttle">https://github.com/sshuttle/sshuttle</a></li>
+<li>Avahi mDNS reflector (<code>enable-reflector=yes</code>, LGPL): <a
+href="https://linux.die.net/man/5/avahi-daemon.conf">https://linux.die.net/man/5/avahi-daemon.conf</a>
+· <a href="https://www.avahi.org/">https://www.avahi.org/</a></li>
+<li>alsmith/multicast-relay (GPL-3.0, SSDP 1900 + mDNS 5353 + Sonos
+6969): <a
+href="https://github.com/alsmith/multicast-relay">https://github.com/alsmith/multicast-relay</a>
+· <a
+href="https://github.com/alsmith/multicast-relay/blob/master/README.md">https://github.com/alsmith/multicast-relay/blob/master/README.md</a>
+· <a
+href="https://github.com/alsmith/multicast-relay/issues/56">https://github.com/alsmith/multicast-relay/issues/56</a></li>
+<li>SSDP across subnets / reflector patterns: <a
+href="https://twisteroidambassador.github.io/2025/03/20/ssdp-across-subnets.html">https://twisteroidambassador.github.io/2025/03/20/ssdp-across-subnets.html</a>
+· <a
+href="https://forum.mikrotik.com/t/the-complete-ssdp-mdns-solution-for-network-segmentation/167825">https://forum.mikrotik.com/t/the-complete-ssdp-mdns-solution-for-network-segmentation/167825</a>
+· <a
+href="https://blog.christophersmart.com/2020/03/30/resolving-mdns-across-vlans-with-avahi-on-openwrt/">https://blog.christophersmart.com/2020/03/30/resolving-mdns-across-vlans-with-avahi-on-openwrt/</a></li>
+<li>smcroute (GPL-2.0, static multicast routing): <a
+href="https://github.com/troglobit/smcroute">https://github.com/troglobit/smcroute</a></li>
+<li>frp (Apache-2.0, Go, feature-complete reverse proxy): <a
+href="https://github.com/fatedier/frp">https://github.com/fatedier/frp</a>
+(via <a
+href="https://xtom.com/blog/frp-rathole-ngrok-comparison-best-reverse-tunneling-solution/">https://xtom.com/blog/frp-rathole-ngrok-comparison-best-reverse-tunneling-solution/</a>)</li>
+<li>rathole (Apache-2.0/MIT, Rust, high-perf NAT traversal): <a
+href="https://github.com/rathole-org/rathole">https://github.com/rathole-org/rathole</a></li>
+<li>chisel (MIT, TCP/UDP over WebSocket): <a
+href="https://github.com/jpillora/chisel">https://github.com/jpillora/chisel</a>
+(via <a
+href="https://github.com/anderspitman/awesome-tunneling">https://github.com/anderspitman/awesome-tunneling</a>)</li>
+<li>wstunnel (erebe, BSD-3, Rust, WS/HTTP2 tunneling): <a
+href="https://github.com/erebe/wstunnel">https://github.com/erebe/wstunnel</a></li>
+<li>bore (MIT, Rust, minimal tunnel): <a
+href="https://github.com/ekzhang/bore">https://github.com/ekzhang/bore</a>
+(via <a
+href="https://pinggy.io/blog/best_ngrok_alternatives/">https://pinggy.io/blog/best_ngrok_alternatives/</a>)</li>
+<li>awesome-tunneling (self-hosting tunnel catalogue): <a
+href="https://github.com/anderspitman/awesome-tunneling">https://github.com/anderspitman/awesome-tunneling</a></li>
+<li>smokescreen (Stripe, MIT, Go, SSRF egress proxy with post-DNS IP
+re-check): <a
+href="https://github.com/stripe/smokescreen">https://github.com/stripe/smokescreen</a>
+· <a
+href="https://github.com/stripe/smokescreen/blob/master/README.md">https://github.com/stripe/smokescreen/blob/master/README.md</a>
+· <a
+href="https://fly.io/blog/practical-smokescreen-sanitizing-your-outbound-web-requests/">https://fly.io/blog/practical-smokescreen-sanitizing-your-outbound-web-requests/</a></li>
+<li>OpenBSD relayd (ISC, app-layer gateway/transparent proxy): <a
+href="https://man.openbsd.org/relayd.conf.5">https://man.openbsd.org/relayd.conf.5</a>
+· <a
+href="https://man.openbsd.org/relayd.8">https://man.openbsd.org/relayd.8</a></li>
+<li>Envoy vs HAProxy (egress/proxy comparison): <a
+href="https://last9.io/blog/envoy-vs-haproxy/">https://last9.io/blog/envoy-vs-haproxy/</a></li>
+<li>SSRF prevention background (OWASP-class, DNS-rebinding): <a
+href="https://goteleport.com/blog/ssrf-attacks/">https://goteleport.com/blog/ssrf-attacks/</a></li>
+<li>toxiproxy (Shopify, MIT, deterministic TCP toxics): <a
+href="https://github.com/Shopify/toxiproxy">https://github.com/Shopify/toxiproxy</a>
+· <a
+href="https://chaostoolkit.org/drivers/toxiproxy/">https://chaostoolkit.org/drivers/toxiproxy/</a></li>
+<li>pumba (Apache-2.0, Go, container chaos + netem, Podman support): <a
+href="https://github.com/alexei-led/pumba">https://github.com/alexei-led/pumba</a></li>
+<li>blockade (Apache-2.0, Python, Docker network partitions): <a
+href="https://github.com/exajobs/chaos-engineering-collection">https://github.com/exajobs/chaos-engineering-collection</a>
+(referenced)</li>
+<li>Chaos-engineering tool landscape (2025): <a
+href="https://steadybit.com/blog/top-chaos-engineering-tools-worth-knowing-about-2025-guide/">https://steadybit.com/blog/top-chaos-engineering-tools-worth-knowing-about-2025-guide/</a></li>
+</ul>
+<p><em>Access date for all sources: 2026-07-01 (§11.4.99). FACT items
+(licenses, star counts, protocol/port facts, feature descriptions) are
+grounded in the cited sources as fetched on the access date; every item
+marked <strong>INFERENCE</strong> (§11.4.6) — overlay-substrate fit for
+our exact <code>svord</code> topology, gvproxy throughput suitability
+for bulk transfer, reverse-tunnel redundancy under an overlay, and
+multicast-relay's undocumented <code>LOCATION</code>-rewrite behaviour —
+is a deduction to be proven by a scoped prototype before it is asserted
+as settled, never claimed here as decided. Deep-research (§11.4.150),
+multi-angle: substrate/control-plane (Angle 1), discovery-relay (Angle
+2), ingress-tunnel (Angle 3), egress-hardening (Angle 4), chaos/oracle
+(Angle 5), architectural (Angle 6).</em></p>
+</body>
+</html>
