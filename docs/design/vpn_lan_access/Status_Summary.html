@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="vpn-lan-service-access--status-summary">VPN-LAN Service Access —
+Status Summary</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:35:00Z <strong>Status:</strong> Companion summary of <a
+href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
+<hr />
+<h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
+For the operator / stakeholders (plain language)</h2>
+<p>We are building helix_proxy's ability to <strong>reach and use the
+services on the far side of the VPN</strong> — file shares, file
+transfer, email, casting, and Android devices. The design is finished
+and security-checked, and the plumbing that connects to the VPN (via
+your existing <code>svord_toolkit</code> scripts) is built and
+proven.</p>
+<p><strong>What's done and proven right now (without needing the live
+VPN):</strong></p>
+<ul>
+<li><strong>The bridge connector</strong> — helix_proxy reads where your
+<code>svord_toolkit</code> scripts live from a private settings file,
+checks whether the VPN is up with a "doctor" tool, and — crucially —
+when the VPN is <strong>down</strong> it <strong>honestly reports
+"skipped," never a fake success.</strong> The test suite confirms this
+and also proves the check has real teeth (a healthy stub flips it to
+"up"). This is the guarantee that we never pretend a feature works when
+it doesn't.</li>
+<li><strong>The protocol tests</strong> — the file-share (SMB/NFS),
+file-transfer (FTP/SFTP/WebDAV), and email tests are written and
+self-proven: each writes and reads back real data (checked
+byte-for-byte) when the VPN is up, and the email test includes a
+<strong>spam-relay safety check</strong> that would fail helix_proxy if
+it ever accepted unauthenticated mail. When the VPN is down, they all
+skip honestly.</li>
+<li><strong>Miracast</strong> is honestly marked
+<strong>impossible</strong> over this kind of VPN (it's a direct radio
+link, not an internet protocol) — with <strong>Chromecast</strong>
+offered as the working alternative.</li>
+<li><strong>The operator guide</strong> is written (setup steps,
+protocol table, FAQ).</li>
+</ul>
+<p><strong>What needs you (clearly flagged, we will ask before
+acting):</strong> the <strong>live VPN connection</strong> (your secrets
++ Mullvad + admin rights) unlocks the real end-to-end tests; deploying
+the device-<strong>discovery helper</strong> on a remote machine, and
+<strong>flashing</strong> any real device, each need your go-ahead first
+— we never change <code>svord_toolkit</code> or a remote host without
+asking.</p>
+<p><strong>Bottom line:</strong> the feature is designed, the anti-bluff
+plumbing is built and proven, and the live parts switch on the moment
+you connect the VPN. Nothing is faked; skipped means skipped.</p>
+<hr />
+<h2 id="page-2--for-software-engineers">Page 2 — For software
+engineers</h2>
+<p>L3-routed VPN ⇒ route unicast / proxy HTTP-shaped via Squid / reflect
+multicast / L2 structurally-impossible. Env-var bridge (§11.4.28),
+honest-SKIP gate (<code>bridge_require</code> rc 2 OPERATOR-BLOCKED
+§11.4.68), anti-bluff <code>ab_pass_with_evidence</code> (non-empty
+artefact required).</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Scope</th>
+<th>Status</th>
+<th>Commit / evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>bridge scaffold + svord-doctor</td>
+<td>PASS</td>
+<td><code>d781002</code> + suite <code>test_vpn_lan_bridge</code> GREEN
+(§11.4.115 teeth) <code>5c28f56</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>routed gateway + SSRF reconciliation</td>
+<td>PENDING</td>
+<td>conductor-owned, security-critical (§11.4.120)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SMB/CIFS/NMB + NFS</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>182e80a</code> sha256 round-trip; bridge-down
+PASS_lines=0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>FTP/FTPS/SFTP + WebDAV(via Squid)</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>182e80a</code> wrong-answer⇒FAIL</td>
+</tr>
+<tr>
+<td>4</td>
+<td>IMAP/SMTP-submission/POP3 + open-relay guard</td>
+<td>AUTHORED (SKIP-proven)</td>
+<td><code>2f31460</code> external-RCPT-accepted⇒FAIL</td>
+</tr>
+<tr>
+<td>5</td>
+<td>mDNS/SSDP/WS-Disc/DNS-SD reflector</td>
+<td>IN PROGRESS</td>
+<td>remote deploy operator-gated (§11.4.122)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Chromecast/DIAL</td>
+<td>IN PROGRESS</td>
+<td>control 8008/8009 routes; discovery reflects</td>
+</tr>
+<tr>
+<td>7</td>
+<td>ADB (access/debug/connect/flash)</td>
+<td>IN PROGRESS</td>
+<td>routed 5555 + adb-server; usbip flash (§11.4.133)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Miracast</td>
+<td>PASS (Won't-fix, §11.4.112)</td>
+<td><code>12faf12</code> cited verdict + Cast alternative</td>
+</tr>
+<tr>
+<td>9</td>
+<td>operator bridge-setup guide</td>
+<td>PASS</td>
+<td><code>a5e5616</code> leak-clean HTML+PDF</td>
+</tr>
+<tr>
+<td>10</td>
+<td>containerize (§11.4.76)</td>
+<td>PENDING</td>
+<td>reflector + adb-server on-demand</td>
+</tr>
+<tr>
+<td>11</td>
+<td>§11.4.169 coverage + Challenges + HelixQA</td>
+<td>IN PROGRESS</td>
+<td>Challenge + <code>vpn_lan.yaml</code> bank; HelixQA-run blocked
+(§11.4.3)</td>
+</tr>
+</tbody>
+</table>
+<p>Autonomous value delivered: the anti-bluff gate (bridge-down ⇒ honest
+SKIP, exit 0, zero <code>^PASS:</code>) + the §11.4.115 teeth in the
+standing suite. Live round-trip evidence (bytes/sha256/mailbox/serials)
+is operator-gated on the svord connection. Composes
+§11.4.3/§11.4.28/§11.4.45/§11.4.68/§11.4.69/§11.4.108/§11.4.112/§11.4.115/§11.4.120/
+§11.4.122/§11.4.133/§11.4.167/§11.4.169.</p>
+</body>
+</html>
