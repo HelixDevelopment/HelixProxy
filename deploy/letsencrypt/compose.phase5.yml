@@ -1,0 +1,10 @@
+# Phase-5 rotation override: Pebble >=2.8.0 exposes the management /set-renewal-info
+# endpoint (absent in 2.6.0) that moves a cert's ARI window to "now", the only
+# deterministic zero-downtime renewal trigger on this stack (docs/research/
+# letsencrypt_renewal_20260701 §11.4.138 + pebble_set_renewal_info_20260701).
+# 2.10.x made -strict a BOOLEAN flag, so the base command's `-strict false` is
+# invalid here — this override drops it. Phase-3 issuance keeps Pebble 2.6.0.
+services:
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:2.10.1
+    command: ["-config", "/test/config/pebble-config.json", "-dnsserver", "challtestsrv:8053"]
