@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>RELEASE_RUNBOOK</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1 id="release-runbook--helix_proxy">Release Runbook — helix_proxy</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Scope:</strong> Cutting a project-prefixed
+release tag (<code>helix_proxy-&lt;version&gt;</code>) on the main
+repository and every owned submodule that changed, published to all
+configured remotes via BOTH the GitHub CLI (<code>gh</code>) and the
+GitLab CLI (<code>glab</code>). <strong>Authority:</strong> Helix
+Constitution §11.4.151 (project-prefixed release tags/versions),
+§11.4.113 (absolute no-force-push; fast-forward-only), §2.1
+(multi-upstream push), §11.4.40 (full-suite retest before tag),
+§11.4.126 (release-scope terminal condition), §11.4.44 (revision
+header), §11.4.65 (universal Markdown export).</p>
+<blockquote>
+<p>This runbook is a read-only planning artefact. It documents the
+procedure; executing any state-changing step (tag/push/release-create)
+is a separate, operator-authorised action.</p>
+</blockquote>
+<hr />
+<h2 id="audit-results-2026-07-01">Audit results 2026-07-01</h2>
+<p>All commands below were run read-only against
+<code>/run/media/milosvasic/DATA4TB/Projects/helix_proxy</code> on
+2026-07-01. No state-changing command was executed. No authentication
+attempt was made.</p>
+<h3 id="1-remotes--git-remote--v">1. Remotes —
+<code>git remote -v</code></h3>
+<pre><code>github   git@github.com:HelixDevelopment/HelixProxy.git (fetch)
+github   git@github.com:HelixDevelopment/HelixProxy.git (push)
+origin   git@github.com:HelixDevelopment/HelixProxy.git (fetch)
+origin   git@github.com:HelixDevelopment/HelixProxy.git (push)
+upstream git@github.com:HelixDevelopment/HelixProxy.git (fetch)
+upstream git@github.com:HelixDevelopment/HelixProxy.git (push)</code></pre>
+<ul>
+<li><strong>NO-HTTPS hard rule:</strong> PASS — all three remotes use
+<code>git@github.com:</code> SSH URLs. No HTTPS remote present.</li>
+<li><strong>Observation (not a pass/fail, flagged for
+operator):</strong> all three remote names (<code>github</code>,
+<code>origin</code>, <code>upstream</code>) are <strong>aliases pointing
+at the SAME GitHub URL</strong>
+<code>git@github.com:HelixDevelopment/HelixProxy.git</code>. There is
+<strong>no GitLab remote configured</strong> for this repository. Under
+§2.1 (multi-upstream push is the norm) a true multi-mirror setup would
+add a distinct GitLab remote. The current configuration pushes to one
+physical GitHub repo under three names. See OPERATOR-BLOCKED item
+<strong>OB-1</strong>.</li>
+</ul>
+<p><strong>Verdict: READY (SSH-only)</strong> — with an OPERATOR note
+that a GitLab mirror remote is not yet configured.</p>
+<h3 id="2-existing-release-tags--git-tag--l-helix_proxy-">2. Existing
+release tags — <code>git tag -l 'helix_proxy-*'</code></h3>
+<pre><code>helix_proxy-0.1.0-dev-0.0.1</code></pre>
+<p>Full tag list (<code>git tag -l</code>):
+<code>helix_proxy-0.1.0-dev-0.0.1</code>, <code>v1.1.0</code>,
+<code>v1.2.0</code> (3 tags total). Tag detail:</p>
+<pre><code>helix_proxy-0.1.0-dev-0.0.1 | 2026-07-01 09:26:23 +0300 | tag (annotated)</code></pre>
+<ul>
+<li><strong>§11.4.151 naming:</strong> PASS — the most recent release
+tag <code>helix_proxy-0.1.0-dev-0.0.1</code> carries the resolved
+<code>helix_proxy-</code> prefix and is an annotated tag.</li>
+<li>The legacy <code>v1.1.0</code> / <code>v1.2.0</code> tags predate
+the prefixed scheme (mirrored in <code>CHANGELOG.md</code> as
+<code>[1.1.0]</code> / <code>[1.2.0]</code>); they are not release
+surfaces going forward.</li>
+<li><strong>Next tag</strong> per monotonic increment:
+<code>helix_proxy-0.1.0-dev-0.0.2</code> (matches the requested
+target).</li>
+</ul>
+<p><strong>Verdict: READY.</strong></p>
+<h3 id="3-github-cli--gh-auth-status--gh-repo-view">3. GitHub CLI —
+<code>gh auth status</code> / <code>gh repo view</code></h3>
+<pre><code>github.com
+  ✓ Logged in to github.com account milos85vasic (keyring)
+  - Active account: true
+  - Git operations protocol: ssh
+  - Token scopes: &#39;admin:public_key&#39;, &#39;gist&#39;, &#39;read:org&#39;, &#39;repo&#39;
+
+repo: {&quot;nameWithOwner&quot;:&quot;HelixDevelopment/HelixProxy&quot;,
+       &quot;url&quot;:&quot;https://github.com/HelixDevelopment/HelixProxy&quot;}</code></pre>
+<ul>
+<li>Authenticated as <code>milos85vasic</code>, SSH git protocol,
+<code>repo</code> scope present (sufficient for
+<code>gh release create</code>).</li>
+<li>Resolved repo: <code>HelixDevelopment/HelixProxy</code>.</li>
+</ul>
+<p><strong>Verdict: READY.</strong></p>
+<h3 id="4-gitlab-cli--glab-auth-status--glab---version">4. GitLab CLI —
+<code>glab auth status</code> / <code>glab --version</code></h3>
+<pre><code>glab 1.91.0 ()
+gitlab.com
+  ✓ Logged in to gitlab.com as milos85vasic (GITLAB_TOKEN)
+  ✓ Git operations for gitlab.com configured to use ssh protocol.
+  ✓ API calls for gitlab.com are made over https protocol.
+  ✓ REST API Endpoint: https://gitlab.com/api/v4/
+  ! Token is from environment variable GITLAB_TOKEN (takes precedence over
+    config/keyring).</code></pre>
+<ul>
+<li><code>glab</code> is present (v1.91.0) and
+<strong>authenticated</strong> to gitlab.com as
+<code>milos85vasic</code> via the <code>GITLAB_TOKEN</code> environment
+variable, git protocol SSH.</li>
+<li><strong>Caveat (honest, per §11.4.6):</strong> the CLI is authed,
+but <strong>the GitLab project that this repo would publish to is
+UNKNOWN</strong> — there is no GitLab remote in
+<code>git remote -v</code> and no <code>.gitlab</code>/project mapping
+was found in the audit. <code>glab release create</code> needs a
+<code>--repo &lt;group&gt;/&lt;project&gt;</code> target (or a
+configured GitLab remote). The token being sourced from
+<code>GITLAB_TOKEN</code> (env) rather than keyring means it depends on
+the operator's shell/wrapper environment being present at release time.
+See OPERATOR-BLOCKED <strong>OB-1</strong> / <strong>OB-2</strong>.</li>
+</ul>
+<p><strong>Verdict: PARTIALLY READY</strong> — CLI authed;
+<strong>target GitLab project + persistent auth source are
+OPERATOR-BLOCKED/UNKNOWN.</strong></p>
+<h3 id="5-release-prefix-resolution-114151">5. Release-prefix resolution
+(§11.4.151)</h3>
+<pre><code>.env                      : DOES NOT EXIST
+.env.example              : exists, but contains NO HELIX_RELEASE_PREFIX
+project root dir basename : helix_proxy</code></pre>
+<ul>
+<li>Resolution order per §11.4.151: (1)
+<code>HELIX_RELEASE_PREFIX</code> from <code>.env</code> — <strong>unset
+(no <code>.env</code>)</strong>; (2) fallback = lowercased snake_case of
+the project root directory name =
+<strong><code>helix_proxy</code></strong>.</li>
+<li><strong>Resolved prefix: <code>helix_proxy</code>.</strong>
+Consistent with the existing <code>helix_proxy-0.1.0-dev-0.0.1</code>
+tag.</li>
+</ul>
+<p><strong>Verdict: READY</strong> (prefix deterministically resolvable
+with zero operator input). Optional hardening: declare
+<code>HELIX_RELEASE_PREFIX=helix_proxy</code> in a gitignored
+<code>.env</code> and document it in the tracked
+<code>.env.example</code> (§11.4.77) so the prefix is authoritative
+rather than dir-name-derived.</p>
+<h3 id="6-changelog-location--format">6. Changelog location +
+format</h3>
+<pre><code>CHANGELOG.md                 : EXISTS at repo root (Keep a Changelog format)
+docs/changelogs/             : DOES NOT EXIST
+docs/releases/               : created by this audit (holds this runbook)
+submodules/*/CHANGELOG.{md,html,pdf} : each owned submodule ships its own</code></pre>
+<ul>
+<li>The canonical changelog is the <strong>root
+<code>CHANGELOG.md</code></strong>, "Keep a Changelog" style with
+<code>## [&lt;version&gt;] - &lt;YYYY-MM-DD&gt;</code> sections and
+<code>### Added / ### Fixed / ### Changed</code> subsections, plus an
+<code>## [Unreleased]</code> block at the top. Latest documented
+entries: <code>[1.2.0] - 2026-04-23</code>,
+<code>[1.1.0] - 2026-04-18</code>,
+<code>[1.0.0] - 2024-03-26</code>.</li>
+<li><strong>Gap:</strong> <code>CHANGELOG.md</code> has <strong>no entry
+for <code>0.1.0-dev-0.0.1</code></strong> nor for the upcoming
+<code>0.1.0-dev-0.0.2</code>; the newest section is
+<code>[1.2.0]</code>. The changelog must gain a section for the new
+release before/at tagging (see procedure step 5). Note the versioning
+discontinuity between the legacy <code>1.x</code> semver line and the
+current <code>0.1.0-dev-0.0.x</code> prefixed line — reconcile per
+operator intent (<strong>OB-3</strong>).</li>
+</ul>
+<p><strong>Verdict: READY (format known)</strong> — with the required
+action to add the new release section (and, if desired, HTML/PDF exports
+per §11.4.65).</p>
+<h3 id="7-branch--head--remote-tip-alignment">7. Branch / HEAD /
+remote-tip alignment</h3>
+<pre><code>current branch : feature/vpn-aware-dynamic-routing
+HEAD           : 2812f48c4a0dd31d523b29056702a494b43af48d
+working tree   : clean (git status --porcelain -&gt; 0 entries)
+
+Local + remote refs (all identical @ 2812f48):
+  refs/heads/main                              2812f48
+  refs/heads/feature/vpn-aware-dynamic-routing 2812f48
+  refs/remotes/github/main                     2812f48
+  refs/remotes/origin/main                     2812f48
+  refs/remotes/upstream/main                   2812f48
+  github/feature/... origin/feature/... upstream/feature/... 2812f48</code></pre>
+<ul>
+<li><strong>Everything is currently in sync at one commit</strong>
+(<code>2812f48</code>): local <code>main</code>, local feature branch,
+and all three remotes' <code>main</code> and feature tips are the same
+object. Working tree clean.</li>
+<li>The checkout is on the <strong>feature branch</strong>
+<code>feature/vpn-aware-dynamic-routing</code>, not <code>main</code>.
+Per §11.4.126 the release-scope tag is cut on <code>main</code> after
+the feature work lands there. Right now
+<code>main == feature == remotes</code>, so a fast-forward of
+<code>main</code> to the feature tip is trivial (or a no-op if already
+there). Once new work advances the feature branch, land it on
+<code>main</code> (§11.4.113 FF-only merge) <strong>before</strong>
+tagging.</li>
+</ul>
+<p><strong>Verdict: READY</strong> — tree clean, all refs aligned; tag
+on <code>main</code>.</p>
+<hr />
+<h2 id="consolidated-readiness-verdict">Consolidated readiness
+verdict</h2>
+<table>
+<thead>
+<tr>
+<th>Prerequisite</th>
+<th>Verdict</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSH-only remotes</td>
+<td>READY</td>
+<td>3 SSH aliases → one GitHub repo</td>
+</tr>
+<tr>
+<td>Prefix (§11.4.151)</td>
+<td>READY</td>
+<td>resolves to <code>helix_proxy</code> (dir fallback)</td>
+</tr>
+<tr>
+<td>Existing tag naming</td>
+<td>READY</td>
+<td><code>helix_proxy-0.1.0-dev-0.0.1</code> compliant</td>
+</tr>
+<tr>
+<td>GitHub CLI (<code>gh</code>)</td>
+<td>READY</td>
+<td>authed, <code>repo</code> scope, HelixDevelopment/HelixProxy</td>
+</tr>
+<tr>
+<td>GitLab CLI (<code>glab</code>)</td>
+<td>PARTIALLY READY</td>
+<td>authed; <strong>target project UNKNOWN</strong> (OB-1/OB-2)</td>
+</tr>
+<tr>
+<td>Multi-upstream (§2.1)</td>
+<td>OPERATOR-BLOCKED</td>
+<td>no GitLab mirror remote configured (OB-1)</td>
+</tr>
+<tr>
+<td>Changelog</td>
+<td>READY (format)</td>
+<td>must add new-release section (OB-3 discontinuity)</td>
+</tr>
+<tr>
+<td>Branch/HEAD alignment</td>
+<td>READY</td>
+<td>clean tree, all refs @ 2812f48; tag on <code>main</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Overall: NOT YET FULLY READY to cut
+<code>helix_proxy-0.1.0-dev-0.0.2</code> across BOTH GitHub and
+GitLab.</strong> GitHub side is fully READY. The <strong>GitLab side is
+OPERATOR-BLOCKED</strong> on a known target project + a GitLab mirror
+remote (OB-1, OB-2). The GitHub-only release can proceed once the
+§11.4.40 full-retest gate and the changelog entry are complete.</p>
+<hr />
+<h2 id="release-procedure">Release procedure</h2>
+<p>Target next tag:
+<strong><code>helix_proxy-0.1.0-dev-0.0.2</code></strong> (prefix
+<code>helix_proxy</code> resolved per §11.4.151, monotonic increment
+from <code>-0.0.1</code>).</p>
+<blockquote>
+<p>Replace <code>&lt;VERSION&gt;</code> with
+<code>0.1.0-dev-0.0.2</code> and <code>&lt;TAG&gt;</code> with
+<code>helix_proxy-0.1.0-dev-0.0.2</code> throughout. Do NOT run any of
+the state-changing steps until the operator authorises the release AND
+the §11.4.40 gate is GREEN.</p>
+</blockquote>
+<h3 id="step-0--fetch-before-anything-11437--11471--114113-step-1">Step
+0 — Fetch-before-anything (§11.4.37 / §11.4.71 / §11.4.113 step 1)</h3>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> fetch <span class="at">--all</span> <span class="at">--prune</span> <span class="at">--tags</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> submodule foreach <span class="at">--recursive</span> <span class="st">&#39;git fetch --all --prune --tags --quiet&#39;</span></span></code></pre></div>
+<p>Confirm <code>HEAD..@{u}</code> is empty for <code>main</code> on
+every remote; integrate any divergence FF-only before proceeding. Remote
+state is unknowable without this fetch (§11.4.6).</p>
+<h3 id="step-1--land-feature-work-on-main-114126--114113">Step 1 — Land
+feature work on <code>main</code> (§11.4.126 / §11.4.113)</h3>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> switch main</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> merge <span class="at">--ff-only</span> feature/vpn-aware-dynamic-routing</span></code></pre></div>
+<p>FF-only merge only (§11.4.113: no force, no rebase of a shared
+branch, no history rewrite). If the merge is not fast-forwardable, use
+the merge-onto-latest-main integration path of §11.4.113 (fetch → base
+on latest main → merge → resolve → commit), never a force.</p>
+<h3
+id="step-2--11440-full-suite-retest-gate-mandatory-before-tagging">Step
+2 — §11.4.40 FULL-SUITE RETEST GATE (mandatory, BEFORE tagging)</h3>
+<p>Do NOT create the tag until a COMPLETE retest on a clean baseline is
+GREEN. Per §11.4.40 the complete retest comprises: (1) pre-build full
+sweep, (2) post-build full sweep, (3) on-target validation cycle, (4)
+meta-test mutation sweep, (5) Challenge bank full sweep (via
+<code>submodules/challenges</code> + HelixQA
+<code>submodules/helix_qa</code>), (6) Issues/Fixed state audit, (7)
+CONTINUATION sync check. Spot-check retests of only batch-touched tests
+are FORBIDDEN. Every PASS carries captured evidence (§11.4 / §11.4.69).
+A red gate blocks the tag.</p>
+<h3 id="step-3--update-the-changelog-11465">Step 3 — Update the
+changelog (§11.4.65)</h3>
+<p>Add a new section to root <code>CHANGELOG.md</code>, mirroring the
+Keep-a-Changelog format already in use:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## [0.1.0-dev-0.0.2] - &lt;YYYY-MM-DD&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">### Added</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="dt">&lt;</span><span class="kw">user-visible</span><span class="ot"> additions</span><span class="dt">&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="fu">### Fixed</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="dt">&lt;</span><span class="kw">bug</span><span class="ot"> fixes with root cause</span><span class="dt">&gt;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="fu">### Changed</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="dt">&lt;</span><span class="kw">behavioural</span><span class="ot"> </span><span class="er">/</span><span class="ot"> config changes</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Move relevant items out of <code>## [Unreleased]</code>. Refresh
+HTML/PDF siblings if the project's export tooling is wired (§11.4.65) —
+the existing <code>CHANGELOG.md</code> has no exports yet at repo root;
+owned submodules do ship <code>.html</code>/<code>.pdf</code>.</p>
+<h3
+id="step-4--determine-changed-owned-submodules-114151-cascade-scope">Step
+4 — Determine changed owned submodules (§11.4.151 cascade scope)</h3>
+<p>Owned submodules (SAME-prefix tag applies to each that changed in
+this release):</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Upstream</th>
+<th>Org (owned)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constitution</code></td>
+<td><code>git@github.com:HelixDevelopment/HelixConstitution.git</code></td>
+<td>HelixDevelopment</td>
+</tr>
+<tr>
+<td><code>submodules/docs_chain</code></td>
+<td><code>git@github.com:vasic-digital/docs_chain.git</code></td>
+<td>vasic-digital</td>
+</tr>
+<tr>
+<td><code>submodules/challenges</code></td>
+<td><code>git@github.com:vasic-digital/Challenges.git</code></td>
+<td>vasic-digital</td>
+</tr>
+<tr>
+<td><code>submodules/helix_qa</code></td>
+<td><code>git@github.com:HelixDevelopment/HelixQA.git</code></td>
+<td>HelixDevelopment</td>
+</tr>
+<tr>
+<td><code>submodules/containers</code></td>
+<td><code>git@github.com:vasic-digital/containers.git</code></td>
+<td>vasic-digital</td>
+</tr>
+</tbody>
+</table>
+<p>For each owned submodule, check whether its pointer advanced in this
+release window (<code>git -C &lt;repo&gt; submodule status</code>;
+compare against the pointer at
+<code>helix_proxy-0.1.0-dev-0.0.1</code>). <strong>Only submodules that
+changed</strong> get the release tag; untouched submodules stay pinned.
+See <strong>OB-4</strong> — these submodules currently carry their own
+<code>helixcode-v1.1.0-*</code> describe line, which is a DIFFERENT
+prefix than <code>helix_proxy</code>; whether this project stamps them
+with a <code>helix_proxy-&lt;VERSION&gt;</code> tag or relies on their
+own release line is an operator decision, not a guess.</p>
+<h3 id="step-5--create-the-prefixed-annotated-tag-on-main-114151">Step 5
+— Create the prefixed annotated tag on <code>main</code>
+(§11.4.151)</h3>
+<p>Main repo (and each changed owned submodule, run from its
+worktree):</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># main repo, on main @ the release commit</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> tag <span class="at">-a</span> helix_proxy-0.1.0-dev-0.0.2 <span class="dt">\</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-m</span> <span class="st">&quot;helix_proxy 0.1.0-dev-0.0.2&quot;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co"># each CHANGED owned submodule (only if its pointer advanced), same prefix:</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span>/submodules/<span class="op">&lt;</span>changed<span class="op">&gt;</span> tag <span class="at">-a</span> helix_proxy-0.1.0-dev-0.0.2 <span class="dt">\</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-m</span> <span class="st">&quot;helix_proxy 0.1.0-dev-0.0.2&quot;</span></span></code></pre></div>
+<p>The tag string MUST be identical across the main repo and every
+changed owned submodule for this release (§11.4.151) so
+<code>git tag -l 'helix_proxy-*'</code> enumerates the whole release
+surface.</p>
+<h3 id="step-6--push-tag--main-ff-only-to-all-remotes-21--114113">Step 6
+— Push tag + main FF-only to all remotes (§2.1 / §11.4.113)</h3>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> github origin upstream<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> push <span class="st">&quot;</span><span class="va">$r</span><span class="st">&quot;</span> main            <span class="co"># fast-forward only</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> push <span class="st">&quot;</span><span class="va">$r</span><span class="st">&quot;</span> helix_proxy-0.1.0-dev-0.0.2</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p><strong>NEVER</strong> <code>--force</code> /
+<code>--force-with-lease</code> / <code>+&lt;ref&gt;</code> (§11.4.113 —
+force-push is absolutely forbidden; every push here is a fast-forward
+because the release commit descends from every mirror tip). If a remote
+rejects non-FF, return to Step 0 for that remote, merge its new tip,
+re-validate, re-push. Add the matching push loop for each changed owned
+submodule to ITS upstream(s). Add the GitLab remote to this loop once
+OB-1 is resolved.</p>
+<h3 id="step-7--publish-the-github-release-gh-release-create">Step 7 —
+Publish the GitHub release (<code>gh release create</code>)</h3>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> release create helix_proxy-0.1.0-dev-0.0.2 <span class="dt">\</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--repo</span> HelixDevelopment/HelixProxy <span class="dt">\</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--title</span> <span class="st">&quot;helix_proxy 0.1.0-dev-0.0.2&quot;</span> <span class="dt">\</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--notes-file</span> <span class="op">&lt;</span>changelog-section-extract.md<span class="op">&gt;</span> <span class="dt">\</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--verify-tag</span>            <span class="co"># tag must already exist (Step 5/6); no auto-create</span></span></code></pre></div>
+<p>Use <code>--notes-file</code> pointing at the extracted new
+<code>CHANGELOG.md</code> section. <code>--verify-tag</code> ensures the
+annotated tag pushed in Step 6 is used rather than <code>gh</code>
+creating a lightweight tag.</p>
+<h3 id="step-8--publish-the-gitlab-release-glab-release-create">Step 8 —
+Publish the GitLab release (<code>glab release create</code>)</h3>
+<p><strong>Blocked until OB-1/OB-2 resolved.</strong> Once a GitLab
+project + reachable auth exist:</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">glab</span> release create helix_proxy-0.1.0-dev-0.0.2 <span class="dt">\</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--repo</span> <span class="op">&lt;</span>group<span class="op">&gt;</span>/<span class="op">&lt;</span>project<span class="op">&gt;</span> <span class="dt">\</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--name</span> <span class="st">&quot;helix_proxy 0.1.0-dev-0.0.2&quot;</span> <span class="dt">\</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--notes-file</span> <span class="op">&lt;</span>changelog-section-extract.md<span class="op">&gt;</span> <span class="dt">\</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--ref</span> main</span></code></pre></div>
+<p>The GitLab tag string MUST equal the GitHub tag string (§11.4.151 —
+one release, one prefixed name across every repository it spans). Ensure
+the tag was pushed to the GitLab remote (Step 6) before / as part of
+this.</p>
+<h3 id="step-9--post-release-verification">Step 9 — Post-release
+verification</h3>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">-C</span> <span class="op">&lt;</span>repo<span class="op">&gt;</span> tag <span class="at">-l</span> <span class="st">&#39;helix_proxy-*&#39;</span>                 <span class="co"># new tag present</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> release view helix_proxy-0.1.0-dev-0.0.2 <span class="at">--repo</span> HelixDevelopment/HelixProxy</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">glab</span> release view helix_proxy-0.1.0-dev-0.0.2 <span class="at">--repo</span> <span class="op">&lt;</span>group<span class="op">&gt;</span>/<span class="op">&lt;</span>project<span class="op">&gt;</span>   <span class="co"># after OB-1</span></span></code></pre></div>
+<p>Confirm the tag on all remotes, both releases published, changelog +
+exports in sync (§11.4.60/§11.4.65), and the CONTINUATION /
+session-resumption doc updated (§12.10 / §11.4.131).</p>
+<hr />
+<h2 id="prerequisites--operator-blocked">Prerequisites /
+OPERATOR-BLOCKED</h2>
+<p>Items the operator must provide or decide before a BOTH-CLI (GitHub +
+GitLab) release can complete. Nothing here is guessed; UNKNOWN is stated
+where it cannot be verified read-only.</p>
+<ul>
+<li><p><strong>OB-1 — GitLab mirror remote + project (BLOCKING for
+GitLab publish).</strong> <code>git remote -v</code> shows only GitHub
+(three SSH aliases to <code>HelixDevelopment/HelixProxy</code>). There
+is <strong>no GitLab remote</strong> and the GitLab project path for
+this repo is <strong>UNKNOWN</strong>. Operator must supply the GitLab
+<code>&lt;group&gt;/&lt;project&gt;</code> (e.g. under a
+<code>vasic-digital</code> / <code>HelixDevelopment</code> GitLab group)
+and add it as an SSH remote so §2.1 multi-upstream push +
+<code>glab release create --repo &lt;group&gt;/&lt;project&gt;</code>
+can target it. Until then the GitLab half of the release cannot proceed.
+GitHub-only release is unaffected.</p></li>
+<li><p><strong>OB-2 — GitLab auth persistence (verify).</strong>
+<code>glab</code> is authed <strong>via the <code>GITLAB_TOKEN</code>
+environment variable</strong> (not keyring/config). Confirm this env var
+is present in the environment that will run the release (a wrapper such
+as <code>op plugin run -- glab</code> may be injecting it). If it is not
+persistently available, <code>glab release create</code> will fail at
+release time even though the audit showed authed. UNKNOWN whether the
+token scope permits release creation on the target project (cannot
+verify without the project — OB-1).</p></li>
+<li><p><strong>OB-3 — Version-line discontinuity (decision).</strong>
+<code>CHANGELOG.md</code> documents a <code>1.x</code> semver line
+(latest <code>[1.2.0] - 2026-04-23</code>) while the tag line is now
+<code>0.1.0-dev-0.0.x</code>. There is no changelog entry for
+<code>0.1.0-dev-0.0.1</code>. Operator must confirm the canonical
+version narrative (is <code>0.1.0-dev</code> a reset/new track
+superseding <code>1.2.0</code>?) and whether legacy
+<code>v1.1.0</code>/<code>v1.2.0</code> tags remain or are deprecated,
+so the new changelog section is accurate.</p></li>
+<li><p><strong>OB-4 — Submodule release-tag prefix (decision,
+§11.4.151).</strong> The owned submodules (<code>docs_chain</code>,
+<code>challenges</code>, <code>helix_qa</code>, <code>containers</code>,
+<code>constitution</code>) currently carry their own
+<code>helixcode-v1.1.0-*</code> release line — a DIFFERENT prefix than
+<code>helix_proxy</code>. §11.4.151 requires the SAME prefix across main
+repo + owned submodules "in one release," but these submodules are
+shared across projects with their own release cadence. Operator must
+decide whether this release stamps changed submodules with a
+<code>helix_proxy-&lt;VERSION&gt;</code> tag (co-existing with
+<code>helixcode-*</code>) or the project references them by pinned
+pointer only. Do NOT tag submodules until decided.</p></li>
+<li><p><strong>OB-5 — <code>.env</code> /
+<code>HELIX_RELEASE_PREFIX</code> (optional hardening).</strong> No
+<code>.env</code> exists; the prefix resolves via the dir-name fallback
+(<code>helix_proxy</code>). Functionally READY, but for an authoritative
+prefix (§11.4.151 order 1), create a gitignored <code>.env</code> with
+<code>HELIX_RELEASE_PREFIX=helix_proxy</code> and document it in the
+tracked <code>.env.example</code> (§11.4.30 / §11.4.77).</p></li>
+<li><p><strong>OB-6 — §11.4.40 full-suite retest (BLOCKING, not yet
+run).</strong> This audit did not run the retest suite (out of read-only
+scope). The release tag MUST NOT be created until the §11.4.40 complete
+retest on a clean baseline is GREEN with captured evidence. This is the
+primary gate independent of GitHub/GitLab readiness.</p></li>
+<li><p><strong>OB-7 — Changelog HTML/PDF exports (§11.4.65).</strong>
+Root <code>CHANGELOG.md</code> has no
+<code>.html</code>/<code>.pdf</code> siblings (owned submodules do). If
+the export mandate applies to the root changelog for this doc class,
+generate the siblings when the new release section lands. UNKNOWN
+whether root <code>CHANGELOG.md</code> is in the project's §11.4.65
+export scope — confirm with the project's export config.</p></li>
+<li><p><strong>NOTE — this runbook's own exports.</strong> Per
+§11.4.44/§11.4.65 this file should gain
+<code>RELEASE_RUNBOOK.html</code> + <code>.pdf</code> siblings; not
+generated here (task scope = one Markdown doc; no commit/export tooling
+run).</p></li>
+</ul>
+</body>
+</html>
