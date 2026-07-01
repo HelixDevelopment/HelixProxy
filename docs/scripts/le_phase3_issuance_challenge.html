@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>le_phase3_issuance_challenge.sh</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">le_phase3_issuance_challenge.sh</h1>
+</header>
+<h1
+id="le_phase3_issuance_challengesh">le_phase3_issuance_challenge.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Authority:</strong> Helix Constitution
+§11.4.27 (Challenges), §11.4.69 (sink-side positive evidence), §11.4.116
+(verdict corroborated by its captured evidence), §11.4.107 (real
+captured evidence), §11.4.3 (honest SKIP), §11.4.1 (script-crash =
+FAIL), §11.4.119 (conductor owns the container resource), §12.6/§12.9
+(host resource caps)</p>
+<h2 id="overview">Overview</h2>
+<p>Anti-bluff Challenge that proves the Let's Encrypt <strong>hermetic
+DNS-01 issuance</strong> path really works: the custom Caddy image
+obtains a REAL TLS certificate via the ACME DNS-01 challenge against a
+LOCAL Pebble ACME server, fully offline, and the project's cert-analyzer
+verifies it.</p>
+<p>The Challenge does not re-implement the issuance flow. It delegates
+to the conductor-authored, re-runnable proof
+<code>deploy/letsencrypt/phase3_hermetic_issue.sh</code>, then — on a
+phase3 PASS — independently <strong>re-reads phase3's own captured
+analyzer verdict file</strong> (<code>cert_analyzer_verdicts.txt</code>)
+and asserts the two decisive verdicts are <code>PASS</code>. That
+re-read is the anti-bluff cross-check (§11.4.116): a PASS is only
+accepted when the captured evidence corroborates it, never on the
+runner's word.</p>
+<h2 id="who-runs-it-114119">Who runs it (§11.4.119)</h2>
+<p>The <strong>conductor</strong> runs this Challenge. Invoking it boots
+the hermetic Pebble + challtestsrv + CoreDNS + Caddy stack (through
+phase3), and under the single-resource-owner rule only the conductor may
+boot containers. This script authors the proof and delegates the boot to
+phase3; it never itself issues a container command.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code>; <code>tests/lib/evidence.sh</code> (sourced for
+<code>ab_pass_with_evidence</code> /
+<code>ab_skip_with_reason</code>).</li>
+<li><code>deploy/letsencrypt/phase3_hermetic_issue.sh</code>
+present.</li>
+<li><code>podman</code> + <code>podman-compose</code> (rootless) on
+PATH.</li>
+<li>The built image
+<code>localhost/helix_proxy/caddy-challtestsrv:2.8.4</code> (run
+<code>deploy/letsencrypt/build.sh</code> first).</li>
+</ul>
+<p>If any of these is absent the Challenge emits an <strong>honest
+SKIP</strong> (<code>topology_unsupported</code>) — never a fake
+pass.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/le_phase3_issuance_challenge.sh</span></code></pre></div>
+<p>Environment honoured by phase3 is passed straight through
+(<code>KEEP_UP</code>, <code>CADDY_HTTPS_PORT</code>,
+<code>CADDY_HTTP_PORT</code>, <code>TEST_HOSTNAME</code>);
+<code>CADDY_IMAGE</code> and <code>CHALLENGE_EVIDENCE_DIR</code> are
+honoured here.</p>
+<h2 id="resource-caps-host-safety">Resource caps (host-safety)</h2>
+<p>phase3 is invoked under
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code> (§12.6/§12.9); the caps
+degrade gracefully when <code>nice</code>/<code>ionice</code> are
+absent.</p>
+<h2 id="exit-code-contract">Exit-code contract</h2>
+<p>The Challenge maps phase3's exit code (0 = real cert issued + all
+analyzer verdicts PASS; 1 = product defect; 2 = OPERATOR-BLOCKED /
+precondition unmet) onto the standard Challenge verdict codes:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Verdict</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>PASS</td>
+<td>phase3 exited 0 <strong>and</strong> its captured
+<code>cert_analyzer_verdicts.txt</code> carries
+<code>cert_chain_roots_in: PASS</code> <strong>and</strong>
+<code>cert_san_matches: PASS</code>.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>FAIL</td>
+<td>phase3 exited 1 (or any unexpected non-0/non-2 code, §11.4.1),
+<strong>or</strong> phase3 exited 0 but the captured verdicts do not
+corroborate it (§11.4.116).</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>SKIP</td>
+<td>An honest, non-applicable precondition: the built image /
+<code>podman-compose</code> / phase3 script is absent, or phase3 itself
+reported OPERATOR-BLOCKED (rc 2).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-skip-conditions-1143">Honest-SKIP conditions
+(§11.4.3)</h2>
+<p>A SKIP is emitted (exit 3) — never a fabricated PASS — when:</p>
+<ul>
+<li><code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> is
+missing;</li>
+<li><code>podman-compose</code> is not on PATH;</li>
+<li>the built image
+<code>localhost/helix_proxy/caddy-challtestsrv:2.8.4</code> does not
+exist (build not run);</li>
+<li>phase3 exits <code>2</code> (its own precondition check found the
+environment unmet).</li>
+</ul>
+<h2 id="anti-bluff-evidence-11469--114116">Anti-bluff evidence (§11.4.69
+/ §11.4.116)</h2>
+<p>The two re-read verdicts are the decisive proofs of a genuine
+issuance:</p>
+<ul>
+<li><code>cert_chain_roots_in: PASS</code> — the served leaf
+cryptographically chains to <strong>this run's</strong>
+freshly-regenerated Pebble CA (a real issuance, not a static
+fixture).</li>
+<li><code>cert_san_matches: PASS</code> — the issued cert carries the
+requested hostname SAN.</li>
+</ul>
+<p>The PASS cites phase3's own <code>cert_analyzer_verdicts.txt</code>
+via <code>ab_pass_with_evidence</code>, which refuses to PASS if that
+artefact is missing or empty.</p>
+<h2 id="outputs">Outputs</h2>
+<ul>
+<li><code>qa-results/challenges/&lt;run-ts&gt;/le_phase3/phase3_stdout.log</code>
+— captured phase3 output.</li>
+<li><code>qa-results/challenges/&lt;run-ts&gt;/le_phase3/verdict_crosscheck.txt</code>
+— the Challenge's re-read of phase3's analyzer verdicts.</li>
+<li>phase3's own evidence under
+<code>qa-results/letsencrypt/phase3_issuance/&lt;run-id&gt;/</code> (the
+cited <code>cert_analyzer_verdicts.txt</code>,
+<code>served_leaf.pem</code>, <code>pebble_ca_bundle.pem</code>,
+<code>caddy_issuance.log</code>).</li>
+</ul>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>deploy/letsencrypt/phase3_hermetic_issue.sh</code> — the
+re-runnable proof this Challenge delegates to.</li>
+<li><code>tests/letsencrypt/cert_analyzer.sh</code> — the analyzer whose
+verdicts gate the PASS.</li>
+<li><code>tests/lib/evidence.sh</code> — the sourced anti-bluff helper
+library.</li>
+<li><code>challenges/scripts/run_proxy_challenges.sh</code> — the
+sibling Challenge-bank runner (same exit-code convention: 0 = PASS, 3 =
+SKIP, else = FAIL).</li>
+</ul>
+<p><strong>Last verified:</strong> 2026-07-01 (authored +
+<code>sh -n</code>/<code>bash -n</code> clean; not executed here — the
+conductor runs it because it boots containers, §11.4.119).</p>
+</body>
+</html>
