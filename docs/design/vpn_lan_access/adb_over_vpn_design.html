@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>adb_over_vpn_design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="adb-over-vpn--full-device-bridge-design-access--debug--connect--flash">ADB
+over VPN — Full Device Bridge Design (Access · Debug · Connect ·
+Flash)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Design reference — the
+in-depth, deep-research-backed phased plan behind <a
+href="PLAN.md"><code>PLAN.md</code></a> §5 Phase 7 and the committed
+autonomous test <a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>../../../tests/vpn_lan/adb_over_vpn.sh</code></a>.
+DESIGN + RESEARCH ONLY — this document ships no code, touches no
+data-plane, deploys nothing. <strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Deep-research
+per §11.4.8 / §11.4.99 / §11.4.150 (every external claim cited by URL +
+access date, or marked <strong>INFERENCE</strong> per §11.4.6).
+Target-hardware-safety per §11.4.133; operator-gating per §11.4.122 /
+§11.4.66; single-serial safety per §11.4.174.
+<strong>Companion:</strong> plan <a
+href="PLAN.md"><code>PLAN.md</code></a> (§2 routing map, §3 bridge
+contract, §5 Phase 7) · topology <a
+href="architecture.md"><code>architecture.md</code></a> (§1 diagram, §2
+primitive table) · containerization <a
+href="containerization.md"><code>containerization.md</code></a> + <a
+href="vpn_lan_containers.yaml"><code>vpn_lan_containers.yaml</code></a>
+(the <code>vpn-lan-adb-server</code> service) · the proving test <a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>../../../tests/vpn_lan/adb_over_vpn.sh</code></a>
+(Phase 7). <strong>Feature workstream:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> (§11.4.167).</p>
+<hr />
+<h2 id="0-how-to-read-this-document">0. How to read this document</h2>
+<p>This is the design that the committed test <a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>tests/vpn_lan/adb_over_vpn.sh</code></a>
+implements against. The test is authoritative for what runs
+<strong>now</strong> (bridge-down honest-SKIP + the live checks it
+drives); this document is the deeper "why + how + what next" behind it.
+Where the two touch the same fact (the routed-5555 model, the central
+adb-server model, the usbip flash boundary, the single-serial
+<code>§11.4.174</code> cleanup rule), this document <strong>restates and
+never contradicts</strong> the committed test.</p>
+<p>Every external claim is either <strong>cited</strong> (URL + access
+date 2026-07-01, listed in the <a
+href="#sources-verified-2026-07-01">Sources verified</a> footer) or
+explicitly marked <strong>INFERENCE</strong> (§11.4.6) — an engineering
+deduction from the cited facts, not itself a cited fact. Nothing here is
+stated as proven-live: the live device paths are operator-gated (§8) and
+prove out only when the operator supplies the svord bridge
+connection.</p>
+<hr />
+<h2
+id="1-overview--the-routing-fact-what-is-network-routable-vs-usb-bound">1.
+Overview + the routing FACT (what is network-routable vs USB-bound)</h2>
+<p>The VPN is <strong>L3-routed</strong> (WireGuard + L2TP/PPP over
+<code>ppp0</code>; reachable subnet <code>10.0.0.0/8</code>; svord host
+<code>10.6.100.221</code> — recon FACT, <a
+href="PLAN.md"><code>PLAN.md</code></a> §2). A Layer-3 VPN carries
+<strong>unicast IP packets</strong> between reachable subnets — nothing
+more. That single property sorts every ADB capability into exactly one
+of two buckets:</p>
+<table>
+<thead>
+<tr>
+<th>ADB capability</th>
+<th>Wire protocol</th>
+<th>Routable over the L3 VPN?</th>
+<th>Primitive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Access / connect</strong> (<code>adb connect</code>)</td>
+<td>TCP 5555 (device <code>adbd</code>)</td>
+<td><strong>YES</strong> — unicast TCP</td>
+<td><strong>L3-ROUTE</strong> over <code>ppp0</code></td>
+</tr>
+<tr>
+<td><strong>Debug</strong> (<code>adb shell</code> / <code>logcat</code>
+/ <code>pull</code> / <code>push</code> / <code>getprop</code>)</td>
+<td>TCP 5555 (over the same connection)</td>
+<td><strong>YES</strong> — unicast TCP</td>
+<td><strong>L3-ROUTE</strong></td>
+</tr>
+<tr>
+<td><strong>adb server↔︎client</strong> control</td>
+<td>TCP 5037 (host-local)</td>
+<td>N/A (stays on the adb-server host)</td>
+<td>co-located with the route owner</td>
+</tr>
+<tr>
+<td><strong>Flash</strong> (<code>fastboot</code>)</td>
+<td><strong>USB transport</strong> (bootloader USB gadget)</td>
+<td><strong>NO</strong> — not an IP service on consumer devices</td>
+<td><strong>usbip</strong> (USB-over-IP)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule of thumb (FACT):</strong> <em><code>adb</code> speaks
+TCP and routes; <code>fastboot</code> speaks USB on consumer bootloaders
+and must be carried by usbip; the adb server's own control port (5037)
+stays local to whichever host owns the route to the device.</em></p>
+<p>The fastboot <strong>protocol</strong> is defined to run "over USB or
+ethernet" (<a
+href="https://github.com/aosp-mirror/platform_system_core/blob/master/fastboot/README.md">AOSP
+fastboot README</a>) — but the ethernet transport requires a
+device/bootloader that exposes fastboot over TCP/UDP, which consumer
+Android bootloaders overwhelmingly do <strong>not</strong> during the
+bootloader stage. Hence remote flashing carries the <strong>USB</strong>
+transport over the network via usbip (Phase C). This is the honest,
+precise form of the committed test's "network fastboot is USB-bound"
+boundary (<strong>INFERENCE</strong> from the protocol spec +
+consumer-bootloader reality; the fastboot-over-ethernet capability is a
+cited FACT, its general non-exposure on consumer bootloaders is the
+INFERENCE).</p>
+<hr />
+<h2
+id="2-adb-client--server--device-model-the-fact-the-phases-build-on">2.
+adb client / server / device model (the FACT the phases build on)</h2>
+<p>adb is a three-part system (<a
+href="https://developer.android.com/tools/adb">Android Debug Bridge
+(adb)</a>):</p>
+<ol type="1">
+<li><strong>client</strong> — the <code>adb …</code> command you invoke;
+sends commands.</li>
+<li><strong>server</strong> — a background process on the host that
+manages the client↔︎device conversation; <strong>binds host TCP port
+5037</strong> and every client talks to it there. One server fronts
+<strong>many</strong> devices.</li>
+<li><strong>daemon (<code>adbd</code>)</strong> — runs on each device;
+the server talks to it. Over the network, <code>adbd</code> listens on
+<strong>TCP 5555</strong> once <code>adb tcpip 5555</code> has been run
+(Android ≤10) or wireless-debugging is enabled (Android 11+).</li>
+</ol>
+<p><code>adb devices</code> lists every managed device with its state;
+the states relevant here are <code>device</code> (usable),
+<code>offline</code> (connected but not responding), and
+<code>unauthorized</code> (RSA key not yet accepted) (<a
+href="https://developer.android.com/tools/adb">adb docs</a>). A network
+device appears with its <code>IP:PORT</code> as the serial, e.g.
+<code>10.6.100.55:5555   device</code>. Target disambiguation is
+<code>adb -s &lt;serial&gt; …</code> (overrides
+<code>$ANDROID_SERIAL</code>) (<a
+href="https://developer.android.com/tools/adb">adb docs</a>).</p>
+<p>This model is why the <strong>central adb-server</strong> design
+works: one adb server on the host that owns the route to
+<code>10.0.0.0/8</code> can <code>adb connect</code> to every remote
+device's 5555, and helix_proxy-side clients disambiguate by serial (§
+Phase B).</p>
+<hr />
+<h2
+id="phase-a--adb-access--debug-over-routed-5555-autonomous-provable">Phase
+A — ADB ACCESS + DEBUG over routed 5555
+<code>[autonomous-provable]</code></h2>
+<p><strong>Goal:</strong> prove a device exposed on TCP 5555 on the
+remote <code>10/8</code> subnet is reachable + usable through the
+L3-routed gateway, with real captured evidence —
+<code>adb connect</code>, <code>adb shell getprop</code>,
+<code>adb logcat</code>, <code>adb pull/push</code>. This is the
+capability the committed test <a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>adb_over_vpn.sh</code></a>
+drives (T7.1 connect, T7.3 debug).</p>
+<p><strong>Deep-research FACTs (cited):</strong></p>
+<ul>
+<li>Classic path: <code>adb tcpip 5555</code> (run once over USB) puts
+<code>adbd</code> into TCP mode on port 5555, then
+<code>adb connect DEVICE_IP:5555</code> connects over the network;
+<code>adb devices</code> shows <code>DEVICE_IP:5555   device</code> (<a
+href="https://developer.android.com/tools/adb">adb docs</a>). <strong>A
+device reboot disables <code>adb tcpip</code> mode</strong> — it must be
+re-enabled (<a
+href="https://github.com/Genymobile/scrcpy/blob/master/doc/connection.md">scrcpy
+connection doc</a>; <a
+href="https://proandroiddev.com/supercharge-android-dev-with-scrcpy-and-adb-wifi-f286091c72fc">ProAndroidDev
+/ scrcpy-adb-wifi</a>).</li>
+<li>Once connected,
+<code>adb -s &lt;serial&gt; shell getprop ro.product.model</code>
+returns the device model string;
+<code>adb -s &lt;serial&gt; logcat</code>,
+<code>adb -s &lt;serial&gt; pull &lt;remote&gt; &lt;local&gt;</code>,
+<code>adb -s &lt;serial&gt; push &lt;local&gt; &lt;remote&gt;</code> all
+run over the same routed TCP session (<a
+href="https://developer.android.com/tools/adb">adb docs</a>).</li>
+<li>Security posture: over the network the connection is <strong>more
+exposed than USB</strong> and MITM-susceptible on untrusted networks —
+classic <code>adb tcpip</code> (Android ≤10) gates only on the
+previously-authorized RSA key and carries <strong>no transport
+encryption</strong>; use only on trusted networks (<a
+href="https://developer.android.com/tools/adb">adb docs</a>; <a
+href="https://devgex.com/en/article/00000826">DevGex ADB-over-TCP/IP
+guide</a>). The L3 VPN <strong>is</strong> that trusted transport here —
+the WireGuard tunnel encrypts the hop, so routing 5555 inside the tunnel
+is the correct security envelope (<strong>INFERENCE</strong> from the
+two cited facts).</li>
+</ul>
+<h3 id="tasks--sub-tasks">Tasks → sub-tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-tasks</th>
+<th>Autonomous?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A1. Route reachability to device 5555</strong></td>
+<td>(a) bridge-up gate via <code>tests/lib/svord_bridge.sh</code>
+(<code>bridge_require</code>); (b) confirm <code>10/8</code> route
+exists on <code>ppp0</code> (svord owns the route — helix_proxy only
+<em>verifies</em>, never re-routes host tables autonomously, §11.4.133);
+(c) TCP-reachability of <code>HELIX_VPN_ADB_HOST:5555</code>.</td>
+<td>Bridge-up = operator-gated; <strong>gate + SKIP path
+autonomous</strong>.</td>
+</tr>
+<tr>
+<td><strong>A2. <code>adb connect</code></strong></td>
+<td>(a)
+<code>adb connect ${HELIX_VPN_ADB_HOST}:${HELIX_VPN_ADB_PORT:-5555}</code>;
+(b) accept <code>connected to</code> /
+<code>already connected to</code>; (c) capture
+<code>adb_connect.txt</code>.</td>
+<td>Bridge-up only.</td>
+</tr>
+<tr>
+<td><strong>A3. State assertion</strong></td>
+<td>(a) <code>adb devices</code> → grep <strong>only our serial</strong>
+(§11.4.174); (b) require state <code>device</code> (not
+<code>offline</code>/<code>unauthorized</code>/absent); (c)
+reachable-but-unusable ⇒ <strong>FAIL</strong> (a real not-working
+state), absent ⇒ <strong>SKIP</strong>.</td>
+<td>Bridge-up only.</td>
+</tr>
+<tr>
+<td><strong>A4. Debug round-trip</strong></td>
+<td>(a)
+<code>adb -s &lt;serial&gt; shell getprop ro.product.model</code> →
+non-empty model = the PASS evidence; (b) OPTIONAL extend (§11.4.146 STEP
+3): <code>logcat -d</code> capture, <code>push</code>+<code>pull</code>
+byte round-trip with sha256 MATCH; (c) write
+<code>getprop.evidence</code>.</td>
+<td>Bridge-up only.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-exact-autonomous-test-that-proves-it">The exact autonomous
+test that proves it</h3>
+<p><a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>tests/vpn_lan/adb_over_vpn.sh</code></a>
+(committed, Phase 7). Behaviour, cross-referenced from the source:</p>
+<ul>
+<li><strong>Env vars</strong> (bridge contract, <a
+href="PLAN.md"><code>PLAN.md</code></a> §3):
+<code>HELIX_SVORD_DIR</code>, <code>HELIX_BRIDGE_CONNECT</code>,
+<code>HELIX_BRIDGE_DISCONNECT</code>, <code>HELIX_BRIDGE_HEALTH</code>,
+<code>HELIX_BRIDGE_SUBNET</code>, <code>HELIX_BRIDGE_HOST</code>; ADB
+target <code>HELIX_VPN_ADB_HOST</code> (device <code>10.x</code>
+address), <code>HELIX_VPN_ADB_PORT</code> (default <code>5555</code>);
+test override <code>SVORD_BRIDGE_LIB</code>.</li>
+<li><strong>Honest-SKIP-when-bridge-down</strong> (§11.4.3 / §11.4.69):
+the script's first action after sourcing the bridge library is
+<code>bridge_require</code>; a non-zero return prints
+<code>SKIP:network_unreachable_external</code> and <code>exit 0</code>
+<strong>before <code>adb</code> is ever invoked</strong> — so with the
+bridge down (the default autonomous state) <strong>no device, and no
+operator/<code>lava-*</code> serial, is ever touched</strong>. A down
+bridge is never a FAIL and never a fake PASS.</li>
+<li><strong>PASS gate:</strong> <code>ab_pass_with_evidence</code>
+requires a non-empty evidence file — a non-empty
+<code>ro.product.model</code> captured in
+<code>qa-results/vpn_lan/phase7/&lt;UTC-ts&gt;/debug/getprop.evidence</code>
+(§11.4.69). Absent device/tool ⇒ SKIP; reachable-but-unusable ⇒
+FAIL.</li>
+<li><strong>Evidence layout:</strong>
+<code>qa-results/vpn_lan/phase7/&lt;UTC-ts&gt;/{connect,debug,flash}/</code>.</li>
+</ul>
+<p><strong>Honest boundary (§11.4.6):</strong> Phase A's <em>logic</em>
+(gate, SKIP path, evidence-gated PASS emitter) is autonomously provable
+now with the bridge down; the <em>live</em> connect/debug round-trip
+proves out only when the operator supplies the bridge + a configured
+<code>HELIX_VPN_ADB_HOST</code> (§8).</p>
+<hr />
+<h2
+id="phase-b--adb-connect-model-server-placement--tls-pairing--multi-device--safety-design--operator-gated-live">Phase
+B — ADB CONNECT model (server placement · TLS pairing · multi-device ·
+safety) <code>[design + operator-gated live]</code></h2>
+<p><strong>Goal:</strong> define <em>where the adb server runs</em>,
+<em>how devices authenticate</em>, <em>how multiple devices are
+disambiguated</em>, and <em>the single-serial safety rule</em> — so the
+connect path is correct, secure, and cannot collaterally disrupt
+operator/<code>lava-*</code> devices.</p>
+<h3 id="b1-adb-server-placement-the-key-vpn-decision">B1. adb-server
+placement (the key VPN decision)</h3>
+<p>Two connection models exist; the deciding fact is <strong>who owns
+the route to <code>10/8</code></strong> (<a
+href="https://developer.android.com/tools/adb">adb docs</a>
+server-on-5037 model; <a
+href="https://github.com/Genymobile/scrcpy/issues/3848">scrcpy #3848</a>
+the offline-over-VPN failure report):</p>
+<ul>
+<li><strong>Model 1 — adb server on the VPN-route-owning host
+(recommended).</strong> Run the single <code>adb server</code> on the
+host that has the <code>ppp0</code> route into <code>10/8</code> (the
+svord-side / gateway host, or the containerized
+<code>vpn-lan-adb-server</code>, Phase D). It <code>adb connect</code>s
+to each remote device's 5555 over the direct route (no proxy hop).
+helix_proxy-side clients reach devices through that one server. This
+matches the committed test's "central adb server (one server, many
+remote devices)" note and the <a
+href="containerization.md"><code>containerization.md</code></a>
+ADB-server-helper design.</li>
+<li><strong>Model 2 — adb server on the proxy side + routed
+5555.</strong> The proxy-side <code>adb server</code>
+<code>adb connect</code>s straight to <code>10.x:5555</code> if the
+proxy host itself holds the <code>10/8</code> route. Works when the
+route is on the proxy host; the direct route (no forward hop) is what
+the committed test's T7.1 asserts.</li>
+</ul>
+<p><strong>Port-forward vs direct-route trade-off (INFERENCE from the
+cited server/route model):</strong> a direct L3 route (Model 1/2) is the
+clean fit — a single routed TCP session per device, full bidirectional
+adb multiplexing, no ALG rewriting. A <code>socat</code>/SSH
+port-forward of 5555 is only a fallback when no route exists; it pins
+one local port per device and complicates multi-device fan-out.
+<strong>The route is preferred; the forward is the degraded
+fallback.</strong> The observed "device shows <code>offline</code> over
+WireGuard" failure mode (<a
+href="https://github.com/Genymobile/scrcpy/issues/3848">scrcpy
+#3848</a>) is the standard symptom of the adb server sitting on the
+wrong side of the tunnel (or a broken return route / MTU) — placing the
+server on the route-owning host (Model 1) is the structural fix
+(<strong>INFERENCE</strong>; the issue itself has no maintainer
+resolution, so this is a deduction from the adb server model, not a
+cited fix).</p>
+<h3 id="b2-device-authentication--rsa-key--android-11-tls-pairing">B2.
+Device authentication — RSA key + Android 11+ TLS pairing</h3>
+<ul>
+<li><strong>All Android ≥4.2.2:</strong> first connection prompts an
+on-device RSA-key authorization dialog; the device refuses adb until the
+key is accepted on an unlocked screen (<a
+href="https://developer.android.com/tools/adb">adb docs</a>). A network
+device stuck at <code>unauthorized</code> in <code>adb devices</code>
+means the key was not accepted — Phase A treats that as a not-usable
+state.</li>
+<li><strong>Android 11+ (API 30) wireless debugging:</strong> a secure,
+USB-free path — pair with <code>adb pair IPADDR:PORT</code> and enter
+the on-device pairing code (or QR); every connection is authenticated by
+a 2048-bit RSA key-pair and encrypted with <strong>TLS</strong>
+(self-signed X.509), and services are discovered via
+<strong>mDNS</strong> (<a
+href="https://developer.android.com/tools/adb">adb docs</a>; <a
+href="https://medium.com/@urvesh/android-11s-wireless-debugging-5d0f6448ee3">Android
+11 wireless debugging</a>). Pairing uses a <strong>separate dynamic
+port</strong> from the 5555 connection port (<a
+href="https://developer.android.com/tools/adb">adb docs</a>).</li>
+<li><strong>VPN interaction with mDNS (INFERENCE):</strong> mDNS
+discovery is <strong>multicast</strong> and does <strong>not</strong>
+cross the L3 VPN (<a href="PLAN.md"><code>PLAN.md</code></a> §2 / <a
+href="reflector_design.md"><code>reflector_design.md</code></a>) — so on
+the proxy side you cannot rely on mDNS auto-discovery of the remote
+device; you <code>adb pair</code>/<code>adb connect</code> by the
+device's explicit <code>10.x:PORT</code> instead (the pairing/connect
+<em>unicast</em> traffic routes; only the <em>discovery</em> multicast
+doesn't). If mDNS discovery of remote devices is ever wanted, it needs
+the Phase-5 reflector — but for adb the explicit-IP connect is
+sufficient and is what the committed test does.</li>
+</ul>
+<h3 id="b3-multi-device-serial-disambiguation">B3. Multi-device serial
+disambiguation</h3>
+<p>With many remote devices behind one server, <strong>every</strong>
+adb invocation MUST target a serial explicitly:
+<code>adb -s 10.x:5555 &lt;cmd&gt;</code> (<a
+href="https://developer.android.com/tools/adb">adb docs</a>). The
+committed test does exactly this — it references <strong>only</strong>
+<code>$ADB_TARGET</code>
+(<code>${HELIX_VPN_ADB_HOST}:${HELIX_VPN_ADB_PORT}</code>) and
+<code>awk</code>-matches <strong>only</strong> that serial in
+<code>adb devices</code>.</p>
+<h3
+id="b4-the-114174-single-serial-safety-rule-cross-ref-the-committed-tests-cleanup">B4.
+The §11.4.174 single-serial safety rule (cross-ref the committed test's
+cleanup)</h3>
+<p>On a <strong>shared</strong> host the <code>adb devices</code> list
+may include operator devices and <code>lava-*</code> CI devices that are
+<strong>off-limits</strong> (§11.4.174 — verify ownership before
+acting). The committed test encodes the rule and this design ratifies it
+as mandatory for every adb-over-VPN operation:</p>
+<ul>
+<li><strong>NEVER <code>adb kill-server</code></strong> — it would tear
+down the shared server and drop every operator/<code>lava-*</code>
+device.</li>
+<li><strong>NEVER a blanket <code>adb disconnect</code></strong>
+(no-argument form) — it disconnects <em>all</em> network devices, not
+just ours.</li>
+<li><strong>Act on our serial only</strong> — connect, state-check, and
+<code>getprop</code> all reference <code>$ADB_TARGET</code> exclusively;
+other serials in the list are never read and never acted on.</li>
+<li><strong>Cleanup disconnects only our serial</strong> — the committed
+test's <code>trap cleanup EXIT INT TERM</code> runs
+<code>adb disconnect "$ADB_TARGET"</code> <strong>gated on
+<code>ADB_CONNECTED=1</code></strong> (only if we actually made the
+connection), so the VPN device is never left connected and no foreign
+device is dropped (§11.4.14 + §11.4.174).</li>
+</ul>
+<h3 id="tasks--sub-tasks-1">Tasks → sub-tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-tasks</th>
+<th>Autonomous?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>B1. Server placement</strong></td>
+<td>(a) decide Model 1 (server on route-owner) as default; (b) document
+the direct-route-preferred / port-forward-fallback trade-off; (c)
+cross-ref the containerized <code>vpn-lan-adb-server</code> (Phase
+D).</td>
+<td>Design autonomous.</td>
+</tr>
+<tr>
+<td><strong>B2. Authentication</strong></td>
+<td>(a) RSA-key authorization flow; (b) Android 11+
+<code>adb pair</code> TLS/mDNS path + the multicast-does-not-cross-VPN
+caveat; (c) unicast connect-by-explicit-IP for VPN.</td>
+<td>Design autonomous; live pairing operator-gated.</td>
+</tr>
+<tr>
+<td><strong>B3. Disambiguation</strong></td>
+<td>(a) mandatory <code>adb -s &lt;serial&gt;</code>; (b) single-target
+<code>awk</code> match.</td>
+<td>Autonomous (mirrors committed test).</td>
+</tr>
+<tr>
+<td><strong>B4. Single-serial safety</strong></td>
+<td>(a) no <code>kill-server</code>; (b) no blanket
+<code>disconnect</code>; (c) our-serial-only cleanup trap gated on
+<code>ADB_CONNECTED</code>.</td>
+<td>Autonomous (mirrors committed test).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest boundary (§11.4.6):</strong> server-placement + safety
+rules are settled design and mirrored in the committed test now; the
+live TLS-pairing round-trip (Android 11+) is operator-gated (needs a
+real device + on-device pairing-code entry, an
+<code>operator_attended</code> action).</p>
+<hr />
+<h2
+id="phase-c--flash-over-vpn-via-usbip-operator-gated-by-physics--safety">Phase
+C — FLASH over VPN via usbip
+<code>[operator-gated by physics + safety]</code></h2>
+<p><strong>Goal:</strong> define the <em>only</em> correct remote-flash
+path — carry the device's <strong>USB</strong> transport over the
+network with <strong>usbip</strong> — and wrap it in the §11.4.133
+target-hardware-safety envelope. This is the committed test's T7.4
+boundary: the test <strong>never</strong> flashes and
+<strong>never</strong> runs <code>fastboot</code>/<code>usbip</code>; it
+records the boundary and SKIPs <code>operator_attended</code>.</p>
+<h3 id="c1-why-fastboot-is-usb-bound-on-consumer-devices">C1. Why
+fastboot is USB-bound on consumer devices</h3>
+<p><code>fastboot</code> is a bootloader-stage protocol that is
+<strong>host-driven and synchronous</strong> with a
+<code>OKAY</code>/<code>FAIL</code>/<code>DATA</code>/<code>INFO</code>/<code>TEXT</code>
+response framing, defined "over USB or ethernet" (<a
+href="https://github.com/aosp-mirror/platform_system_core/blob/master/fastboot/README.md">AOSP
+fastboot README</a>). In the bootloader stage a consumer device exposes
+fastboot as a <strong>USB gadget</strong>; the ethernet transport
+requires bootloader support that consumer devices generally do not ship,
+so a network <code>fastboot</code> command has no IP endpoint to reach
+on the device (<strong>INFERENCE</strong> — the over-ethernet capability
+is the cited FACT; its non-exposure on consumer bootloaders is the
+deduction). <code>fastbootd</code> (Android 10+ userspace fastboot)
+still speaks the same protocol over the device's USB gadget from
+userspace (<a
+href="https://source.android.com/docs/core/architecture/bootloader/fastbootd">AOSP
+Move fastboot to userspace</a>). Therefore the routable path is to carry
+the <strong>USB</strong> transport itself over IP.</p>
+<h3 id="c2-usbip-serverclient-topology">C2. usbip server/client
+topology</h3>
+<p>usbip is a Linux USB-over-IP system with a server/client split; the
+daemon listens on <strong>TCP 3240</strong> (<a
+href="https://docs.kernel.org/usb/usbip_protocol.html">USB/IP protocol —
+Linux Kernel docs</a>; <a
+href="https://www.kernel.org/doc/readme/tools-usb-usbip-README">usbip
+README, kernel.org</a>; <a
+href="https://developer.ridgerun.com/wiki/index.php/How_to_setup_and_use_USB/IP">RidgeRun
+USB/IP wiki</a>). usbip is explicitly usable for <strong>"flashing
+Android devices, using ADB and Fastboot"</strong> (<a
+href="https://developer.ridgerun.com/wiki/index.php/How_to_setup_and_use_USB/IP">RidgeRun
+USB/IP wiki</a>).</p>
+<ul>
+<li><strong>Server = the remote host with the device physically
+attached</strong> (on the <code>10/8</code> subnet):
+<ul>
+<li>load modules: <code>modprobe usbip-core</code> /
+<code>modprobe usbip-host</code> (a.k.a.
+<code>insmod usbip-core.ko</code> / <code>usbip-host.ko</code>);</li>
+<li>start daemon: <code>usbipd -D</code> (listens on <strong>TCP
+3240</strong>);</li>
+<li>enumerate + export the device: <code>usbip list -l</code> then
+<code>usbip bind --busid &lt;busid&gt;</code> (<a
+href="https://www.kernel.org/doc/readme/tools-usb-usbip-README">usbip
+README</a>).</li>
+</ul></li>
+<li><strong>Client = the flashing host</strong> (proxy/gateway side,
+reached over the routed VPN):
+<ul>
+<li>load modules: <code>modprobe usbip-core</code> /
+<code>modprobe vhci-hcd</code>;</li>
+<li>discover + attach: <code>usbip list --remote &lt;server&gt;</code>
+then
+<code>usbip attach --remote &lt;server&gt; --busid &lt;busid&gt;</code>;</li>
+<li>the device now appears <strong>as a local USB device</strong> on the
+client, so local <code>fastboot</code>/<code>adb</code> see it;</li>
+<li>detach when done: <code>usbip detach --port &lt;port&gt;</code> (<a
+href="https://www.kernel.org/doc/readme/tools-usb-usbip-README">usbip
+README</a>).</li>
+</ul></li>
+</ul>
+<pre class="text"><code>   FLASHING HOST (usbip client)              L3 VPN            REMOTE HOST (usbip server)
+   proxy / gateway side                      (ppp0)            10.x — device on USB
+   ┌───────────────────────────┐               │              ┌──────────────────────────┐
+   │ modprobe usbip-core        │               │              │ modprobe usbip-core        │
+   │ modprobe vhci-hcd          │               │              │ modprobe usbip-host        │
+   │ usbip attach --remote H    │  TCP 3240     │              │ usbipd -D  (listens 3240)  │
+   │   --busid B  ──────────────┼══════════════ ppp0 ═════════▶│ usbip bind --busid B       │
+   │ device appears LOCAL ──►   │  USB URBs     │              │ [ Android device in        │
+   │ fastboot flash &lt;img&gt;       │  over IP      │              │   bootloader/fastboot USB ]│
+   └───────────────────────────┘               │              └──────────────────────────┘</code></pre>
+<h3 id="c3-usbip-security--latency-caveats">C3. usbip security + latency
+caveats</h3>
+<ul>
+<li><strong>No built-in encryption/authentication (INFERENCE,
+high-confidence).</strong> The kernel usbip README documents no
+auth/crypto in the protocol and the operational guidance it gives is
+firewall/SELinux posture, not confidentiality (<a
+href="https://www.kernel.org/doc/readme/tools-usb-usbip-README">usbip
+README</a>; <a
+href="https://docs.kernel.org/usb/usbip_protocol.html">USB/IP protocol —
+Linux Kernel docs</a>). The safe deployment therefore carries usbip
+<strong>inside</strong> the already-encrypted WireGuard L3 tunnel (never
+exposing 3240 to an untrusted network) and scopes 3240 to the VPN subnet
+via the same SSRF-allowlist discipline as every other port (<a
+href="PLAN.md"><code>PLAN.md</code></a> §4). Marked INFERENCE because
+the "tunnel it over VPN/SSH" recommendation is standard practice deduced
+from the documented absence of usbip crypto, not a single cited
+sentence.</li>
+<li><strong>Latency / reliability caveat (INFERENCE from the protocol
+being synchronous URB-over-TCP).</strong> usbip serializes USB request
+blocks over TCP; a lossy/high-latency link makes bulk USB transfers (a
+multi-hundred-MB flash) slow and increases the window in which a stall
+could interrupt a write. A flash over usbip should run over a stable,
+low-latency VPN segment, and the device should be on mains power — an
+interrupted flash is exactly the brick risk of C4. (Deduction from the
+synchronous host-driven protocol shape in the <a
+href="https://github.com/aosp-mirror/platform_system_core/blob/master/fastboot/README.md">AOSP
+fastboot README</a> + the URB-over-TCP usbip model.)</li>
+</ul>
+<h3
+id="c4-114133-operator-gated-safety-envelope-no-autonomous-brick-risk-flash">C4.
+§11.4.133 operator-gated safety envelope (no autonomous brick-risk
+flash)</h3>
+<p>Flashing can <strong>brick</strong> a device: an improperly-signed or
+mismatched boot image renders the device "unbootable and unrecoverable
+without unlocking the bootloader again," and relocking over mismatched
+software can trip anti-rollback into a hard brick (<a
+href="https://source.android.com/docs/core/architecture/bootloader/locking_unlocking">AOSP
+Lock and unlock the bootloader</a>). Therefore, under §11.4.133
+(target-hardware-safety) + §11.4.122 (no silent change to a connected
+host) + §11.4.66 (interactive-clarification), remote flashing is
+<strong>operator-authorized only</strong>, and any flow that ever
+executes it MUST:</p>
+<ol type="1">
+<li><strong>Ask first (§11.4.66/§11.4.122)</strong> — an interactive
+options question before any flash; no autonomous flash decision.</li>
+<li><strong>Backup first (§9.2)</strong> — capture recoverable state
+(current slot / boot / partition backup where the device allows) before
+writing.</li>
+<li><strong>Verify the image</strong> — flash only a vendor-signed /
+verified image whose checksum is confirmed; never an unverified artifact
+(<a
+href="https://source.android.com/docs/core/architecture/bootloader/locking_unlocking">AOSP
+locking/unlocking</a>).</li>
+<li><strong>Stable transport + power</strong> — usbip over a low-latency
+VPN segment, device on mains (C3).</li>
+<li><strong>Never autonomously relock</strong> — relock only after
+restoring vendor-signed stock images, operator-driven.</li>
+</ol>
+<h3 id="tasks--sub-tasks-2">Tasks → sub-tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-tasks</th>
+<th>Autonomous?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>C1. USB-bound boundary</strong></td>
+<td>(a) document fastboot-protocol-over-USB/ethernet FACT +
+consumer-bootloader-USB-only INFERENCE; (b) record it in the test's
+<code>flash/boundary.evidence</code>.</td>
+<td>Autonomous (design + boundary doc).</td>
+</tr>
+<tr>
+<td><strong>C2. usbip topology</strong></td>
+<td>(a) server: <code>usbip-core</code>/<code>usbip-host</code> +
+<code>usbipd -D</code> + <code>usbip bind</code>; (b) client:
+<code>usbip-core</code>/<code>vhci-hcd</code> +
+<code>usbip attach</code>; (c) port 3240; (d) device-appears-local then
+local <code>fastboot</code>.</td>
+<td><strong>Operator-gated</strong> (real device + remote-host change
+§11.4.122).</td>
+</tr>
+<tr>
+<td><strong>C3. Security + latency</strong></td>
+<td>(a) tunnel 3240 inside WireGuard, never exposed; (b) SSRF-allowlist
+scope 3240 to the VPN subnet; (c) stable/low-latency segment + mains
+power.</td>
+<td>Design autonomous; deploy operator-gated.</td>
+</tr>
+<tr>
+<td><strong>C4. Safety envelope</strong></td>
+<td>(a) ask-first §11.4.66/§11.4.122; (b) backup §9.2; (c) verified
+image; (d) no autonomous relock.</td>
+<td><strong>Operator-gated</strong> (§11.4.133).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest boundary (§11.4.6):</strong> the committed test <a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>adb_over_vpn.sh</code></a>
+<strong>records this boundary and SKIPs
+<code>operator_attended</code></strong> — it never runs
+<code>fastboot</code>/<code>usbip</code> and never flashes. Everything
+in Phase C above the SKIP is <em>design</em>; the live flash is
+operator-authorized only and is never performed by any autonomous
+test.</p>
+<hr />
+<h2
+id="phase-d--containerization-of-the-adb-server-helper-on-demand-operator-gated-deploy">Phase
+D — Containerization of the adb-server helper
+<code>[on-demand, operator-gated deploy]</code></h2>
+<p><strong>Goal:</strong> the central adb server (Phase B Model 1) runs
+as an <strong>on-demand container</strong> booted via the containers
+submodule — never by hand — cross-referencing the already-designed
+service.</p>
+<p>The service is declared as
+<strong><code>vpn-lan-adb-server</code></strong> in <a
+href="vpn_lan_containers.yaml"><code>vpn_lan_containers.yaml</code></a>
+and designed in <a
+href="containerization.md"><code>containerization.md</code></a>: a
+central <code>adb server</code> fronting many remote devices, reachable
+over routed TCP 5555, so helix_proxy-side
+<code>adb connect 10.x:5555</code> needs no proxy hop. Its readiness is
+a <strong>TCP health probe on 5555</strong>
+(<code>nc -z 127.0.0.1 5555</code>), its image + bind address are
+<strong>injected</strong> (<code>${VPN_LAN_ADB_SERVER_IMAGE}</code>,
+<code>${VPN_LAN_ADB_BIND:-127.0.0.1}</code>) so no secret/literal lands
+in the submodule (§11.4.28 / §11.4.10).</p>
+<p><strong>Port-model clarification (INFERENCE, design refinement — does
+not contradict the committed artifacts):</strong> the adb
+<em>server↔︎client control</em> channel is TCP <strong>5037</strong> and
+stays container/host-local; <strong>5555</strong> is the
+<em>device-facing <code>adbd</code></em> port the co-located adb server
+dials over the route. The <code>vpn-lan-adb-server</code> service's
+exposed 5555 is the routed device-facing port (as the
+yaml/containerization docs describe); the 5037 control port is not
+exposed off-host. This is the precise port split behind the "reachable
+over routed TCP 5555" phrasing in the existing docs.</p>
+<p>Boot rules (from <a
+href="containerization.md"><code>containerization.md</code></a>,
+restated): started via <code>submodules/containers</code>
+<code>pkg/boot</code> / <code>pkg/compose</code> /
+<code>pkg/health</code> (rootless Podman, §11.4.161) — <strong>no ad-hoc
+<code>podman</code></strong>; booting on a remote host <strong>changes
+that host</strong> so it is <strong>operator-gated</strong> (§11.4.122 /
+§11.4.66) — the local proof (<a
+href="../../../tests/vpn_lan/container_boot.sh"><code>../../../tests/vpn_lan/container_boot.sh</code></a>)
+is a config-parse / plan-level readiness check that <strong>starts
+nothing</strong>.</p>
+<h3 id="tasks--sub-tasks-3">Tasks → sub-tasks</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-tasks</th>
+<th>Autonomous?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D1. Service declaration</strong></td>
+<td>(a) <code>vpn-lan-adb-server</code> in
+<code>vpn_lan_containers.yaml</code> (image/ports/health, injected
+config only); (b) TCP health probe on 5555.</td>
+<td>Autonomous (declaration + parse proof).</td>
+</tr>
+<tr>
+<td><strong>D2. On-demand boot</strong></td>
+<td>(a)
+<code>pkg/boot</code>/<code>pkg/compose</code>/<code>pkg/health</code>;
+(b) rootless Podman; (c) no ad-hoc podman.</td>
+<td><strong>Operator-gated</strong> (remote-host change §11.4.122).</td>
+</tr>
+<tr>
+<td><strong>D3. Local plan proof</strong></td>
+<td>(a) <code>container_boot.sh</code> config-parse/plan check; (b)
+starts nothing; (c) honest-SKIP when bridge/runtime absent.</td>
+<td>Autonomous.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-tasks--sub-tasks-master-table-per-phase">3. Tasks / sub-tasks
+master table (per phase)</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Task</th>
+<th>Sub-tasks (condensed)</th>
+<th>Autonomous vs Operator-gated</th>
+<th>Proving test / evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong> access+debug</td>
+<td>A1 route reachability</td>
+<td>bridge gate · verify <code>10/8</code> route · TCP 5555 reach</td>
+<td>gate/SKIP <strong>autonomous</strong>; live
+<strong>op-gated</strong></td>
+<td><code>adb_over_vpn.sh</code> (bridge-down SKIP)</td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>A2 <code>adb connect</code></td>
+<td>connect · accept connected · capture log</td>
+<td>op-gated (bridge up)</td>
+<td><code>connect/adb_connect.txt</code></td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>A3 state assertion</td>
+<td><code>adb devices</code> our-serial only · require
+<code>device</code></td>
+<td>op-gated</td>
+<td><code>connect/adb_devices.txt</code></td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>A4 debug round-trip</td>
+<td><code>getprop</code> model · optional logcat/push-pull sha256</td>
+<td>op-gated</td>
+<td><code>debug/getprop.evidence</code></td>
+</tr>
+<tr>
+<td><strong>B</strong> connect model</td>
+<td>B1 server placement</td>
+<td>Model 1 route-owner default · route-vs-forward</td>
+<td>design <strong>autonomous</strong></td>
+<td>this doc · <code>containerization.md</code></td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>B2 authentication</td>
+<td>RSA-key · Android 11+ <code>adb pair</code> TLS/mDNS ·
+unicast-connect-by-IP</td>
+<td>design autonomous; live pairing <strong>op-gated</strong></td>
+<td>adb docs · this doc</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>B3 disambiguation</td>
+<td>mandatory <code>adb -s &lt;serial&gt;</code> · single-target
+match</td>
+<td><strong>autonomous</strong> (mirrors test)</td>
+<td><code>adb_over_vpn.sh</code></td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>B4 single-serial safety</td>
+<td>no <code>kill-server</code> · no blanket <code>disconnect</code> ·
+our-serial cleanup trap</td>
+<td><strong>autonomous</strong> (mirrors test)</td>
+<td><code>adb_over_vpn.sh</code> cleanup (§11.4.174)</td>
+</tr>
+<tr>
+<td><strong>C</strong> flash</td>
+<td>C1 USB-bound boundary</td>
+<td>fastboot-USB/ethernet FACT · consumer-USB-only INFERENCE · boundary
+evidence</td>
+<td><strong>autonomous</strong> (boundary doc)</td>
+<td><code>flash/boundary.evidence</code></td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>C2 usbip topology</td>
+<td>server bind · client attach · port 3240 · local-device fastboot</td>
+<td><strong>operator-gated</strong> (§11.4.122/§11.4.133)</td>
+<td>design only — test SKIPs</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>C3 security+latency</td>
+<td>tunnel 3240 in WireGuard · SSRF-scope · stable segment+power</td>
+<td>design autonomous; deploy op-gated</td>
+<td>this doc</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>C4 safety envelope</td>
+<td>ask-first · backup · verified image · no autonomous relock</td>
+<td><strong>operator-gated</strong> (§11.4.133)</td>
+<td>this doc · §11.4.66 question</td>
+</tr>
+<tr>
+<td><strong>D</strong> container</td>
+<td>D1 service declaration</td>
+<td><code>vpn-lan-adb-server</code> yaml · TCP 5555 health</td>
+<td><strong>autonomous</strong> (parse proof)</td>
+<td><code>vpn_lan_containers.yaml</code> ·
+<code>container_boot.sh</code></td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>D2 on-demand boot</td>
+<td><code>pkg/boot</code>/<code>compose</code>/<code>health</code> ·
+rootless · no ad-hoc podman</td>
+<td><strong>operator-gated</strong> (§11.4.122)</td>
+<td><code>containerization.md</code> §7</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>D3 local plan proof</td>
+<td>config-parse/plan · starts nothing · honest-SKIP</td>
+<td><strong>autonomous</strong></td>
+<td><code>container_boot.sh</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2
+id="4-honest-boundary--proven-autonomously-now-vs-operator-gated-1146">4.
+Honest boundary — proven-autonomously-now vs operator-gated
+(§11.4.6)</h2>
+<p><strong>Proven autonomously now (no operator input, no secrets,
+touches no device):</strong></p>
+<ul>
+<li>The bridge-down <strong>honest-SKIP</strong> path of <a
+href="../../../tests/vpn_lan/adb_over_vpn.sh"><code>adb_over_vpn.sh</code></a>
+— <code>SKIP:network_unreachable_external</code>, <code>exit 0</code>,
+<code>adb</code> never invoked, no operator/<code>lava-*</code> serial
+touched.</li>
+<li>The <strong>single-serial safety design</strong> (Phase B4) — no
+<code>kill-server</code>, no blanket <code>disconnect</code>,
+our-serial-only cleanup gated on <code>ADB_CONNECTED</code> — mirrored
+in the committed test.</li>
+<li>The <strong>flash-boundary record</strong> (Phase C1) —
+<code>flash/boundary.evidence</code> documenting the USB-bound reality;
+the test SKIPs <code>operator_attended</code> and never runs
+<code>fastboot</code>/<code>usbip</code>.</li>
+<li>The <strong>container plan-level proof</strong> (Phase D3) —
+<code>container_boot.sh</code> parses the boot plan and starts
+nothing.</li>
+</ul>
+<p><strong>Operator-gated (parked, §11.4.21 / surfaced via §11.4.66 when
+reached):</strong></p>
+<ul>
+<li>The <strong>live</strong> <code>adb connect</code> + debug
+round-trip (Phase A2–A4) — needs the svord bridge up + a configured
+<code>HELIX_VPN_ADB_HOST</code> on a real device.</li>
+<li><strong>Android 11+ TLS pairing</strong> live round-trip (Phase B2)
+— on-device pairing-code entry is <code>operator_attended</code>.</li>
+<li><strong>Any usbip flash</strong> (Phase C2/C4) — real device +
+remote-host change (§11.4.122) + brick-risk (§11.4.133): backup +
+verified image + interactive approval, never autonomous.</li>
+<li><strong>Container deploy on a remote host</strong> (Phase D2) —
+changes that host; operator-approved boot only.</li>
+</ul>
+<p>This document guarantees a <strong>correct, cited,
+security-reconciled, evidence-anchored</strong> design for full
+ADB-over-VPN (access, debug, connect, flash). It does
+<strong>not</strong> claim any live device result — every live path is
+honestly SKIPped by the autonomous test until the operator supplies the
+bridge, and flashing is operator-authorized only. No phase is "done"
+until its runtime signature verifies with captured evidence (§11.4.108)
+and it crosses independent review (§11.4.142) + the §11.4.169 test-type
+matrix.</p>
+<hr />
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>Android Debug Bridge (adb) — official Android developer docs (adb
+server port 5037, device <code>adbd</code> TCP 5555,
+<code>adb tcpip 5555</code>, <code>adb connect IP:5555</code>,
+<code>adb devices</code> states, <code>adb -s &lt;serial&gt;</code>,
+<code>adb kill-server</code>, <code>adb disconnect</code>, Android 11+
+<code>adb pair</code> TLS + mDNS, RSA-key authorization, network
+security posture): <a
+href="https://developer.android.com/tools/adb">https://developer.android.com/tools/adb</a></li>
+<li>Android 11's Wireless debugging (adb pair, 2048-bit RSA key-pair,
+self-signed X.509 TLS, mDNS): <a
+href="https://medium.com/@urvesh/android-11s-wireless-debugging-5d0f6448ee3">https://medium.com/@urvesh/android-11s-wireless-debugging-5d0f6448ee3</a></li>
+<li>ADB over TCP/IP guide (classic <code>adb tcpip</code> /
+<code>adb connect</code>, trusted-network security): <a
+href="https://devgex.com/en/article/00000826">https://devgex.com/en/article/00000826</a></li>
+<li>scrcpy connection doc (<code>--tcpip</code>,
+<code>--serial=IP:5555</code>, device reboot disables
+<code>adb tcpip</code>, Android 11 wireless-debugging bypass): <a
+href="https://github.com/Genymobile/scrcpy/blob/master/doc/connection.md">https://github.com/Genymobile/scrcpy/blob/master/doc/connection.md</a></li>
+<li>scrcpy + ADB-over-WiFi (reboot disables TCP/IP mode; USB needed once
+for classic path): <a
+href="https://proandroiddev.com/supercharge-android-dev-with-scrcpy-and-adb-wifi-f286091c72fc">https://proandroiddev.com/supercharge-android-dev-with-scrcpy-and-adb-wifi-f286091c72fc</a></li>
+<li>scrcpy issue #3848 (adb device shows <code>offline</code> over a
+WireGuard VPN — the interplay failure mode; no maintainer resolution):
+<a
+href="https://github.com/Genymobile/scrcpy/issues/3848">https://github.com/Genymobile/scrcpy/issues/3848</a></li>
+<li>USB/IP protocol — The Linux Kernel documentation (usbip protocol,
+TCP 3240): <a
+href="https://docs.kernel.org/usb/usbip_protocol.html">https://docs.kernel.org/usb/usbip_protocol.html</a></li>
+<li>usbip README — kernel.org
+(<code>usbip-core</code>/<code>usbip-host</code>/<code>vhci-hcd</code>
+modules, <code>usbipd -D</code>,
+<code>usbip list -l</code>/<code>--remote</code>,
+<code>usbip bind --busid</code>,
+<code>usbip attach --remote --busid</code>, <code>usbip detach</code>,
+TCP 3240): <a
+href="https://www.kernel.org/doc/readme/tools-usb-usbip-README">https://www.kernel.org/doc/readme/tools-usb-usbip-README</a></li>
+<li>RidgeRun USB/IP wiki (usbip for "flashing Android devices, using ADB
+and Fastboot"; port 3240): <a
+href="https://developer.ridgerun.com/wiki/index.php/How_to_setup_and_use_USB/IP">https://developer.ridgerun.com/wiki/index.php/How_to_setup_and_use_USB/IP</a></li>
+<li>AOSP fastboot README (fastboot protocol "over USB or ethernet",
+host-driven synchronous, OKAY/FAIL/DATA/INFO framing): <a
+href="https://github.com/aosp-mirror/platform_system_core/blob/master/fastboot/README.md">https://github.com/aosp-mirror/platform_system_core/blob/master/fastboot/README.md</a></li>
+<li>AOSP Move fastboot to userspace / fastbootd (userspace fastboot over
+the device USB gadget): <a
+href="https://source.android.com/docs/core/architecture/bootloader/fastbootd">https://source.android.com/docs/core/architecture/bootloader/fastbootd</a></li>
+<li>AOSP Lock and unlock the bootloader (improperly-signed boot image ⇒
+unbootable/unrecoverable; relock brick risk / anti-rollback): <a
+href="https://source.android.com/docs/core/architecture/bootloader/locking_unlocking">https://source.android.com/docs/core/architecture/bootloader/locking_unlocking</a></li>
+</ul>
+<p><em>Access date for all sources: 2026-07-01. INFERENCE items are
+explicitly marked in-text (§11.4.6): the
+consumer-bootloader-exposes-fastboot-over-USB-only deduction (Phase C1),
+the tunnel-usbip-inside-the-VPN security posture (Phase C3), the
+adb-server-on-the-route-owner fix for the offline-over-VPN symptom
+(Phase B1), the mDNS-does-not-cross-L3 adb-discovery caveat (Phase B2),
+and the 5037-vs-5555 port-split clarification (Phase D) — each a
+deduction from the cited facts, not itself a cited fact. Deep-research
+multi-angle (§11.4.150): protocol-layer (adb/fastboot/usbip specs),
+routing-layer (L3 VPN carries unicast TCP, not USB, not multicast),
+security-layer (RSA/TLS pairing, usbip-has-no-crypto, brick-risk),
+safety-layer (operator-gated flash §11.4.133).</em></p>
+</body>
+</html>
