@@ -959,6 +959,7 @@ test_vpn_lan_ingress() {
 test_vpn_lan_autonomous_battery() {
     local _bat _p _out _rc _pass _fail _name
     for _bat in \
+        "bridge-contract library unit tests (17 assertions)|vpn_lan/svord_bridge_unit.sh" \
         "SSRF stress+chaos (100-iter determinism + fail-safe chaos)|vpn_lan/ssrf_bridge_stress_chaos.sh" \
         "evaluator benchmark+memory (throughput floor + no RSS growth)|vpn_lan/evaluator_bench_memory.sh" \
         "evaluator concurrency+load (N-worker hash agreement + load correctness)|vpn_lan/evaluator_concurrency_load.sh" \
