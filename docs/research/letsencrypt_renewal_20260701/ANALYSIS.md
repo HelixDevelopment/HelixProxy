@@ -1,7 +1,7 @@
 # Let's Encrypt Phase-5 RENEWAL + ROTATION — Deep Research (Caddy in-process renewal vs Pebble ARI, zero-downtime rotation proof)
 
-**Revision:** 2
-**Last modified:** 2026-07-01T13:20:00Z
+**Revision:** 3
+**Last modified:** 2026-07-01T10:55:00Z
 **Authority:** Helix Constitution §11.4.150 (deep multi-angle research before workstream commitment) + §11.4.99 (latest-source cross-reference) + §11.4.6 (no-guessing — every claim cited or marked UNCONFIRMED) + §11.4.107/§11.4.115 (rock-solid rotation proof).
 **Scope:** design the hermetic Phase-5 RENEWAL + ROTATION test against the already-built hermetic stack — Caddy image `localhost/helix_proxy/caddy-challtestsrv:2.8.4`, Pebble `ghcr.io/letsencrypt/pebble:v2.6.0`, `pebble-challtestsrv`, per `deploy/letsencrypt/compose.hermetic.yml` + `deploy/letsencrypt/Caddyfile`.
 **Consumes:** `tests/letsencrypt/cert_analyzer.sh` (`cert_chain_roots_in` / `cert_not_expired` / `cert_san_matches` / `cert_days_remaining` / `cert_renewal_due`, with the `CERT_ANALYZER_NOW_EPOCH` now-seam).
@@ -334,3 +334,50 @@ Sources: `tests/letsencrypt/cert_analyzer.sh` (in-repo); Pebble chain shape / "c
 - Let's Encrypt — "An Engineer's Guide to Integrating ARI into Existing ACME Clients" (2024-04-25) — https://letsencrypt.org/2024/04/25/guide-to-integrating-ari-into-existing-acme-clients
 
 **Source-file reads at pinned version tags (via `gh api` / raw.githubusercontent.com, 2026-07-01):** `letsencrypt/pebble@v2.6.0`: `wfe/wfe.go`, `core/types.go`, `ca/ca.go`, `test/config/pebble-config.json`. `caddyserver/caddy@v2.8.4`: `go.mod`, **`caddyconfig/httpcaddyfile/builtins.go`, `caddyconfig/httpcaddyfile/options.go`, `modules/caddytls/automation.go` (Correction 2026-07-01 — proving `renewal_window_ratio` is JSON-only in 2.8.4)**. `caddyserver/certmagic@v0.21.3`: `certificates.go`, `config.go` (+ `maintain.go`/`certificates.go` @master for cross-check).
+
+## Conductor live-test findings 2026-07-01 — Phase-5 mechanism is deeper than the analysis (§11.4.138)
+
+The conductor booted the hermetic stack (Caddy 2.8.4 + Pebble **2.6.0**) and tested
+the renewal path end-to-end. Three FACTS (captured from `caddy` logs + `openssl`),
+each disproving an assumption above:
+
+1. **`renewal_window_ratio: 1` via the admin API does NOT force renewal.** Set via
+   `POST /load` (confirmed present in the running config: GET returns `1`), even with
+   `renew_interval: "2s"`. No renewal fired in 45s. Caddy's `got renewal info` log
+   showed an **ARI** `selected_time` far in the future and `recheck_after` +6h — certmagic
+   v0.21.3 followed the **ARI** time, and the ratio did NOT override it (contradicting the
+   "ARI and ratio are OR'd" claim in Q1). Zero-downtime of the `/load` reload itself IS
+   confirmed clean (100/100 probes 200, 0 dropped).
+
+2. **A short Pebble cert (`certificateValidityPeriod: 120`/`150`) does NOT get renewed
+   either.** Pebble 2.6.0 issues the short leaf correctly (verified 119s / 149s lifetimes),
+   BUT its **ARI window is on a ~2-day scale that ignores the short lifetime**: for a 150s
+   cert, Pebble returned `window_start`/`selected_time` ≈ **19 h** out. Caddy scheduled
+   renewal ~19 h ahead, so the 150s cert simply **expired unrenewed**. So the certmagic
+   default-ratio path never fires within a short cert's life because ARI dominates the
+   schedule.
+
+3. **Root blocker = ARI, and Pebble 2.6.0 gives no way to move the ARI window to "now".**
+   Pebble's `/set-renewal-info/` management endpoint (which would set the ARI window to the
+   present and make Caddy renew on its next `renew_interval` check) is **absent in v2.6.0**
+   (added in Pebble **v2.8.0**, PR #501). This matches the "Fallback ranks" caveat above but
+   is now LIVE-CONFIRMED as the *only* deterministic zero-downtime path on this stack.
+
+### Corrected Phase-5 plan (for the next iteration)
+
+- **Bump the Phase-5 Pebble to ≥ v2.8.0** (e.g. `ghcr.io/letsencrypt/pebble:2.10.1`, tags
+  verified present on GHCR) **for the rotation test only** (Phase-3 issuance keeps 2.6.0).
+  Verify the 2.10.x `-config`/`-dnsserver`/`-strict` flags + `PEBBLE_VA_*` env still parse.
+- Issue a normal cert (S1). Then `POST` Pebble's `/set-renewal-info/` (management API on
+  `:15000`) to set the leaf's ARI renewal window to **now**; set `renew_interval` short
+  (e.g. `5s`) via `POST /load` so Caddy re-checks ARI promptly → it renews → **S2 ≠ S1**.
+- Assert: `serial_after != serial_before` AND `notBefore_after > notBefore_before` AND the
+  continuous `curl --resolve proxy.hermetic.test:9443:127.0.0.1 https://…/health` probe
+  records **0** failures across the swap; then `cert_analyzer.sh` verifies S2 (chain to the
+  per-run Pebble CA). The `/set-renewal-info/` request shape must be read from the Pebble
+  2.10.x source (`wfe`/management) — mark UNCONFIRMED until the live POST is verified.
+
+**Honest status (§11.4.6):** Phase 5 is **PENDING** — the zero-downtime config-reload path
+is proven, but a *deterministic renewal trigger* on Pebble 2.6.0 is not achievable; it
+requires the Pebble ≥2.8.0 `/set-renewal-info` bump above. No renewal has been proven yet,
+so Phase 5 is NOT marked done (never a metadata-only PASS §11.4.1).
