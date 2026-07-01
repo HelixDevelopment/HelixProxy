@@ -31,6 +31,17 @@
 #                 wildcard_leaf.pem   — issued by test_ca, SAN *.proxy.test
 #                                       (exercises the single-leading-wildcard
 #                                       branch of cert_san_matches)
+#                 doublewild_leaf.pem — issued by test_ca, SAN *.*.proxy.test
+#                                       (malformed double-wildcard — MUST NOT
+#                                       match any legitimate host)
+#                 nosan_leaf.pem      — issued by test_ca, CN proxy.test, NO SAN
+#                                       extension (empty-SAN — never matches)
+#                 ipsan_leaf.pem      — issued by test_ca, SAN IP:10.0.0.1 only
+#                                       (IP-only SAN — no dNSName match)
+#                 dnsandip_leaf.pem   — issued by test_ca, SAN DNS:proxy.test +
+#                                       IP:10.0.0.1 (mixed — DNS still matches)
+#                 malformed_leaf.pem  — present-but-truncated/unparseable PEM
+#                                       (distinct from an absent file)
 #               plus gitignored *.key / *.csr / *.srl throwaway material.
 # Side-effects: writes the files above; no network, no containers.
 # Dependencies: POSIX sh, openssl (req -x509 / x509 -req with -not_before /
@@ -66,19 +77,44 @@ NEAR_NA=20260706000000Z
 EXP_NB=20260101000000Z
 EXP_NA=20260301000000Z
 
-# _mk_leaf <name> <cn> <san_dns> <not_before> <not_after> <ca_pem> <ca_key>
-# Generate a key + CSR (SAN requested in the CSR) then sign it with the given
-# CA, copying the SAN into the issued cert. Produces <name>.pem (tracked).
-_mk_leaf() {
-    _name=$1; _cn=$2; _san=$3; _nb=$4; _na=$5; _ca=$6; _cak=$7
+# _mk_leaf_rawsan <name> <cn> <san_spec> <not_before> <not_after> <ca_pem> <ca_key>
+# Generate a key + CSR (the RAW openssl subjectAltName spec requested in the CSR
+# — e.g. "DNS:proxy.test", "IP:10.0.0.1", "DNS:a.test,IP:10.0.0.1",
+# "DNS:*.*.proxy.test") then sign it with the given CA, copying the SAN into the
+# issued cert. Produces <name>.pem (tracked). This is the general form.
+_mk_leaf_rawsan() {
+    _name=$1; _cn=$2; _sanspec=$3; _nb=$4; _na=$5; _ca=$6; _cak=$7
     openssl req -newkey "rsa:$KEYBITS" -sha256 -nodes \
         -keyout "$_name.key" -out "$_name.csr" \
         -subj "/CN=$_cn" \
-        -addext "subjectAltName=DNS:$_san" >/dev/null 2>&1
+        -addext "subjectAltName=$_sanspec" >/dev/null 2>&1
     openssl x509 -req -in "$_name.csr" \
         -CA "$_ca" -CAkey "$_cak" -CAcreateserial \
         -sha256 -not_before "$_nb" -not_after "$_na" \
         -copy_extensions copy \
+        -out "$_name.pem" >/dev/null 2>&1
+    rm -f "$_name.csr"
+}
+
+# _mk_leaf <name> <cn> <san_dns> <not_before> <not_after> <ca_pem> <ca_key>
+# Convenience wrapper for the common single-dNSName case (preserves the original
+# contract exactly): the SAN is "DNS:<san_dns>".
+_mk_leaf() {
+    _mk_leaf_rawsan "$1" "$2" "DNS:$3" "$4" "$5" "$6" "$7"
+}
+
+# _mk_leaf_nosan <name> <cn> <not_before> <not_after> <ca_pem> <ca_key>
+# Generate a leaf with a subject CN but NO subjectAltName extension at all
+# (edge case: a modern validator MUST NOT fall back to CN — an empty-SAN cert
+# never matches a hostname query). Produces <name>.pem (tracked).
+_mk_leaf_nosan() {
+    _name=$1; _cn=$2; _nb=$3; _na=$4; _ca=$5; _cak=$6
+    openssl req -newkey "rsa:$KEYBITS" -sha256 -nodes \
+        -keyout "$_name.key" -out "$_name.csr" \
+        -subj "/CN=$_cn" >/dev/null 2>&1
+    openssl x509 -req -in "$_name.csr" \
+        -CA "$_ca" -CAkey "$_cak" -CAcreateserial \
+        -sha256 -not_before "$_nb" -not_after "$_na" \
         -out "$_name.pem" >/dev/null 2>&1
     rm -f "$_name.csr"
 }
@@ -120,12 +156,43 @@ _mk_leaf wrongca_leaf    proxy.test proxy.test "$GOOD_NB" "$GOOD_NA" wrong_ca.pe
 # apex proxy.test and NOT a.b.proxy.test). ----------------------------------
 _mk_leaf wildcard_leaf   "*.proxy.test" "*.proxy.test" "$GOOD_NB" "$GOOD_NA" test_ca.pem test_ca.key
 
+# --- Golden-BAD (double-wildcard): SAN *.*.proxy.test — a malformed, RFC-6125-
+# illegal double-wildcard. The matcher MUST NOT accept it against any legitimate
+# host (neither a.proxy.test nor a.b.proxy.test). ---------------------------
+_mk_leaf_rawsan doublewild_leaf "*.*.proxy.test" "DNS:*.*.proxy.test" \
+    "$GOOD_NB" "$GOOD_NA" test_ca.pem test_ca.key
+
+# --- Golden-BAD (empty-SAN): right issuer + valid window, CN=proxy.test but NO
+# subjectAltName extension. A modern validator MUST NOT fall back to CN, so a
+# hostname query never matches. ---------------------------------------------
+_mk_leaf_nosan nosan_leaf proxy.test "$GOOD_NB" "$GOOD_NA" test_ca.pem test_ca.key
+
+# --- Golden-BAD (IP-only SAN): right issuer + valid window, SAN is a single
+# iPAddress and NO dNSName. cert_san_matches is DNS-name-only, so neither the IP
+# literal nor any DNS name matches. -----------------------------------------
+_mk_leaf_rawsan ipsan_leaf proxy.test "IP:10.0.0.1" \
+    "$GOOD_NB" "$GOOD_NA" test_ca.pem test_ca.key
+
+# --- Golden-GOOD (mixed DNS+IP SAN): SAN "DNS:proxy.test,IP:10.0.0.1" — proves
+# the dNSName is correctly isolated from a mixed SAN while the iPAddress is
+# ignored, so proxy.test STILL matches. -------------------------------------
+_mk_leaf_rawsan dnsandip_leaf proxy.test "DNS:proxy.test,IP:10.0.0.1" \
+    "$GOOD_NB" "$GOOD_NA" test_ca.pem test_ca.key
+
+# --- Golden-BAD (malformed/truncated PEM): present-but-unparseable file (a
+# certificate BEGIN header with truncated base64 and NO END line). Distinct
+# from an ABSENT file — every parse-dependent function MUST reject it, never a
+# false-PASS (§11.4.1). Truncating good_leaf.pem to its first 3 lines is a
+# deterministic way to guarantee an unparseable PEM regardless of key bytes.
+head -n 3 good_leaf.pem > malformed_leaf.pem
+
 # Drop the throwaway serial + the wrong-CA material we no longer need tracked;
 # wrong_ca.pem/key stay gitignored (regenerable), test_ca.key stays gitignored.
 rm -f test_ca.srl wrong_ca.srl
 
 printf 'gen_fixtures: wrote'
-for _f in test_ca good_leaf expired_leaf nearexpiry_leaf otherhost_leaf wrongca_leaf wildcard_leaf; do
+for _f in test_ca good_leaf expired_leaf nearexpiry_leaf otherhost_leaf wrongca_leaf \
+          wildcard_leaf doublewild_leaf nosan_leaf ipsan_leaf dnsandip_leaf malformed_leaf; do
     printf ' %s.pem' "$_f"
 done
 printf '\n'

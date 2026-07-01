@@ -3,11 +3,14 @@
 # cert_analyzer_selftest.sh — TAP self-test for tests/letsencrypt/cert_analyzer.sh
 # -----------------------------------------------------------------------------
 # Purpose:      Prove every cert_analyzer.sh function is CORRECT against the
-#               golden-GOOD fixture AND provably REJECTS every golden-BAD
-#               fixture (expired / wrong-CA / wrong-host / near-expiry /
-#               substring-not-a-match) — the §11.4.107(10) self-validated-
-#               analyzer discipline: an analyzer that ACCEPTS its golden-bad
-#               fixture is a bluff gate. Fully hermetic (no network, no ACME,
+#               golden-GOOD fixtures AND provably REJECTS every golden-BAD
+#               fixture (expired / not-yet-valid / expired-just-now &
+#               NotBefore/NotAfter boundary / wrong-CA / wrong-host /
+#               near-expiry / substring-not-a-match / double-wildcard SAN /
+#               empty-SAN (no CN fallback) / IP-only SAN / malformed-truncated
+#               PEM) — the §11.4.107(10) self-validated-analyzer discipline: an
+#               analyzer that ACCEPTS its golden-bad fixture is a bluff gate.
+#               Fully hermetic (no network, no ACME,
 #               no container boot); deterministic via a pinned "now" epoch
 #               (§11.4.50).
 # Usage:        bash tests/letsencrypt/cert_analyzer_selftest.sh
@@ -51,6 +54,13 @@ NOW=$(date -u -d '2026-07-01T12:00:00Z' +%s)
 NOW_LATER=$(date -u -d '2026-09-15T00:00:00Z' +%s)
 # A "now" BEFORE good_leaf's NotBefore (2026-06-01) — not-yet-valid case.
 NOW_EARLIER=$(date -u -d '2026-05-01T00:00:00Z' +%s)
+# Exact validity-window boundaries of good_leaf (NotBefore 2026-06-01T00:00:00Z,
+# NotAfter 2026-08-30T00:00:00Z). The contract is NotBefore <= now < NotAfter:
+# the lower bound is INCLUSIVE, the upper bound is EXCLUSIVE. These pin the
+# exact boundary semantics with NO new fixture (§11.4.50 now-seam).
+NOW_NB=$(date -u -d '2026-06-01T00:00:00Z' +%s)          # == NotBefore
+NOW_NA=$(date -u -d '2026-08-30T00:00:00Z' +%s)          # == NotAfter
+NOW_NA_MINUS1=$((NOW_NA - 1))                            # one second before NotAfter
 
 TESTS=0
 FAILS=0
@@ -107,7 +117,8 @@ run_case 0 "cert_analyzer.sh parses under bash -n" bash -n "$LIB"
 run_case 0 "gen_fixtures.sh parses under sh -n"    sh -n "$FIX/gen_fixtures.sh"
 
 # --- Fixture presence (the golden corpus must exist) -----------------------
-for _fx in test_ca good_leaf expired_leaf nearexpiry_leaf wrongca_leaf otherhost_leaf wildcard_leaf; do
+for _fx in test_ca good_leaf expired_leaf nearexpiry_leaf wrongca_leaf otherhost_leaf wildcard_leaf \
+           doublewild_leaf nosan_leaf ipsan_leaf dnsandip_leaf malformed_leaf; do
     run_case 0 "fixture present: $_fx.pem" test -s "$FIX/$_fx.pem"
 done
 
@@ -128,6 +139,17 @@ run_case 0 "not_expired: expired leaf @now -> EXPIRED (golden-bad rejected)" \
     neg cert_not_expired "$FIX/expired_leaf.pem" "$NOW"
 run_case 2 "not_expired: unparseable/absent pem -> rc 2 (§11.4.1 no false-PASS)" \
     cert_not_expired "$FIX/does_not_exist.pem" "$NOW"
+# Exact validity-window boundaries (NotBefore inclusive, NotAfter exclusive).
+run_case 0 "not_expired: good leaf @now==NotBefore -> valid (lower bound INCLUSIVE, boundary)" \
+    cert_not_expired "$FIX/good_leaf.pem" "$NOW_NB"
+run_case 0 "not_expired: good leaf @now==NotAfter -> EXPIRED-just-now (upper bound EXCLUSIVE, golden-bad boundary)" \
+    neg cert_not_expired "$FIX/good_leaf.pem" "$NOW_NA"
+run_case 0 "not_expired: good leaf @now==NotAfter-1s -> still valid (last valid second, boundary)" \
+    cert_not_expired "$FIX/good_leaf.pem" "$NOW_NA_MINUS1"
+# Malformed/truncated-but-PRESENT PEM (distinct from an absent file): every
+# parse-dependent function MUST reject it, never a false-PASS (§11.4.1).
+run_case 2 "not_expired: malformed/truncated PEM (present, unparseable) -> rc 2 (golden-bad)" \
+    cert_not_expired "$FIX/malformed_leaf.pem" "$NOW"
 
 # --- cert_days_remaining (deterministic scalar) ----------------------------
 check_value 59   "days_remaining: good leaf @now -> 59" \
@@ -136,6 +158,8 @@ check_value 4    "days_remaining: near-expiry leaf @now -> 4" \
     "$(cert_days_remaining "$FIX/nearexpiry_leaf.pem" "$NOW")"
 check_value -122 "days_remaining: expired leaf @now -> -122 (negative, already past)" \
     "$(cert_days_remaining "$FIX/expired_leaf.pem" "$NOW")"
+run_case 2 "days_remaining: malformed/truncated PEM -> rc 2, no scalar emitted (golden-bad)" \
+    cert_days_remaining "$FIX/malformed_leaf.pem" "$NOW"
 
 # --- cert_san_matches (exact + single-wildcard; NEVER a substring) ---------
 run_case 0 "san_matches: good leaf SAN covers exact host proxy.test (golden-good)" \
@@ -154,6 +178,28 @@ run_case 0 "san_matches: wildcard *.proxy.test does NOT cover apex proxy.test" \
     neg cert_san_matches "$FIX/wildcard_leaf.pem" proxy.test
 run_case 0 "san_matches: wildcard *.proxy.test does NOT cover a.b.proxy.test (two labels)" \
     neg cert_san_matches "$FIX/wildcard_leaf.pem" a.b.proxy.test
+# Malformed double-wildcard SAN (*.*.proxy.test) must NOT match any real host.
+run_case 0 "san_matches: double-wildcard *.*.proxy.test does NOT match a.proxy.test (golden-bad)" \
+    neg cert_san_matches "$FIX/doublewild_leaf.pem" a.proxy.test
+run_case 0 "san_matches: double-wildcard *.*.proxy.test does NOT match a.b.proxy.test (golden-bad)" \
+    neg cert_san_matches "$FIX/doublewild_leaf.pem" a.b.proxy.test
+# Empty-SAN cert: CN=proxy.test but NO subjectAltName — must NOT match (no CN
+# fallback), yet it IS a valid cert issued by test_ca (proves the reject is due
+# to the empty SAN, not a broken cert).
+run_case 0 "san_matches: empty-SAN cert (CN only) does NOT match proxy.test — no CN fallback (golden-bad)" \
+    neg cert_san_matches "$FIX/nosan_leaf.pem" proxy.test
+run_case 0 "san_matches: empty-SAN cert is nonetheless a valid cert issued by test_ca (control)" \
+    cert_chain_roots_in "$FIX/nosan_leaf.pem" "$FIX/test_ca.pem"
+# IP-only SAN: cert_san_matches is dNSName-only — neither the IP literal nor any
+# DNS name matches an iPAddress-only SAN.
+run_case 0 "san_matches: IP-only SAN does NOT match the IP literal 10.0.0.1 (DNS-only discipline, golden-bad)" \
+    neg cert_san_matches "$FIX/ipsan_leaf.pem" 10.0.0.1
+run_case 0 "san_matches: IP-only SAN does NOT match a DNS name proxy.test (golden-bad)" \
+    neg cert_san_matches "$FIX/ipsan_leaf.pem" proxy.test
+# Mixed DNS+IP SAN: the dNSName is isolated from the iPAddress — proxy.test
+# STILL matches (golden-good — the IP does not corrupt DNS extraction).
+run_case 0 "san_matches: mixed DNS+IP SAN still matches DNS host proxy.test (golden-good)" \
+    cert_san_matches "$FIX/dnsandip_leaf.pem" proxy.test
 
 # --- cert_chain_roots_in (issued-by-EXPECTED-CA; validity-independent) ------
 run_case 0 "chain_roots_in: good leaf roots in test_ca (golden-good — issued by it)" \
@@ -164,6 +210,8 @@ run_case 0 "chain_roots_in: wrong-CA leaf does NOT root in test_ca (golden-bad r
     neg cert_chain_roots_in "$FIX/wrongca_leaf.pem" "$FIX/test_ca.pem"
 run_case 2 "chain_roots_in: absent leaf/ca file -> rc 2 (no false-PASS)" \
     cert_chain_roots_in "$FIX/does_not_exist.pem" "$FIX/test_ca.pem"
+run_case 0 "chain_roots_in: malformed/truncated leaf does NOT verify to test_ca -> rejected (golden-bad)" \
+    neg cert_chain_roots_in "$FIX/malformed_leaf.pem" "$FIX/test_ca.pem"
 
 # --- cert_renewal_due (threshold trigger) ----------------------------------
 run_case 0 "renewal_due: near-expiry (4d) <= 30d threshold -> DUE @now" \
