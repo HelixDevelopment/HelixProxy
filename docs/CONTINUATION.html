@@ -175,18 +175,54 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
-2026-07-01T16:40:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 11 <strong>Last modified:</strong>
+2026-07-01T18:15:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
-"3-4 parallel subagents, rock-solid evidence, no bluff") <strong>+ NEW
-VPN-LAN service-access feature (Phases 0/2/3/4/8/9 landed; 5/6/7/10/11
-in flight)</strong>. <strong>Rev-10 wave (12 commits this session, all
-FF to origin, HEAD <code>d218977</code>):</strong> <code>8140d40</code>
-S1 security-ACL SKIP→GREEN (authoritative access.log
-<code>TCP_DENIED/HIER_NONE</code>, standing suite 69/63/6/0, §11.4.169
-matrix 10 PASS/1 SKIP); <code>fe9d9a9</code> VPN-LAN comprehensive
-phased plan (12 phases, env-var bridge §11.4.28, SSRF-reconciled
-§11.4.120, 5 cited deep-research streams §11.4.150);
+"3-4 parallel subagents, rock-solid evidence, no bluff"). <strong>Rev-11
+wave (HEAD <code>4e2810c</code>, all FF to origin):</strong> the
+<strong>VPN-LAN service-access feature is COMPLETE — all Phases 0-12
+committed</strong> incl. the operator's <strong>Phase 12 bidirectional
+exposure</strong> (<code>2ed0fed</code> bidirectional_exposure.md +
+ingress_allowlist_teeth.sh, wired into the standing suite) and
+<strong>Phase 1 SSRF carve-out teeth</strong> (suite-wired). <strong>All
+5 autonomous VPN-LAN teeth GREEN</strong> (SSRF carve-out + SSRF_MUT,
+ingress-allowlist + INGRESS_MUT, bridge). Landed also: DNS-rebinding
+SSRF gap demo + smokescreen design (<code>4e2810c</code>, 7 sources
+§11.4.150), control-plane coverage <strong>acl-helper 0→53.8%</strong>
+(<code>4a9b75f</code>) + <strong>cmd/api 0→61.1%</strong>
+(<code>4e2810c</code>, -race clean, go.sum untouched), §11.4.169
+<strong>stress+chaos</strong> (<code>97d9733</code>, 100-iter identical
+hash) + <strong>benchmark+memory</strong> (<code>4e2810c</code>), deep
+<strong>OSS survey</strong> (<code>958d110</code>, 28 projects/50 URLs).
+<strong>§11.4.1 anti-bluff win
+(<code>7c4345d</code>+<code>4a007a0</code>+<code>30ec5b5</code>):</strong>
+the standing suite was HANGING forever on the LE phase3 guard
+(rootless-podman aardvark-dns bind failure); root-caused live
+(§11.4.102), fixed the LE boot-timeout→SKIP + three latent
+<code>set -e</code>/<code>pipefail</code>/<code>grep -c</code>
+suite-abort bugs → the suite now <strong>COMPLETES + honestly reports
+(74/60/11/3)</strong> instead of masking failures behind a hang.
+<strong>⚠️ HOST PODMAN BROKEN (env, operator-actionable, NOT a code
+defect):</strong> <code>aardvark-dns</code> cannot bind netavark gateway
+<code>:53</code> host-wide → proxy containers show "Up (healthy)" but
+<code>crun</code> says NOT running,
+<code>:53128</code>/<code>:51080</code> don't serve,
+<code>./start</code> fails identically; a host-level podman/netavark
+reset is needed but was NOT done autonomously (§11.4.101/§11.4.174 —
+shared host w/ operator
+<code>lava-*</code>/<code>deploy_caddy</code>/<code>wg0-mullvad</code>).
+The 3 suite FAILs are ALL this one condition. <strong>3 subagents in
+flight:</strong> control-plane coverage r3, bidirectional both-way
+protocol assertions, §11.4.169 concurrency+load. <strong>(Rev-10
+prior:)</strong> <strong>§11.4.126 autonomous loop</strong> +
+<strong>VPN-LAN service-access feature (Phases 0/2/3/4/8/9 landed;
+5/6/7/10/11 in flight)</strong>. <strong>Rev-10 wave (12 commits this
+session, all FF to origin, HEAD <code>d218977</code>):</strong>
+<code>8140d40</code> S1 security-ACL SKIP→GREEN (authoritative
+access.log <code>TCP_DENIED/HIER_NONE</code>, standing suite 69/63/6/0,
+§11.4.169 matrix 10 PASS/1 SKIP); <code>fe9d9a9</code> VPN-LAN
+comprehensive phased plan (12 phases, env-var bridge §11.4.28,
+SSRF-reconciled §11.4.120, 5 cited deep-research streams §11.4.150);
 <code>12faf12</code> <strong>Phase 8 Miracast §11.4.112
 structurally-impossible verdict</strong> (cited Wi-Fi-Alliance, Cast
 alternative); <code>628d255</code> <code>cmd/healthd</code> coverage
