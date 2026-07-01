@@ -179,14 +179,26 @@
 <h1
 id="hermetic-wireguard-test-harness--autonomous-validation-without-live-mullvad">Hermetic
 WireGuard test harness — autonomous validation without live Mullvad</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-02T00:00:00Z <strong>Status:</strong> DESIGN (feasibility
-FACT-proven on this host; implementation is a scoped, non-operator-gated
-follow-up). Authority: inherits
-<code>constitution/Constitution.md</code> per §11.4.35. Serves the
-operator's deep-research mandate ("new ideas, game-changing approaches,
-opensource we can incorporate") + the §11.4.52 autonomous-validation
-mandate.</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-02T01:00:00Z <strong>Status:</strong> <strong>H0 DONE (real
+encrypted WireGuard tunnel round-trip proven), H1/H2/H3 next.</strong>
+Authority: inherits <code>constitution/Constitution.md</code> per
+§11.4.35. Serves the operator's deep-research mandate ("new ideas,
+game-changing approaches, opensource we can incorporate") + the §11.4.52
+autonomous-validation mandate. <strong>Rev 2 update:</strong> the
+planned userspace-<code>wireguard-go</code> build proved unnecessary —
+the host <code>wireguard</code> <strong>kernel module</strong> is usable
+<strong>inside</strong> an unprivileged userns netns
+(<code>ip link add wg0 type wireguard</code> + <code>wg set</code>
+succeed under <code>unshare -Ur</code>), so H0-full is a zero-build,
+zero-dependency, no-package-install path. Proven by
+<code>tests/vpn_lan/hermetic_wg_roundtrip.sh</code>: a real encrypted
+kernel-WireGuard tunnel between two unprivileged netns, HTTP payload
+round-tripped over the tunnel, sha256 + <code>wg show</code> handshake
+(<code>latest-handshake=1782947082 rx=452 tx=752</code>) verified, 3/3
+deterministic (§11.4.50), with a wrong-peer-key golden-bad proving the
+crypto is load-bearing (<code>rx=0</code> on a bad key,
+§11.4.107(10)/§11.4.68).</p>
 <hr />
 <h2 id="1-the-problem-this-removes">1. The problem this removes</h2>
 <p>The VPN-LAN feature ships 5 protocol round-trip tests (SMB/NFS,
@@ -428,13 +440,16 @@ id="8-phased-plan-each-phase--one-pwu-11458-all-rootless-non-operator-gated">8.
 Phased plan (each phase = one PWU, §11.4.58; all rootless,
 non-operator-gated)</h2>
 <ol type="1">
-<li><strong>H0</strong> — vendor/build <code>wireguard-go</code>
-(rootless <code>go build</code>), commit a
-<code>scripts/vpn_lan/ hermetic_wg_up.sh</code> that stands up the
-two-netns WG pair under <code>unshare -Urnm</code> + a
-<code>hermetic_wg_down.sh</code> teardown (trap-cleaned §11.4.14).
-Physical proof: <code>wg show</code> + a ping/curl round-trip across the
-tunnel, captured under <code>qa-results/vpn_lan/hermetic/</code>.</li>
+<li><strong>H0 — DONE</strong> (<code>f96da56</code> veth substrate +
+this-round kernel-WG tunnel). The planned <code>wireguard-go</code>
+build was unnecessary: the host <code>wireguard</code> <strong>kernel
+module</strong> works inside an unprivileged userns netns.
+<code>tests/vpn_lan/hermetic_netns_poc.sh</code> (veth L3 round-trip) +
+<code>tests/vpn_lan/hermetic_wg_roundtrip.sh</code> (real encrypted
+WireGuard tunnel) both PASS deterministically with golden-bad teeth;
+physical proof (<code>wg show</code> handshake + rx/tx, sha256) under
+<code>qa-results/vpn_lan/hermetic{,_wg}/</code>. Teardown is automatic —
+the whole namespace dies with <code>unshare</code> (§11.4.14).</li>
 <li><strong>H1</strong> — peer-B service launcher
 (smbd/vsftpd/webdav/eureka/mDNS Go responder, high ports, private confs,
 no root). Physical proof: each service reachable from peer-A over the

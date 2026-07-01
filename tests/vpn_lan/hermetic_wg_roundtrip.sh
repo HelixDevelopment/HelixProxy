@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+###############################################################################
+# hermetic_wg_roundtrip.sh — H0-FULL: a REAL kernel-WireGuard tunnel between two
+#   unprivileged network namespaces, round-trip proven OVER the encrypted tunnel.
+#   (docs/design/vpn_lan_access/hermetic_wg_test_harness.md — H0 full)
+#
+# Purpose:
+#   Upgrade the H0 veth PoC (hermetic_netns_poc.sh) to the real thing: two netns
+#   joined by a **kernel WireGuard tunnel** (wg0 overlay 10.10.0.0/24) carried
+#   over a veth underlay (10.9.0.0/24). A real HTTP payload is served in the peer
+#   netns bound to the WG-ONLY overlay address 10.10.0.2 — reachable ONLY through
+#   the tunnel — fetched from the other side and sha256-verified, with the
+#   WireGuard handshake + non-zero transfer counters confirmed on both ends.
+#   Fully UNPRIVILEGED (unshare -Ur => root-in-userns; the host `wireguard` kernel
+#   module + /usr/sbin/wg), NO build, NO podman, NO Mullvad, NO package install.
+#
+#   This is the substrate the operator-gated protocol tests run on autonomously
+#   (§11.4.52): swap the real svord bridge for this loopback WG peer via
+#   HELIX_BRIDGE_MODE=hermetic (H2). It exercises the SAME L3-over-WireGuard shape
+#   as the production bridge — the identical routing/proxy code path.
+#
+# Usage:
+#   tests/vpn_lan/hermetic_wg_roundtrip.sh              # PASS / SKIP / FAIL
+#   WG_MUT=badkey tests/vpn_lan/hermetic_wg_roundtrip.sh  # §1.1 golden-bad: a WRONG
+#     peer public key MUST break the handshake => no round-trip => the run FAILs,
+#     proving the WireGuard CRYPTO gates the traffic (not the veth underlay).
+#   (internal) hermetic_wg_roundtrip.sh --inner
+#
+# Outputs:
+#   One PASS/SKIP/FAIL line. Exit 0 == PASS or honest SKIP; 1 == FAIL. Under
+#   WG_MUT=badkey the outer wrapper PASSes iff the tunnel round-trip FAILED for
+#   the handshake reason (teeth load-bearing §11.4.107(10)). Evidence:
+#   qa-results/vpn_lan/hermetic_wg/<UTC-ts>_<pass|mut>_<pid>/roundtrip.evidence
+#
+# Preflight / honest SKIP (§11.4.3 — never a fake PASS):
+#   SKIP when the host lacks the `wireguard` kernel module, `wg`, unshare/nsenter/
+#   ip/python3/sha256sum, when unprivileged userns is disabled, or when process
+#   headroom is too low (§12 host-safety).
+#
+# Side-effects:
+#   ONE throwaway user+net+mount namespace via `unshare -Urnm`; two wg0 ifaces +
+#   a veth pair + a python http.server all live inside it and are torn down when
+#   unshare exits (§11.4.14). NOTHING on the host network is touched or visible
+#   (§11.4.174-safe). Private WG keys live in mode-0600 mktemp files inside the
+#   namespace, removed on exit; NEVER logged (§11.4.10).
+#
+# Dependencies: bash, util-linux unshare + nsenter, iproute2 ip (+ wireguard link
+#   type), wireguard-tools `wg`, host `wireguard` kernel module, python3, sha256sum.
+#
+# Cross-references:
+#   tests/vpn_lan/hermetic_netns_poc.sh (the veth substrate this builds on)
+#   docs/design/vpn_lan_access/hermetic_wg_test_harness.md
+#   constitution §11.4.3 / §11.4.6 / §11.4.10 / §11.4.50 / §11.4.52 / §11.4.107 / §11.4.174 / §12
+###############################################################################
+set -u
+export PATH="$PATH:/usr/sbin:/sbin"
+
+# ---------------------------------------------------------------------------
+# INNER: runs inside `unshare -Urnm` (uid 0-in-userns). Builds the veth underlay,
+# the two-ended WireGuard tunnel, serves + fetches over the tunnel, verifies.
+# ---------------------------------------------------------------------------
+if [ "${1:-}" = "--inner" ]; then
+    EV="${WG_EV_DIR:?}/roundtrip.evidence"; mkdir -p "${WG_EV_DIR}"; : >"$EV"
+    log(){ printf '%s\n' "$*" | tee -a "$EV"; }
+    fail(){ log "WG_FAIL: $*"; exit 1; }
+    WG=$(command -v wg 2>/dev/null || echo /usr/sbin/wg)
+
+    log "== uid inside userns: $(id -u) (0 == root-in-userns); wg: $WG =="
+    ip link set lo up 2>>"$EV" || fail "lo up (outer)"
+    ip link add veth0 type veth peer name veth1 2>>"$EV" || fail "veth add"
+
+    # Peer netns = a held child; marker touched from inside its swapped netns.
+    MARK=$(mktemp -u)
+    unshare -n bash -c "touch '$MARK'; exec sleep 60" &
+    HOLDER=$!
+    KDIR=$(mktemp -d)
+    cleanup(){ kill "$HOLDER" 2>/dev/null; [ -n "${SRV:-}" ] && kill "$SRV" 2>/dev/null; rm -rf "$KDIR" "$MARK" 2>/dev/null; true; }
+    trap cleanup EXIT INT TERM
+    for _ in $(seq 1 50); do [ -e "$MARK" ] && break; sleep 0.1; done
+    [ -e "$MARK" ] || fail "holder netns not ready"
+    rm -f "$MARK" 2>/dev/null || true
+    [ -e "/proc/$HOLDER/ns/net" ] || fail "holder pid gone"
+
+    # --- veth underlay (carries the encrypted WG UDP) ---
+    ip link set veth1 netns "$HOLDER" 2>>"$EV" || fail "move veth1"
+    ip addr add 10.9.0.1/24 dev veth0 2>>"$EV" || fail "underlay addr A"
+    ip link set veth0 up 2>>"$EV" || fail "veth0 up"
+    nsenter -t "$HOLDER" -n ip link set lo up 2>>"$EV" || fail "peer lo up"
+    nsenter -t "$HOLDER" -n ip addr add 10.9.0.2/24 dev veth1 2>>"$EV" || fail "underlay addr B"
+    nsenter -t "$HOLDER" -n ip link set veth1 up 2>>"$EV" || fail "veth1 up"
+
+    # --- WireGuard keypairs (mode-0600 files, never logged §11.4.10) ---
+    umask 077
+    "$WG" genkey > "$KDIR/a.key" 2>>"$EV" || fail "wg genkey A (wg unusable in userns?)"
+    "$WG" pubkey < "$KDIR/a.key" > "$KDIR/a.pub" 2>>"$EV" || fail "wg pubkey A"
+    "$WG" genkey > "$KDIR/b.key" 2>>"$EV" || fail "wg genkey B"
+    "$WG" pubkey < "$KDIR/b.key" > "$KDIR/b.pub" 2>>"$EV" || fail "wg pubkey B"
+    PUB_A=$(cat "$KDIR/a.pub"); PUB_B=$(cat "$KDIR/b.pub")
+    # §11.4.107(10) golden-bad: give A a WRONG peer key so the handshake can never
+    # complete — if the round-trip still worked, traffic would be leaking over the
+    # veth underlay in the clear (a bluff). A wrong key MUST break it.
+    PEER_FOR_A="$PUB_B"
+    if [ "${WG_MUT:-0}" = badkey ]; then
+        "$WG" genkey > "$KDIR/x.key" 2>>"$EV"; PEER_FOR_A=$("$WG" pubkey < "$KDIR/x.key")
+        log "MUT: A's peer key set to a WRONG pubkey — handshake must fail, round-trip must break"
+    fi
+
+    # --- wg0 in netns A (current) ---
+    ip link add wg0 type wireguard 2>>"$EV" || fail "wg0 add A (kernel wireguard module?)"
+    "$WG" set wg0 private-key "$KDIR/a.key" listen-port 51820 \
+        peer "$PEER_FOR_A" endpoint 10.9.0.2:51820 allowed-ips 10.10.0.2/32 persistent-keepalive 5 2>>"$EV" || fail "wg set A"
+    ip addr add 10.10.0.1/24 dev wg0 2>>"$EV" || fail "wg0 addr A"
+    ip link set wg0 up 2>>"$EV" || fail "wg0 up A"
+
+    # --- wg0 in netns B (peer) ---
+    nsenter -t "$HOLDER" -n ip link add wg0 type wireguard 2>>"$EV" || fail "wg0 add B"
+    nsenter -t "$HOLDER" -n "$WG" set wg0 private-key "$KDIR/b.key" listen-port 51820 \
+        peer "$PUB_A" endpoint 10.9.0.1:51820 allowed-ips 10.10.0.1/32 persistent-keepalive 5 2>>"$EV" || fail "wg set B"
+    nsenter -t "$HOLDER" -n ip addr add 10.10.0.2/24 dev wg0 2>>"$EV" || fail "wg0 addr B"
+    nsenter -t "$HOLDER" -n ip link set wg0 up 2>>"$EV" || fail "wg0 up B"
+
+    # --- real HTTP payload served on the WG-ONLY overlay addr 10.10.0.2 ---
+    SRVDIR=$(mktemp -d)
+    NONCE="hermetic-wg-proof-$$-${RANDOM}"
+    printf '%s\n' "$NONCE" > "$SRVDIR/payload.txt"
+    SHA_SRC=$(sha256sum "$SRVDIR/payload.txt" | cut -d' ' -f1)
+    ( cd "$SRVDIR" && exec nsenter -t "$HOLDER" -n python3 -m http.server 8080 --bind 10.10.0.2 ) >/dev/null 2>&1 &
+    SRV=$!
+
+    # poll the tunnel address from netns A (triggers the handshake)
+    UP=0
+    for _ in $(seq 1 40); do
+        if python3 -c 'import socket,sys; s=socket.socket(); s.settimeout(0.4); sys.exit(0 if s.connect_ex(("10.10.0.2",8080))==0 else 1)' 2>/dev/null; then UP=1; break; fi
+        sleep 0.25
+    done
+
+    HS=$("$WG" show wg0 latest-handshakes 2>/dev/null | awk '{print $2}' | head -1); HS=${HS:-0}
+    RX=$("$WG" show wg0 transfer 2>/dev/null | awk '{print $2}' | head -1); RX=${RX:-0}
+    TX=$("$WG" show wg0 transfer 2>/dev/null | awk '{print $3}' | head -1); TX=${TX:-0}
+    log "wg show wg0: latest-handshake=$HS  rx=$RX  tx=$TX  (peer count=$("$WG" show wg0 peers 2>/dev/null | wc -l))"
+
+    if [ "$UP" != 1 ]; then
+        log "tunnel round-trip did NOT establish (handshake=$HS) — expected under WG_MUT=badkey"
+        fail "no connect over 10.10.0.2:8080 (WG handshake incomplete)"
+    fi
+
+    BODY=$(python3 -c 'import urllib.request; print(urllib.request.urlopen("http://10.10.0.2:8080/payload.txt", timeout=8).read().decode().rstrip("\n"))' 2>>"$EV") || fail "fetch over tunnel"
+    SHA_GOT=$(printf '%s\n' "$BODY" | sha256sum | cut -d' ' -f1)
+    log "peer-served nonce (over WG): $NONCE"
+    log "fetched body               : $BODY"
+    log "sha256 source / fetched     : $SHA_SRC / $SHA_GOT"
+    rm -rf "$SRVDIR" 2>/dev/null || true
+    { [ "$SHA_SRC" = "$SHA_GOT" ] && [ "$BODY" = "$NONCE" ]; } || fail "sha256/body mismatch"
+    { [ "$HS" != 0 ] && [ "$RX" -gt 0 ] 2>/dev/null && [ "$TX" -gt 0 ] 2>/dev/null; } || fail "WG handshake/transfer not confirmed (hs=$HS rx=$RX tx=$TX)"
+    log "WG_PASS: real HTTP payload round-tripped over an encrypted kernel-WireGuard tunnel between 2 unprivileged netns, sha256 + handshake + transfer verified"
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# OUTER: preflight (honest SKIP §11.4.3 / §12) then re-exec under unshare -Urnm.
+# ---------------------------------------------------------------------------
+SCRIPT_LABEL='hermetic_wg_roundtrip'
+_sd=$(cd "$(dirname "$0")" && pwd); _root=$(cd "$_sd/../.." && pwd)
+WG_MUT="${WG_MUT:-0}"
+_skip(){ printf 'SKIP: %s [%s]\n' "$SCRIPT_LABEL" "$1"; exit 0; }
+
+for _t in unshare nsenter ip python3 sha256sum wg; do command -v "$_t" >/dev/null 2>&1 || _skip "tool absent: $_t"; done
+[ -d /sys/module/wireguard ] || _skip "host 'wireguard' kernel module not loaded"
+if [ -r /proc/sys/kernel/unprivileged_userns_clone ] && [ "$(cat /proc/sys/kernel/unprivileged_userns_clone)" = 0 ]; then
+    _skip "unprivileged user namespaces disabled"
+fi
+unshare -Ur -n true 2>/dev/null || _skip "unshare -Ur -n failed (unprivileged userns unavailable)"
+_softu=$(ulimit -u 2>/dev/null || echo 0); _inuse=$(ps --no-headers -u "$(id -u)" 2>/dev/null | wc -l | tr -d ' ')
+if [ "${_softu}" != unlimited ] && [ "${_softu:-0}" -gt 0 ] 2>/dev/null && [ "$(( _softu - _inuse ))" -lt 64 ] 2>/dev/null; then
+    _skip "process headroom too low (ulimit -u=${_softu}, in use=${_inuse}) — §12 host-safety"
+fi
+
+TS=$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%Y%m%dT%H%M%SZ)
+if [ "$WG_MUT" = badkey ]; then _mode=mut; else _mode=pass; fi
+export WG_EV_DIR="$_root/qa-results/vpn_lan/hermetic_wg/${TS}_${_mode}_$$"
+_rc=0
+WG_MUT="$WG_MUT" timeout 60 env WG_EV_DIR="$WG_EV_DIR" WG_MUT="$WG_MUT" \
+    unshare -Urnm bash "$0" --inner >/dev/null 2>&1 || _rc=$?
+_ev="$WG_EV_DIR/roundtrip.evidence"
+
+if [ "$WG_MUT" = badkey ]; then
+    # golden-bad: the ONLY acceptable outcome is the tunnel round-trip FAILING
+    # because the WG handshake could not complete (wrong peer key).
+    if [ "$_rc" != 0 ] && grep -q 'WG handshake incomplete' "$_ev" 2>/dev/null; then
+        printf 'PASS: %s [§1.1 golden-bad — wrong peer key broke the handshake => no round-trip; WG crypto is load-bearing; evidence: %s]\n' "$SCRIPT_LABEL" "$_ev"; exit 0
+    fi
+    printf 'FAIL: %s [§1.1 mutation did NOT fail at the handshake (rc=%s) — round-trip may be leaking over the underlay]\n' "$SCRIPT_LABEL" "$_rc"
+    tail -4 "$_ev" 2>/dev/null || true; exit 1
+fi
+
+if [ "$_rc" = 0 ] && grep -q WG_PASS "$_ev" 2>/dev/null; then
+    printf 'PASS: %s [encrypted kernel-WireGuard tunnel round-trip between 2 unprivileged netns, sha256+handshake+transfer verified; evidence: %s]\n' "$SCRIPT_LABEL" "$_ev"; exit 0
+fi
+printf 'FAIL: %s [rc=%s; evidence: %s]\n' "$SCRIPT_LABEL" "$_rc" "$_ev"
+tail -4 "$_ev" 2>/dev/null || true
+exit 1
