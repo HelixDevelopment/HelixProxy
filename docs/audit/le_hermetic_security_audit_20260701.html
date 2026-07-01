@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>LE Hermetic Security Audit 20260701</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">LE Hermetic Security Audit 20260701</h1>
+</header>
+<h1 id="lets-encrypt-hermetic-infra--proxy-lanes--security-audit">Let's
+Encrypt Hermetic Infra + Proxy Lanes — Security Audit</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Scope:</strong>
+<code>deploy/letsencrypt/**</code> (hermetic ACME stack) + committed
+proxy Challenge lanes (<code>challenges/scripts/proxy_*.sh</code>,
+<code>challenges/scripts/run_proxy_challenges.sh</code>) +
+<code>tools/helixqa/**</code> <strong>Method:</strong> READ-ONLY static
+review (Read + grep) — no code changed, no container booted, no operator
+resource touched <strong>Authority:</strong> Helix Constitution
+§11.4.169 (security test-type), §11.4.10 (credentials), §11.4.6
+(no-guessing — every finding carries <code>file:line</code> evidence or
+is marked UNCONFIRMED), §11.4.44 (revision header)</p>
+<hr />
+<h2 id="verdict-summary">Verdict summary</h2>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CRITICAL</td>
+<td>0</td>
+</tr>
+<tr>
+<td>HIGH</td>
+<td>0</td>
+</tr>
+<tr>
+<td>MEDIUM</td>
+<td>1</td>
+</tr>
+<tr>
+<td>LOW</td>
+<td>3</td>
+</tr>
+<tr>
+<td>INFO (positive/hardening)</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<p><strong>No real secret leaked.</strong> No token, private key,
+password, API key, or credential value was found in any tracked OR
+untracked file in scope (see Secret-scan result below). The one
+committed cryptographic artifact
+(<code>pebble-ca/pebble.minica.pem</code>) is a PUBLIC test CA
+certificate with no private-key material, and it is gitignored.</p>
+<p><strong>Tracking status (context):</strong> the entire
+<code>deploy/letsencrypt/</code> tree is currently UNTRACKED
+(<code>git ls-files deploy/letsencrypt/</code> returns empty; matches
+session <code>?? deploy/</code>). The proxy Challenge lanes and
+<code>tools/helixqa/**</code> ARE tracked. Findings below apply
+regardless of tracking state (they gate a future commit + boot).</p>
+<hr />
+<h2 id="secret-scan-result-11410">Secret-scan result (§11.4.10)</h2>
+<p>Explicit scan across the full audit scope (tracked + untracked):</p>
+<ul>
+<li>Value-bearing
+<code>password|secret|token|api_key|bearer|authorization</code>
+assignments — <strong>none found</strong> (only NAME-ONLY references
+such as
+<code>ACME_DNS_TOKEN_SECRET_NAME=helixproxy_caddy_dns_token</code>, a
+Podman-secret NAME, never a value).</li>
+<li><code>BEGIN … PRIVATE KEY</code> / <code>BEGIN RSA</code> /
+<code>BEGIN OPENSSH</code> markers — <strong>none</strong> anywhere in
+scope.</li>
+<li>Vendor token shapes (<code>AKIA…</code>, <code>ghp_…</code>,
+<code>xox[baprs]-…</code>, <code>sk-…</code>) —
+<strong>none</strong>.</li>
+<li><code>deploy/letsencrypt/pebble-ca/pebble.minica.pem</code> —
+<code>-----BEGIN CERTIFICATE-----</code> only, <strong>no
+<code>PRIVATE KEY</code> block</strong>; <code>git check-ignore</code>
+confirms it is ignored via <code>.gitignore:32 pebble-ca/</code>.</li>
+</ul>
+<p><strong>Conclusion: clean. No credential exposure.</strong></p>
+<hr />
+<h2 id="medium-findings">MEDIUM findings</h2>
+<h3
+id="m1--caddy-httpshttp-host-ports-published-on-all-interfaces-0000-in-the-hermetic-stack">M1
+— Caddy HTTPS/HTTP host ports published on ALL interfaces (0.0.0.0) in
+the hermetic stack</h3>
+<p><strong>Evidence:</strong>
+<code>deploy/letsencrypt/compose.hermetic.yml:244-245</code></p>
+<pre><code>- &quot;${CADDY_HTTPS_PORT:-8443}:443&quot;   # HTTPS (TLS termination)
+- &quot;${CADDY_HTTP_PORT:-8080}:80&quot;     # HTTP -&gt; HTTPS redirect only</code></pre>
+<p>Neither caddy port carries a <code>127.0.0.1:</code> bind prefix, so
+Podman publishes them on <code>0.0.0.0</code> (every host interface). By
+contrast the two supporting services are correctly loopback-scoped:
+<code>pebble</code> at <code>compose.hermetic.yml:106-107</code>
+(<code>127.0.0.1:…:14000/15000</code>) and <code>challtestsrv</code> at
+<code>:139</code> (<code>127.0.0.1:…:8055</code>).</p>
+<p><strong>Failure scenario:</strong> when the hermetic stack is booted
+on a workstation attached to a LAN/Wi-Fi (the operator's own §11.4.174
+shared-host case), any other host on that network can reach
+<code>https://&lt;host-ip&gt;:8443</code> and
+<code>http://&lt;host-ip&gt;:8080</code>. That front terminates TLS and
+<code>reverse_proxy</code>es to the pod-internal upstream
+(<code>CADDY_UPSTREAM</code>, default <code>admin:80</code>), so a LAN
+peer can drive the test upstream through the exposed Caddy. For a purely
+hermetic self-issuance test this is broader exposure than required.</p>
+<p><strong>Nuance (not a defect in the production TLS-front
+role):</strong> Caddy IS the public TLS terminator by design
+(<code>Caddyfile:11-15</code>), so a network-facing bind is intentional
+for the real staging/prod path. The finding is that the HERMETIC test
+profile inherits that wide bind rather than loopback.
+<strong>Recommended (advisory, not applied — READ-ONLY):</strong>
+default the hermetic caddy publishes to
+<code>127.0.0.1:${CADDY_HTTPS_PORT}:443</code> /
+<code>127.0.0.1:${CADDY_HTTP_PORT}:80</code>, and let the operator widen
+the bind explicitly for the network-facing cutover. Ranked MEDIUM
+because exposure is real but bounded (a test upstream, no secret behind
+it) and conditional on a non-isolated host.</p>
+<hr />
+<h2 id="low-findings">LOW findings</h2>
+<h3
+id="l1--base--service-images-pinned-by-tag-not-by-sha256-digest-supply-chain">L1
+— Base + service images pinned by TAG, not by <code>@sha256</code>
+digest (supply chain)</h3>
+<p><strong>Evidence:</strong>
+<code>deploy/letsencrypt/Dockerfile.caddy:28</code>
+(<code>FROM docker.io/library/caddy:${CADDY_VERSION}-builder</code>),
+<code>:53</code> (<code>…-alpine</code>);
+<code>compose.hermetic.yml:78</code>
+(<code>ghcr.io/letsencrypt/pebble:2.6.0</code>), <code>:125</code>
+(<code>pebble-challtestsrv:2.6.0</code>), <code>:165</code>
+(<code>coredns/coredns:1.11.1</code>).</p>
+<p><strong>Failure scenario:</strong> a mutable tag can be re-pointed
+upstream (registry compromise or a maintainer force-repush of a tag), so
+a later <code>podman build</code>/<code>pull</code> could fetch
+different bytes than were reviewed. <strong>Mitigating fact:</strong>
+the files self-acknowledge this as intended-future work
+(<code>compose.hermetic.yml:75-77</code>, <code>:123-124</code> —
+"PENDING boot-verify … pin the @sha256 digest") per §11.4.6/§11.4.173,
+so it is a tracked gap, not an oversight. Ranked LOW.</p>
+<h3
+id="l2--challtestsrv-dns-provider-has-no-runtime-hermetic-guard-documentation-only-control">L2
+— challtestsrv DNS provider has no runtime hermetic guard
+(documentation-only control)</h3>
+<p><strong>Evidence:</strong>
+<code>deploy/letsencrypt/caddy-challtestsrv-dns/provider.go:10-13</code>
+("HERMETIC-TEST-ONLY … Do NOT point this provider at any real DNS zone")
+is a doc comment; <code>Provision</code> (<code>:73-83</code>) and
+<code>post</code> (<code>:155-175</code>) apply no scheme/host allowlist
+and no "refuse non-hermetic target" check.</p>
+<p><strong>Failure scenario (bounded,
+near-structurally-impossible):</strong> if an operator mis-set
+<code>CHALLTESTSRV_MGMT_URL</code> to an arbitrary reachable URL, the
+module would <code>POST /set-txt</code> / <code>/clear-txt</code> there.
+<strong>Why the blast radius is near-zero:</strong> the module only
+speaks challtestsrv's bespoke <code>POST /set-txt</code> management API;
+a real DNS provider exposes no such endpoint, so it cannot modify real
+DNS records — the worst realistic outcome is a non-2xx error against an
+unrelated host. Ranked LOW (defense-in-depth suggestion: validate the
+URL is <code>http(s)</code> and optionally warn if the host is
+non-loopback / non-pod-internal). No injection risk exists on the call
+itself — see INFO-3.</p>
+<h3
+id="l3--coredns-forward-target-is-a-hardcoded-ip-placeholder-rewritten-at-boot-114111-by-address-binding">L3
+— CoreDNS forward target is a hardcoded IP placeholder rewritten at boot
+(§11.4.111 by-address binding)</h3>
+<p><strong>Evidence:</strong>
+<code>deploy/letsencrypt/coredns/Corefile:7</code>
+(<code>forward . 10.89.4.2:8053</code>). The compose comment
+(<code>compose.hermetic.yml:158-160</code>) states the line is
+"(re)written with challtestsrv's live IP by
+<code>phase3_hermetic_issue.sh</code> before this service starts."</p>
+<p><strong>Failure scenario:</strong> the tracked Corefile ships a fixed
+pod-subnet IP that is only correct after a boot-time rewrite; a
+stale/checked-in IP that no longer matches the live challtestsrv would
+silently forward ACME <code>_acme-challenge</code> TXT queries to the
+wrong address (a §11.4.111 resolve-by-index fragility, not a
+confidentiality/integrity breach — the data is a public ACME challenge
+token). Ranked LOW; noted for §11.4.111 hygiene. The rewrite-at-boot
+pattern also means a script mutates a tracked config file — acceptable
+here (regenerated, non-secret) but worth an INFO flag for reviewers.</p>
+<hr />
+<h2
+id="info--positive-controls-confirmed-hardening-that-is-present-and-correct">INFO
+— positive controls confirmed (hardening that is present and
+correct)</h2>
+<ul>
+<li><strong>INFO-1 — Non-root container + minimal capability, cleaned
+up.</strong> <code>Dockerfile.caddy:76</code> (<code>USER caddy</code>),
+<code>:68</code> (<code>setcap 'cap_net_bind_service=+ep'</code> — the
+single minimal cap to bind :80/:443, nothing broader), <code>:69</code>
+(<code>apk del libcap</code> — the setcap tool is removed post-use).
+Confirms §11.4.161 rootless + defense-in-depth.</li>
+<li><strong>INFO-2 — No privileged / host-network / dangerous mount
+anywhere.</strong> Grep across <code>compose.hermetic.yml</code> for
+<code>privileged:|cap_add|network_mode|/var/run/docker.sock|/run/podman|SYS_ADMIN|pid:host|ipc:host</code>
+returns <strong>none</strong>. Every service is on the private
+<code>letsencrypt-hermetic</code> network; all config/CA mounts are
+read-only (<code>:ro,Z</code> — SELinux-relabelled) at <code>:198</code>
+(Caddyfile), <code>:207</code> (pebble-ca), and
+<code>coredns Corefile</code> (<code>:171</code>, read-only). Named
+volumes only for regenerable ACME state.</li>
+<li><strong>INFO-3 — DNS provider HTTP calls are injection-safe and
+bounded.</strong> <code>provider.go:156</code> marshals the payload with
+<code>json.Marshal</code> (proper escaping — no body injection);
+<code>:160</code> builds the URL as <code>p.ManagementURL + path</code>
+where <code>path</code> is a hardcoded literal (<code>/set-txt</code> /
+<code>/clear-txt</code>, <code>:122</code>/<code>:134</code>) and the
+<code>host</code>/<code>value</code> come from Caddy's own ACME config,
+not attacker-controlled runtime input (no URL/command injection);
+<code>:80</code> sets a 10s client timeout (no hang); <code>:171</code>
+reads at most 512 bytes of any error body via
+<code>io.LimitReader</code> (bounded diagnostic, no unbounded/echo
+leak). No <code>os/exec</code>, no shell, no template concatenation into
+a command.</li>
+<li><strong>INFO-4 — Secrets handled by NAME + PATH only, and commented
+off for hermetic.</strong> <code>compose.hermetic.yml:47-49</code>
+(top-level <code>secrets:</code> block commented), <code>:225-226</code>
+(caddy <code>secrets:</code> mount commented), <code>:190</code>
+(<code>ACME_DNS_TOKEN_FILE</code> is a mount PATH, value read at
+runtime), <code>.env.example:48-58</code> (NAME-only, explicit "NEVER
+the value"). Admin API OFF by default:
+<code>compose.hermetic.yml:215</code>
+(<code>CADDY_ADMIN=${…:-off}</code>), <code>Caddyfile:44</code>
+(<code>admin {$CADDY_ADMIN:off}</code>), admin port <code>2019</code>
+commented at <code>:247</code> and loopback-only when enabled. Fully
+§11.4.10-compliant.</li>
+<li><strong>INFO-5 — <code>.gitignore</code> is comprehensive and
+effective.</strong> <code>deploy/letsencrypt/.gitignore</code> excludes
+<code>.env</code>/<code>.env.*</code> (<code>:13-14</code>, allowing
+<code>.env.example</code>),
+<code>*.key/*.pem/*.crt/*.csr/*.p12/*.pfx</code> (<code>:20-25</code>),
+<code>data/</code>+<code>caddy-*/</code> (<code>:26-29</code>),
+<code>pebble-ca/</code> (<code>:32</code>),
+<code>secrets/</code>+<code>*.secret</code>+<code>*_token</code>
+(<code>:35-37</code>). Runtime crypto material and the materialized
+public CA cannot be committed. Proxy-lane evidence lands under
+<code>qa-results/</code> which is gitignored at root
+(<code>.gitignore:51</code>).</li>
+<li><strong>INFO-6 — Proxy Challenge lanes are read-only clients with no
+credential-leaking logs.</strong>
+<code>proxy_forward_http_challenge.sh</code>,
+<code>proxy_socks5_challenge.sh</code>,
+<code>proxy_cache_challenge.sh</code> and
+<code>run_proxy_challenges.sh</code> invoke only <code>curl</code>
+through the proxy with quoted args (no shell injection), never
+start/stop/reconfigure a container, and capture response headers via a
+grep allowlist restricted to
+<code>HTTP/|Via|Cache-Control|Age|Server|Content-Type|X-Cache|Expires</code>
+(<code>proxy_forward_http_challenge.sh:107</code>,
+<code>proxy_cache_challenge.sh:135</code>) —
+<code>Authorization</code>/<code>Cookie</code>/<code>Set-Cookie</code>
+are NOT captured. <code>run_proxy_bank.sh</code> runs the HelixQA
+subprocess under a clean <code>env -i</code> (<code>:178</code>) and
+only reads (<code>cat</code>) the project's own <code>proxy-squid</code>
+access log — no secret written to any log path; evidence dirs are
+created with the default umask (not world-writable) under gitignored
+<code>qa-results/</code>.</li>
+</ul>
+<hr />
+<h2 id="coverage-note">Coverage note</h2>
+<p>Every file named in the task was read in full:
+<code>provider.go</code>, <code>compose.hermetic.yml</code>,
+<code>Dockerfile.caddy</code>, <code>Caddyfile</code>,
+<code>build.sh</code>, <code>.env.example</code>,
+<code>.gitignore</code>, <code>coredns/Corefile</code>,
+<code>pebble-ca/pebble.minica.pem</code> (header + private-key scan),
+the three <code>proxy_*_challenge.sh</code> lanes,
+<code>run_proxy_challenges.sh</code>,
+<code>tools/helixqa/runner/run_proxy_bank.sh</code>,
+<code>tools/helixqa/banks/proxy.yaml</code> +
+<code>routes/proxy_cache.yaml</code>, and the module README. The HelixQA
+bank YAMLs are declarative test definitions with no secrets and no
+executable injection surface. Nothing in scope was left unreviewed; no
+finding is marked UNCONFIRMED.</p>
+</body>
+</html>

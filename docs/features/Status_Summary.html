@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="helix_proxy--feature-status-summary">helix_proxy — Feature
+Status Summary</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T12:30:00Z <strong>Authority:</strong> §11.4.56 two-audience
+companion to <a href="Status.md"><code>Status.md</code></a>. Inherits
+<code>constitution/Constitution.md</code> per §11.4.35.</p>
+<hr />
+<h2 id="page-1--for-the-product--operations-team-plain-language">Page 1
+— For the product / operations team (plain language)</h2>
+<p><strong>What is this?</strong> helix_proxy is a self-hosted proxy
+server. Apps and users point their web traffic at it; it forwards that
+traffic to the internet, can route it through a VPN, and remembers
+("caches") repeated downloads so they come back faster.</p>
+<p><strong>What works today, proven with real evidence:</strong></p>
+<ul>
+<li><strong>Web proxying works.</strong> Plain web (HTTP) and secure
+(HTTPS) requests both go through the proxy and reach the internet. We
+proved it with real requests that came back stamped by our proxy (a
+<code>Via: proxy-squid</code> marker only our proxy adds).</li>
+<li><strong>SOCKS5 proxying works.</strong> The second proxy type
+(SOCKS5, used by many apps) forwards both plain and secure traffic.
+Proven with real requests.</li>
+<li><strong>Caching works.</strong> Ask for the same file twice and the
+second copy is served from the proxy's own memory — confirmed in the
+proxy's own access log as a real cache "HIT", not a guess.</li>
+<li><strong>Status/health command works.</strong> The
+<code>./status</code> tool truthfully reports which parts are running,
+which ports are open, and whether connections succeed.</li>
+<li><strong>The certificate checker works.</strong> The piece that will
+validate our future auto-HTTPS certificates already passes its full
+self-test (37/37) and is deliberately built so it cannot rubber-stamp a
+bad certificate.</li>
+</ul>
+<p><strong>What's built but not switched on yet (in
+progress):</strong></p>
+<ul>
+<li>The <strong>smart VPN-aware routing brain</strong> (the
+"control-plane") — the part that decides which VPN tunnel each request
+should use, plus the admin dashboard, live health publisher, and
+metrics. The code exists and passes its component tests, but it is not
+yet plugged into the live proxy, so end users cannot use it yet. The
+admin page you see today is still a temporary placeholder.</li>
+<li><strong>Username/password protection</strong> on the proxy and
+<strong>live dashboards/metrics</strong> — designed and partially
+tested, not switched on.</li>
+<li><strong>Automatic HTTPS certificates (Let's Encrypt)</strong> — the
+checker is done; actually issuing and renewing certificates is the next
+step.</li>
+</ul>
+<p><strong>What needs a decision or action from you
+(operator):</strong></p>
+<ul>
+<li>To prove <strong>VPN routing</strong> end-to-end we need a real VPN
+tunnel up and the expected exit IP provided. Until then the test
+honestly skips rather than pretend.</li>
+<li>To turn on <strong>Let's Encrypt for a real domain</strong> we need
+you to choose a DNS provider, supply a scoped API token, and authorise
+go-live for the real domain.</li>
+</ul>
+<p><strong>Bottom line:</strong> the core proxy (forward HTTP, HTTPS,
+SOCKS5, caching) is working and evidence-backed. The advanced
+VPN-routing/admin/metrics layer and real HTTPS issuance are still being
+wired in. Nothing is claimed "done" without a real captured proof behind
+it.</p>
+<hr />
+<h2 id="page-2--for-software-engineers">Page 2 — For software
+engineers</h2>
+<p><strong>Scope.</strong> Reconciled against branch
+<code>feature/vpn-aware-dynamic-routing</code> @ <code>bf38c35</code>.
+Deployed stack = <code>docker-compose.yml</code> (Squid
+<code>:53128</code>, Dante <code>:51080</code>, <code>proxy-admin</code>
+= <code>traefik/whoami</code> placeholder <code>:58080</code>,
+<code>proxy-vpn</code> observed Stopped). Control-plane = separate Go
+module <code>digital.vasic.helixproxy/controlplane</code>, not yet in
+the byte path.</p>
+<p><strong>Tally:</strong> 9 PASS-with-evidence · 10 PENDING · 3
+OPERATOR-BLOCKED. No FAIL; no metadata-only PASS.</p>
+<p><strong>PASS-with-evidence (deployed data plane + LE Phase
+1):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Decisive evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP forward proxy</td>
+<td><code>qa-results/challenges/20260701T085518Z/evidence/http/forward_http_evidence.txt</code>
+— proxy=204, <code>Via: 1.1 proxy-squid (squid/6.13)</code></td>
+</tr>
+<tr>
+<td>HTTPS CONNECT tunnel</td>
+<td>same file, <code>https_200</code> sub-probe
+(<code>Connection established</code> → upstream 200)</td>
+</tr>
+<tr>
+<td>SOCKS5 + SOCKS5-over-HTTPS</td>
+<td><code>qa-results/challenges/20260701T085518Z/evidence/socks5/socks5_evidence.txt</code>
+(204 + 200)</td>
+</tr>
+<tr>
+<td>Response caching</td>
+<td><code>qa-results/comprehensive/cache_hit.evidence</code>
+(<code>TCP_MEM_HIT/200</code>) +
+<code>squid_access_snapshot.log</code></td>
+</tr>
+<tr>
+<td>Cache admin (<code>cachectl</code>)</td>
+<td><code>qa-results/comprehensive/cache_cmd_stats.out</code></td>
+</tr>
+<tr>
+<td>ACL allow-path</td>
+<td>forward challenge (localnet admit) — deny-path PENDING</td>
+</tr>
+<tr>
+<td><code>./status</code> health</td>
+<td><code>qa-results/comprehensive/status.out</code> +
+<code>status_json.out</code></td>
+</tr>
+<tr>
+<td>Admin <code>/health</code> reachability</td>
+<td><code>qa-results/comprehensive/after_run.log:92</code>
+(placeholder-qualified)</td>
+</tr>
+<tr>
+<td>LE cert-analyzer</td>
+<td><code>qa-results/regression/cert_analyzer_selfvalidation/*</code>
+(37/37 + §1.1 RED→GREEN)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>PENDING (code/tests exist, not end-user-reachable):</strong>
+VPN-aware dynamic routing (<code>internal/routing</code>, golden-config
+unit/integration GREEN, <code>p4-compiler</code>); Control API
+REST/SSE/PAC/mTLS/metrics (<code>internal/api</code> +
+<code>cmd/api</code>, unit <code>-race</code> + real-PG integration +
+§1.1 mTLS mutation, <code>p6-api</code>); VPN health publisher
+(<code>internal/vpn</code> + <code>cmd/healthd</code>, real-gluetun
+integration + chaos + §1.1, <code>p3-healthd</code>); circuit
+breaker/tier-failover (<code>internal/breaker</code>,
+<code>p5b-breaker</code>); ACL helper graceful-503
+(<code>internal/aclhelper</code>, <code>p5-aclhelper</code>); PAC
+generation (<code>internal/pac</code> golden); proxy auth
+<code>407</code> / ACL deny-path (<code>auth_407</code> analyzer
+self-validated at fixture level only); observability/metrics
+(<code>config/prometheus/prometheus.yml</code> is an explicit
+NOT-YET-LIVE PLAN, targets absent); LE issuance/renewal Phases 2/3/5.
+Live stress/chaos/ddos/benchmark/memory/concurrency runs SKIP
+(<code>suite_results.txt</code>: <code>PASS=0 SKIP=6 FAIL=0</code>) —
+dynamic stack (P10) not deployed; analyzers self-validated + RED
+regression guards (<code>ddos_flood_evidence</code>,
+<code>benchmark_baseline_ratchet</code>) PASS.</p>
+<p><strong>OPERATOR-BLOCKED:</strong> LE Phase 4 (staging real DNS-01 —
+needs DNS provider + scoped token as Podman secret); LE Phase 6
+(production cutover — operator go-live gate); real VPN egress proof
+(needs live tunnel + <code>VPN_EXIT_IP</code>; <code>proxy-vpn</code>
+Stopped; the old <code>host_ip==proxy_ip</code> "VPN verified" bluff was
+removed — <code>tests/verify-proxy.sh:87-98</code>).</p>
+<p><strong>Key anti-bluff notes.</strong> (1) HelixQA live exec SKIPs
+honestly — <code>helixqa</code> binary unbuildable (6 own-org sibling
+modules absent), proxy re-proven via a stdlib HTTPExecutor replica
+(<code>qa-results/helixqa/*/mech_*.txt</code>). (2) Cache challenge
+client-side SKIP is <code>topology_unsupported</code> (rootless subuid
+owns <code>access.log</code>); the <code>TCP_MEM_HIT</code> PASS comes
+from comprehensive-test's container-side snapshot. (3) Every analyzer
+(<code>no_leak</code>, <code>graceful_503</code>,
+<code>egress_neq_host</code>, <code>xcache_hit</code>,
+<code>auth_407</code>, cert-analyzer) is golden-good/golden-bad
+self-validated (§11.4.107(10)). (4) Video-confirmation is N/A —
+helix_proxy is headless; proof is captured status codes +
+<code>Via:</code> headers + <code>access.log</code>
+<code>TCP_*HIT</code>.</p>
+<p><strong>Cross-refs:</strong> control-plane
+<code>control-plane/README.md</code>; LE
+<code>docs/design/letsencrypt/Status.md</code>; HelixQA bank
+<code>tools/helixqa/banks/proxy.yaml</code>; challenge bank
+<code>challenges/scripts/run_proxy_challenges.sh</code>.</p>
+</body>
+</html>

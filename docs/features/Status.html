@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="helix_proxy--feature-status">helix_proxy — Feature Status</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T12:30:00Z <strong>Status:</strong> Data plane (Squid
+HTTP/HTTPS forward + Dante SOCKS5 + Squid caching) is deployed,
+end-user-reachable, and PASS with captured evidence. The VPN-aware
+control-plane (dynamic routing / control API / health publisher /
+breaker / ACL-helper / PAC / metrics) is a separate Go module —
+component-tested (unit/integration GREEN + §1.1 mutations) but NOT yet
+wired into the running data plane, therefore PENDING at the end-user
+layer. Let's Encrypt HTTPS is Phase-1 (cert-analyzer) PASS;
+issuance/renewal PENDING; staging/production cutover OPERATOR-BLOCKED.
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. This is the
+§11.4.153 per-feature Status set (companion §11.4.56 two-audience <a
+href="Status_Summary.md"><code>Status_Summary.md</code></a>). Every row
+is reconciled against real code + committed tests/challenges/evidence;
+no metadata-only PASS (§11.4 / §11.4.1 / §11.4.6). <strong>Repo
+anchor:</strong> branch <code>feature/vpn-aware-dynamic-routing</code>,
+HEAD <code>bf38c35</code> at authoring time.</p>
+<hr />
+<h2
+id="operator-blocked--operator-gated-items-read-first--11445-o1-surface">Operator-blocked
+/ operator-gated items (read first — §11.4.45 O(1) surface)</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why blocked</th>
+<th>Unblock condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Real VPN egress proof (egress-IP ≠ host-IP through the proxy)</td>
+<td>No live tunnel bound at test time; <code>proxy-vpn</code> container
+observed <strong>Stopped</strong>; <code>VPN_EXIT_IP</code> unset. The
+verify scripts SKIP honestly (<code>operator_attended</code>) rather
+than fabricate a VPN PASS
+(<code>tests/verify-proxy.sh:87-98</code>).</td>
+<td>Operator brings up a real tunnel and exports
+<code>VPN_EXIT_IP=&lt;tunnel exit&gt;</code>; then
+<code>tests/egress_proof/real_vpn_egress_proof.sh</code> produces the
+live RED→GREEN proof.</td>
+</tr>
+<tr>
+<td>Let's Encrypt Phase 4 — LE <strong>staging</strong> end-to-end (real
+DNS-01)</td>
+<td>Needs a real DNS provider + a scoped API token stored as a Podman
+secret (§11.4.10 — value never in git/<code>.env</code>). Operator chose
+<em>defer real domain</em> (design §9 Phase 0).</td>
+<td>Operator provides the DNS provider name + a scoped API token + a
+test hostname.</td>
+</tr>
+<tr>
+<td>Let's Encrypt Phase 6 — <strong>production</strong> cutover</td>
+<td>Real public domain + real DNS-01 for that domain + a single
+operator-gated go-live (design §9).</td>
+<td>Operator authorises go-live with the real domain + token + host
+firewall opening.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="feature-status-table-114153">Feature status table
+(§11.4.153)</h2>
+<p><strong>Legend.</strong> Wiring = <em>is the feature genuinely
+reachable by an end user of the DEPLOYED stack
+(<code>docker-compose.yml</code>)?</em> Validation ∈ {PASS, FAIL, SKIP,
+PENDING, OPERATOR-BLOCKED}. PASS requires a committed captured-evidence
+path (§11.4.69). PENDING = code/tests exist but the feature is not yet
+end-user-reachable in the deployed stack (no metadata-only PASS).
+Video-confirmation is <strong>N/A</strong> for every row: helix_proxy is
+a headless network service with no rendered UI — its §11.4.107/§11.4.69
+proof is captured curl status codes + Squid <code>Via:</code> headers +
+<code>access.log</code> <code>TCP_*HIT</code> facts, not a video
+(§11.4.153(3) autonomous-infeasible ⇒ honest non-video evidence).</p>
+<h3 id="a-data-plane-proxy-features--deployed--end-user-reachable">A.
+Data-plane proxy features — DEPLOYED &amp; end-user-reachable</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation (file:line)</th>
+<th>Wiring (end-user-reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage</th>
+<th>Validation</th>
+<th>Evidence-path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Squid <code>:53128</code></td>
+<td>HTTP forward proxy (plain-HTTP GET relayed to upstream)</td>
+<td>functional / data-plane</td>
+<td><code>config/squid/squid.conf:53</code>
+(<code>http_access allow localnet</code>);
+<code>docker-compose.yml:56</code> (<code>proxy-squid</code>)</td>
+<td>YES — <code>curl -x http://localhost:53128</code> forwards live</td>
+<td>Real <code>curl</code> 204 relayed with
+<code>Via: 1.1 proxy-squid (squid/6.13)</code> header</td>
+<td>Challenge + verify + comprehensive + HelixQA bank case
+PRX-HTTP-001</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/challenges/20260701T085518Z/evidence/http/forward_http_evidence.txt</code>
+(proxy=204, <code>Via: proxy-squid</code>)</td>
+</tr>
+<tr>
+<td>Squid <code>:53128</code></td>
+<td>HTTPS CONNECT tunneling (<code>CONNECT</code> to TLS upstream)</td>
+<td>functional / data-plane</td>
+<td><code>config/squid/squid.conf:46,50</code> (<code>acl CONNECT</code>
+/ <code>deny CONNECT !SSL_ports</code>);
+<code>docker-compose.yml:56</code></td>
+<td>YES — <code>curl -x http://localhost:53128 https://…</code></td>
+<td>Real TLS GET → <code>HTTP/1.1 200 Connection established</code> then
+upstream 200</td>
+<td>forward challenge sub-probe <code>https_200</code>; HelixQA
+PRX-HTTPS-001</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/challenges/20260701T085518Z/evidence/http/forward_http_evidence.txt</code>
+(https_200 CONNECT established)</td>
+</tr>
+<tr>
+<td>Dante <code>:51080</code></td>
+<td>SOCKS5 proxy (HTTP over SOCKS5)</td>
+<td>functional / data-plane</td>
+<td><code>config/dante/sockd.conf</code>;
+<code>docker-compose.yml:127</code> (<code>proxy-dante</code>)</td>
+<td>YES — <code>curl --proxy socks5://localhost:51080</code></td>
+<td>Real <code>curl</code> 204 relayed via Dante SOCKS5</td>
+<td>socks5 challenge sub-probe <code>socks_204</code>; HelixQA
+PRX-SOCKS5-001</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/challenges/20260701T085518Z/evidence/socks5/socks5_evidence.txt</code>
+(socks=204)</td>
+</tr>
+<tr>
+<td>Dante <code>:51080</code></td>
+<td>SOCKS5-over-HTTPS (TLS carried over SOCKS5)</td>
+<td>functional / data-plane</td>
+<td><code>config/dante/sockd.conf</code>;
+<code>docker-compose.yml:127</code></td>
+<td>YES — <code>curl --proxy socks5://… https://…</code></td>
+<td>Real HTTPS GET → HTTP/2 200 through Dante</td>
+<td>socks5 challenge sub-probe <code>socks_https</code>; HelixQA
+PRX-SOCKS5-002</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/challenges/20260701T085518Z/evidence/socks5/socks5_evidence.txt</code>
+(socks_https=200)</td>
+</tr>
+<tr>
+<td>Squid <code>:53128</code></td>
+<td>Response caching (cache-HIT of cacheable object)</td>
+<td>performance / data-plane</td>
+<td><code>config/squid/squid.conf:9</code>
+(<code>cache_dir aufs … 51200</code>), <code>:10</code>
+(<code>cache_mem 512 MB</code>), <code>:70-73</code>
+(<code>refresh_pattern</code>)</td>
+<td>YES — repeat GET served from cache</td>
+<td>Two GETs of the same object → Squid <code>TCP_MEM_HIT/200</code> in
+<code>access.log</code> (decisive sink-side proof)</td>
+<td>comprehensive <code>assert_cache_hit</code>; HelixQA
+PRX-CACHE-001/002; challenge (client-side supplementary)</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/comprehensive/cache_hit.evidence</code>
+(<code>TCP_MEM_HIT/200</code>) +
+<code>qa-results/comprehensive/squid_access_snapshot.log</code></td>
+</tr>
+<tr>
+<td>Squid <code>:53128</code></td>
+<td>Cache admin/inspection (<code>cachectl stats/list/size</code>)</td>
+<td>operational</td>
+<td><code>cachectl</code> (repo root)</td>
+<td>YES — operator CLI against live cache</td>
+<td>Real <code>cachectl stats</code> prints substantive cache
+figures</td>
+<td>comprehensive cache-command probes; regression
+<code>cache_cli_present_test.sh</code></td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/comprehensive/cache_cmd_stats.out</code>,
+<code>cache_cmd_list.out</code>, <code>cache_cmd_size.out</code></td>
+</tr>
+<tr>
+<td>Squid <code>:53128</code></td>
+<td>ACL access control (allow <code>localnet</code>, deny-all default,
+<code>Safe_ports</code>, <code>CONNECT</code>→SSL-ports-only,
+<code>manager</code> deny) — <strong>allow-path</strong></td>
+<td>security / data-plane</td>
+<td><code>config/squid/squid.conf:49-55</code></td>
+<td>YES — enforced by running Squid on every request</td>
+<td>Allow-path proven: localnet requests forward; deny-all is the
+default tail</td>
+<td>Enforced by the live proxy (allow-path is exercised by every forward
+challenge); <code>auth_407</code> analyzer self-validated at fixture
+level</td>
+<td><strong>PASS</strong> (allow-path only; see A-note)</td>
+<td>Allow-path:
+<code>qa-results/challenges/20260701T085518Z/evidence/http/forward_http_evidence.txt</code>;
+deny-path proof PENDING (§B)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A-note (anti-bluff, §11.4.6):</strong> the ACL <em>allow</em>
+path is proven — every forward/SOCKS5 challenge succeeds only because
+<code>http_access allow localnet</code> admits it. The ACL <em>deny</em>
+paths (<code>deny all</code>, <code>deny !Safe_ports</code>,
+<code>deny CONNECT !SSL_ports</code>, <code>deny manager</code>) are
+present + enforced by the running Squid but have <strong>no dedicated
+committed deny-assertion capture</strong> yet, so a full deny-path PASS
+is deferred to §B (PENDING). Proxy <em>authentication</em>
+(username/password <code>407</code>) is NOT in the deployed
+<code>squid.conf</code> — see §B.</p>
+<h3
+id="b-control-plane--auth-features--codetests-exist-not-yet-wired-into-the-deployed-data-plane-pending">B.
+Control-plane &amp; auth features — code/tests exist, NOT yet wired into
+the deployed data plane (PENDING)</h3>
+<p>The control-plane is a separate Go module
+(<code>control-plane/</code>,
+<code>module digital.vasic.helixproxy/controlplane</code>) that sits
+<em>beside</em> the byte path. Its packages are phased (P3–P6 landed
+with unit/integration GREEN + §1.1 mutations), but the deployed admin
+surface is still the <code>traefik/whoami</code> placeholder
+(<code>docker-compose.yml:199-201</code>), so none of these are
+end-user-reachable in the running stack yet. Per §11.4 / §11.4.1 they
+are <strong>PENDING</strong>, never PASS.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation (file:line)</th>
+<th>Wiring (end-user-reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage</th>
+<th>Validation</th>
+<th>Evidence-path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>control-plane <code>internal/routing</code></td>
+<td>VPN-aware dynamic routing (render Squid include + Dante routes +
+PAC)</td>
+<td>data-plane routing</td>
+<td><code>control-plane/internal/routing/routing.go</code> (+
+<code>testdata/*.golden</code>)</td>
+<td>NO — dynamic stack (<code>docker-compose.dynamic.yml</code>) not
+deployed</td>
+<td>— (golden-config render only; no live route yet)</td>
+<td>unit + integration GREEN vs golden configs</td>
+<td><strong>PENDING</strong></td>
+<td><code>control-plane/qa-results/p4-compiler/*</code> (unit_routing /
+integration_routing)</td>
+</tr>
+<tr>
+<td>control-plane <code>cmd/api</code> + <code>internal/api</code></td>
+<td>Control API (REST CRUD / SSE status / PAC endpoint /
+<code>/metrics</code> / mTLS)</td>
+<td>control API</td>
+<td><code>control-plane/internal/api/server.go</code>,
+<code>handlers.go</code>, <code>metrics.go</code>, <code>tls.go</code>;
+<code>cmd/api/main.go</code></td>
+<td>NO — admin <code>:58080</code> is <code>traefik/whoami</code>
+placeholder</td>
+<td>—</td>
+<td>unit (<code>-race</code>) + real-Postgres integration + §1.1
+mutation (mTLS)</td>
+<td><strong>PENDING</strong></td>
+<td><code>control-plane/qa-results/p6-api/*</code> (01_unit_short_race,
+04_mutation_RED, 08_integration_realpg)</td>
+</tr>
+<tr>
+<td>control-plane <code>cmd/healthd</code> +
+<code>internal/vpn</code></td>
+<td>VPN health publisher / health endpoints (tunnel-up = tx-Δ&gt;0 ∧
+fresh handshake ∧ egress≠host)</td>
+<td>health / observability</td>
+<td><code>control-plane/internal/vpn/health.go</code>,
+<code>gluetun.go</code>, <code>wg.go</code>;
+<code>cmd/healthd/main.go</code></td>
+<td>NO — not wired into deployed stack</td>
+<td>— (proven against a real gluetun in integration, not in prod)</td>
+<td>unit GREEN + real-gluetun integration + chaos + §1.1 mutation</td>
+<td><strong>PENDING</strong></td>
+<td><code>control-plane/qa-results/p3-healthd/EVIDENCE.md</code> +
+<code>20260630_211405/*</code></td>
+</tr>
+<tr>
+<td>control-plane <code>internal/breaker</code></td>
+<td>Per-target circuit breaker + tunnel tier-failover</td>
+<td>resilience</td>
+<td><code>control-plane/internal/breaker/breaker.go</code>,
+<code>selection.go</code>, <code>tunnelbreaker.go</code></td>
+<td>NO</td>
+<td>—</td>
+<td>unit GREEN</td>
+<td><strong>PENDING</strong></td>
+<td><code>control-plane/qa-results/p5b-breaker/*</code></td>
+</tr>
+<tr>
+<td>control-plane <code>cmd/acl-helper</code> +
+<code>internal/aclhelper</code></td>
+<td>External ACL helper (<code>OK tag=&lt;tunnel&gt;</code> /
+<code>ERR</code> graceful-503, fail-closed)</td>
+<td>data-plane ACL</td>
+<td><code>control-plane/internal/aclhelper/decide.go</code>,
+<code>protocol.go</code>; <code>cmd/acl-helper/main.go</code></td>
+<td>NO — Squid <code>external_acl_type</code> not wired in deployed
+<code>squid.conf</code></td>
+<td>—</td>
+<td>unit + integration GREEN</td>
+<td><strong>PENDING</strong></td>
+<td><code>control-plane/qa-results/p5-aclhelper/*</code></td>
+</tr>
+<tr>
+<td>control-plane <code>internal/pac</code></td>
+<td>PAC generation (<code>FindProxyForURL</code>)</td>
+<td>data-plane routing</td>
+<td><code>control-plane/internal/pac/generate.go</code>,
+<code>pac.go</code> (+ <code>testdata/pac.golden</code>)</td>
+<td>NO</td>
+<td>—</td>
+<td>unit GREEN vs golden</td>
+<td><strong>PENDING</strong></td>
+<td><code>control-plane/qa-results/p4-compiler/*</code></td>
+</tr>
+<tr>
+<td>Squid <code>:53128</code></td>
+<td>Proxy authentication (username/password <code>407</code>) + ACL
+deny-path assertion</td>
+<td>security</td>
+<td>(design) <code>tests/dynamic/analyzers/auth_407_analyzer.sh</code>;
+not in deployed <code>config/squid/squid.conf</code></td>
+<td>NO — no <code>auth_param</code> in deployed config</td>
+<td>—</td>
+<td><code>auth_407</code> analyzer self-validated (golden-good PASS /
+golden-bad FAIL) at fixture level only</td>
+<td><strong>PENDING</strong></td>
+<td><code>qa-results/p9-harness/CONSOLIDATED_20260630T221343Z/CONSOLIDATED_EVIDENCE.txt</code>
+(analyzer self-validation)</td>
+</tr>
+<tr>
+<td>Prometheus / Grafana / OTel</td>
+<td>Observability &amp; metrics (scrape topology, dashboards, in-process
+OTel)</td>
+<td>observability</td>
+<td><code>config/prometheus/prometheus.yml</code>,
+<code>config/grafana/</code>,
+<code>control-plane/internal/otel/otel.go</code>,
+<code>internal/api/metrics.go</code></td>
+<td>NO — <code>prometheus.yml</code> is explicitly a <em>NOT-YET-LIVE
+PLAN</em>; scrape targets do not exist</td>
+<td>—</td>
+<td>config authored; control <code>/metrics</code> unit-tested (not
+deployed)</td>
+<td><strong>PENDING</strong></td>
+<td><code>config/prometheus/prometheus.yml:2-10</code> (NOT-YET-LIVE
+PLAN banner); <code>control-plane/qa-results/p6-api/*</code> (metrics
+unit)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c-operational--health-surface--deployed">C. Operational / health
+surface — DEPLOYED</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation (file:line)</th>
+<th>Wiring</th>
+<th>Real-use</th>
+<th>Tests-coverage</th>
+<th>Validation</th>
+<th>Evidence-path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>./status</code></td>
+<td>Operational status/health command (Container/Port/Connection
+state)</td>
+<td>health / operational</td>
+<td><code>status</code> (repo root)</td>
+<td>YES — operator CLI + <code>--json</code></td>
+<td>Real <code>./status</code> prints Container/Port/Connection fields;
+<code>--json</code> emits structured health</td>
+<td>comprehensive status probes</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/comprehensive/status.out</code>,
+<code>status_json.out</code>, <code>probe_status_json.txt</code></td>
+</tr>
+<tr>
+<td><code>proxy-admin</code> <code>:58080</code></td>
+<td>Admin container reachability <code>/health</code> (200)</td>
+<td>health</td>
+<td><code>docker-compose.yml:199-201</code>
+(<code>traefik/whoami</code>)</td>
+<td>YES (reachable) — but is the <code>whoami</code>
+<strong>placeholder</strong>, not the real admin UI</td>
+<td>HTTP 200 from <code>:58080/health</code></td>
+<td>comprehensive "Admin health endpoint"</td>
+<td><strong>PASS</strong> (placeholder-qualified — real admin UI is §B
+PENDING)</td>
+<td><code>qa-results/comprehensive/after_run.log:92</code>
+(<code>✓ PASS: Admin health endpoint</code>)</td>
+</tr>
+<tr>
+<td>Containers</td>
+<td>Compose service healthchecks (Squid/Dante/admin liveness)</td>
+<td>health</td>
+<td><code>docker-compose.yml</code> (<code>healthcheck:</code>
+blocks)</td>
+<td>YES — runtime restart/liveness</td>
+<td><code>./status</code> reflects Running/Stopped per container</td>
+<td>comprehensive container-status tests</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/comprehensive/status.out</code> (per-container
+Running/Stopped)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d-lets-encrypt-https-workstream-task-59">D. Let's Encrypt HTTPS
+workstream (task #59)</h3>
+<p>Detailed integration status: <a
+href="../design/letsencrypt/Status.md"><code>../design/letsencrypt/Status.md</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation (file:line)</th>
+<th>Wiring</th>
+<th>Real-use</th>
+<th>Tests-coverage</th>
+<th>Validation</th>
+<th>Evidence-path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cert-analyzer</td>
+<td>Offline PEM analyzer (<code>cert_not_expired</code> /
+<code>cert_days_remaining</code> / <code>cert_san_matches</code> /
+<code>cert_chain_roots_in</code> / <code>cert_renewal_due</code>) +
+golden-good/golden-bad self-validation (§11.4.107(10))</td>
+<td>security / TLS</td>
+<td><code>tests/letsencrypt/cert_analyzer.sh</code> (+
+<code>cert_analyzer_selftest.sh</code>, <code>fixtures/</code>)</td>
+<td>YES (offline tool — analyzes a resulting cert regardless of how
+obtained)</td>
+<td>Selftest 37/37; guard GREEN+RED; §1.1 SAN-mutation → FAIL, restore
+byte-identical</td>
+<td>unit selftest + regression self-validation guard + §1.1
+mutation</td>
+<td><strong>PASS</strong></td>
+<td><code>qa-results/regression/cert_analyzer_selfvalidation/*</code>
+(<code>verdict: PASS</code>, RED reproduced);
+<code>qa-results/letsencrypt/cert-analyzer/*</code></td>
+</tr>
+<tr>
+<td>Caddy (custom image)</td>
+<td>Auto-HTTPS terminator + DNS-01 ACME client (chosen client)</td>
+<td>TLS</td>
+<td><code>config/caddy/Caddyfile</code></td>
+<td>NO — image/service not built/wired yet</td>
+<td>—</td>
+<td>design decisions captured (Phase 0)</td>
+<td><strong>PENDING</strong></td>
+<td><code>docs/design/letsencrypt/Status.md</code> (Phase 1/2/3
+rows)</td>
+</tr>
+<tr>
+<td>Caddy + Pebble</td>
+<td>Hermetic local-ACME issuance (Phase 3) + renewal/rotation (Phase
+5)</td>
+<td>TLS</td>
+<td>(design) <code>docs/design/LETSENCRYPT_HTTPS.md</code> §Pebble</td>
+<td>NO</td>
+<td>—</td>
+<td>authored plan; analyzer ready to assert the result</td>
+<td><strong>PENDING</strong></td>
+<td><code>docs/design/letsencrypt/Status.md</code> (Phase 3/5)</td>
+</tr>
+<tr>
+<td>LE staging / production</td>
+<td>Real DNS-01 issuance (Phase 4) + production cutover (Phase 6)</td>
+<td>TLS</td>
+<td>(design) <code>docs/design/LETSENCRYPT_HTTPS.md</code> §9</td>
+<td>NO</td>
+<td>—</td>
+<td>operator-gated</td>
+<td><strong>OPERATOR-BLOCKED</strong></td>
+<td><code>docs/design/letsencrypt/Status.md</code> (Operator-blocked
+table)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="e-vpn-routing--egress">E. VPN routing / egress</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation (file:line)</th>
+<th>Wiring</th>
+<th>Real-use</th>
+<th>Tests-coverage</th>
+<th>Validation</th>
+<th>Evidence-path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>egress proof</td>
+<td>Real VPN egress proof (egress-IP through proxy = tunnel exit ∧ ≠
+host-IP)</td>
+<td>data-plane / security</td>
+<td><code>tests/egress_proof/real_vpn_egress_proof.sh</code>;
+<code>evidence.sh assert_egress_ip</code>; <code>egress_neq_host</code>
+analyzer</td>
+<td>NO — <code>proxy-vpn</code> observed Stopped; no live tunnel</td>
+<td>— (SKIP <code>operator_attended</code> — the old host_ip==proxy_ip
+"VPN verified" bluff was removed)</td>
+<td><code>egress_neq_host_analyzer</code> self-validated (golden-good
+PASS / golden-bad <code>egress==host</code> FAIL)</td>
+<td><strong>OPERATOR-BLOCKED</strong></td>
+<td>analyzer self-validation:
+<code>qa-results/p9-harness/CONSOLIDATED_20260630T221343Z/CONSOLIDATED_EVIDENCE.txt</code>;
+live SKIP: <code>tests/verify-proxy.sh:87-98</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="114169-test-type-coverage-matrix">§11.4.169 test-type coverage
+matrix</h2>
+<p>Per-feature × test-type × evidence-state. Cells:
+<strong>PASS</strong> = live captured evidence committed;
+<strong>UNIT</strong> = unit/fixture-level GREEN (incl.
+golden-good/golden-bad self-validation) but not a live-stack run;
+<strong>SKIP</strong> = honest topology SKIP (dynamic/live stack absent
+— §11.4.3); <strong>PENDING</strong> = warranted but not yet produced;
+<strong>N/A</strong> = not applicable to this feature class. The
+DEPLOYED data-plane suites for
+stress/chaos/ddos/benchmark/memory/concurrency currently
+<strong>SKIP</strong> because they require the un-deployed
+<code>dynamic</code> stack (P10) — their analyzers are self-validated
+and their scripts are parse-clean, so the SKIP is honest, not a
+gap-hidden PASS.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>unit</th>
+<th>integration</th>
+<th>e2e / live</th>
+<th>challenge</th>
+<th>HelixQA</th>
+<th>security</th>
+<th>stress / chaos</th>
+<th>benchmark</th>
+<th>Overall</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP forward proxy</td>
+<td>PASS (<code>proxy_conn_verdict_test.sh</code>)</td>
+<td>PASS (comprehensive)</td>
+<td><strong>PASS</strong> (challenge live curl)</td>
+<td><strong>PASS</strong>
+(<code>proxy_forward_http_challenge.sh</code>)</td>
+<td>SKIP (bank authored; <code>helixqa</code> binary unbuildable — 6
+sibling modules absent)</td>
+<td>UNIT (ACL analyzers)</td>
+<td>SKIP (dynamic stack absent)</td>
+<td>SKIP (dynamic stack absent)</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>HTTPS CONNECT tunneling</td>
+<td>PASS</td>
+<td>PASS</td>
+<td><strong>PASS</strong> (challenge)</td>
+<td><strong>PASS</strong> (<code>https_200</code> sub-probe)</td>
+<td>SKIP (harness build)</td>
+<td>UNIT</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>SOCKS5 proxy</td>
+<td>PASS</td>
+<td>PASS</td>
+<td><strong>PASS</strong></td>
+<td><strong>PASS</strong> (<code>proxy_socks5_challenge.sh</code>)</td>
+<td>SKIP (harness build)</td>
+<td>UNIT</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>SOCKS5-over-HTTPS</td>
+<td>PASS</td>
+<td>PASS</td>
+<td><strong>PASS</strong></td>
+<td><strong>PASS</strong> (<code>socks_https</code> sub-probe)</td>
+<td>SKIP (harness build)</td>
+<td>UNIT</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>Response caching (TCP_*HIT)</td>
+<td>PASS (<code>xcache_hit_analyzer</code> self-val)</td>
+<td><strong>PASS</strong> (comprehensive <code>TCP_MEM_HIT</code>)</td>
+<td><strong>PASS</strong> (comprehensive live double-fetch)</td>
+<td>SKIP (client-side access.log unreadable → topology SKIP);
+comprehensive PASS via container</td>
+<td>SKIP (harness build)</td>
+<td>N/A</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>Cache admin (<code>cachectl</code>)</td>
+<td>PASS (<code>cache_cli_present_test.sh</code>)</td>
+<td><strong>PASS</strong> (comprehensive)</td>
+<td><strong>PASS</strong> (live <code>cachectl stats</code>)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>Squid ACL (allow-path)</td>
+<td>PASS (analyzer)</td>
+<td><strong>PASS</strong> (live forward)</td>
+<td><strong>PASS</strong></td>
+<td>via forward challenge</td>
+<td>SKIP</td>
+<td>UNIT (<code>auth_407</code> self-val)</td>
+<td>SKIP</td>
+<td>N/A</td>
+<td><strong>PASS</strong> (allow); deny-path PENDING</td>
+</tr>
+<tr>
+<td>Proxy auth (407) / ACL deny-path</td>
+<td>UNIT (<code>auth_407</code> self-val)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>SKIP</td>
+<td>UNIT</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>VPN-aware dynamic routing</td>
+<td><strong>UNIT</strong> (routing golden)</td>
+<td><strong>UNIT</strong> (integration golden)</td>
+<td>SKIP (dynamic stack absent)</td>
+<td>PENDING</td>
+<td>SKIP</td>
+<td>PENDING</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>Control API (REST/SSE/PAC/mTLS)</td>
+<td><strong>UNIT</strong> (<code>-race</code>)</td>
+<td><strong>UNIT</strong> (real Postgres)</td>
+<td>PENDING (admin=whoami)</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>UNIT (mTLS §1.1)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>VPN health publisher / health</td>
+<td><strong>UNIT</strong></td>
+<td><strong>UNIT</strong> (real gluetun + chaos)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>UNIT</td>
+<td>UNIT (chaos)</td>
+<td>PENDING</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>Circuit breaker + tier-failover</td>
+<td><strong>UNIT</strong></td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>ACL helper (graceful 503)</td>
+<td><strong>UNIT</strong></td>
+<td><strong>UNIT</strong></td>
+<td>SKIP</td>
+<td>PENDING</td>
+<td>SKIP</td>
+<td>UNIT (<code>graceful_503</code> self-val)</td>
+<td>SKIP</td>
+<td>N/A</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>PAC generation</td>
+<td><strong>UNIT</strong> (golden)</td>
+<td>UNIT</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>Observability / metrics</td>
+<td><strong>UNIT</strong> (control <code>/metrics</code>)</td>
+<td>PENDING</td>
+<td>PENDING (targets absent)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>PENDING</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td><code>./status</code> operational health</td>
+<td>PASS</td>
+<td><strong>PASS</strong> (comprehensive)</td>
+<td><strong>PASS</strong> (live)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>LE cert-analyzer (Phase 1)</td>
+<td><strong>PASS</strong> (selftest 37/37 + §1.1)</td>
+<td>PASS (regression guard)</td>
+<td>N/A (offline tool)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PASS</strong> (cert validity/SAN/chain)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PASS</strong></td>
+</tr>
+<tr>
+<td>LE issuance/renewal (Phase 2/3/5)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>PENDING</strong></td>
+</tr>
+<tr>
+<td>LE staging/production (Phase 4/6)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>OPERATOR-BLOCKED</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>OPERATOR-BLOCKED</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>OPERATOR-BLOCKED</strong></td>
+</tr>
+<tr>
+<td>Real VPN egress proof</td>
+<td>UNIT (<code>egress_neq_host</code> self-val)</td>
+<td>SKIP</td>
+<td>OPERATOR-BLOCKED (no live tunnel)</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>UNIT</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>OPERATOR-BLOCKED</strong></td>
+</tr>
+<tr>
+<td>ddos / flood resilience</td>
+<td>UNIT (<code>ddos_flood_evidence</code> guard)</td>
+<td>SKIP (dynamic stack)</td>
+<td>SKIP</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>UNIT</td>
+<td>SKIP</td>
+<td>N/A</td>
+<td><strong>PENDING</strong> (live SKIP; guard PASS)</td>
+</tr>
+<tr>
+<td>benchmark / latency ratchet</td>
+<td>UNIT (<code>benchmark_baseline_ratchet</code> guard)</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>SKIP (dynamic stack)</td>
+<td><strong>PENDING</strong> (live SKIP; guard PASS)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="honest-gaps-1143--1146">Honest gaps (§11.4.3 / §11.4.6)</h3>
+<ol type="1">
+<li><strong>HelixQA live execution is SKIP, not PASS.</strong> The
+<code>helixqa</code> binary cannot be built in this checkout — its
+<code>go.mod</code> <code>replace</code>s six own-org sibling modules
+(<code>doc_processor</code>, <code>llm_orchestrator</code>,
+<code>llm_provider</code>, <code>llms_verifier</code>,
+<code>vision_engine</code>, <code>security</code>) that are not vendored
+here. The runner emits an honest §11.4.3 SKIP naming the exact blocker
+(<code>qa-results/helixqa/20260701T090532Z/SKIP.md</code>). The proxy
+data plane was independently re-proven this run via a stdlib replica of
+the HelixQA HTTPExecutor client (<code>mech_http_forward.txt</code> 204,
+<code>mech_https_connect.txt</code> 200, <code>mech_socks5.txt</code>
+204). Unblock: vendor the six modules under
+<code>submodules/</code>.</li>
+<li><strong>Live stress/chaos/ddos/benchmark/memory/concurrency
+SKIP.</strong> These six dynamic-suite runs require the un-deployed
+<code>dynamic</code> stack (P10); all six honest-SKIP
+(<code>qa-results/p9-harness/20260630T221343Z/suite_results.txt</code>:
+<code>suites=6 PASS=0 SKIP=6 FAIL=0</code>). Their analyzers are
+self-validated (golden-good PASS / golden-bad FAIL) and their scripts
+parse-clean; the RED regression guards
+(<code>ddos_flood_evidence</code>,
+<code>benchmark_baseline_ratchet</code>) PASS.</li>
+<li><strong>ACL deny-path</strong> has enforcement but no dedicated
+committed deny-assertion capture — represented PENDING, not folded into
+the allow-path PASS.</li>
+<li><strong>Cache challenge client-side SKIP</strong>
+(<code>topology_unsupported</code>) is honest — the Squid
+<code>access.log</code> is owned by a rootless-container subuid and
+unreadable client-side; the decisive <code>TCP_MEM_HIT</code> PASS comes
+from comprehensive-test's container-side snapshot instead.</li>
+<li><strong>Video-confirmation N/A</strong> for every row
+(§11.4.153(3)): helix_proxy is headless — proof is captured status codes
++ <code>Via:</code> headers + <code>access.log</code>
+<code>TCP_*HIT</code>, not rendered video.</li>
+</ol>
+<hr />
+<h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
+<p>Only the <strong>deployed Squid + Dante data plane</strong> (HTTP
+forward, HTTPS CONNECT, SOCKS5, SOCKS5-over-HTTPS, caching, cache admin,
+ACL allow-path, <code>./status</code>, admin reachability) and the
+<strong>LE Phase-1 cert-analyzer</strong> are PASS with committed
+captured evidence. Everything in §B (control-plane routing / API /
+health / breaker / ACL-helper / PAC / metrics, and proxy auth) is
+<strong>component-tested but not wired into the running stack</strong> —
+honestly PENDING, never a metadata-only PASS. The LE issuance/renewal
+path is PENDING; LE staging/production and the real VPN egress proof are
+OPERATOR-BLOCKED. Feature tally: <strong>9 PASS-with-evidence, 10
+PENDING, 3 OPERATOR-BLOCKED</strong> (LE Phase 4, LE Phase 6, real VPN
+egress proof).</p>
+</body>
+</html>

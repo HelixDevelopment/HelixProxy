@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="helixqa-proxy-test-bank--helix_proxy">HelixQA proxy test bank —
+helix_proxy</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T09:00:23Z</p>
+<p>Anti-bluff HelixQA (§11.4.27) coverage for the helix_proxy data
+plane: Squid HTTP/HTTPS forward+cache proxy (<code>:53128</code>) and
+Dante SOCKS5 proxy (<code>:51080</code>). This directory documents the
+bank, the runner, and the current honest §11.4.3 SKIP blocking a real
+HelixQA run.</p>
+<h2 id="1-investigation-facts-submoduleshelix_qa">1. Investigation facts
+(submodules/helix_qa)</h2>
+<ul>
+<li><strong>Bank format:</strong> HelixQA YAML test bank. Required
+top-level keys <code>version</code>, <code>name</code>,
+<code>test_cases</code>; per-step executable action
+<code>"http: &lt;METHOD&gt; &lt;PATH&gt;"</code>
+(<code>ActionTypeHTTP</code>). Source of truth:
+<code>submodules/helix_qa/pkg/testbank/schema.go</code>
+(<code>ActionTypeHTTP</code> = line 224, <code>ParseAction</code> = line
+376; assertion fields <code>expect_status</code> /
+<code>expect_body_contains</code> / <code>expect_json_path</code> =
+lines 309–321).</li>
+<li><strong>Run command (LLM-free, no browser/device):</strong>
+<code>helixqa http --bank &lt;bank.yaml&gt; --base-url &lt;URL&gt; [--json --verbose]</code>
+(<code>submodules/helix_qa/cmd/helixqa/http.go</code>). It loads a bank,
+runs every <code>http:</code> step through
+<code>pkg/autonomous.HTTPExecutor</code> against
+<code>--base-url</code>, and reports per-case PASS/FAIL with the real
+status code. (<code>helixqa run</code> needs Playwright/ADB;
+<code>helixqa autonomous</code> needs an LLM — neither fits a
+proxy.)</li>
+<li><strong>Can it target a proxy?</strong> Yes, via env — the
+load-bearing mechanism: <code>HTTPExecutor</code> builds
+<code>&amp;http.Client{Timeout:30s}</code> with a <strong>nil
+Transport</strong> (<code>pkg/autonomous/http_executor.go:110</code>),
+so Go uses <code>http.DefaultTransport</code> whose
+<code>Proxy: http.ProxyFromEnvironment</code> reads
+<code>HTTP_PROXY</code> / <code>HTTPS_PROXY</code>. Setting those to the
+live proxy forwards every request THROUGH it to the
+<code>--base-url</code> upstream; the upstream's real status code is the
+proof of forwarding. <strong>Empirically proven this session</strong>
+with a stdlib replica of that exact client: HTTP fwd → 204, HTTPS
+CONNECT → 200, SOCKS5 → 204
+(<code>qa-results/helixqa/20260701T085355Z/mech_*.txt</code>).</li>
+<li><strong>Prerequisite / blocker (see §4):</strong> the
+<code>helixqa</code> binary does not build in this checkout.</li>
+</ul>
+<h2 id="2-deliverables">2. Deliverables</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tools/helixqa/banks/proxy.yaml</code></td>
+<td>Canonical bank — all 4 features (HTTP forward, HTTPS-through,
+SOCKS5, cache), 6 cases, <code>helixqa list</code>/inventory.</td>
+</tr>
+<tr>
+<td><code>tools/helixqa/banks/routes/*.yaml</code></td>
+<td>Per-transport execution slices (one <code>--base-url</code> each)
+the runner feeds to <code>helixqa http</code>.</td>
+</tr>
+<tr>
+<td><code>tools/helixqa/runner/run_proxy_bank.sh</code></td>
+<td>Builds <code>helixqa</code> (if siblings resolve) and runs each
+route bank through the live proxy; else honest SKIP.</td>
+</tr>
+</tbody>
+</table>
+<p>Route → target → transport:</p>
+<table>
+<thead>
+<tr>
+<th>Route bank</th>
+<th><code>--base-url</code></th>
+<th>proxy env</th>
+<th>expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>proxy_http_forward.yaml</code></td>
+<td><code>http://connectivitycheck.gstatic.com</code></td>
+<td><code>HTTP_PROXY=http://127.0.0.1:53128</code></td>
+<td>204</td>
+</tr>
+<tr>
+<td><code>proxy_https_through.yaml</code></td>
+<td><code>https://connectivitycheck.gstatic.com</code></td>
+<td><code>HTTPS_PROXY=http://127.0.0.1:53128</code></td>
+<td>204 (CONNECT)</td>
+</tr>
+<tr>
+<td><code>proxy_socks5.yaml</code></td>
+<td><code>http://connectivitycheck.gstatic.com</code></td>
+<td><code>HTTP_PROXY=socks5://127.0.0.1:51080</code></td>
+<td>204</td>
+</tr>
+<tr>
+<td><code>proxy_socks5_https.yaml</code></td>
+<td><code>https://connectivitycheck.gstatic.com</code></td>
+<td><code>HTTPS_PROXY=socks5://127.0.0.1:51080</code></td>
+<td>204</td>
+</tr>
+<tr>
+<td><code>proxy_cache.yaml</code></td>
+<td><code>http://www.gnu.org</code></td>
+<td><code>HTTP_PROXY=http://127.0.0.1:53128</code></td>
+<td>200 ×2 + sink-side <code>TCP_*HIT</code></td>
+</tr>
+</tbody>
+</table>
+<p>Targets and expected codes are the project's own sanctioned values
+(<code>tests/verify-proxy.sh</code>,
+<code>tests/comprehensive-test.sh</code>) and were re-confirmed live
+this session.</p>
+<h2 id="3-cache-verification-is-sink-side-11469">3. Cache verification
+is sink-side (§11.4.69)</h2>
+<p>The <code>HTTPExecutor</code> asserts only status/body/json-path —
+NOT response headers or Squid's access.log — so a cache HIT cannot be
+asserted by an <code>http:</code> step. The two cache <code>http:</code>
+steps prove the object is served consistently THROUGH the proxy; the
+DECISIVE HIT proof is a Squid <code>TCP_*HIT</code> for the exact URL in
+<code>proxy-squid:/var/log/squid/access.log</code> (plus
+<code>./cachectl stats</code>), captured sink-side by the runner exactly
+as <code>tests/comprehensive-test.sh</code> does. HTTPS bodies are
+CONNECT-tunnelled and never cacheable by Squid, so the cache target is
+deliberately plain HTTP.</p>
+<h2 id="4-current-status--honest-skip-1143-blocker--unblock">4. Current
+status — honest SKIP (§11.4.3), blocker + unblock</h2>
+<p>Running an actual HelixQA session against the live proxy is
+<strong>BLOCKED</strong>: the <code>helixqa</code> CLI cannot be built
+here. <code>submodules/helix_qa/go.mod</code> <code>replace</code>s six
+own-org sibling modules to <code>../&lt;name&gt;</code> paths that are
+<strong>not vendored</strong> in helix_proxy, and both
+<code>pkg/testbank</code> (<code>manager.go:11</code>) and
+<code>pkg/autonomous</code> (<code>coordinator.go:15</code>) import
+<code>digital.vasic.docprocessor</code>, so even a minimal build fails
+(captured <code>go build</code> output in the run's
+<code>build*.log</code>).</p>
+<p>Missing siblings (present: <code>challenges</code>,
+<code>containers</code>): <code>doc_processor</code>,
+<code>llm_orchestrator</code>, <code>llm_provider</code>,
+<code>llms_verifier</code>, <code>vision_engine</code>,
+<code>security</code>.</p>
+<p><strong>Unblock (operator/conductor):</strong> vendor those six
+own-org modules as siblings under <code>submodules/</code> (SSH, per
+§11.4.28(C)/§11.4.36), then re-run
+<code>tools/helixqa/runner/run_proxy_bank.sh</code> — it builds
+<code>helixqa</code> and executes the bank against the live proxy
+automatically, writing <code>result.json</code> + evidence under
+<code>qa-results/helixqa/&lt;run-ts&gt;/</code>.</p>
+<p><strong>Not a bluff:</strong> the proxy data plane itself is proven
+working this session (HTTP 204 / HTTPS 200 / SOCKS5 204 through the
+executor's exact client, plus curl 204/200/204 and cache target 200/33
+766 B). The SKIP is about the HelixQA <em>harness build</em>, not the
+proxy.</p>
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li><code>submodules/helix_qa/cmd/helixqa/http.go</code>,
+<code>pkg/autonomous/http_executor.go</code>,
+<code>pkg/testbank/schema.go</code>, <code>README.md</code>,
+<code>CLAUDE.md</code> (bank format + run command).</li>
+<li><code>tests/verify-proxy.sh</code>,
+<code>tests/comprehensive-test.sh</code> (sanctioned targets + cache-HIT
+convention).</li>
+<li>Live proxy probes + executor-client mechanism proof
+(<code>qa-results/helixqa/20260701T085355Z/mech_*.txt</code>).</li>
+</ul>
+</body>
+</html>

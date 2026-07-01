@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CHANGELOG_helix_proxy-0.1.0-dev-0.0.2</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="changelog--helix_proxy-010-dev-002">Changelog —
+helix_proxy-0.1.0-dev-0.0.2</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T09:56:36Z <strong>Scope:</strong> Every change on the release
+surface between the previous release tag
+<code>helix_proxy-0.1.0-dev-0.0.1</code> (commit <code>3f79794</code>,
+2026-07-01 09:24:25 +0300) and the release candidate <code>HEAD</code>
+(<code>bf38c35</code>, 2026-07-01 12:11:30 +0300) — 14 commits.
+<strong>Authority:</strong> Helix Constitution §11.4.151
+(project-prefixed release tags), §11.4.135 (standing regression-guard
+suite), §11.4.44 (revision header), §11.4.65 (universal Markdown
+export), §11.4.6 (no-guessing).</p>
+<blockquote>
+<p>Read-only planning/record artefact. It documents what landed;
+creating/pushing the tag is a separate, operator-authorised action gated
+by the §11.4.40 full-suite retest (see
+<code>docs/releases/RELEASE_RUNBOOK.md</code>).</p>
+</blockquote>
+<hr />
+<h2 id="release-prefix-note-114151">Release-prefix note (§11.4.151)</h2>
+<p>The release prefix resolves deterministically, resolution order:</p>
+<ol type="1">
+<li><code>HELIX_RELEASE_PREFIX</code> from <code>.env</code> —
+<strong>unset</strong> (no <code>.env</code> file exists in the
+checkout; <code>.env</code> is gitignored per §11.4.30, its template
+<code>.env.example</code> carries no
+<code>HELIX_RELEASE_PREFIX</code>).</li>
+<li>Fallback = lowercased snake_case of the project-root directory
+basename = <strong><code>helix_proxy</code></strong>.</li>
+</ol>
+<p><strong>Resolved prefix: <code>helix_proxy</code></strong> → this
+release is tagged <code>helix_proxy-0.1.0-dev-0.0.2</code> (monotonic
+increment from <code>-0.0.1</code>), the SAME prefix carried by the
+previous tag, so <code>git tag -l 'helix_proxy-*'</code> enumerates the
+whole release surface. Optional hardening (runbook OB-5): declare
+<code>HELIX_RELEASE_PREFIX=helix_proxy</code> in a gitignored
+<code>.env</code> + document it in the tracked <code>.env.example</code>
+(§11.4.77) so the prefix is authoritative rather than
+dir-name-derived.</p>
+<hr />
+<h2 id="commit-inventory-previous-tag--head-oldest-first">Commit
+inventory (previous tag → HEAD, oldest first)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>SHA</th>
+<th>Type</th>
+<th>Subject</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>9a21d94</code></td>
+<td>feat</td>
+<td>#54 — creds-drop-ready real-VPN-egress functional-proof harness +
+operator runbook</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>3308e5a</code></td>
+<td>feat</td>
+<td>#53 — optional separate plaintext <code>/metrics</code> listener
+(<code>CONTROL_API_METRICS_ADDR</code>)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>2e834a7</code></td>
+<td>fix</td>
+<td>BUGFIX-0013 — CONST-033 scanner false-FAIL on governance-doc export
+siblings (F4)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>f219b4d</code></td>
+<td>fix</td>
+<td>BUGFIX-0014 — anti-bluff proxy connectivity classifier (no
+false-FAIL on outage, no fail-open on crashed proxy)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>8219669</code></td>
+<td>fix</td>
+<td>BUGFIX-0015 — require positive flood evidence before a ddos survival
+PASS</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>80bd833</code></td>
+<td>fix</td>
+<td>BUGFIX-0016 — real benchmark regression ratchet vs a committed
+baseline</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>fddd25c</code></td>
+<td>docs</td>
+<td>letsencrypt — design + phased plan for LE HTTPS with auto-renewal +
+rotation</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>9ffbc0a</code></td>
+<td>fix</td>
+<td>BUGFIX-0017 — de-bluff comprehensive-test.sh proxy canaries
+(F1)</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>39c4139</code></td>
+<td>fix</td>
+<td>BUGFIX-0018 — close <code>assert_egress_ip</code>
+host-undeterminable fail-open + register standing guards (F7 + F-1)</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>2812f48</code></td>
+<td>feat</td>
+<td>letsencrypt — Phase-1 offline cert-analyzer + self-validation guard
++ Status docs (task #59)</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>ae16f61</code></td>
+<td>docs</td>
+<td>continuation — §12.10 resume (anti-bluff sweep complete; LE Phase 1
+landed)</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>86c1d8b</code></td>
+<td>docs</td>
+<td>releases — release runbook + prerequisite audit for
+<code>helix_proxy-0.1.0-dev-0.0.2</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>f2e69e0</code></td>
+<td>feat</td>
+<td>challenges — live proxy Challenge bank (HTTP-forward + SOCKS5 +
+cache)</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>bf38c35</code></td>
+<td>feat</td>
+<td>helixqa — proxy test bank + runner with honest §11.4.3 harness-build
+SKIP</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="feat">feat</h2>
+<ul>
+<li><strong><code>9a21d94</code> — Real-VPN-egress functional-proof
+harness (#54).</strong> A creds-drop-ready harness that, once WireGuard
+credentials are supplied, proves the §15 VPN-routing contract end-to-end
+(egress through the proxy == the expected tunnel exit AND != the host's
+real IP), with an operator runbook. Absent a live tunnel it SKIPs
+honestly (<code>operator_attended</code>, §11.4.52) — never a fabricated
+PASS.</li>
+<li><strong><code>3308e5a</code> — Optional separate plaintext
+<code>/metrics</code> listener (#53).</strong> New
+<code>CONTROL_API_METRICS_ADDR</code> config lets the control-API expose
+Prometheus <code>/metrics</code> on a separate plaintext listener,
+decoupled from the fail-closed mTLS control surface, for scrape
+topologies that cannot present a client cert.</li>
+<li><strong><code>2812f48</code> — Let's Encrypt Phase-1 offline
+cert-analyzer (task #59).</strong> An offline certificate analyzer
+(<code>tests/letsencrypt/cert_analyzer.sh</code>) that is
+self-validating per §11.4.107(10): it ACCEPTS every golden-GOOD
+certificate property and REJECTS every golden-BAD one (expired /
+wrong-CA / wrong-host / SAN-substring / not-due-for-renewal). Ships with
+a registered self-validation guard + per-feature Status docs. No network
+— Phase 2/3 (live issuance / auto-renewal / rotation) remain planned per
+the LE design.</li>
+<li><strong><code>f2e69e0</code> — Live proxy Challenge bank (task
+#59).</strong> A Challenge bank (<code>submodules/challenges</code>)
+exercising the real data plane: HTTP-forward proxy, SOCKS5 proxy, and
+cache-HIT canaries, scoring PASS only on positive captured evidence
+(§11.4.69).</li>
+<li><strong><code>bf38c35</code> — HelixQA proxy test bank + runner
+(task #59).</strong> A HelixQA (<code>submodules/helix_qa</code>) test
+bank + runner for the proxy, with an honest §11.4.3 SKIP-with-reason
+when the harness build is unavailable — never a PASS-by-default.</li>
+</ul>
+<h2 id="fix">fix</h2>
+<p>All six fixes in this window are <strong>test-suite /
+anti-bluff-library integrity</strong> fixes (they make the test corpus
+HONEST — no product/proxy behaviour changes), each rooted per §11.4.102
+and closed with §11.4.115 RED→GREEN + §1.1 paired mutation evidence
+(full detail in <code>docs/issues/fixed/BUGFIXES.md</code>).</p>
+<ul>
+<li><strong><code>2e834a7</code> — BUGFIX-0013:</strong> the CONST-033
+no-suspend scanner false-FAILed on the
+<code>.html</code>/<code>.pdf</code> §11.4.65 export siblings of the
+governance carriers (<code>CONSTITUTION.md</code>,
+<code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>QWEN.md</code>,
+<code>GEMINI.md</code>), which legitimately quote the banned host-power
+literals. Made the five governance <code>EXCLUDE_PATHS</code> entries
+extension-agnostic prefixes; a non-governance file with a banned literal
+or any real script invocation still trips the scanner (gate not
+neutered, §11.4.120). Latent — the sibling-blindness class BUGFIX-0011
+closed for the bug ledger, one layer over.</li>
+<li><strong><code>f219b4d</code> — BUGFIX-0014:</strong>
+<code>verify-proxy.sh</code> / <code>final-verify.sh</code> classified
+every through-proxy check as
+<code>code == expected ? PASS : FAIL</code>, so a momentary outage of
+the probed <em>site</em> false-FAILed a healthy proxy
+(non-deterministic, not re-runnable). Added a single client-side
+classifier <code>proxy_conn_verdict</code> in
+<code>tests/lib/evidence.sh</code>: proxy-reachable → PASS;
+proxy-miss-but-direct-200 → FAIL (real defect, §11.4.68 not fail-open);
+both-fail → SKIP (external outage).</li>
+<li><strong><code>8219669</code> — BUGFIX-0015:</strong>
+<code>ddos_flood_suite</code> scored "survived the flood" PASS with no
+proof a flood occurred. Added a pure <code>flood_survival_verdict</code>
+classifier requiring positive captured flood evidence
+(<code>flood_total &gt; 0</code> AND
+<code>flood_responses &gt; 0</code>) before any survival PASS;
+zero-flood on a listening proxy → FAIL, absent proxy → honest SKIP.</li>
+<li><strong><code>80bd833</code> — BUGFIX-0016:</strong> the benchmark
+regression ratchet compared against a baseline under the gitignored
+<code>qa-results/</code> tree, so the comparison never persisted and
+every run PASSed on the absolute budget regardless of a real regression.
+Moved the baseline to the committed path
+<code>tests/dynamic/baselines/benchmark_p95.baseline</code>; seed-once +
+SKIP on absent, FAIL on p95 growth beyond tolerance, no
+auto-refresh.</li>
+<li><strong><code>9ffbc0a</code> — BUGFIX-0017:</strong> seven proxy
+canaries in <code>comprehensive-test.sh</code> still used the
+pre-BUGFIX-0014 blind <code>code != expected ? FAIL</code> pattern.
+Re-wired each through a <code>conn_check</code> wrapper onto the
+already-committed <code>proxy_conn_verdict</code> classifier
+(BUGFIX-0014), so an external outage SKIPs while a real proxy defect
+still FAILs. The DoH content assertion is preserved via synthetic
+<code>ANSWER</code>/<code>MISS</code> tokens.</li>
+<li><strong><code>39c4139</code> — BUGFIX-0018:</strong>
+<code>assert_egress_ip</code> fail-opened the hardest-to-fake
+VPN-routing §15 proof — when the host's real IP was undeterminable, the
+<code>egress != host</code> half silently collapsed, so a genuine NO-VPN
+(<code>egress == host</code>) case could fake-PASS. Now returns exit-2
+OPERATOR-BLOCKED when <code>host_real</code> is not IP-shaped (F-1
+hardened it from a two-sentinel deny-list to a positive
+<code>_evidence_ip_shaped</code> validator). <strong>Also closed the
+F5/F6 registration gap</strong> — see the guard audit below.</li>
+</ul>
+<h2 id="docs">docs</h2>
+<ul>
+<li><strong><code>fddd25c</code> — Let's Encrypt design + phased
+plan</strong> for HTTPS with auto-renewal and rotation (informs the
+Phase-1 analyzer that landed in <code>2812f48</code>).</li>
+<li><strong><code>ae16f61</code> — CONTINUATION §12.10 resume</strong>
+refreshed to live state: anti-bluff sweep complete, LE Phase 1 landed,
+Phases 2/3 in flight.</li>
+<li><strong><code>86c1d8b</code> — Release runbook + prerequisite
+audit</strong> for <code>helix_proxy-0.1.0-dev-0.0.2</code>
+(<code>docs/releases/RELEASE_RUNBOOK.md</code>), with the read-only
+GitHub/GitLab readiness audit and OPERATOR-BLOCKED items
+OB-1..OB-7.</li>
+</ul>
+<h2 id="test">test</h2>
+<p>No commit in this window carries a bare <code>test(</code>
+Conventional-Commits prefix; the <code>fix(tests): …</code> commits
+above are classified as fixes (they repair defective tests). Every fix
+additionally lands or wires its §11.4.135 standing guard — audited
+next.</p>
+<hr />
+<h2 id="114135-regression-guard-audit">§11.4.135 regression-guard
+audit</h2>
+<p>Scope: every <strong>bugfix</strong> on the release surface (previous
+tag → HEAD) — BUGFIX-0013 through BUGFIX-0018. For each: the standing
+guard registered in <code>tests/run-tests.sh</code> →
+<code>test_regression_guards()</code>, whether that guard is wired with
+BOTH a GREEN assertion AND a <code>RED_MODE=1</code> reproduction
+self-check, and any honest gap.</p>
+<p><strong>Evidence basis (§11.4.6 honest boundary).</strong> This audit
+is a documentation pass; the guards were <strong>not re-executed
+here</strong> (read-only task; the <code>tests/</code> tree is not run
+as part of authoring — the §11.4.40 full-suite retest is the
+operator-run authoritative re-run before the tag, per the runbook). The
+GREEN + RED status below is established from two captured sources: (a)
+direct read of <code>tests/run-tests.sh</code>
+<code>test_regression_guards()</code> (lines 473–699) confirming each
+guard is wired with both a GREEN invocation and a
+<code>RED_MODE=1</code> self-check; (b) the captured RED→GREEN + §1.1
+mutation-with-md5-restore runs recorded per fix in
+<code>docs/issues/fixed/BUGFIXES.md</code>, including the standing-suite
+capture at BUGFIX-0018 time:
+<code>tests/run-tests.sh -&gt; 59 run / 53 pass / 6 skip / 0 fail; BUGFIX-0018 GREEN+RED both PASS</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Fix</th>
+<th>Registered guard (<code>tests/regression/…</code>)</th>
+<th style="text-align: center;">Wired GREEN</th>
+<th style="text-align: center;">Wired <code>RED_MODE=1</code></th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BUGFIX-0013</td>
+<td><code>no_suspend_export_sibling_test.sh</code> (shared; GREEN branch
+extended for governance-doc siblings)</td>
+<td style="text-align: center;">yes (L572)</td>
+<td style="text-align: center;">yes (L582)</td>
+<td><strong>GUARDED</strong> (shared guard)</td>
+</tr>
+<tr>
+<td>BUGFIX-0014</td>
+<td><code>proxy_conn_verdict_test.sh</code></td>
+<td style="text-align: center;">yes (L615)</td>
+<td style="text-align: center;">yes (L625)</td>
+<td><strong>GUARDED</strong> (dedicated)</td>
+</tr>
+<tr>
+<td>BUGFIX-0015</td>
+<td><code>ddos_flood_evidence_test.sh</code></td>
+<td style="text-align: center;">yes (L635)</td>
+<td style="text-align: center;">yes (L641)</td>
+<td><strong>GUARDED</strong> (dedicated)</td>
+</tr>
+<tr>
+<td>BUGFIX-0016</td>
+<td><code>benchmark_baseline_ratchet_test.sh</code></td>
+<td style="text-align: center;">yes (L651)</td>
+<td style="text-align: center;">yes (L657)</td>
+<td><strong>GUARDED</strong> (dedicated)</td>
+</tr>
+<tr>
+<td>BUGFIX-0017</td>
+<td><em>(no dedicated guard)</em> — reuses
+<code>proxy_conn_verdict_test.sh</code> (BUGFIX-0014)</td>
+<td style="text-align: center;">via 0014</td>
+<td style="text-align: center;">via 0014</td>
+<td><strong>GUARDED-BY-REUSE</strong> — see note</td>
+</tr>
+<tr>
+<td>BUGFIX-0018</td>
+<td><code>assert_egress_ip_host_unknown_test.sh</code></td>
+<td style="text-align: center;">yes (L669)</td>
+<td style="text-align: center;">yes (L675)</td>
+<td><strong>GUARDED</strong> (dedicated)</td>
+</tr>
+</tbody>
+</table>
+<p>Additionally, the <strong>Let's Encrypt Phase-1</strong> feature
+(<code>2812f48</code>, not a bugfix but shipped this window) registers a
+self-validation guard <code>cert_analyzer_selfvalidation_test.sh</code>
+(GREEN L687 + <code>RED_MODE=1</code> L693).</p>
+<p>All 12 guard files referenced by
+<code>test_regression_guards()</code> are present on disk under
+<code>tests/regression/</code> (verified). Each is wired GREEN + RED
+(the RED self-check enforces §11.4.7 — a guard that cannot reproduce its
+defect is itself a finding).</p>
+<h3 id="tally">Tally</h3>
+<ul>
+<li>Release-window bugfixes audited: <strong>6</strong>
+(BUGFIX-0013…0018).</li>
+<li>With a registered standing guard (dedicated or shared), wired GREEN
++ RED: <strong>5</strong> (0013 shared, 0014, 0015, 0016, 0018).</li>
+<li>Guarded-by-reuse (no dedicated guard; documented; runtime proof
+captured): <strong>1</strong> (0017).</li>
+<li><strong>True unguarded GAPS: 0.</strong></li>
+</ul>
+<h3 id="honest-findings-1146--not-papered-over">Honest findings (§11.4.6
+— not papered over)</h3>
+<ol type="1">
+<li><p><strong>BUGFIX-0017 has no dedicated standing guard (documented
+reuse, not a silent gap).</strong> Per its own ledger entry, BUGFIX-0017
+only re-wires <code>comprehensive-test.sh</code>'s canaries onto the
+<em>already-guarded</em> classifier <code>proxy_conn_verdict</code>
+(covered by BUGFIX-0014's registered
+<code>proxy_conn_verdict_test.sh</code>, full truth-table + RED/GREEN
+polarity + §1.1 mutation). Its own lane-specific runtime proof is the
+captured conductor live smoke at
+<code>qa-results/regression/comprehensive_f1_conductor_smoke/</code>
+(CASE1 working-proxy → PASS, CASE2 simulated outage →
+<code>SKIP:network_unreachable_external</code>). This is a legitimate,
+documented reuse — the invariant IS guarded — but it is surfaced here
+honestly rather than counted as a dedicated guard.</p></li>
+<li><p><strong>A real §11.4.135 registration gap existed <em>within</em>
+this window and was CLOSED within it.</strong> The F5
+(<code>ddos_flood_evidence_test.sh</code>, BUGFIX-0015) and F6
+(<code>benchmark_baseline_ratchet_test.sh</code>, BUGFIX-0016) guards
+were committed to disk with their fixes but were <strong>not
+wired</strong> into <code>test_regression_guards()</code>, so for two
+commits (<code>8219669</code>, <code>80bd833</code>) they never ran on a
+build — a live gap. BUGFIX-0018 (<code>39c4139</code>) surfaced and
+closed it, registering F5 + F6 + F7 (each GREEN +
+<code>RED_MODE=1</code>). As of <code>HEAD</code> both are wired
+(L635/L641 and L651/L657). Net state at the release candidate: no
+on-disk-but-unwired guard remains among the audited set. This is
+recorded so the history is not smoothed over.</p></li>
+<li><p><strong>Re-execution deferred to the release gate.</strong> No
+guard was re-run in this authoring pass (see Evidence basis). The
+§11.4.40 full-suite retest on a clean baseline — the operator-run
+release gate documented in the runbook (Step 2) — is the authoritative
+re-run that must be GREEN before the
+<code>helix_proxy-0.1.0-dev-0.0.2</code> tag is created. This changelog
+does not assert a fresh run it did not perform.</p></li>
+</ol>
+<hr />
+<h2 id="sources">Sources</h2>
+<ul>
+<li><code>docs/issues/fixed/BUGFIXES.md</code> (BUGFIX-0013…0018 entries
+— root cause, RED→GREEN, §1.1 mutation md5 restores, captured evidence
+paths).</li>
+<li><code>tests/run-tests.sh</code> →
+<code>test_regression_guards()</code> (lines 473–699 — guard
+wiring).</li>
+<li><code>docs/releases/RELEASE_RUNBOOK.md</code> (prefix resolution,
+tag naming, §11.4.40 gate, OPERATOR-BLOCKED items).</li>
+<li><code>git log helix_proxy-0.1.0-dev-0.0.1..HEAD</code> (commit
+inventory).</li>
+</ul>
+</body>
+</html>
