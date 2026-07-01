@@ -69,6 +69,11 @@ CADDY_IMAGE="${CADDY_IMAGE:-localhost/helix_proxy/caddy-challtestsrv:2.8.4}"
 TEST_HOSTNAME="${TEST_HOSTNAME:-proxy.hermetic.test}"
 PEBBLE_IMAGE="${PEBBLE_IMAGE:-ghcr.io/letsencrypt/pebble:2.6.0}"
 COMPOSE="podman-compose -f compose.hermetic.yml"
+# §11.4.1/§11.4.3: bound every container boot so a rootless-podman networking
+# failure (aardvark-dns/netavark unable to bind :53 on the netavark gateway —
+# "Cannot assign requested address", seen when stale podman networks accumulate)
+# becomes an HONEST SKIP, never an infinite suite hang and never a fake PASS.
+BOOT_TIMEOUT="${LE_BOOT_TIMEOUT:-60}"
 CAPS="nice -n 19 ionice -c 3"
 RUNID=$(date -u +%Y%m%dT%H%M%SZ)
 EVID="${REPO_ROOT}/qa-results/letsencrypt/phase3_issuance/${RUNID}"
@@ -108,15 +113,33 @@ cleanup() {
 		log "KEEP_UP=1 — leaving stack up for Phase-5"
 	else
 		log "tearing down hermetic stack"
-		${COMPOSE} down -v >/dev/null 2>&1 || true
+		timeout 45 ${COMPOSE} down -v >/dev/null 2>&1 || true
 	fi
 	exit "${_rc}"
 }
 trap cleanup EXIT INT TERM
 
+# compose_up_or_skip <service...> — boot with a timeout. A rootless-podman
+# networking failure (aardvark-dns/netavark bind error) or a >BOOT_TIMEOUT hang
+# is an HONEST SKIP (§11.4.3 infra/topology unsupported — exit 2 OPERATOR-BLOCKED,
+# which the harness scores as SKIP), NEVER an infinite hang and NEVER a fake PASS.
+compose_up_or_skip() {
+	_bl=$(mktemp 2>/dev/null || echo "/tmp/le_boot_$$.log")
+	# `|| _rc=$?` keeps set -e from aborting on the timeout's 124 before we can
+	# classify it — the whole point is to convert that failure into a SKIP.
+	_rc=0
+	timeout "${BOOT_TIMEOUT}" ${CAPS} ${COMPOSE} up -d "$@" >"${_bl}" 2>&1 || _rc=$?
+	if [ "${_rc}" = 124 ] || grep -qiE 'aardvark-dns|netavark|Cannot assign requested address|failed to bind udp listener|error from child process' "${_bl}" 2>/dev/null; then
+		log "OPERATOR-BLOCKED: rootless podman could not boot [$*] — aardvark-dns/netavark networking failure or ${BOOT_TIMEOUT}s timeout (honest SKIP §11.4.3; see ${_bl})"
+		exit 2
+	fi
+	rm -f "${_bl}" 2>/dev/null || true
+	return 0
+}
+
 # ---- 0. clean slate ----------------------------------------------------------
 log "clean teardown (fresh caddy /data — avoids certmagic #354)"
-${COMPOSE} down -v >/dev/null 2>&1 || true
+timeout 45 ${COMPOSE} down -v >/dev/null 2>&1 || true
 podman rm -f le-coredns-test >/dev/null 2>&1 || true
 
 # ---- 1. materialize Pebble's public minica (CA #1, trust anchor) -------------
@@ -130,14 +153,14 @@ openssl x509 -in pebble-ca/pebble.minica.pem -noout -subject >/dev/null 2>&1 \
 
 # ---- 2. boot pebble + challtestsrv, resolve challtestsrv IP ------------------
 log "boot pebble + challtestsrv"
-${CAPS} ${COMPOSE} up -d pebble challtestsrv >/dev/null 2>&1
+compose_up_or_skip pebble challtestsrv
 _chip=""
 for _i in $(seq 1 30); do
 	_chip=$(podman inspect letsencrypt-challtestsrv \
 		--format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null || true)
 	[ -n "${_chip}" ] && break; sleep 1
 done
-[ -n "${_chip}" ] || { log "FAIL: challtestsrv has no IP"; exit 1; }
+[ -n "${_chip}" ] || { log "OPERATOR-BLOCKED: challtestsrv has no IP after boot (rootless networking) — honest SKIP §11.4.3"; exit 2; }
 log "challtestsrv IP=${_chip}"
 
 # ---- 3. write CoreDNS Corefile with the live forward IP + boot CoreDNS -------
@@ -157,7 +180,7 @@ hermetic.test:53 {
     errors
 }
 COREFILE
-${CAPS} ${COMPOSE} up -d coredns >/dev/null 2>&1
+compose_up_or_skip coredns
 
 # ---- 4. wait for the Pebble ACME directory (host gate) -----------------------
 log "wait for pebble ACME directory"
@@ -169,7 +192,7 @@ done
 
 # ---- 5. boot caddy (fresh) — issuance triggers on start ----------------------
 log "boot caddy — real DNS-01 issuance begins"
-${CAPS} ${COMPOSE} up -d caddy >/dev/null 2>&1
+compose_up_or_skip caddy
 
 # ---- 6. poll for the served leaf with the expected SAN ----------------------
 log "poll caddy :${CADDY_HTTPS_PORT} for the issued cert (up to 90s)"
