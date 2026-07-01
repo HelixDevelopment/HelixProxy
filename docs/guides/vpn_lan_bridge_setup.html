@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>vpn_lan_bridge_setup</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1 id="vpn-lan-svord-bridge--operator-setup-guide">VPN-LAN svord Bridge
+— Operator Setup Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:00:22Z <strong>Status:</strong> Active — operator manual
+for the VPN-LAN service-access feature (Phase 9 of <a
+href="../design/vpn_lan_access/PLAN.md"><code>../design/vpn_lan_access/PLAN.md</code></a>)
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Consumer-side
+operator guide for the env-var svord bridge contract; the design
+source-of-truth is <a
+href="../design/vpn_lan_access/PLAN.md"><code>PLAN.md</code></a> §3
+(contract) + §2 (routing map) + §4 (security) and the <a
+href="../design/vpn_lan_access/miracast_verdict.md"><code>miracast_verdict.md</code></a>
+structural verdict. <strong>Feature workstream:</strong>
+<code>feature/vpn-aware-dynamic-routing</code> (§11.4.167)</p>
+<hr />
+<h2 id="1-overview--what-this-feature-does">1. Overview — what this
+feature does</h2>
+<p>This feature lets you <strong>reach and use mainstream services that
+live on a VPN-internal LAN through helix_proxy</strong>. helix_proxy
+connects to that remote network by driving a sibling <strong>bridge
+project</strong> (in our deployment: <code>svord_toolkit</code>) over
+its own <code>svord-ssh-*</code> scripts, and then routes / proxies /
+reflects each service so it becomes usable from the helix_proxy
+side.</p>
+<p>helix_proxy never hardcodes the bridge project. It reads a small
+<strong>bridge contract</strong> of 6 environment variables (§4 below),
+invokes only the operator-supplied hooks, and never reaches into the
+bridge project's internals or modifies it or any remote host
+(invocation-only, §11.4.122).</p>
+<h3 id="the-one-line-routing-map">The one-line routing map</h3>
+<p>The VPN is <strong>L3-routed</strong> (WireGuard + L2TP/PPP over
+<code>ppp0</code>; reachable subnet <code>10.0.0.0/8</code>). That
+single fact decides how every protocol is carried (<a
+href="../design/vpn_lan_access/PLAN.md"><code>PLAN.md</code></a>
+§2):</p>
+<ul>
+<li><strong>Unicast services ROUTE</strong> over the L3 VPN (SMB, NFS,
+FTP-control, SFTP, IMAP, SMTP, POP3, Cast control, DIAL HTTP).</li>
+<li><strong>HTTP-shaped services are PROXIED</strong> through the
+<strong>existing Squid</strong> (WebDAV and any other HTTP origin) — no
+new component required.</li>
+<li><strong>Multicast discovery is REFLECTED</strong> on the remote
+(device-side) network, because routers do not forward multicast across
+L3 (mDNS, SSDP/UPnP, WS-Discovery, DNS-SD, Chromecast/DIAL
+discovery).</li>
+<li><strong>L2 / Wi-Fi-Direct is STRUCTURALLY-IMPOSSIBLE</strong> over
+an L3 VPN — this is <strong>Miracast</strong> (§7 + <a
+href="../design/vpn_lan_access/miracast_verdict.md"><code>miracast_verdict.md</code></a>,
+§11.4.112).</li>
+</ul>
+<p><strong>Rule of thumb:</strong> unicast services route; HTTP-shaped
+services already work through Squid; multicast discovery needs a
+remote-side reflector; Wi-Fi-Direct / L2 is out of scope by physics.</p>
+<hr />
+<h2 id="2-prerequisites">2. Prerequisites</h2>
+<p>Before you configure the bridge you need:</p>
+<ul>
+<li><strong>The sibling bridge project</strong> — in our deployment
+<code>svord_toolkit</code>, checked out beside helix_proxy (default
+example location <code>../svord_toolkit</code>). It must provide the
+three <code>svord-ssh-*</code> scripts the contract points at:
+<ul>
+<li><code>svord-ssh-connect</code> — brings the VPN link
+<strong>up</strong>,</li>
+<li><code>svord-ssh-disconnect</code> — tears the VPN link
+<strong>down</strong>,</li>
+<li><code>svord-ssh-health</code> — reports reachability (<strong>exit 0
+== up</strong>, non-zero == down).</li>
+</ul></li>
+<li><strong>A running base proxy</strong> — the helix_proxy Squid/Dante
+stack must be up, because HTTP-shaped traffic (e.g. WebDAV) is carried
+through the <strong>existing Squid</strong> and the SSRF allowlist
+carve-out is applied to the existing Dante/Squid config (§6).</li>
+<li><strong>A <code>ping</code> or <code>nc</code> tool on the
+host</strong> — <code>scripts/svord_doctor.sh</code> uses one of them
+for the remote-host smoke probe. If neither is present the doctor cannot
+confirm reachability and reports
+<code>SKIP:host_probe_unavailable</code> (§5).</li>
+</ul>
+<blockquote>
+<p>The live VPN connection itself (secrets, credentials, root/sudo
+access on the bridge side) is <strong>operator-supplied and
+operator-gated</strong>. Everything in this guide that does <em>not</em>
+require the live connection — the doctor, the honest-SKIP path, the
+config logic — is exercisable without any secrets.</p>
+</blockquote>
+<hr />
+<h2 id="3-the-bridge-contract-at-a-glance">3. The bridge contract at a
+glance</h2>
+<p>helix_proxy reads <strong>6</strong> variables. Real values live in a
+<strong>gitignored <code>.env</code></strong>; a tracked
+<strong><code>.env.example</code></strong> documents the shape (the
+§11.4.77 re-obtain mechanism). The example values below are
+<strong>illustrative only</strong> — they carry names and paths, never
+secrets.</p>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Meaning</th>
+<th>Illustrative example (from <code>.env.example</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELIX_SVORD_DIR</code></td>
+<td>Path to the sibling bridge project</td>
+<td><code>../svord_toolkit</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_CONNECT</code></td>
+<td>Command that brings the VPN <strong>up</strong> (first token must be
+an executable file)</td>
+<td><code>${HELIX_SVORD_DIR}/svord-ssh-connect</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_DISCONNECT</code></td>
+<td>Command that tears the VPN <strong>down</strong> (first token
+executable)</td>
+<td><code>${HELIX_SVORD_DIR}/svord-ssh-disconnect</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HEALTH</code></td>
+<td>Health probe — <strong>exit 0 == up</strong>, the authoritative
+up/down signal</td>
+<td><code>${HELIX_SVORD_DIR}/svord-ssh-health</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_SUBNET</code></td>
+<td>Reachable remote subnet (CIDR) — for route scoping + the narrow SSRF
+allowlist carve-out</td>
+<td><code>10.0.0.0/8</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HOST</code></td>
+<td>A known remote host inside the subnet, for smoke reachability</td>
+<td><code>10.6.100.221</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>HELIX_SVORD_DIR</code> is the <strong>only</strong> place the
+bridge-project name lives — change it there to point at a different
+bridge and nothing else needs editing (§11.4.28 decoupled).</p>
+<hr />
+<h2 id="4-setup-steps">4. Setup steps</h2>
+<h3 id="step-1--copy-the-template-to-a-gitignored-env">Step 1 — copy the
+template to a gitignored <code>.env</code></h3>
+<p>From the helix_proxy repo root:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.example .env</span></code></pre></div>
+<p><code>.env</code> is gitignored (line 6 of <code>.gitignore</code>)
+and <strong>must never be committed</strong> (§11.4.10 / §11.4.30). The
+template carries <strong>names and illustrative paths only</strong> —
+put no secrets in <code>.env.example</code>, ever.</p>
+<h3 id="step-2--fill-in-the-6-bridge-vars">Step 2 — fill in the 6 bridge
+vars</h3>
+<p>Edit <code>.env</code> and point the 6 <code>HELIX_SVORD_DIR</code> /
+<code>HELIX_BRIDGE_*</code> vars at your real bridge project (see the
+table in §3). Rules that the doctor enforces:</p>
+<ul>
+<li>Each of <code>HELIX_BRIDGE_CONNECT</code> /
+<code>HELIX_BRIDGE_DISCONNECT</code> / <code>HELIX_BRIDGE_HEALTH</code>
+must have a <strong>first whitespace token that is an existing,
+executable file</strong> — otherwise the contract is
+<code>MISCONFIGURED</code> (§5).</li>
+<li><code>HELIX_BRIDGE_SUBNET</code> is the CIDR later used for L3 route
+scoping <strong>and</strong> the narrow SSRF allowlist carve-out (§6).
+Keep it as tight as your deployment allows.</li>
+<li><code>HELIX_BRIDGE_HOST</code> must be a real host inside that
+subnet — the doctor pings / <code>nc</code>s it as the final smoke
+check.</li>
+</ul>
+<p>All 6 vars must be <strong>set and non-empty</strong>; any
+unset/empty var makes the contract unresolvable
+(<code>MISCONFIGURED:env_unset</code>).</p>
+<h3 id="step-3--run-the-doctor-and-read-the-bridge-verdict">Step 3 — run
+the doctor and read the <code>BRIDGE:</code> verdict</h3>
+<p><code>scripts/svord_doctor.sh</code> is the preflight. Every
+downstream VPN-LAN test runs it first. It reads the contract
+<strong>from the environment</strong>, so source your <code>.env</code>
+first:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-a</span><span class="kw">;</span> <span class="bu">.</span> ./.env<span class="kw">;</span> <span class="bu">set</span> +a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/svord_doctor.sh</span></span></code></pre></div>
+<p>The doctor prints diagnostic <code>svord-doctor:</code> lines and
+then exactly <strong>one</strong> final verdict line matching
+<code>^BRIDGE: </code>. It <strong>never fakes UP</strong>: a genuine
+<code>UP</code> requires the authoritative health probe to exit 0
+<strong>and</strong> the remote host to be reachable.</p>
+<table>
+<thead>
+<tr>
+<th>Final verdict line</th>
+<th>Meaning</th>
+<th>Exit code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BRIDGE: UP</code></td>
+<td>Contract resolved, hooks executable,
+<code>HELIX_BRIDGE_HEALTH</code> exit 0, remote host reachable — the VPN
+is genuinely up</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>BRIDGE: SKIP:network_unreachable_external</code></td>
+<td>Contract fine, but the health probe reported <strong>down</strong>
+or the host is unreachable — the bridge is down</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><code>BRIDGE: SKIP:host_probe_unavailable</code></td>
+<td>Health probe up, but no <code>ping</code>/<code>nc</code> tool
+exists to confirm host reachability — cannot confirm</td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><code>BRIDGE: MISCONFIGURED:&lt;reason&gt;</code></td>
+<td>Bad contract — e.g. <code>env_unset</code>,
+<code>hook_not_executable:&lt;hooks&gt;</code>,
+<code>bridge_lib_missing</code> — fix the <code>.env</code> and
+re-run</td>
+<td><code>3</code></td>
+</tr>
+</tbody>
+</table>
+<p>Exit codes at a glance: <strong><code>0</code> = up, <code>2</code> =
+down / operator-blocked (honest SKIP), <code>3</code> =
+misconfigured</strong>. Wire your automation to treat <code>2</code> as
+SKIP (not failure) and <code>3</code> as a setup error to fix.</p>
+<hr />
+<h2 id="5-honest-skip-behaviour--by-design-not-a-failure">5. Honest-SKIP
+behaviour — by design, not a failure</h2>
+<p>When the bridge is <strong>down</strong>, every VPN-LAN test
+<strong>honestly SKIPs</strong> with the closed-set reason
+<code>network_unreachable_external</code> (§11.4.3) and
+<strong>never</strong> reports a fake PASS. This is
+<strong>deliberate</strong>: the live VPN connection is
+operator-supplied, so the autonomous slate must not manufacture a green
+result for a path it cannot actually exercise.</p>
+<p>The mechanism is the same in both the script and the library:</p>
+<ul>
+<li><code>scripts/svord_doctor.sh</code> emits
+<code>BRIDGE: SKIP:network_unreachable_external</code> and exits
+<code>2</code> when the health probe reports down or the host is
+unreachable.</li>
+<li><code>tests/lib/svord_bridge.sh</code> exposes
+<code>bridge_require</code>, the gate every downstream test calls: it
+returns <code>0</code> when up; when down it echoes
+<code>SKIP:network_unreachable_external</code> and returns
+<code>2</code> (OPERATOR-BLOCKED per §11.4.68 / §11.4.69); when the
+contract is unset it echoes <code>SKIP:misconfigured</code> and returns
+<code>3</code>.</li>
+</ul>
+<p>So a SKIP means "the bridge is down (or unconfigured), and the
+harness told you the truth about it" — exit <code>2</code> is an honest
+OPERATOR-BLOCKED signal, <strong>not</strong> a red test. A
+metadata-only, config-only, or absence-of-error PASS on a path the
+bridge cannot reach would be a §11.4 bluff; the honest SKIP is what
+keeps that from happening.</p>
+<hr />
+<h2 id="6-security-notes">6. Security notes</h2>
+<p>Widening egress to the VPN subnet reopens SSRF surface, so the bridge
+is deployed with the existing hardening kept intact (<a
+href="../design/vpn_lan_access/PLAN.md"><code>PLAN.md</code></a>
+§4):</p>
+<ul>
+<li><strong>RFC1918 / link-local / loopback / metadata block stays as
+the floor.</strong> The prior Dante SSRF + Squid ACL hardening is
+<strong>not removed</strong>. Every private range other than the bridge
+subnet stays denied.</li>
+<li><strong>Only a narrow allowlist carve-out</strong> is added for
+<code>HELIX_BRIDGE_SUBNET</code>. In the Dante first-match top-down
+order the factory-subnet ALLOW rule sits <strong>above</strong> the
+broad internal-DENY, so exactly that one subnet is reachable and every
+other RFC1918 range remains blocked. Keep
+<code>HELIX_BRIDGE_SUBNET</code> as tight as your deployment allows — it
+is the width of the hole.</li>
+<li><strong>Email open-relay guard.</strong> helix_proxy must
+<strong>never expose an anonymous CONNECT to :25.</strong> Authenticated
+<strong>submission</strong> (587/465) is routed to VPN clients;
+server-to-server <code>:25</code> stays behind the boundary. The SSRF
+allowlist must not turn helix_proxy into an anonymizing spam conduit.
+Prefer implicit-TLS ports (993/995/465, RFC 8314) over
+plaintext-upgradable STARTTLS ports where you have the choice.</li>
+<li><strong>No secrets in git.</strong> <code>.env</code> is gitignored
+and never committed; <code>.env.example</code> carries names and paths
+only; credentials for the live connection live outside the tree
+(§11.4.10 / §11.4.30). Run the pre-store leak audit (§11.4.10.A) before
+storing any operator-supplied secret.</li>
+</ul>
+<p>Each egress widening ships with a paired mutation proving the
+allowlist has teeth (an out-of-allowlist target still denies), so the
+carve-out cannot silently become permissive.</p>
+<hr />
+<h2 id="7-protocol-support-matrix">7. Protocol support matrix</h2>
+<p>How each in-scope protocol is carried, and its status.
+<strong>Approach</strong> follows the §1 routing map; unicast services
+<strong>route</strong> over the L3 VPN, HTTP-shaped services are
+<strong>proxied via the existing Squid</strong>, multicast discovery is
+<strong>reflected at the remote</strong> site, and Wi-Fi-Direct is
+<strong>structurally-impossible</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Protocol / service</th>
+<th>Approach</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SMB / CIFS / NMB (NetBIOS)</td>
+<td>Route unicast over L3 (needs L3 routing, <strong>not</strong>
+SOCKS5); NMB name resolution via unicast fallback</td>
+<td>Designed — round-trip proven when bridge up; honest SKIP when
+down</td>
+</tr>
+<tr>
+<td>NFS</td>
+<td>Route unicast over L3 (2049 + aux)</td>
+<td>Designed — read/write round-trip when bridge up; honest SKIP when
+down</td>
+</tr>
+<tr>
+<td>FTP / FTPS</td>
+<td>Route control (21) + the server's pinned passive-port range; FTPS
+explicit (<code>AUTH TLS</code>) + implicit (990)</td>
+<td>Designed — passive round-trip when bridge up; honest SKIP when
+down</td>
+</tr>
+<tr>
+<td>SFTP</td>
+<td>Route over SSH (22) — the recommended modern single-connection
+path</td>
+<td>Designed — byte round-trip when bridge up; honest SKIP when
+down</td>
+</tr>
+<tr>
+<td>WebDAV</td>
+<td><strong>Proxy via the existing Squid</strong> (HTTP
+<code>PROPFIND</code>/<code>MKCOL</code>) — no new component</td>
+<td>Designed — 207/201 bodies when bridge up; honest SKIP when down</td>
+</tr>
+<tr>
+<td>IMAP / IMAPS</td>
+<td>Route unicast (993)</td>
+<td>Designed — mailbox LIST when bridge up; honest SKIP when down</td>
+</tr>
+<tr>
+<td>SMTP / submission</td>
+<td>Route authenticated submission (587/465) — <strong>never</strong>
+anonymous CONNECT-:25 (§6)</td>
+<td>Designed — <code>250</code> accepted + open-relay negative test when
+bridge up; honest SKIP when down</td>
+</tr>
+<tr>
+<td>POP3 / POP3S</td>
+<td>Route unicast (995)</td>
+<td>Designed — retrieve when bridge up; honest SKIP when down</td>
+</tr>
+<tr>
+<td>mDNS / SSDP / WS-Discovery / DNS-SD / DIAL discovery</td>
+<td><strong>Reflect at the remote</strong> site (Avahi reflector / SSDP
+relay) — routers do not forward multicast across L3;
+<strong>operator-gated</strong> remote deployment (§11.4.122)</td>
+<td>Designed — reflector operator-gated; honest SKIP when not
+deployed</td>
+</tr>
+<tr>
+<td>Chromecast (Google Cast / DIAL)</td>
+<td>Discovery via the remote reflector; <strong>control routes</strong>
+as unicast TCP (8008 / 8009 TLS, DIAL HTTP)</td>
+<td>Designed — eureka_info JSON + cast status transition when bridge up;
+honest SKIP when no device/reflector</td>
+</tr>
+<tr>
+<td>ADB (access / debug / connect)</td>
+<td>Route unicast TCP (5555), central adb-server model — no proxy
+hop</td>
+<td>Designed — remote serial + <code>getprop</code> when bridge up;
+honest SKIP when down</td>
+</tr>
+<tr>
+<td>ADB flash (<code>fastboot</code>)</td>
+<td>USB-level → route via <strong><code>usbip</code></strong>
+(USB-over-IP); network <code>fastboot</code> is honestly USB-bound;
+operator-gated on real hardware (§11.4.133)</td>
+<td>Honest boundary — usbip smoke or honest SKIP; operator-gated</td>
+</tr>
+<tr>
+<td><strong>Miracast</strong></td>
+<td><strong>STRUCTURALLY-IMPOSSIBLE</strong> over an L3 VPN —
+Wi-Fi-Direct / L2, no routable IP hop (§11.4.112)</td>
+<td><strong>Won't-fix: structurally-impossible</strong> — see <a
+href="../design/vpn_lan_access/miracast_verdict.md"><code>miracast_verdict.md</code></a>;
+use Chromecast instead</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Miracast</strong> row is authoritative per <a
+href="../design/vpn_lan_access/miracast_verdict.md"><code>miracast_verdict.md</code></a>:
+Miracast's transport is a Wi-Fi Direct Layer-2 radio P2P group with no
+routable IP hop, so an L3 VPN has nothing to route. The routable "cast
+to a remote display" capability is delivered instead by <strong>Google
+Cast / DIAL</strong> (the Chromecast row above).</p>
+<hr />
+<h2 id="8-faq">8. FAQ</h2>
+<p><strong>Q1. The doctor says
+<code>SKIP:network_unreachable_external</code> — is that a test
+failure?</strong> No. It means the <strong>bridge is down</strong> (the
+health probe reported non-zero, or the remote host was unreachable). The
+doctor exits <code>2</code>, which is an honest OPERATOR-BLOCKED SKIP,
+not a red result. Bring the VPN up (or fix connectivity) and re-run; the
+live round-trip evidence only exists when the bridge is genuinely up
+(§5).</p>
+<p><strong>Q2. Can I cast to a remote display via Miracast?</strong> No
+— Miracast <strong>cannot traverse the L3 VPN</strong>. It rides Wi-Fi
+Direct at Layer 2 (a direct radio P2P group between two devices in RF
+proximity) with no routable IP hop for the VPN to carry — a structural
+impossibility of the standard, not a missing feature (<a
+href="../design/vpn_lan_access/miracast_verdict.md"><code>miracast_verdict.md</code></a>,
+§11.4.112). Use <strong>Google Cast / DIAL (Chromecast)</strong>
+instead: its control plane routes over the VPN as ordinary unicast TCP,
+and only its discovery needs the remote-side reflector.</p>
+<p><strong>Q3. Does WebDAV need a new service?</strong> No. WebDAV is
+HTTP-shaped, so it goes through the <strong>existing Squid</strong>
+(<code>PROPFIND</code> / <code>MKCOL</code>); no new component is added.
+On an older Squid you may need to enable <code>extension_methods</code>,
+and the WebDAV origin's TLS port must be in Squid's
+<code>SSL_Ports</code> for <code>CONNECT</code>.</p>
+<p><strong>Q4. Why do mounts (SMB / NFS) need L3 routing instead of
+SOCKS5?</strong> Because they are <strong>unicast IP services that
+route</strong> over the L3 VPN — SOCKS5/Squid is the wrong primitive for
+mounts and discovery. The VPN is L3-routed, so the correct primitive is
+a routed gateway plus a scoped SSRF allowlist, not a SOCKS5 hop (<a
+href="../design/vpn_lan_access/PLAN.md"><code>PLAN.md</code></a>
+§2).</p>
+<p><strong>Q5. Why does discovery (mDNS / SSDP) need a reflector on the
+remote side?</strong> Multicast discovery is <strong>not forwarded
+across L3</strong> by routers. To enumerate a remote-site service you
+deploy a remote-side reflector (Avahi <code>enable-reflector=yes</code>
+for mDNS, an SSDP relay for 1900). That deployment changes a remote
+host, so it is <strong>operator-gated</strong> — it only happens after
+an interactive question with options (§11.4.122).</p>
+<p><strong>Q6. Can I flash a device over the VPN with
+<code>fastboot</code>?</strong> Not directly — <code>fastboot</code> is
+USB-level, not a routable IP service. It is carried via
+<strong><code>usbip</code></strong> (USB-over-IP) from a remote host
+that has the device physically attached; network <code>fastboot</code>
+is honestly USB-bound. Any real-device flash is
+<strong>operator-gated</strong> for target-hardware safety (§11.4.133 /
+§11.4.122).</p>
+<p><strong>Q7. Will widening egress to the VPN subnet weaken the SSRF
+hardening?</strong> No — the RFC1918 / link-local / loopback / metadata
+<strong>block stays as the floor</strong>, and only a <strong>narrow
+carve-out</strong> for <code>HELIX_BRIDGE_SUBNET</code> is added above
+the internal-deny in Dante's first-match order. Every other private
+range stays denied, and a paired mutation proves the allowlist has teeth
+(§6).</p>
+<p><strong>Q8. Where do the live secrets go — do they belong in
+<code>.env.example</code>?</strong> Never. <code>.env.example</code>
+carries <strong>names and illustrative paths only</strong>. Real values
+go in the gitignored <code>.env</code> (which is never committed), and
+the live-connection credentials live <strong>outside the tree</strong>
+entirely (§11.4.10 / §11.4.30). Run the pre-store leak audit before
+storing any operator-supplied secret (§11.4.10.A).</p>
+<hr />
+<h2 id="sources">Sources</h2>
+<ul>
+<li><a
+href="../design/vpn_lan_access/PLAN.md"><code>../design/vpn_lan_access/PLAN.md</code></a>
+— the comprehensive phased plan: §2 routing map, §3 env-var bridge
+contract, §4 security reconciliation, §5 per-phase protocol
+coverage.</li>
+<li><a
+href="../design/vpn_lan_access/miracast_verdict.md"><code>../design/vpn_lan_access/miracast_verdict.md</code></a>
+— the §11.4.112 structural-impossibility verdict for Miracast
+(authoritative for the Miracast row in §7 and FAQ Q2), with cited Wi-Fi
+Alliance / Wi-Fi Direct evidence.</li>
+<li><code>.env.example</code> (VPN-LAN SVORD BRIDGE CONTRACT section) —
+the tracked, no-secrets template for the 6-var contract copied into
+<code>.env</code>.</li>
+<li><code>scripts/svord_doctor.sh</code> — the preflight doctor: the
+<code>BRIDGE:</code> verdict lines and exit codes <code>0</code> /
+<code>2</code> / <code>3</code> documented in §4.</li>
+<li><code>tests/lib/svord_bridge.sh</code> — the sourceable contract
+library: <code>bridge_load</code>, <code>bridge_up</code>,
+<code>bridge_require</code>, <code>bridge_subnet</code>,
+<code>bridge_host</code>.</li>
+</ul>
+</body>
+</html>
