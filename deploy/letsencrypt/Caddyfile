@@ -1,0 +1,139 @@
+# =============================================================================
+# Caddyfile — Let's Encrypt hermetic TLS-termination front (proxy-caddy)
+# =============================================================================
+# Design authority : docs/design/LETSENCRYPT_HTTPS.md (§4.3 "Where it plugs in")
+# Research authority: docs/research/letsencrypt_hermetic_20260701/ANALYSIS.md
+#                     ("Recommended hermetic architecture" — Option A)
+# Constitution     : §11.4.10 (no secrets in tracked files) · §11.4.156 (renewal
+#                    is Caddy's IN-PROCESS loop — NO cron/CI/hook) · §11.4.161
+#                    (rootless) · §11.4.111 (resolve by NAME) · §11.4.6.
+#
+# WHAT THIS DOES
+#   Caddy is BOTH the ACME client AND the TLS terminator. It obtains + RENEWS a
+#   certificate for TEST_HOSTNAME via ACME **DNS-01**, terminates public HTTPS,
+#   and reverse-proxies plaintext to an internal upstream. Renewal + hot in-memory
+#   rotation are built into the long-running Caddy process (§11.4.156 — no timer).
+#
+# EVERYTHING is env-parameterized so the conductor flips the hermetic Pebble
+# endpoint to LE staging → production by changing only env VALUES — no edits to
+# this file. Values come from compose.hermetic.yml (names in .env.example).
+# Caddyfile placeholders use {$VAR} / {$VAR:default}.
+#
+# =============================================================================
+# THE TWO CAs — do NOT conflate (ANALYSIS.md Q6 gotcha #1; the #1 hermetic trap)
+# -----------------------------------------------------------------------------
+#   (1) pebble.minica.pem  — signs Pebble's OWN HTTPS endpoints (:14000 directory
+#       and :15000 management). Caddy must TRUST it to *talk to* Pebble over TLS.
+#       => that is what `acme_ca_root` / `trusted_roots` below point at. It is a
+#       PUBLIC test CA (its key is public) — mounted read-only, never a secret.
+#   (2) the per-run issuance CA returned by Pebble's /roots/0 + /intermediates/0
+#       — signs the leaf Pebble ISSUES to Caddy. Pebble REGENERATES it every boot,
+#       so it is fetched at VERIFY time by the TEST (cert_analyzer.sh), NEVER
+#       pinned here and NEVER trusted by Caddy. Trusting the wrong one =>
+#       "x509: certificate signed by unknown authority" on the ACME handshake.
+# =============================================================================
+
+{
+	# ---- Global options ------------------------------------------------------
+	# ACME account contact. LE uses it for expiry notices; Pebble ignores it.
+	email {$ACME_EMAIL}
+
+	# Admin API. OFF by default (no admin socket surface on this front). The
+	# Phase-5 rotation test flips this to an address (e.g. 0.0.0.0:2019) so the
+	# test can POST /load to force a renewal + read live config (ANALYSIS.md Q4).
+	admin {$CADDY_ADMIN:off}
+
+	# Global default ACME CA directory URL.
+	#   hermetic : https://pebble:14000/dir   (resolve-by-name, §11.4.111)
+	#   staging  : https://acme-staging-v02.api.letsencrypt.org/directory
+	#   prod     : https://acme-v02.api.letsencrypt.org/directory
+	acme_ca {$ACME_DIRECTORY_URL:https://pebble:14000/dir}
+
+	# Trust anchor for the ACME SERVER endpoint's OWN TLS cert — CA (1) above,
+	# the mounted pebble.minica.pem. Hermetic ONLY. For real LE this MUST be
+	# empty and the line COMMENTED OUT (public roots already trusted; an empty
+	# value here is a Caddyfile parse error) — the conductor comments it at the
+	# staging/prod cutover.
+	acme_ca_root {$ACME_CA_ROOT:/run/pebble-ca/pebble.minica.pem}
+}
+
+# -----------------------------------------------------------------------------
+# Site block — the operator-chosen dashboard hostname (hermetic test default).
+# TEST_HOSTNAME default = proxy.hermetic.test (design §4.3 example hostname).
+# -----------------------------------------------------------------------------
+{$TEST_HOSTNAME:proxy.hermetic.test} {
+
+	# ---- TLS / ACME issuer ---------------------------------------------------
+	# Explicit ACME issuer so the DNS-01 challenge + CA endpoint are pinned per
+	# site (overrides the global defaults above where they must differ).
+	tls {
+		issuer acme {
+			# ACME directory URL (hermetic Pebble / staging / prod — see above).
+			dir {$ACME_DIRECTORY_URL:https://pebble:14000/dir}
+
+			# ACME account contact email.
+			email {$ACME_EMAIL}
+
+			# Trust anchor for the ACME endpoint's TLS — CA (1), pebble.minica.pem.
+			# Hermetic ONLY; comment out for real LE (same rule as acme_ca_root).
+			trusted_roots {$ACME_CA_ROOT:/run/pebble-ca/pebble.minica.pem}
+
+			# ---- DNS-01 challenge ------------------------------------------
+			# DNS-01 needs NO inbound port for validation (design §3.2) — Caddy
+			# writes the _acme-challenge TXT via the DNS provider module.
+			#
+			# HERMETIC provider = `challtestsrv` (this repo's custom module,
+			# dns.providers.challtestsrv, built into CADDY_IMAGE by
+			# ../Dockerfile.caddy). It POSTs set-txt/clear-txt to challtestsrv's
+			# UNAUTHENTICATED management API (CHALLTESTSRV_MGMT_URL, :8055) — so
+			# there is NO token and NO secret on this path (§11.4.10, nothing to
+			# leak). The module reads only the management URL.
+			dns challtestsrv {$CHALLTESTSRV_MGMT_URL:http://challtestsrv:8055}
+
+			# ---- Caddy's OWN pre-issue propagation self-check --------------
+			# Caddy verifies the TXT is visible before asking the CA to validate.
+			# It MUST resolve via the SAME mock DNS the CA queries, or it never
+			# sees the record and stalls until propagation_timeout (ANALYSIS.md
+			# Q6 gotcha #3). Point Caddy's resolver at challtestsrv's DNS (:8053).
+			resolvers {$ACME_RESOLVERS:challtestsrv:8053}
+
+			# Keep the hermetic propagation window tight (no real DNS latency).
+			propagation_delay   {$ACME_PROPAGATION_DELAY:2s}
+			propagation_timeout {$ACME_PROPAGATION_TIMEOUT:30s}
+		}
+
+		# ---- Phase-5 rotation lever (default: unset) ----------------------
+		# Setting CADDY_RENEWAL_RATIO=1 makes renewAt ~= notBefore, so Caddy
+		# renews immediately on the next config load — the deterministic
+		# force-renewal for the rotation test (ANALYSIS.md Q4). Default empty
+		# => Caddy's built-in 0.3333 ratio (§11.4.156 in-process renewal).
+		# renewal_window_ratio {$CADDY_RENEWAL_RATIO}
+	}
+
+	# ---- REAL-PROVIDER (staging/prod) DNS-01 — COMMENTED template ------------
+	# For the real path, build CADDY_IMAGE with `caddy-dns/<provider>` instead of
+	# challtestsrv, drop the `resolvers`/`trusted_roots`/`acme_ca_root` lines
+	# (public DNS + public roots), and read the provider TOKEN from the MOUNTED
+	# Podman secret via the {file.…} placeholder — the token VALUE never appears
+	# in this file (§11.4.10). ACME_DNS_TOKEN_FILE resolves to
+	# /run/secrets/helixproxy_caddy_dns_token (mount of the secret named
+	# `helixproxy_caddy_dns_token`; see .env.example + ../README.md):
+	#
+	#   tls {
+	#       dns {$ACME_DNS_PROVIDER} {file.{$ACME_DNS_TOKEN_FILE}}
+	#   }
+
+	# ---- Reverse proxy to the internal upstream ------------------------------
+	# CADDY_UPSTREAM is the plaintext, pod-internal target Caddy fronts. Default
+	# `admin:80` = the existing admin static site (design §4.3). Reached by
+	# service NAME over the shared pod-internal network (§11.4.111) — no host
+	# port-forward.
+	reverse_proxy {$CADDY_UPSTREAM:admin:80}
+
+	# ---- Health endpoint (overrides the proxied path) ------------------------
+	# Local liveness probe used by the containers-submodule pkg/health gate and by
+	# e2e evidence capture (design §6). Returns 200 over the served TLS.
+	handle /health {
+		respond "ok" 200
+	}
+}

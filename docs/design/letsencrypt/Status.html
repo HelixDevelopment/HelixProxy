@@ -174,10 +174,12 @@
 <body>
 <h1 id="lets-encrypt-https--integration-status">Let's Encrypt HTTPS —
 Integration Status</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T12:15:00Z <strong>Status:</strong> In progress — Phase 1
-cert-analyzer landed; issuance/renewal phases pending. Production
-cutover OPERATOR-BLOCKED (design §9 real-domain gate).
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-01T10:06:00Z <strong>Status:</strong> In progress — Phases 0–3
+PASS: a REAL hermetic DNS-01 certificate is issued by local Pebble and
+verified by the cert-analyzer (re-runnable). Phase 5 (renewal/rotation)
+next; Phase 4 (LE staging) + Phase 6 (production cutover)
+OPERATOR-BLOCKED (design §9 real-domain gate).
 <strong>Authority:</strong> Inherits
 <code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
 integration-status doc for the Let's Encrypt HTTPS workstream (task
@@ -282,24 +284,39 @@ exact→substring) → guard FAIL, restore byte-identical md5
 </tr>
 <tr>
 <td>1 — Custom Caddy image w/ DNS-01 provider module</td>
-<td>Build a Caddy image bundling the chosen DNS provider plugin (via the
-<code>containers</code> submodule, rootless — §11.4.76/.161)</td>
-<td>PENDING</td>
-<td>—</td>
+<td>Build a rootless Caddy image bundling the local
+<code>dns.providers.challtestsrv</code> module (§11.4.161)</td>
+<td>PASS</td>
+<td><code>build.sh</code> built
+<code>localhost/helix_proxy/caddy-challtestsrv:2.8.4</code>; post-build
+anti-bluff check
+<code>caddy list-modules | grep dns.providers.challtestsrv</code> PASS
+(a build ≠ module linked, §11.4.6);
+<code>qa-results/letsencrypt/build/</code></td>
 </tr>
 <tr>
-<td>2 — Compose service + Podman secret + cert volume</td>
-<td>Wire Caddy service + secret NAME/PATH (no value) + persistent cert
-volume; no real issuance yet</td>
-<td>PENDING</td>
-<td>—</td>
+<td>2 — Compose service + Podman secret + cert volume + CoreDNS SOA
+front</td>
+<td>Wire Caddy + CoreDNS (zone-determination fix) + secret NAME/PATH (no
+value) + persistent cert volume</td>
+<td>PASS</td>
+<td><code>compose.hermetic.yml</code> (4 services;
+<code>PEBBLE_VA_ALWAYS_VALID=0</code>; secrets commented for hermetic;
+caddy loopback-bound per security-audit M1); CoreDNS answers
+<code>hermetic.test</code> SOA, forwards <code>_acme-challenge</code>
+TXT to challtestsrv</td>
 </tr>
 <tr>
 <td>3 — Hermetic local-ACME with Pebble (anti-bluff core)</td>
-<td>Caddy issues a real cert against a local Pebble ACME server, fully
-offline/hermetic; cert-analyzer asserts the result</td>
-<td>PENDING</td>
-<td>—</td>
+<td>Caddy issues a REAL cert against local Pebble via DNS-01, fully
+offline; cert-analyzer asserts the served leaf</td>
+<td>PASS</td>
+<td>re-runnable <code>phase3_hermetic_issue.sh</code> → 2 clean runs
+each issued a real cert (Pebble VA_ALWAYS_VALID=0 genuine validation);
+cert-analyzer PASS: not_expired + SAN <code>proxy.hermetic.test</code> +
+negative-SAN-reject + <strong>chain-to-this-run's-Pebble-CA</strong>;
+<code>qa-results/letsencrypt/phase3_issuance/20260701T100119Z/</code> +
+<code>…T100434Z/</code></td>
 </tr>
 <tr>
 <td>4 — LE <strong>staging</strong> end-to-end (real DNS-01)</td>
@@ -323,13 +340,18 @@ cert; no downtime</td>
 </tbody>
 </table>
 <h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
-<p>Only Phase 0 and the Phase-1 <strong>cert-analyzer</strong> are DONE
-with captured evidence. The analyzer validates a resulting certificate
-regardless of how it was obtained, so it is ready to assert the output
-of Phases 3–6 the moment those land. No issuance, renewal, or rotation
-path has been exercised yet — those rows are honestly PENDING /
-OPERATOR-BLOCKED, never a metadata-only PASS (§11.4 / §11.4.1). The
-hermetic Pebble path (Phase 3) is the next autonomous target; the
-real-domain paths (4, 6) wait on the operator gate.</p>
+<p>Phases 0–3 are DONE with captured evidence: the custom Caddy image is
+built with the DNS-01 module linked (anti-bluff-verified), the hermetic
+stack is wired (with the CoreDNS SOA front that fixes certmagic's
+zone-determination), and <code>phase3_hermetic_issue.sh</code> issues a
+REAL cert via DNS-01 against local Pebble (genuine validation —
+<code>PEBBLE_VA_ALWAYS_VALID=0</code>) that the cert-analyzer verifies
+over the served leaf, including that it chains to THIS RUN's Pebble CA —
+proven on two clean re-runnable runs (§11.4.98 / §11.4.107). What is NOT
+yet exercised (honestly): Phase 5 renewal/rotation (research landed,
+<code>docs/research/letsencrypt_renewal_20260701/</code>; the running
+stack is left up via <code>KEEP_UP=1</code> for it) and the real-domain
+paths (Phase 4 LE staging, Phase 6 production cutover) which wait on the
+operator gate — never a metadata-only PASS (§11.4 / §11.4.1).</p>
 </body>
 </html>

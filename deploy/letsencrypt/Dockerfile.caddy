@@ -1,0 +1,83 @@
+# =============================================================================
+# Dockerfile.caddy — custom Caddy image WITH the hermetic challtestsrv DNS-01
+# provider (xcaddy multi-stage build). Built rootless via ../build.sh.
+# =============================================================================
+# WHY a custom image: the official docker.io/library/caddy image bundles NO
+# DNS-provider modules, so it cannot perform ANY ACME DNS-01 challenge
+# (ANALYSIS.md Q3). This image embeds the LOCAL module
+# `caddy-challtestsrv-dns/` (module id dns.providers.challtestsrv) so Caddy can
+# solve DNS-01 against pebble-challtestsrv, fully offline.
+#
+# Constitution: §11.4.161 (rootless — non-root final user) · §11.4.173
+# (containerized build; ../build.sh is the rootless-podman recipe the conductor
+# runs, or drives through the containers submodule pkg/crossbuild) · §11.4.6
+# (versions PINNED, not floating :latest).
+#
+# BUILD CONTEXT must be this directory (deploy/letsencrypt/) so the local module
+# `./caddy-challtestsrv-dns/` is visible to the builder stage. See ../build.sh.
+# =============================================================================
+
+# Pinned versions (§11.4.6). CADDY_VERSION also selects the xcaddy target below,
+# keeping the builder image, the xcaddy build arg and the runtime image in lock-
+# step. The module targets libdns v0.2.x (Caddy 2.8.x) — see the module README
+# "Version compatibility" before bumping to >= 2.10.
+ARG CADDY_VERSION=2.8.4
+
+# ---- Stage 1: build the custom binary with xcaddy -------------------------
+# The caddy:<ver>-builder image ships the Go toolchain + xcaddy preinstalled.
+FROM docker.io/library/caddy:${CADDY_VERSION}-builder AS builder
+ARG CADDY_VERSION
+
+WORKDIR /src
+# Copy ONLY the local module (small, deterministic build context slice).
+COPY caddy-challtestsrv-dns/ /src/caddy-challtestsrv-dns/
+
+# Build Caddy with the local module wired in via a go.mod replace (the `=./path`
+# form). No network fetch of the module. GOMAXPROCS=2 bounds the Go compile's
+# parallelism + peak RSS (§12.6 host-safety) so the build stays within the
+# ../build.sh --memory cap even under rootless cgroups.
+#
+# NO positional <caddy_version> arg (§11.4.6 — deliberate): the caddy:<ver>-builder
+# base image already presets `ENV CADDY_VERSION=v<ver>`, and inside a RUN that base
+# ENV OVERRIDES this Dockerfile's `ARG CADDY_VERSION`. So `"v${CADDY_VERSION}"`
+# expanded to `vv2.8.4` ("Invalid characters in version"). xcaddy defaults its
+# core version to that same CADDY_VERSION env, and the FROM tag pins it to the
+# intended release, so omitting the positional arg builds exactly caddy v<ver>.
+RUN GOMAXPROCS=2 xcaddy build \
+      --with github.com/helixproxy/caddy-challtestsrv-dns=/src/caddy-challtestsrv-dns \
+      --output /out/caddy \
+ && /out/caddy version \
+ && /out/caddy list-modules 2>/dev/null | grep -q 'dns.providers.challtestsrv'
+
+# ---- Stage 2: minimal non-root runtime ------------------------------------
+FROM docker.io/library/caddy:${CADDY_VERSION}-alpine
+ARG CADDY_VERSION
+
+# Replace the stock binary with our custom (DNS-01-capable) build.
+COPY --from=builder /out/caddy /usr/bin/caddy
+
+# Non-root final user (§11.4.161). Create a dedicated caddy user/group, grant the
+# binary CAP_NET_BIND_SERVICE so it can bind :80/:443 without root, and hand the
+# writable paths (ACME store /data, autosave /config, Caddyfile dir) to it. Under
+# rootless Podman the container user is already an unprivileged host UID (userns),
+# so this is defense-in-depth, not the sole isolation layer.
+RUN set -eux; \
+    addgroup -S caddy 2>/dev/null || true; \
+    adduser -S -D -H -G caddy -s /sbin/nologin caddy 2>/dev/null || true; \
+    apk add --no-cache libcap; \
+    setcap 'cap_net_bind_service=+ep' /usr/bin/caddy; \
+    apk del libcap; \
+    mkdir -p /data /config /etc/caddy; \
+    chown -R caddy:caddy /data /config /etc/caddy
+
+# Caddy's XDG storage lives under /data (set by the base image). The named
+# volumes mounted here (letsencrypt-caddy-data:/data, ...-config:/config) inherit
+# this ownership on first init, so the non-root process can write the ACME store.
+USER caddy
+
+# 80 = HTTP->HTTPS redirect, 443 = TLS termination, 2019 = admin API (off by
+# default in the Caddyfile; enabled only for the Phase-5 rotation test).
+EXPOSE 80 443 2019
+
+# Inherit the base image ENTRYPOINT/CMD (caddy run --config /etc/caddy/Caddyfile
+# --adapter caddyfile). The Caddyfile is bind-mounted read-only by the compose.

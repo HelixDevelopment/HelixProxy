@@ -1,7 +1,7 @@
 # Let's Encrypt HTTPS — Status Summary
 
-**Revision:** 1
-**Last modified:** 2026-07-01T12:15:00Z
+**Revision:** 2
+**Last modified:** 2026-07-01T10:06:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -20,16 +20,22 @@ to babysit) and the **DNS-01** method so it works even without opening ports on 
   is still valid, how many days are left, whether it covers the right hostname, and whether it
   was issued by the expected authority — all offline, and it is self-tested so it cannot lie
   (a deliberately-broken certificate is always caught).
+- **A real certificate is now issued end-to-end, fully on this machine** (no internet, no
+  real domain): Caddy asks a local test certificate-authority for a certificate using the
+  DNS method, gets a genuine one, and the checker confirms it is valid, covers the right
+  name, and was really signed by that authority. This runs from scratch on demand in about
+  15 seconds and produces saved proof each time.
 
 **What's still pending / needs you:**
 
-- Issuing a real certificate end-to-end (first against a local test server, then Let's Encrypt
-  **staging**) — the next automated step is the local hermetic test.
+- **Renewal + rotation** (proving the certificate auto-renews with no downtime) — the next
+  automated step; the research for it is done.
 - **Going live on the real domain** needs you to provide a DNS provider API token and give the
   go-ahead. Until then nothing touches production.
 
-**Bottom line:** the foundation and the safety-checker are done and proven; certificate issuance
-and the real-domain go-live are the remaining steps, the last one waiting on your go-ahead.
+**Bottom line:** the foundation, the safety-checker, AND real end-to-end certificate issuance
+are done and proven on this machine; renewal/rotation is next and the real-domain go-live
+waits on your go-ahead.
 
 ---
 
@@ -46,11 +52,25 @@ and the real-domain go-live are the remaining steps, the last one waiting on you
   (SAN exact→substring) → guard FAIL, restore byte-identical md5 `a06e0f89ee9993fe5de368be852e4eff`.
   Fixtures: public `*.pem` tracked, `*.key`/`*.csr`/`*.srl` gitignored (§11.4.10), regen via
   `fixtures/gen_fixtures.sh` (§11.4.77).
-- **Pending (autonomous):** custom Caddy DNS-01 image (§11.4.76 containers submodule, rootless §11.4.161),
-  Phase 2 compose+secret+volume wiring, Phase 3 Pebble hermetic issuance (anti-bluff core), Phase 5
-  renewal/rotation sim.
+- **Phase 1 custom Caddy image (PASS):** `deploy/letsencrypt/build.sh` builds
+  `localhost/helix_proxy/caddy-challtestsrv:2.8.4` (rootless, non-root user + `cap_net_bind_service`)
+  embedding the local `dns.providers.challtestsrv` libdns module via xcaddy; post-build anti-bluff
+  `caddy list-modules | grep dns.providers.challtestsrv` PASS (§11.4.6 — build ≠ linked).
+- **Phase 2 compose + CoreDNS SOA front (PASS):** `compose.hermetic.yml` — pebble
+  (`PEBBLE_VA_ALWAYS_VALID=0`) + challtestsrv + **coredns** + caddy; secrets NAME/PATH-only, commented
+  for the hermetic path; caddy loopback-bound (security-audit M1). CoreDNS answers `hermetic.test` SOA
+  in the ANSWER section (certmagic's zone-determination needs it — challtestsrv NOTIMPs SOA) and
+  fall-through-forwards the dynamic `_acme-challenge` TXT to challtestsrv.
+- **Phase 3 hermetic issuance (PASS):** `deploy/letsencrypt/phase3_hermetic_issue.sh` — clean-slate,
+  re-runnable (§11.4.98): boots the stack, Caddy obtains a REAL cert via DNS-01 from local Pebble
+  (genuine validation), cert-analyzer verifies not_expired + SAN + negative-SAN-reject +
+  chain-to-this-run's-Pebble-CA. Two clean runs, evidence in `qa-results/letsencrypt/phase3_issuance/`.
+  Root-cause research for the zone-determination + a certmagic #354 panic in
+  `docs/research/letsencrypt_hermetic_20260701/` + `docs/research/certmagic_chain_panic_20260701/`.
+- **Pending (autonomous):** Phase 5 renewal/rotation sim (research done —
+  `docs/research/letsencrypt_renewal_20260701/`: `renewal_window_ratio 1` via admin `/load`).
 - **OPERATOR-BLOCKED:** Phase 4 LE-staging (real DNS-01 token §11.4.10), Phase 6 prod cutover (real-domain go-live gate, design §9).
-- **Guard wiring:** `cert_analyzer_selfvalidation_test.sh` to be registered in `run-tests.sh`
-  `test_regression_guards()` (§11.4.135) with the LE lane commit.
+- **Guard wiring:** `cert_analyzer_selfvalidation_test.sh` registered; the Phase-3 issuance guard
+  (`tests/letsencrypt/phase3_issuance_guard.sh`) + LE Challenge land with this lane (§11.4.135).
 - **Anti-bluff:** every non-PASS row is honestly PENDING/OPERATOR-BLOCKED (§11.4.6) — no
-  metadata-only PASS; the analyzer is ready to assert the output of the issuance phases when they land.
+  metadata-only PASS; every PASS cites a captured-evidence path.

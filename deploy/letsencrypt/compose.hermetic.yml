@@ -1,0 +1,268 @@
+# =============================================================================
+# compose.hermetic.yml — Let's Encrypt HERMETIC ACME stack (proxy-caddy)
+# =============================================================================
+# Purpose : a fully self-contained Caddy + Pebble + pebble-challtestsrv stack the
+#           conductor boots via the containers submodule to issue a REAL cert
+#           against a LOCAL ACME server (Pebble) with DNS-01 solved locally —
+#           zero network, zero LE rate-limit exposure (design §6; research
+#           ANALYSIS.md "Recommended hermetic architecture", Option A).
+#
+# HOW THE CONTAINERS SUBMODULE CONSUMES THIS FILE
+#   This is a STANDARD compose file. The containers submodule
+#   (`submodules/containers`) drives it through `pkg/compose.ComposeProject`
+#   (`pkg/compose/types.go:19`) and `ComposeOrchestrator.Up`
+#   (`pkg/compose/orchestrator.go:22`), which runs `podman compose -f <file> up
+#   -d` locally or over SSH. Readiness is gated by `pkg/health` (TCP/HTTP
+#   checkers). The high-level entry is `pkg/boot.BootManager.BootAll`
+#   (`pkg/boot/manager.go:64`). Orchestrated ONLY via the submodule; NO ad-hoc
+#   `podman run` (§11.4.76).
+#
+# Constitution: §11.4.10 (secrets by NAME+PATH only) · §11.4.161 (rootless) ·
+#   §11.4.156 (renewal = Caddy in-process loop, no cron/CI/hook) · §11.4.111
+#   (resolve-by-name) · §11.4.6 (versions PINNED; unverified => PENDING inline).
+#   All host-published ports are HIGH (>1024) so a rootless Podman user can bind
+#   them (design §4.4). NO host-network mode.
+#
+# CANONICAL SECRET NAME (reconciled 2026-07-01): `helixproxy_caddy_dns_token`
+#   — matches the existing `helixproxy_api_*` secret family in the real code
+#   (`tls.go`) and the design doc §4.3/§5. NOT NEEDED for the hermetic
+#   challtestsrv path (challtestsrv is unauthenticated) — required only for the
+#   real-provider (staging/prod) path. See the `caddy` service + ../README.md.
+# =============================================================================
+
+version: "3.8"
+
+# -----------------------------------------------------------------------------
+# Secrets — operator-provisioned Podman secret, NAME ONLY, never a value (§11.4.10)
+# -----------------------------------------------------------------------------
+# Referenced by NAME `helixproxy_caddy_dns_token`; mounted into `caddy` at
+# `/run/secrets/helixproxy_caddy_dns_token` (see the caddy service's commented
+# `secrets:` stanza). Value created OUT OF BAND by the operator:
+#   podman secret create helixproxy_caddy_dns_token <token-file>
+# The HERMETIC path (ACME_DNS_PROVIDER=challtestsrv) needs NO token, so the
+# secret stays UNDECLARED-as-required for hermetic runs. This whole `secrets:`
+# top-level block + the caddy `secrets:` mount are COMMENTED so a hermetic boot
+# never requires a not-yet-created external secret (§11.4.6 — no guessing about
+# its presence). Uncomment BOTH only for the staging/prod real-provider path.
+# secrets:
+#   helixproxy_caddy_dns_token:
+#     external: true
+
+# -----------------------------------------------------------------------------
+# Named volumes — regenerable state (§11.4.30 / §11.4.77; re-issued via ACME on loss)
+# -----------------------------------------------------------------------------
+volumes:
+  # Caddy /data: ACME account key + issued certs + private keys. GITIGNORED,
+  # persistent, 0600-class inside the container. Regeneration = ACME re-issue
+  # (design §5, §7.2). Never committed.
+  letsencrypt-caddy-data:
+  # Caddy /config: autosaved runtime config (non-secret).
+  letsencrypt-caddy-config:
+
+# -----------------------------------------------------------------------------
+# Private pod-internal network — name resolution Caddy <-> Pebble <-> challtestsrv
+# and Caddy -> upstream (§11.4.111 resolve-by-name). NOT host-network.
+# -----------------------------------------------------------------------------
+networks:
+  letsencrypt-hermetic:
+    name: letsencrypt-hermetic
+
+services:
+  # ===========================================================================
+  # pebble — miniature in-RAM RFC-8555 ACME test server (design §3.4)
+  # ===========================================================================
+  pebble:
+    # PINNED tag (§11.4.6 — not :latest). PENDING boot-verify: confirm this exact
+    # tag is published on GHCR and, for full reproducibility (§11.4.173), pin the
+    # @sha256 digest. The LE images live on GHCR.
+    image: ${PEBBLE_IMAGE:-ghcr.io/letsencrypt/pebble:2.6.0}
+    container_name: letsencrypt-pebble
+    hostname: pebble
+    # Point Pebble's validation authority at challtestsrv's mock DNS so the
+    # DNS-01 TXT records Caddy writes are resolvable locally. `-strict false`
+    # relaxes non-fatal RFC checks for the hermetic harness (ANALYSIS.md Q1/Q6).
+    # PENDING boot-verify: the default config path (/test/config/pebble-config.json)
+    # + the -dnsserver flag are Pebble's documented defaults; confirm at boot.
+    command: ["-config", "/test/config/pebble-config.json", "-dnsserver", "challtestsrv:8053", "-strict", "false"]
+    environment:
+      # Do not sleep 0-15s before validation — fast, deterministic issuance.
+      - PEBBLE_VA_NOSLEEP=1
+      # Do NOT auto-pass validation — genuinely exercise DNS-01 (0 = real check).
+      # (PEBBLE_VA_ALWAYS_VALID=1 would be a §11.4 PASS-bluff for the DNS-01 path.)
+      - PEBBLE_VA_ALWAYS_VALID=0
+      # Disable the default 5% nonce rejection so acmez retries don't look flaky
+      # under tight per-attempt timeouts (ANALYSIS.md Q1/Q6 gotcha #6).
+      - PEBBLE_WFE_NONCEREJECT=0
+    depends_on:
+      - challtestsrv
+    networks:
+      - letsencrypt-hermetic
+    # High host ports (>1024), bound to LOOPBACK only — this loopback publish of
+    # :15000 IS the mechanism by which the conductor fetches THIS run's issuance
+    # CA at boot/verify time (curl -k https://127.0.0.1:15000/roots/0 +
+    # /intermediates/0 — Pebble regenerates it every boot, ANALYSIS.md Q1/Q5).
+    # Pod-internal services still reach Pebble by name on 14000/15000.
+    ports:
+      - "127.0.0.1:${PEBBLE_DIR_PORT:-14000}:14000"    # ACME directory (HTTPS, self-signed by pebble.minica.pem)
+      - "127.0.0.1:${PEBBLE_MGMT_PORT:-15000}:15000"   # management API (per-run /roots/0 + /intermediates/0)
+    restart: unless-stopped
+    # PENDING boot-verify: exact in-image tooling. Pebble's directory is
+    # HTTPS/self-signed => --no-check-certificate. Prefer the submodule
+    # pkg/health TCP checker on 14000 if wget is absent in the pinned image.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://localhost:14000/dir || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 3s
+
+  # ===========================================================================
+  # challtestsrv — pebble-challtestsrv: mock DNS + management API (design §3.4)
+  # ===========================================================================
+  challtestsrv:
+    # PINNED tag (§11.4.6). PENDING boot-verify: challtestsrv shares the pebble
+    # repo's release tags; confirm this exact tag exists on GHCR + pin @sha256.
+    image: ${CHALLTESTSRV_IMAGE:-ghcr.io/letsencrypt/pebble-challtestsrv:2.6.0}
+    container_name: letsencrypt-challtestsrv
+    hostname: challtestsrv
+    # Blank the DEFAULT AAAA answer: challtestsrv's default IPv6 (::1) can take
+    # precedence over the intended A record and break resolution (ANALYSIS.md Q6
+    # gotcha #4). DNS-01 needs only the TXT (written live via the mgmt API), so
+    # A/AAAA defaults are not otherwise required.
+    command: ["-defaultIPv6", ""]
+    networks:
+      - letsencrypt-hermetic
+    # Management API on a high LOOPBACK host port for debugging/evidence. The DNS
+    # (:8053/udp+tcp), HTTP-01 (:5002) and TLS-ALPN (:5001) listeners stay
+    # POD-INTERNAL (reached by Pebble + Caddy by name) — no host publish.
+    ports:
+      - "127.0.0.1:${CHALLTESTSRV_MGMT_PORT:-8055}:8055"  # management API (set/clear TXT)
+    restart: unless-stopped
+    # PENDING boot-verify: the mgmt root may 404 => TCP-connect probe. Confirm
+    # nc presence or use the submodule pkg/health TCP checker on 8055.
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8055 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 2s
+
+  # ===========================================================================
+  # coredns — authoritative SOA front for hermetic.test (design-gap fix 2026-07-01).
+  # certmagic's DNS-01 zone-determination does an SOA walk BEFORE presenting the
+  # TXT; challtestsrv answers NOTIMP to SOA (no authoritative mode — verified via
+  # dig), which blocked Caddy ("could not determine zone ... NOTIMP"). CoreDNS
+  # answers the hermetic.test SOA locally (template plugin) and FALLS THROUGH
+  # (forward) to challtestsrv for the dynamic _acme-challenge TXT. Caddy points
+  # ACME_RESOLVERS at coredns:53 (name-resolved); Pebble keeps querying
+  # challtestsrv:8053 directly (it does no SOA walk). CoreDNS `forward` needs an IP
+  # not a name, so ./coredns/Corefile's forward line is (re)written with
+  # challtestsrv's live IP by phase3_hermetic_issue.sh before this service starts.
+  # See docs/research/letsencrypt_hermetic_20260701/.
+  # ===========================================================================
+  coredns:
+    image: ${COREDNS_IMAGE:-docker.io/coredns/coredns:1.11.1}
+    container_name: letsencrypt-coredns
+    hostname: coredns
+    command: ["-conf", "/Corefile"]
+    depends_on:
+      - challtestsrv
+    volumes:
+      - ./coredns/Corefile:/Corefile:ro,Z
+    networks:
+      - letsencrypt-hermetic
+    restart: unless-stopped
+
+  # ===========================================================================
+  # caddy — ACME client + TLS terminator (design §4.1). Renewal IN-PROCESS.
+  # ===========================================================================
+  caddy:
+    # CUSTOM image built from ./Dockerfile.caddy by ./build.sh — it embeds the
+    # local dns.providers.challtestsrv module (stock caddy has NO DNS module, so
+    # DNS-01 is impossible without it — ANALYSIS.md Q3). `build:` lets the
+    # containers submodule / `podman compose build` produce it; the pinned tag
+    # is what ./build.sh emits and what compose runs.
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+      args:
+        CADDY_VERSION: ${CADDY_VERSION:-2.8.4}
+    image: ${CADDY_IMAGE:-localhost/helix_proxy/caddy-challtestsrv:2.8.4}
+    container_name: letsencrypt-caddy
+    hostname: caddy
+    depends_on:
+      - pebble
+      - challtestsrv
+      - coredns
+    environment:
+      # ---- ACME endpoint (hermetic Pebble default; staging/prod override) ----
+      - ACME_DIRECTORY_URL=${ACME_DIRECTORY_URL:-https://pebble:14000/dir}
+      # Trust anchor (CA #1) for Pebble's ACME endpoint TLS = the mounted
+      # pebble.minica.pem. Comment/empty for real LE.
+      - ACME_CA_ROOT=${ACME_CA_ROOT:-/run/pebble-ca/pebble.minica.pem}
+      - ACME_EMAIL=${ACME_EMAIL:-hermetic@proxy.hermetic.test}
+      # ---- DNS-01 provider (hermetic = challtestsrv, no token) ----
+      - ACME_DNS_PROVIDER=${ACME_DNS_PROVIDER:-challtestsrv}
+      # Hermetic challtestsrv management API the DNS module POSTs TXT to.
+      - CHALLTESTSRV_MGMT_URL=${CHALLTESTSRV_MGMT_URL:-http://challtestsrv:8055}
+      # Caddy's zone-determination SOA walk + propagation self-check resolver =>
+      # CoreDNS (answers hermetic.test SOA, forwards TXT to challtestsrv). Direct
+      # challtestsrv:8053 fails certmagic's SOA walk (NOTIMP). Name-resolved.
+      - ACME_RESOLVERS=${ACME_RESOLVERS:-coredns:53}
+      - ACME_PROPAGATION_DELAY=${ACME_PROPAGATION_DELAY:-2s}
+      - ACME_PROPAGATION_TIMEOUT=${ACME_PROPAGATION_TIMEOUT:-30s}
+      # Admin API — OFF by default; Phase-5 rotation sets CADDY_ADMIN=0.0.0.0:2019.
+      - CADDY_ADMIN=${CADDY_ADMIN:-off}
+      # ---- Real-provider (staging/prod) token FILE path — value read at runtime,
+      # never in env/compose/git (§11.4.10). UNUSED on the hermetic path. Path =
+      # mount of the Podman secret named `helixproxy_caddy_dns_token`.
+      - ACME_DNS_TOKEN_FILE=${ACME_DNS_TOKEN_FILE:-/run/secrets/helixproxy_caddy_dns_token}
+      # ---- Site + upstream ----
+      - TEST_HOSTNAME=${TEST_HOSTNAME:-proxy.hermetic.test}
+      # Plaintext pod-internal upstream Caddy fronts (design §4.3). Default
+      # `admin:80`; the conductor sets the real admin/whoami service name.
+      - CADDY_UPSTREAM=${CADDY_UPSTREAM:-admin:80}
+    volumes:
+      # The Caddyfile (read-only). `:ro,Z` = SELinux relabel for rootless Podman.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,Z
+      # Persistent cert/account-key store (gitignored named volume).
+      - letsencrypt-caddy-data:/data
+      - letsencrypt-caddy-config:/config
+      # Pebble's PUBLIC test CA (CA #1, pebble.minica.pem) so Caddy trusts the
+      # ACME endpoint. The conductor materializes ./pebble-ca/pebble.minica.pem
+      # BEFORE booting caddy (see ../README.md "Conductor boot sequence" — copied
+      # out of the pebble image /test/certs/pebble.minica.pem). `./pebble-ca/` is
+      # gitignored. Omit this mount for staging/prod.
+      - ./pebble-ca:/run/pebble-ca:ro,Z
+    networks:
+      - letsencrypt-hermetic
+    # HIGH host ports (>1024) so rootless Podman can bind them (design §4.4).
+    # Container listens on 443/80/2019 internally (setcap in Dockerfile.caddy lets
+    # the non-root caddy user bind low ports). Reaching :443 from the host is an
+    # operator sysctl/NAT decision (design §4.4) — NOT performed here (CONST-033).
+    ports:
+      # Hermetic default: bind LOOPBACK (security audit M1, 2026-07-01) so the
+      # test TLS-front + its reverse-proxied upstream are NOT LAN-exposed on a
+      # shared host. The production TLS-front role sets CADDY_BIND_ADDR="0.0.0.0:"
+      # (or "") to publish on all interfaces.
+      - "${CADDY_BIND_ADDR:-127.0.0.1:}${CADDY_HTTPS_PORT:-8443}:443"   # HTTPS (TLS termination)
+      - "${CADDY_BIND_ADDR:-127.0.0.1:}${CADDY_HTTP_PORT:-8080}:80"     # HTTP -> HTTPS redirect only
+      # Admin API (rotation test only; OFF by default). Uncomment with CADDY_ADMIN.
+      # - "127.0.0.1:${CADDY_ADMIN_PORT:-2019}:2019"
+    restart: unless-stopped
+    # ---- Real-provider (staging/prod) secret mount — COMMENTED for hermetic ----
+    # Uncomment (and the top-level `secrets:` block) for the staging/prod real
+    # DNS-provider path AFTER `podman secret create helixproxy_caddy_dns_token
+    # <token-file>`. Mounts the secret at /run/secrets/helixproxy_caddy_dns_token
+    # (= ACME_DNS_TOKEN_FILE). Kept commented so hermetic boot needs no secret.
+    # secrets:
+    #   - helixproxy_caddy_dns_token
+    #
+    # PENDING boot-verify: in-image probe tooling. A TLS handshake + /health 200
+    # is the design §6 e2e readiness signal.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --no-check-certificate -O /dev/null https://localhost:443/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s

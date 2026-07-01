@@ -1,0 +1,40 @@
+# =============================================================================
+# .gitignore — Let's Encrypt Phase-2 hermetic stack (§11.4.10 / §11.4.30)
+# =============================================================================
+# NEVER version: the real .env (may hold non-secret local values but is the
+# per-host copy), ACME account keys, issued certs + private keys, Caddy /data,
+# and any materialized secret/CA file. The token itself is a Podman secret and
+# never lands on disk here at all. Regeneration mechanism (§11.4.77): certs +
+# account key are re-issued via ACME on loss; pebble.minica.pem is the public
+# test CA copied from the pebble image.
+# =============================================================================
+
+# Local per-host env (the tracked template is .env.example)
+.env
+.env.*
+!.env.example
+
+# ACME account keys, certs, private keys, CSRs (any runtime crypto material)
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# Caddy persistent data / config (mirrors the named volumes; if ever bind-mounted)
+data/
+config/
+caddy-data/
+caddy-config/
+
+# Materialized Pebble public test CA (regenerable from the pebble image)
+pebble-ca/
+
+# Any stray secret file (defense-in-depth; secrets are Podman secrets, not files)
+secrets/
+*.secret
+*_token
+
+# Generated per-boot by phase3_hermetic_issue.sh (live challtestsrv IP) — §11.4.77 regen mechanism
+coredns/Corefile
