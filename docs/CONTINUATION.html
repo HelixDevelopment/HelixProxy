@@ -175,15 +175,45 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-07-01T15:09:21Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
+2026-07-01T16:20:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous hardening loop</strong> (operator: "keep hardening, don't tag
-yet"). <strong>P10 VPN fail-closed = GREEN</strong>: dynamic stack
-booted, tunnel DOWN → branded 503 <code>ERR_TUNNEL_DOWN</code> ×3,
-<code>leak_seen=0</code>, Squid PID unchanged, deterministic ×3 +
-RED-polarity; egress-half operator-gated SKIP (§11.4.21). <strong>2
-security fixes landed + VERIFIED DEPLOYED LIVE</strong> (§11.4.108
-runtime-signature): Squid header/version-hygiene
+yet") <strong>+ NEW VPN-LAN service-access feature (plan landed, Phase 0
+in flight)</strong>. <strong>Rev-9 wave:</strong> <code>8140d40</code>
+promoted the §11.4.169 <strong>security-ACL live-deny
+SKIP→GREEN</strong> — S1 now reads Squid's own access.log
+(<code>TCP_DENIED/403</code>+<code>HIER_NONE</code> = deny enforced + no
+upstream leak, §11.4.68/§11.4.69), replacing the ambiguous
+<code>000</code> client-code SKIP; RED teeth (allowed
+<code>:443</code>⇒<code>TCP_TUNNEL/HIER_DIRECT</code>⇒no false deny-PASS
+§11.4.115), wired into the standing suite (§11.4.135). Full standing
+suite GREEN <strong>69 run / 63 pass / 6 skip / 0 fail</strong>, all 4
+security-guard lines PASS. §11.4.169 matrix now <strong>10 PASS / 1
+honest SKIP</strong> (<code>docs/design/hardening/Status.md</code> Rev
+4). <code>fe9d9a9</code> landed the <strong>comprehensive VPN-LAN phased
+plan</strong> (<code>docs/design/vpn_lan_access/PLAN.md</code> +
+<code>PLAN_Summary.md</code> Rev 1) — 5 deep-research streams (§11.4.150
+cited), env-var-decoupled svord bridge (§11.4.28), SSRF-reconciled
+(§11.4.120), 12 phases with tasks/subtasks/evidence + honest-SKIP
+posture. <strong>3 subagents in flight (§11.4.70/§11.4.103, conductor
+reviews+commits §11.4.142):</strong> (A) Phase-0 bridge scaffold
+(<code>.env.example</code>+<code>tests/lib/svord_bridge.sh</code>+<code>scripts/svord_doctor.sh</code>+companion
+doc, local-stub honest-SKIP proof); (B) control-plane coverage push
+(measure-then-raise-lowest-hermetic-pkg, -race clean, go.mod unchanged);
+(C) Phase-8 Miracast §11.4.112 structural-impossibility verdict doc.
+<strong>Data-plane health FACT (§11.4.7):</strong> base proxy UP — real
+204 endpoint (gstatic) returns 204 via <code>:53128</code>, both
+listeners accept TCP, squid+dante healthy 2h; a fake-domain
+(<code>cache.example</code>) probe's 503/000 was NOT a regression. HEAD
+<code>fe9d9a9</code> (== <code>main</code> == origin). Host 43%.
+<strong>(prior)</strong> <strong>§11.4.126 autonomous hardening
+loop</strong> (operator: "keep hardening, don't tag yet"). <strong>P10
+VPN fail-closed = GREEN</strong>: dynamic stack booted, tunnel DOWN →
+branded 503 <code>ERR_TUNNEL_DOWN</code> ×3, <code>leak_seen=0</code>,
+Squid PID unchanged, deterministic ×3 + RED-polarity; egress-half
+operator-gated SKIP (§11.4.21). <strong>2 security fixes landed +
+VERIFIED DEPLOYED LIVE</strong> (§11.4.108 runtime-signature): Squid
+header/version-hygiene
 (<code>via off</code>+<code>forwarded_for delete</code>+version-suppression
 — <code>Via</code> gone) <code>4f983ee</code>; Dante SOCKS5 SSRF (block
 link-local/loopback/RFC1918 + <code>command:connect</code>)
@@ -238,15 +268,22 @@ file.</p>
 <h2 id="1-current-phase">1. Current PHASE</h2>
 <p><strong>§11.4.126 autonomous hardening loop</strong> — construction
 (P0–P10 fail-closed) is landed; the loop is now closing hardening gaps
-under all §11.4.169 test types with real captured evidence. Operator
-decision in force: <strong>"keep hardening, don't tag yet."</strong> The
-Go control-plane (stores, health-publisher, acl-helper, config-compiler,
-P5b breaker/failover, P6 control-API/SSE/metrics/PAC/mTLS) builds + vets
-+ gofmt-clean and is proven unit / integration / config-parse; the
-<code>dynamic</code> compose profile boots live and the
-<strong>fail-closed data-plane proof is GREEN</strong>. Base proxy UP on
-<code>:53128</code> (204); host ~43%; 4 <code>helixproxy_*</code> Podman
-secrets present (enable dynamic re-boot).</p>
+under all §11.4.169 test types with real captured evidence <strong>AND
+has opened a new feature workstream: VPN-LAN service access</strong>
+(operator mandate — reach/use all mainstream services on the far side of
+the svord_toolkit VPN). The authoritative phased tracker is
+<code>docs/design/vpn_lan_access/PLAN.md</code> (§11.4.172, 12 phases).
+Phase 0 (env-var bridge scaffold + svord-doctor) is in flight via a
+subagent; Phase 8 (Miracast §11.4.112 verdict) + a control-plane
+coverage push run in parallel. Operator decision in force: <strong>"keep
+hardening, don't tag yet."</strong> The Go control-plane (stores,
+health-publisher, acl-helper, config-compiler, P5b breaker/failover, P6
+control-API/SSE/metrics/PAC/mTLS) builds + vets + gofmt-clean and is
+proven unit / integration / config-parse; the <code>dynamic</code>
+compose profile boots live and the <strong>fail-closed data-plane proof
+is GREEN</strong>. Base proxy UP on <code>:53128</code> (204); host
+~43%; 4 <code>helixproxy_*</code> Podman secrets present (enable dynamic
+re-boot).</p>
 <p><strong>P10 VPN fail-closed — GREEN (§11.4.68/.115/.108):</strong>
 <code>tests/dynamic/vpn_failclosed_test.sh</code> proven live — booted
 the dynamic stack, forced the tunnel DOWN via Redis
