@@ -1581,5 +1581,64 @@ give each canary the defect-vs-intentional-probe judgment it needs.</p>
 <code>tests/regression/proxy_conn_verdict_test.sh</code>; unit
 <code>tests/lib/evidence_selftest.sh</code>; companion
 <code>docs/scripts/proxy_conn_verdict_test.md</code>.</p>
+<h2
+id="bugfix-0015--ddos_flood_suite-scored-survived-the-flood-pass-with-no-proof-a-flood-occurred-f5">BUGFIX-0015
+— ddos_flood_suite scored "survived the flood" PASS with no proof a
+flood occurred (F5)</h2>
+<ul>
+<li><strong>Type:</strong> Bug (test-suite integrity — a §11.4.69
+evidence gap / §11.4.1 PASS-bluff: a vacuous "survived" PASS on a flood
+that issued zero requests)</li>
+<li><strong>Status:</strong> Fixed</li>
+<li><strong>Date:</strong> 2026-07-01</li>
+<li><strong>Affected files:</strong>
+<code>tests/dynamic/suites/ddos_flood_suite.sh</code> (new pure
+<code>flood_survival_verdict</code> classifier +
+flood_total/flood_responses counters in both the vegeta and curl paths +
+proxy-listening probe),
+<code>tests/regression/ddos_flood_evidence_test.sh</code> (new §11.4.135
+guard), <code>docs/scripts/ddos_flood_evidence_test.md</code>
+(companion), + <code>.html</code>/<code>.pdf</code>.</li>
+<li><strong>Discovered by:</strong> the §11.4.118 anti-bluff discovery
+sweep (finding F5, CONFIRMED).</li>
+</ul>
+<p>Root cause: the suite's "degraded-not-collapsed" GREEN gate asserted
+only <code>pid_stable=1 &amp;&amp; recovery=200</code>. The flood
+request counters were captured into the evidence file but never asserted
+<code>&gt; 0</code>, and <code>ab_pass_with_evidence</code> accepts any
+non-empty evidence file (the recovery line is always appended). So a run
+in which the flood issued ZERO requests still PASSed as "survived the
+flood" — the proxy survived nothing. A vacuous survival claim (§11.4.69
+evidence gap / §11.4.1 bluff).</p>
+<p>Fix: a pure self-testable classifier
+<code>flood_survival_verdict &lt;pid_stable&gt; &lt;rec&gt; &lt;flood_total&gt; &lt;flood_responses&gt; &lt;proxy_listening&gt;</code>
+requiring POSITIVE captured flood evidence —
+<code>flood_total&gt;0</code> (requests issued) AND
+<code>flood_responses&gt;0</code> (measurable non-000 responses) —
+before any survival PASS. A zero-flood run on a listening proxy →
+<code>FAIL:no-flood-evidence</code>; on an absent proxy → honest
+<code>SKIP:topology_unsupported</code> (never a silent PASS); a
+real-flood crash/no-recovery →
+<code>FAIL:crashed-or-no-recovery</code>.</p>
+<h3
+id="verification-captured-independently-reviewed-114142--go">Verification
+(captured, independently reviewed §11.4.142 — GO)</h3>
+<pre><code>$ bash tests/regression/ddos_flood_evidence_test.sh            -&gt; [PASS] GREEN (4-fixture verdict: zero=FAIL, survived=PASS, crashed=FAIL, absent=SKIP)
+$ RED_MODE=1 tests/regression/ddos_flood_evidence_test.sh      -&gt; [PASS] RED reproduces the pre-fix zero-flood PASS-bluff (faithful to git-diff pre-fix gate)
+# §1.1 paired mutation (neutralise the flood_total&gt;0 guard):
+$ (mutated) ddos_flood_evidence_test.sh   -&gt; [FAIL] ZERO=PASS resurrected (real assertion mismatch) ; restore byte-identical (md5 00a1b6f…49c4) -&gt; PASS
+# no-stack invocation -&gt; honest SKIP:topology_unsupported exit 0</code></pre>
+<p>Honest boundary (§11.4.6): a test-suite-integrity fix — it requires
+proof the flood actually happened before any survival PASS; no
+false-PASS tuple exists. Known follow-up (reviewer LOW note, non-bluff):
+a hard crash where the port ALSO stops listening currently reports
+<code>SKIP:topology_unsupported</code> (honest SKIP, never a false-PASS)
+rather than <code>FAIL:crashed</code> — precise crashed-vs-absent
+disambiguation needs a distinct "observed-up-before" signal and is
+tracked separately (the naive <code>pid_stable=0 -&gt; FAIL</code> would
+false-FAIL the legitimate no-stack SKIP, §11.4.1).</p>
+<p>Evidence: guard
+<code>tests/regression/ddos_flood_evidence_test.sh</code>; companion
+<code>docs/scripts/ddos_flood_evidence_test.md</code>.</p>
 </body>
 </html>
