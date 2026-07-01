@@ -707,14 +707,18 @@ test_regression_guards() {
     if [ "${SKIP_LE_ISSUANCE_GUARD:-0}" = "1" ]; then
         test_result "LE Phase-3 hermetic issuance guard" "SKIP" "SKIP_LE_ISSUANCE_GUARD=1"
     else
-        sh "$SCRIPT_DIR/letsencrypt/phase3_issuance_guard.sh" >/dev/null 2>&1; _p3_rc=$?
+        # `|| _p3_rc=$?` (not `; _p3_rc=$?`) — under `set -euo pipefail` a bare
+        # `cmd; rc=$?` aborts the whole suite the instant the guard exits non-zero
+        # (e.g. a §11.4.3 topology SKIP=2), before rc is ever captured. The guard's
+        # 3-way exit MUST be recorded as PASS/SKIP/FAIL, never abort the suite.
+        _p3_rc=0; sh "$SCRIPT_DIR/letsencrypt/phase3_issuance_guard.sh" >/dev/null 2>&1 || _p3_rc=$?
         case "$_p3_rc" in
             0) test_result "LE Phase-3 hermetic issuance (GREEN: real cert issued + verified)" "PASS" ;;
             2) test_result "LE Phase-3 hermetic issuance (GREEN)" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
             *) test_result "LE Phase-3 hermetic issuance (GREEN)" "FAIL" \
                    "run: sh tests/letsencrypt/phase3_issuance_guard.sh" ;;
         esac
-        RED_MODE=1 sh "$SCRIPT_DIR/letsencrypt/phase3_issuance_guard.sh" >/dev/null 2>&1; _p3_rc=$?
+        _p3_rc=0; RED_MODE=1 sh "$SCRIPT_DIR/letsencrypt/phase3_issuance_guard.sh" >/dev/null 2>&1 || _p3_rc=$?
         case "$_p3_rc" in
             0) test_result "LE Phase-3 issuance guard RED reproduces (broken resolver)" "PASS" ;;
             2) test_result "LE Phase-3 issuance guard RED" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
@@ -729,14 +733,14 @@ test_regression_guards() {
     if [ "${SKIP_LE_ISSUANCE_GUARD:-0}" = "1" ]; then
         test_result "LE Phase-5 renewal/rotation guard" "SKIP" "SKIP_LE_ISSUANCE_GUARD=1"
     else
-        sh "$SCRIPT_DIR/letsencrypt/phase5_rotation_guard.sh" >/dev/null 2>&1; _p5_rc=$?
+        _p5_rc=0; sh "$SCRIPT_DIR/letsencrypt/phase5_rotation_guard.sh" >/dev/null 2>&1 || _p5_rc=$?
         case "$_p5_rc" in
             0) test_result "LE Phase-5 renewal rotation (GREEN: real S1->S2, 0-downtime swap, analyzer verifies S2)" "PASS" ;;
             2) test_result "LE Phase-5 renewal rotation (GREEN)" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
             *) test_result "LE Phase-5 renewal rotation (GREEN)" "FAIL" \
                    "run: sh tests/letsencrypt/phase5_rotation_guard.sh" ;;
         esac
-        RED_MODE=1 sh "$SCRIPT_DIR/letsencrypt/phase5_rotation_guard.sh" >/dev/null 2>&1; _p5_rc=$?
+        _p5_rc=0; RED_MODE=1 sh "$SCRIPT_DIR/letsencrypt/phase5_rotation_guard.sh" >/dev/null 2>&1 || _p5_rc=$?
         case "$_p5_rc" in
             0) test_result "LE Phase-5 rotation guard RED reproduces (no surgery => no renewal)" "PASS" ;;
             2) test_result "LE Phase-5 rotation guard RED" "SKIP" "built image/podman-compose absent — §11.4.3" ;;
@@ -887,8 +891,10 @@ test_vpn_lan_ssrf() {
     fi
     local _out _rc=0 _pass _fail
     _out=$(sh "$ssrf" 2>&1) || _rc=$?
-    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:')
-    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:')
+    # `|| true` — grep -c prints 0 but EXITS 1 on zero matches; under
+    # `set -euo pipefail` that would abort the whole suite mid-function.
+    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:' || true)
+    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:' || true)
     if [[ $_rc -eq 0 && $_pass -ge 3 && $_fail -eq 0 ]]; then
         test_result "VPN-LAN SSRF carve-out teeth (floor blocks metadata+loopback+all RFC1918; narrow carve floor-preserving)" "PASS"
     elif printf '%s\n' "$_out" | grep -q '^SKIP:' && [[ $_fail -eq 0 && $_pass -eq 0 ]]; then
@@ -923,8 +929,10 @@ test_vpn_lan_ingress() {
     fi
     local _out _rc=0 _pass _fail
     _out=$(sh "$ing" 2>&1) || _rc=$?
-    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:')
-    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:')
+    # `|| true` — grep -c prints 0 but EXITS 1 on zero matches; under
+    # `set -euo pipefail` that would abort the whole suite mid-function.
+    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:' || true)
+    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:' || true)
     if [[ $_rc -eq 0 && $_pass -ge 4 && $_fail -eq 0 ]]; then
         test_result "VPN-LAN ingress-allowlist teeth (default-deny; only exact (host,port) permitted; host+port narrow)" "PASS"
     else

@@ -70,9 +70,17 @@ trap cleanup EXIT INT TERM
 command -v jq >/dev/null 2>&1 || { log "OPERATOR-BLOCKED: jq required"; exit 2; }
 podman image exists "${CADDY_IMAGE}" 2>/dev/null || { log "OPERATOR-BLOCKED: image ${CADDY_IMAGE} missing — run ./build.sh"; exit 2; }
 log "issuing S1 via phase3_hermetic_issue.sh"
+# phase3 exit 2 = it could not boot the hermetic stack (rootless-podman/aardvark-dns
+# infra — §11.4.3), which is a SKIP, NOT a phase5 product FAIL. Propagate 2 as our
+# own SKIP; only a real non-0/non-2 exit is a FAIL. `|| _p3rc=$?` is set-e-safe.
+_p3rc=0
 KEEP_UP=1 CADDY_ADMIN=0.0.0.0:2019 CADDY_HTTPS_PORT="${HTTPS_PORT}" CADDY_HTTP_PORT="${CADDY_HTTP_PORT:-9080}" \
-	bash "${SCRIPT_DIR}/phase3_hermetic_issue.sh" >"${EVID}/phase3_issue.log" 2>&1 \
-	|| { log "FAIL: phase3 issuance failed (see ${EVID}/phase3_issue.log)"; exit 1; }
+	bash "${SCRIPT_DIR}/phase3_hermetic_issue.sh" >"${EVID}/phase3_issue.log" 2>&1 || _p3rc=$?
+if [ "${_p3rc}" = 2 ]; then
+	log "SKIP: phase3 could not boot the hermetic stack (infra/podman exit 2) — honest §11.4.3 SKIP"; exit 2
+elif [ "${_p3rc}" != 0 ]; then
+	log "FAIL: phase3 issuance failed (see ${EVID}/phase3_issue.log)"; exit 1
+fi
 S1=$(serial_now); leaf_now >"${EVID}/served_leaf_1.pem"
 [ -n "${S1}" ] || { log "FAIL: no S1 served"; exit 1; }
 log "S1=${S1}"
