@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>hermetic_wg_test_harness</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="hermetic-wireguard-test-harness--autonomous-validation-without-live-mullvad">Hermetic
+WireGuard test harness — autonomous validation without live Mullvad</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-02T00:00:00Z <strong>Status:</strong> DESIGN (feasibility
+FACT-proven on this host; implementation is a scoped, non-operator-gated
+follow-up). Authority: inherits
+<code>constitution/Constitution.md</code> per §11.4.35. Serves the
+operator's deep-research mandate ("new ideas, game-changing approaches,
+opensource we can incorporate") + the §11.4.52 autonomous-validation
+mandate.</p>
+<hr />
+<h2 id="1-the-problem-this-removes">1. The problem this removes</h2>
+<p>The VPN-LAN feature ships 5 protocol round-trip tests (SMB/NFS,
+FTP/SFTP/WebDAV, email, Chromecast/DIAL, ADB) that are today
+<strong>operator-gated SKIPs</strong> — they cannot run without the
+operator's <strong>live svord/Mullvad bridge</strong> (secrets + admin)
+AND a working host podman. §11.4.52 (Autonomous-Validation) classifies
+an "only-validatable-with-the-operator-present" feature as a release
+blocker until promoted: the path does not scale to CI, does not run on
+every commit, and masks drift between manual runs.</p>
+<p><strong>The gap:</strong> we have never proven the <em>routing +
+proxy + protocol-client logic</em> works over an L3 tunnel
+<strong>autonomously</strong> — only that it honestly SKIPs when the
+bridge is down. That is correct anti-bluff behaviour (§11.4.3/§11.4.68),
+but it leaves the logic layer unproven except by the operator.</p>
+<h2
+id="2-the-approach--a-loopback-wireguard-pair-in-unprivileged-network-namespaces">2.
+The approach — a loopback WireGuard pair in unprivileged network
+namespaces</h2>
+<p>Stand up <strong>two network namespaces on one host, joined by a
+userspace-WireGuard tunnel</strong>, entirely <strong>rootless</strong>
+and <strong>without the real Mullvad bridge</strong>:</p>
+<pre><code> netns A (&quot;helix_proxy side&quot;)            netns B (&quot;remote LAN simulator&quot;)
+ 10.9.0.1  ── wg0 ═══ encrypted L3 ═══ wg0 ──  10.9.0.2
+   │  runs the routing/proxy path            │  runs REAL services:
+   │  + the protocol-client tests            │  smbd · vsftpd · a WebDAV http
+   └──────────────────────────────────────── └──  · a DIAL/eureka stub · mDNS</code></pre>
+<p>The tunnel is the <strong>same L3 shape</strong> as the real svord
+bridge (WireGuard + <code>10.0.0.0/8</code>), so the identical
+routing/proxy code path is exercised. The protocol tests round-trip real
+bytes and assert sha256 / mailbox body / eureka JSON against the peer —
+the same anti-bluff assertions they already carry, now driven
+autonomously against a <strong>controlled</strong> peer.</p>
+<h3 id="why-it-is-rootless-the-unlock">Why it is rootless (the
+unlock)</h3>
+<p><code>unshare -Ur -n</code> maps the caller's uid to <strong>root
+inside a new user namespace</strong>, so <code>ip netns add</code> /
+<code>ip link add … type wireguard|veth</code> (normally root-only)
+succeed with <strong>no real host privilege</strong>, and everything
+created is confined to that throwaway namespace — invisible to every
+other process (§11.4.174-safe by construction). Kernel WireGuard inside
+a userns needs <code>CAP_NET_ADMIN</code> <em>within that userns</em>
+(granted by <code>unshare -Ur</code>); where the kernel module path is
+unavailable, <strong>userspace WireGuard</strong>
+(<code>wireguard-go</code> / <code>boringtun</code>) opens
+<code>/dev/net/tun</code> and needs no module at all (the
+<code>wireguard4netns</code> pattern below).</p>
+<h2
+id="3-feasibility--fact-proven-on-this-host-1146-captured-probe-2026-07-02">3.
+Feasibility — FACT-proven on THIS host (§11.4.6, captured probe
+2026-07-02)</h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Command</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unprivileged userns clone enabled</td>
+<td><code>cat /proc/sys/kernel/unprivileged_userns_clone</code></td>
+<td><strong>1</strong></td>
+</tr>
+<tr>
+<td>user-namespace budget</td>
+<td><code>cat /proc/sys/user/max_user_namespaces</code></td>
+<td><strong>255793</strong></td>
+</tr>
+<tr>
+<td>net-namespace budget</td>
+<td><code>cat /proc/sys/user/max_net_namespaces</code></td>
+<td><strong>255793</strong></td>
+</tr>
+<tr>
+<td>userns+netns actually works</td>
+<td><code>unshare -Ur -n sh -c 'ip link show lo &amp;&amp; echo INNER_OK'</code></td>
+<td><strong>rc=0, INNER_OK</strong></td>
+</tr>
+<tr>
+<td>TUN device for userspace WG</td>
+<td><code>test -c /dev/net/tun</code></td>
+<td><strong>present</strong></td>
+</tr>
+<tr>
+<td>unshare tool</td>
+<td><code>unshare --version</code></td>
+<td>util-linux <strong>2.39.2</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion (fact, not guess):</strong> a rootless,
+no-Mullvad, <strong>podman-independent</strong> hermetic WireGuard
+loopback harness is feasible on this host. It is gated on
+<strong>neither</strong> operator blocker (the broken host podman nor
+the live svord connection) — only on building the harness + a
+userspace-WG binary (both rootless, no host changes).</p>
+<p><strong>Missing (buildable, no root):</strong>
+<code>wireguard-go</code> / <code>boringtun</code> / <code>wg</code> are
+not installed; <code>wireguard-go</code> is a pure-Go
+<code>go build</code> (this is already a Go project) needing no
+privilege.</p>
+<h2
+id="4-oss-to-incorporate-11474-catalogue-first--extend-dont-reimplement">4.
+OSS to incorporate (§11.4.74 catalogue-first /
+extend-don't-reimplement)</h2>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Role in the harness</th>
+<th>Catalogue-Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a
+href="https://www.wireguard.com/netns/"><code>wireguard.com/netns</code></a></td>
+<td>canonical two-netns WG routing pattern</td>
+<td>reuse (reference)</td>
+</tr>
+<tr>
+<td><a
+href="https://github.com/dadevel/wg-netns"><code>dadevel/wg-netns</code></a></td>
+<td>declarative WG-in-netns profile setup</td>
+<td>reuse or vendor the pattern</td>
+</tr>
+<tr>
+<td><a
+href="https://github.com/cmusatyalab/wireguard4netns"><code>cmusatyalab/wireguard4netns</code></a></td>
+<td>userspace WG (<code>wireguard-go</code>) into an
+<strong>unprivileged</strong> netns — the rootless path</td>
+<td>reuse — this is the load-bearing dependency</td>
+</tr>
+<tr>
+<td><a
+href="https://github.com/rootless-containers/slirp4netns"><code>rootless-containers/slirp4netns</code></a></td>
+<td>user-mode networking for unprivileged netns (fallback egress)</td>
+<td>reuse if a real-egress leg is ever needed</td>
+</tr>
+</tbody>
+</table>
+<p>We do <strong>not</strong> reimplement WireGuard; we drive
+<code>wireguard-go</code> per the <code>wireguard4netns</code> pattern
+and script the netns lifecycle.</p>
+<h2
+id="5-per-protocol-autonomy-honest--not-every-service-is-trivially-rootless">5.
+Per-protocol autonomy (honest — not every service is trivially
+rootless)</h2>
+<table>
+<thead>
+<tr>
+<th>Protocol</th>
+<th>Peer-B server</th>
+<th>Rootless-feasible?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SMB/CIFS</td>
+<td><code>smbd</code> on a high port, private conf</td>
+<td><strong>yes</strong> (userspace, unprivileged)</td>
+</tr>
+<tr>
+<td>FTP/FTPS</td>
+<td><code>vsftpd</code> / <code>pure-ftpd</code> high port</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td>WebDAV</td>
+<td><code>nginx</code>/<code>apache</code>/a Go WebDAV on a high
+port</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td>HTTP/DIAL (eureka)</td>
+<td>a tiny Go <code>:8008</code> eureka stub</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td>mDNS/DNS-SD</td>
+<td><code>avahi</code>/a Go mDNS responder</td>
+<td><strong>partial</strong> — avahi wants dbus; a Go responder avoids
+it</td>
+</tr>
+<tr>
+<td>IMAP/SMTP/POP3</td>
+<td><code>dovecot</code>+a submission stub, or a Go mail stub</td>
+<td><strong>partial</strong> — real dovecot is heavy; a Go stub proves
+the client logic</td>
+</tr>
+<tr>
+<td>NFS</td>
+<td><strong>kernel</strong> nfsd</td>
+<td><strong>no</strong> in userns — use a userspace NFS
+(<code>unfsd</code>/Go NFS) or keep NFS operator-gated</td>
+</tr>
+</tbody>
+</table>
+<p>The design promotes the <strong>feasible</strong> rows to
+<code>AUTONOMOUS_VERIFIED</code> and keeps the genuinely kernel-bound
+rows (NFS-kernel) as honest §11.4.3 operator-gated with the reason
+cited.</p>
+<h2
+id="6-honest-boundary-1146--1143--what-this-does-and-does-not-prove">6.
+Honest boundary (§11.4.6 / §11.4.3 — what this does and does NOT
+prove)</h2>
+<ul>
+<li><strong>Proves (autonomously):</strong> the
+routing-over-an-L3-WG-tunnel path, the proxy path, the protocol-client
+round-trip logic (bytes/sha256/body/JSON) against a controlled peer, and
+that the anti-bluff teeth fire on a wrong answer — all with captured
+evidence per §11.4.5/§11.4.69/§11.4.107, deterministic per
+§11.4.50.</li>
+<li><strong>Does NOT prove:</strong> the <strong>real</strong> remote
+topology — the actual Mullvad path, the real svord host's specific
+services, MTU/latency/firewall quirks of the production peer. That
+remains a §11.4.3 <strong>real-topology confirmation</strong> run, still
+operator-gated on the live bridge. The harness converts "can't test at
+all without you" → "logic autonomously proven; real-topology
+confirmation operator-gated" — a large §11.4.52 promotion, not a
+replacement for the live run.</li>
+</ul>
+<h2 id="7-bridge-contract-integration-11428--no-coupling">7.
+Bridge-contract integration (§11.4.28 — no coupling)</h2>
+<p>Add a <code>HELIX_BRIDGE_MODE=hermetic</code> to
+<code>tests/lib/svord_bridge.sh</code> consumers: in hermetic mode the
+harness sets <code>HELIX_BRIDGE_HEALTH</code> to the loopback peer's
+reachability probe and
+<code>HELIX_BRIDGE_SUBNET</code>/<code>HELIX_BRIDGE_HOST</code> to the
+peer-B <code>10.9.0.0/24</code> / <code>10.9.0.2</code>. The existing
+tests are <strong>unchanged</strong> — <code>bridge_require</code>
+simply returns 0 (up) against the hermetic peer instead of SKIP, so the
+same assertions run. Default/unset mode = today's behaviour (real bridge
+or honest SKIP). No test learns it is talking to a loopback peer.</p>
+<h2
+id="8-phased-plan-each-phase--one-pwu-11458-all-rootless-non-operator-gated">8.
+Phased plan (each phase = one PWU, §11.4.58; all rootless,
+non-operator-gated)</h2>
+<ol type="1">
+<li><strong>H0</strong> — vendor/build <code>wireguard-go</code>
+(rootless <code>go build</code>), commit a
+<code>scripts/vpn_lan/ hermetic_wg_up.sh</code> that stands up the
+two-netns WG pair under <code>unshare -Urnm</code> + a
+<code>hermetic_wg_down.sh</code> teardown (trap-cleaned §11.4.14).
+Physical proof: <code>wg show</code> + a ping/curl round-trip across the
+tunnel, captured under <code>qa-results/vpn_lan/hermetic/</code>.</li>
+<li><strong>H1</strong> — peer-B service launcher
+(smbd/vsftpd/webdav/eureka/mDNS Go responder, high ports, private confs,
+no root). Physical proof: each service reachable from peer-A over the
+tunnel.</li>
+<li><strong>H2</strong> — wire <code>HELIX_BRIDGE_MODE=hermetic</code> +
+run the existing protocol tests against the peer; promote the feasible
+rows to <code>AUTONOMOUS_VERIFIED</code> in the §11.4.52 ledger;
+NFS-kernel stays honest operator-gated. Each is a §11.4.135 standing
+guard.</li>
+<li><strong>H3</strong> — a §1.1 mutation per protocol proving the
+hermetic assertions are load-bearing (wrong sha256 in peer-B ⇒ test
+FAILs), and a determinism pass (§11.4.50, N iterations).</li>
+</ol>
+<h2 id="9-host-caveat-observed-2026-07-02">9. Host caveat (observed
+2026-07-02)</h2>
+<p>During feasibility probing the host briefly hit
+<strong>user-process/thread exhaustion</strong>
+(<code>fork: retry: Resource temporarily unavailable</code>,
+<code>errno=11</code>) — the same accumulated subagent-transcript +
+broken-podman-container detritus that fills <code>/tmp</code>. The
+harness MUST be <strong>process-frugal</strong> (a bounded, fixed number
+of processes, all reaped on teardown) and MUST run only when the host
+has process headroom — a pre-flight <code>ulimit -u</code> /
+live-process check that honestly SKIPs (§11.4.3) rather than adding
+pressure to a starved host (§12 / §11.4.133).</p>
+<h2 id="10-composition">10. Composition</h2>
+<p>Composes §11.4.3 / §11.4.6 / §11.4.8 / §11.4.28 / §11.4.50 / §11.4.52
+/ §11.4.68 / §11.4.69 / §11.4.74 / §11.4.107 / §11.4.135 / §11.4.150 /
+§11.4.161 / §11.4.174 / §12.</p>
+<h2 id="sources-verified-2026-07-02">Sources verified 2026-07-02</h2>
+<ul>
+<li><a
+href="https://www.wireguard.com/netns/">https://www.wireguard.com/netns/</a>
+— canonical WireGuard network-namespace routing pattern (root-based
+reference).</li>
+<li><a
+href="https://github.com/dadevel/wg-netns">https://github.com/dadevel/wg-netns</a>
+— declarative WireGuard-in-netns profiles, multi-peer.</li>
+<li><a
+href="https://github.com/cmusatyalab/wireguard4netns">https://github.com/cmusatyalab/wireguard4netns</a>
+— userspace WireGuard (<code>wireguard-go</code>) into an
+<strong>unprivileged</strong> network namespace (the rootless
+load-bearing path).</li>
+<li><a
+href="https://github.com/rootless-containers/slirp4netns">https://github.com/rootless-containers/slirp4netns</a>
+— user-mode networking for unprivileged network namespaces.</li>
+<li><a
+href="https://www.procustodibus.com/blog/2022/10/wireguard-in-podman/">https://www.procustodibus.com/blog/2022/10/wireguard-in-podman/</a>
+— WireGuard in rootless Podman (NET_ADMIN/NET_RAW,
+<code>network_mode: service:</code> pattern).</li>
+</ul>
+</body>
+</html>
