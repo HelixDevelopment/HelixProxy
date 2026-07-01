@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status_Summary</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -174,8 +178,8 @@
 <body>
 <h1 id="vpn-lan-service-access--status-summary">VPN-LAN Service Access —
 Status Summary</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T16:48:00Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-01T19:05:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
@@ -317,10 +321,27 @@ container_boot.sh; submodule untouched</td>
 <tr>
 <td>11</td>
 <td>§11.4.169 coverage + Challenges + HelixQA</td>
-<td>AUTHORED (run-blocked)</td>
-<td><code>89f73b7</code> Challenge + <code>vpn_lan.yaml</code> 9-case
-bank; HelixQA-run blocked 6 siblings (§11.4.3); stress+chaos in
-flight</td>
+<td>AUTHORED (mostly GREEN)</td>
+<td><code>89f73b7</code> Challenge + 9-case bank; autonomous types GREEN
+— stress+chaos <code>97d9733</code>, bench+memory + dns-rebinding
+<code>4e2810c</code>, concurrency+load <code>7e73b08</code>; HelixQA-run
+blocked 6 siblings+podman (§11.4.3)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Bidirectional exposure + ingress allowlist</td>
+<td>AUTHORED (GREEN + suite-wired)</td>
+<td><code>2ed0fed</code> bidirectional_exposure.md +
+ingress_allowlist_teeth.sh (<code>INGRESS_MUT</code> 3/3, PASS=4);
+<code>cc8b620</code> both-way reverse-leg in all 5 protocol tests; live
+both-way operator-gated</td>
+</tr>
+<tr>
+<td>—</td>
+<td>§11.4.135 autonomous suite guards</td>
+<td>GREEN</td>
+<td><code>6d8893f</code> test_vpn_lan_ssrf + test_vpn_lan_ingress +
+test_vpn_lan_autonomous_battery wired, all rc=0 PASS≥1</td>
 </tr>
 </tbody>
 </table>

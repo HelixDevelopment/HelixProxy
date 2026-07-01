@@ -1,7 +1,7 @@
 # VPN-LAN Service Access — Status Summary
 
-**Revision:** 2
-**Last modified:** 2026-07-01T16:48:00Z
+**Revision:** 3
+**Last modified:** 2026-07-01T19:05:00Z
 **Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
 
 ---
@@ -59,7 +59,9 @@ OPERATOR-BLOCKED §11.4.68), anti-bluff `ab_pass_with_evidence` (non-empty artef
 | 8 | Miracast | PASS (Won't-fix, §11.4.112) | `12faf12` cited verdict + Cast alternative |
 | 9 | operator bridge-setup guide | PASS | `a5e5616` leak-clean HTML+PDF |
 | 10 | containerize (§11.4.76) | AUTHORED (SKIP-proven) | `1911d5e` containerization.md + vpn_lan_containers.yaml + container_boot.sh; submodule untouched |
-| 11 | §11.4.169 coverage + Challenges + HelixQA | AUTHORED (run-blocked) | `89f73b7` Challenge + `vpn_lan.yaml` 9-case bank; HelixQA-run blocked 6 siblings (§11.4.3); stress+chaos in flight |
+| 11 | §11.4.169 coverage + Challenges + HelixQA | AUTHORED (mostly GREEN) | `89f73b7` Challenge + 9-case bank; autonomous types GREEN — stress+chaos `97d9733`, bench+memory + dns-rebinding `4e2810c`, concurrency+load `7e73b08`; HelixQA-run blocked 6 siblings+podman (§11.4.3) |
+| 12 | Bidirectional exposure + ingress allowlist | AUTHORED (GREEN + suite-wired) | `2ed0fed` bidirectional_exposure.md + ingress_allowlist_teeth.sh (`INGRESS_MUT` 3/3, PASS=4); `cc8b620` both-way reverse-leg in all 5 protocol tests; live both-way operator-gated |
+| — | §11.4.135 autonomous suite guards | GREEN | `6d8893f` test_vpn_lan_ssrf + test_vpn_lan_ingress + test_vpn_lan_autonomous_battery wired, all rc=0 PASS≥1 |
 
 Autonomous value delivered: the anti-bluff gate (bridge-down ⇒ honest SKIP, exit 0, zero
 `^PASS:`) + the §11.4.115 teeth in the standing suite. Live round-trip evidence
