@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Counter-increment wiring design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Counter-increment wiring design</h1>
+</header>
+<h1
+id="counter-increment-wiring-helix_proxy_acl_decisions_total-helix_proxy_tunnel_down_responses_total">Counter-increment
+wiring — <code>helix_proxy_acl_decisions_total</code> +
+<code>helix_proxy_tunnel_down_responses_total</code></h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> Design (task #56 hardening
+— byte-path→api counter increment) <strong>Authority:</strong> consumer
+design doc under §11.4.45 / §11.4.108 (wiring-before-behaviour).
+Constitution wins on any conflict. <strong>Scope:</strong> how the two
+pre-registered-at-0 control-API counters become live on real proxied
+traffic, consistent with the committed
+<code>helix_proxy_vpn_up</code>-from-Redis pattern.</p>
+<hr />
+<h2 id="problem-statement-facts">1. Problem statement (FACTS)</h2>
+<p>The control-API pre-registers two counters at <code>0</code> and
+honestly defers their increment:</p>
+<ul>
+<li><code>control-plane/internal/api/metrics.go:14-17</code> — <em>“The
+two counters are registered + exposed here even though they are
+incremented by the acl-helper / byte-path later (plan P5/P10)… the
+increment seam (<code>Metrics.Inc*</code>) is ready.”</em></li>
+<li><code>control-plane/internal/api/metrics.go:74-82</code> —
+<code>IncACLDecision(decision)</code> /
+<code>IncTunnelDownResponse()</code> are in-process
+<code>CounterVec</code>/<code>Counter</code> mutators.</li>
+<li>The §56 live guard
+<code>tests/observability/metrics_scrape_test.sh:225-265</code> already
+drives ONE real proxied request
+(<code>curl -x $PROXY_URL $PROBE_TARGET</code>, line 229-230),
+re-scrapes <code>/metrics</code>, and computes the
+<code>acl_decisions_total</code> delta. Today the delta is
+<code>0</code> → an honest <code>feature_disabled_by_config</code> SKIP
+(line 260-265). With <code>HELIX_METRICS_BYTEPATH_WIRED=1</code> a flat
+counter becomes a <strong>HARD FAIL</strong> (line 250-254).</li>
+</ul>
+<p>The gap: the two counters never increment on real traffic, so the §56
+test can only SKIP the increment sub-proof.</p>
+<h2 id="architecture-constraint-two-processes-one-shared-store-facts">2.
+Architecture constraint — two processes, one shared store (FACTS)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fact</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The acl-helper is a SEPARATE, Squid-spawned
+<code>external_acl_type</code> helper process.</td>
+<td><code>control-plane/cmd/acl-helper/main.go:1-8</code>;
+<code>control-plane/internal/routing/routing.go:281</code>
+(<code>external_acl_type vpn_route … {{.HelperPath}}</code>).</td>
+</tr>
+<tr>
+<td>The acl-helper already holds a Redis client and nothing else.</td>
+<td><code>cmd/acl-helper/main.go:13</code> (<em>“Dependencies: stdlib +
+the committed internal/redis only”</em>), <code>main.go:70</code>
+(<code>redis.Open</code>).</td>
+</tr>
+<tr>
+<td>The control-API is a LONG-LIVED, separate process holding the
+Prometheus registry in memory.</td>
+<td><code>internal/api/server.go:26-49</code>
+(<code>server.metrics = newMetrics(...)</code>, one registry per
+server).</td>
+</tr>
+<tr>
+<td>The control-API is ALSO already Redis-connected in every
+deployment.</td>
+<td><code>docker-compose.observability.yml:109</code>
+(<code>REDIS_ADDR=proxy-redis:6379</code>), passed to
+<code>NewServer(... bus redis.StatusBus ...)</code>
+<code>server.go:44-46</code>.</td>
+</tr>
+<tr>
+<td>The two processes share <strong>only Redis</strong> — no shared
+memory, no shared registry.</td>
+<td>The acl-helper is baked into the Squid image
+(<code>docker-compose.dynamic.yml:223 --helper-path …</code>); the API
+runs as <code>proxy-api</code>.</td>
+</tr>
+<tr>
+<td>The API already sources a live metric fail-closed FROM Redis at
+scrape time.</td>
+<td><code>internal/api/metrics.go:89-123</code>
+<code>vpnUpCollector.Collect</code> reads
+<code>vpn:status:&lt;profile&gt;</code> per scrape.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Consequence:</strong> <code>Metrics.IncACLDecision</code> (an
+in-process call inside the API) can <em>never</em> be driven by the
+acl-helper, which lives in a different process and never touches the
+API’s registry. The only wiring surface between “sees the traffic”
+(acl-helper) and “owns the metric” (API) is <strong>Redis</strong>.</p>
+<h2 id="the-ok-err-tunnel_down-mapping-fact-11">3. The OK / ERR /
+tunnel_down mapping (FACT — 1:1)</h2>
+<p>The Squid dynamic include binds the helper verdict to the
+response:</p>
+<pre><code>external_acl_type vpn_route … {{.HelperPath}}      # routing.go:281
+acl tun_up external vpn_route                       # routing.go:282
+http_access deny !tun_up                            # routing.go:295  (helper ERR ⇒ denied)
+deny_info 503:ERR_TUNNEL_DOWN tun_up                # routing.go:297  (that deny ⇒ 503 page)</code></pre>
+<p>The acl-helper’s pure verdict
+(<code>internal/aclhelper/decide.go:47-70</code>) returns
+<code>OK tag=&lt;tunnel&gt;</code> on the single affirmative path (route
+exists AND tunnel <code>StateUp</code>); <strong>every</strong> other
+case returns <code>ERR</code>. Because
+<code>deny_info 503:ERR_TUNNEL_DOWN</code> is bound
+<strong>only</strong> to <code>tun_up</code>, every helper
+<code>ERR</code> → exactly one <code>ERR_TUNNEL_DOWN</code> 503
+response, and no other Squid 5xx maps to that page. Therefore:</p>
+<ul>
+<li><code>helix_proxy_acl_decisions_total{decision="OK"}</code> = count
+of helper OK verdicts.</li>
+<li><code>helix_proxy_acl_decisions_total{decision="ERR"}</code> = count
+of helper ERR verdicts.</li>
+<li><code>helix_proxy_tunnel_down_responses_total</code> = count of
+helper ERR verdicts (1:1 with the served 503).</li>
+</ul>
+<p><strong>Honest boundary (§11.4.6):</strong> the count is of
+<em>helper ERR emissions</em>, which the committed
+<code>deny_info</code> config maps 1:1 to served
+<code>ERR_TUNNEL_DOWN</code> 503s. A hypothetical Squid-internal 5xx
+that is NOT an <code>ERR_TUNNEL_DOWN</code> page is correctly NOT
+counted (it is a different error). This is a faithful proxy for “503s
+served”, not a guess.</p>
+<h2 id="options-ranked">4. Options (ranked)</h2>
+<h3
+id="option-a1-acl-helper-incrs-a-redis-counter-api-reads-it-at-scrape-recommended">Option
+A1 — acl-helper INCRs a Redis counter; API reads it at scrape
+(RECOMMENDED)</h3>
+<p>The acl-helper <code>INCR</code>s a per-decision Redis counter key
+after it answers Squid. The API replaces the in-process counters with a
+<strong>Redis-reading const-metric collector</strong> that mirrors
+<code>vpnUpCollector</code> exactly, emitting
+<code>prometheus.CounterValue</code> const metrics read from those keys
+at scrape time.</p>
+<ul>
+<li><strong>Mirrors the confirmed pattern</strong>
+(<code>vpnUpCollector</code>, <code>metrics.go:89-123</code>) — one
+architecture, not two.</li>
+<li><strong>Keeps the acl-helper’s dependency surface</strong> (Redis
+only, <code>main.go:13</code>) — no new import, no new ingress.</li>
+<li><strong>Lossless</strong> when Redis is up — <code>INCR</code> is
+atomic and durable, unlike fire-and-forget pub/sub.</li>
+<li><strong>Survives API restart</strong> — the count lives in Redis, so
+an API restart does NOT spuriously reset the Prometheus counter (an
+in-process <code>CounterVec</code> would). Redis being flushed is the
+only reset, which is normal.</li>
+<li><strong>Multi-replica-consistent</strong> — every API replica reads
+the same key and scrapes the same value.</li>
+</ul>
+<h3
+id="option-a2-acl-helper-publishevent-on-a-redis-channel-api-subscribes-and-calls-inc">Option
+A2 — acl-helper <code>PublishEvent</code> on a Redis channel; API
+subscribes and calls <code>Inc*</code></h3>
+<p>Reuses <code>PublishEvent</code>/<code>SubscribeEvents</code>
+(<code>internal/redis/client.go:167-215</code>). Keeps counters
+in-process (native monotonic) but adds a background subscriber goroutine
+to the API. <strong>Rejected as primary:</strong> pub/sub is lossy — a
+decision published while the API is down/reconnecting is dropped →
+silent undercount (a §11.4-relevant inaccuracy for a counter). More
+moving parts than A1 for a worse guarantee.</p>
+<h3
+id="option-b-acl-helper-posts-to-a-new-api-http-endpoint-per-decision">Option
+B — acl-helper POSTs to a new API HTTP endpoint per decision</h3>
+<p><strong>Rejected.</strong> (1) Adds a synchronous network call + new
+failure mode into the decision-adjacent path of a process whose whole
+point is “out of the byte path, fails closed”
+(<code>main.go:6-8</code>). (2) Couples the acl-helper to the API’s
+location + the mTLS control port (the plaintext <code>/metrics</code>
+listener is GET-only, <code>server.go:110-114</code>). (3) Violates the
+stated acl-helper dependency constraint (stdlib + internal/redis only,
+<code>main.go:13</code>) and adds a new ingress surface to the API.</p>
+<h2 id="concrete-code-change-option-a1">5. Concrete code change (Option
+A1)</h2>
+<h3
+id="internalredisredis.go-key-scheme-contract-resolve-by-name-11.4.111">5.1
+<code>internal/redis/redis.go</code> — key scheme + contract
+(resolve-by-name §11.4.111)</h3>
+<p>Add beside the existing key prefixes (<code>redis.go:27-32</code>),
+consistent with <code>vpn:status:&lt;profile&gt;</code> /
+<code>route:&lt;target&gt;</code> / <code>vpn:events</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> metricsKeyPrefix <span class="op">=</span> <span class="st">&quot;metrics:&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// ACLDecisionCounterKey / TunnelDownCounterKey are the shared counter keys the</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// acl-helper INCRs and the control-API reads at scrape (single source of truth).</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> ACLDecisionCounterKey<span class="op">(</span>decision <span class="dt">string</span><span class="op">)</span> <span class="dt">string</span> <span class="op">{</span> <span class="cf">return</span> metricsKeyPrefix <span class="op">+</span> <span class="st">&quot;acl_decisions:&quot;</span> <span class="op">+</span> decision <span class="op">}</span> <span class="co">// decision = &quot;OK&quot;|&quot;ERR&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> TunnelDownCounterKey<span class="op">()</span> <span class="dt">string</span>                  <span class="op">{</span> <span class="cf">return</span> metricsKeyPrefix <span class="op">+</span> <span class="st">&quot;tunnel_down_responses&quot;</span> <span class="op">}</span></span></code></pre></div>
+<p>Extend the <code>StatusBus</code> interface
+(<code>redis.go:37-52</code>):</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// IncrCounter atomically adds `by` to a counter key, returning the new value.</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>IncrCounter<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> key <span class="dt">string</span><span class="op">,</span> by <span class="dt">int64</span><span class="op">)</span> <span class="op">(</span><span class="dt">int64</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">// GetCounter reads a counter key; a MISSING key is 0 (never fabricated), a</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">// transport error is surfaced so the collector can skip the series (§11.4.6).</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>GetCounter<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> key <span class="dt">string</span><span class="op">)</span> <span class="op">(</span><span class="dt">int64</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span></span></code></pre></div>
+<h3 id="internalredisclient.go-implement-on-client">5.2
+<code>internal/redis/client.go</code> — implement on
+<code>*Client</code></h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> IncrCounter<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> key <span class="dt">string</span><span class="op">,</span> by <span class="dt">int64</span><span class="op">)</span> <span class="op">(</span><span class="dt">int64</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    n<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>rdb<span class="op">.</span>IncrBy<span class="op">(</span>ctx<span class="op">,</span> key<span class="op">,</span> by<span class="op">).</span>Result<span class="op">()</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;redis: incr %s: %w&quot;</span><span class="op">,</span> key<span class="op">,</span> err<span class="op">)</span> <span class="op">}</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> n<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> GetCounter<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> key <span class="dt">string</span><span class="op">)</span> <span class="op">(</span><span class="dt">int64</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    n<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>rdb<span class="op">.</span>Get<span class="op">(</span>ctx<span class="op">,</span> key<span class="op">).</span>Int64<span class="op">()</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> errors<span class="op">.</span>Is<span class="op">(</span>err<span class="op">,</span> goredis<span class="op">.</span>Nil<span class="op">)</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span><span class="op">,</span> <span class="ot">nil</span> <span class="op">}</span> <span class="co">// missing ⇒ 0 (never fabricated)</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span> <span class="cf">return</span> <span class="dv">0</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;redis: get counter %s: %w&quot;</span><span class="op">,</span> key<span class="op">,</span> err<span class="op">)</span> <span class="op">}</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> n<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3
+id="internalaclhelper-shared-decision-recording-policy-one-place">5.3
+<code>internal/aclhelper</code> — shared decision-recording policy (one
+place)</h3>
+<p>New <code>internal/aclhelper/record.go</code> so the ERR⇒tunnel_down
+mapping (§3) lives in ONE spot both the helper and the tests import.
+Extend <code>aclhelper.Bus</code> (<code>decide.go:14-21</code>) with
+<code>IncrCounter(ctx, key, by)</code> (the real
+<code>*redis.Client</code> satisfies it once 5.2 lands):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">// RecordDecision increments the shared Redis counters for one verdict. Best-effort:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">// the caller logs-and-continues on error — a metrics write NEVER alters or delays</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">// the fail-closed verdict (§11.4.6). ok=false increments BOTH the ERR series AND</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">// the tunnel_down counter (§3: every ERR ⇒ one ERR_TUNNEL_DOWN 503).</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> RecordDecision<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> bus Bus<span class="op">,</span> ok <span class="dt">bool</span><span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ok <span class="op">{</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        _<span class="op">,</span> err <span class="op">:=</span> bus<span class="op">.</span>IncrCounter<span class="op">(</span>ctx<span class="op">,</span> redis<span class="op">.</span>ACLDecisionCounterKey<span class="op">(</span><span class="st">&quot;OK&quot;</span><span class="op">),</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> _<span class="op">,</span> err <span class="op">:=</span> bus<span class="op">.</span>IncrCounter<span class="op">(</span>ctx<span class="op">,</span> redis<span class="op">.</span>ACLDecisionCounterKey<span class="op">(</span><span class="st">&quot;ERR&quot;</span><span class="op">),</span> <span class="dv">1</span><span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    _<span class="op">,</span> err <span class="op">:=</span> bus<span class="op">.</span>IncrCounter<span class="op">(</span>ctx<span class="op">,</span> redis<span class="op">.</span>TunnelDownCounterKey<span class="op">(),</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> err</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3
+id="cmdacl-helpermain.go-loop-call-it-after-the-reply-is-flushed">5.4
+<code>cmd/acl-helper/main.go</code> <code>loop</code> — call it AFTER
+the reply is flushed</h3>
+<p>In <code>loop</code> (<code>main.go:84-110</code>), after the
+successful <code>w.Flush()</code> (line 100-102), record the decision on
+a bounded context. The reply is written FIRST, so a slow/failed
+<code>INCR</code> never delays Squid’s answer nor changes the
+verdict:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// ... after ferr := w.Flush() succeeds, `ok` is already returned by decideWithTimeout:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>recCtx<span class="op">,</span> rcancel <span class="op">:=</span> context<span class="op">.</span>WithTimeout<span class="op">(</span>ctx<span class="op">,</span> reqTimeout<span class="op">)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> rerr <span class="op">:=</span> aclhelper<span class="op">.</span>RecordDecision<span class="op">(</span>recCtx<span class="op">,</span> dec<span class="op">.</span>Bus<span class="op">,</span> ok<span class="op">);</span> rerr <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    fmt<span class="op">.</span>Fprintln<span class="op">(</span>os<span class="op">.</span>Stderr<span class="op">,</span> <span class="st">&quot;acl-helper: metrics incr:&quot;</span><span class="op">,</span> rerr<span class="op">)</span> <span class="co">// best-effort, NEVER fatal</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>rcancel<span class="op">()</span></span></code></pre></div>
+<p>(<code>decideWithTimeout</code> at <code>main.go:96</code> already
+yields <code>ok</code>; thread it into the write branch.)</p>
+<h3
+id="internalapimetrics.go-redis-reading-const-metric-collector-mirror-vpnupcollector">5.5
+<code>internal/api/metrics.go</code> — Redis-reading const-metric
+collector (mirror <code>vpnUpCollector</code>)</h3>
+<p>Replace the in-process <code>aclDecisions *CounterVec</code> +
+<code>tunnelDownResponses Counter</code>
+(<code>metrics.go:43-47, 56-68</code>) with a collector that reads the
+shared keys at scrape:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> aclCounterCollector <span class="kw">struct</span><span class="op">{</span> bus redis<span class="op">.</span>StatusBus <span class="op">}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> <span class="op">(</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    aclDecisionsDesc <span class="op">=</span> prometheus<span class="op">.</span>NewDesc<span class="op">(</span>MetricACLDecisionsTotal<span class="op">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Total external-acl decisions by outcome (decision=OK|ERR), from Redis.&quot;</span><span class="op">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;decision&quot;</span><span class="op">},</span> <span class="ot">nil</span><span class="op">)</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    tunnelDownDesc <span class="op">=</span> prometheus<span class="op">.</span>NewDesc<span class="op">(</span>MetricTunnelDownResponses<span class="op">,</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Total ERR_TUNNEL_DOWN 503 responses served (fail-closed), from Redis.&quot;</span><span class="op">,</span> <span class="ot">nil</span><span class="op">,</span> <span class="ot">nil</span><span class="op">)</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>aclCounterCollector<span class="op">)</span> Describe<span class="op">(</span>ch <span class="kw">chan</span><span class="op">&lt;-</span> <span class="op">*</span>prometheus<span class="op">.</span>Desc<span class="op">)</span> <span class="op">{</span> ch <span class="op">&lt;-</span> aclDecisionsDesc<span class="op">;</span> ch <span class="op">&lt;-</span> tunnelDownDesc <span class="op">}</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>aclCounterCollector<span class="op">)</span> Collect<span class="op">(</span>ch <span class="kw">chan</span><span class="op">&lt;-</span> prometheus<span class="op">.</span>Metric<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    ctx<span class="op">,</span> cancel <span class="op">:=</span> context<span class="op">.</span>WithTimeout<span class="op">(</span>context<span class="op">.</span>Background<span class="op">(),</span> <span class="dv">2</span><span class="op">*</span>time<span class="op">.</span>Second<span class="op">)</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> cancel<span class="op">()</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Both decision series ALWAYS emit (missing key ⇒ 0), preserving the current</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">// pre-touch-at-0 behaviour (metrics.go:66-68). Only a hard transport error</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">// skips a series — never a fabricated value (§11.4.6, mirrors metrics.go:112).</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _<span class="op">,</span> d <span class="op">:=</span> <span class="kw">range</span> <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;OK&quot;</span><span class="op">,</span> <span class="st">&quot;ERR&quot;</span><span class="op">}</span> <span class="op">{</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> v<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>bus<span class="op">.</span>GetCounter<span class="op">(</span>ctx<span class="op">,</span> redis<span class="op">.</span>ACLDecisionCounterKey<span class="op">(</span>d<span class="op">));</span> err <span class="op">==</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>            ch <span class="op">&lt;-</span> prometheus<span class="op">.</span>MustNewConstMetric<span class="op">(</span>aclDecisionsDesc<span class="op">,</span> prometheus<span class="op">.</span>CounterValue<span class="op">,</span> <span class="dt">float64</span><span class="op">(</span>v<span class="op">),</span> d<span class="op">)</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> v<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>bus<span class="op">.</span>GetCounter<span class="op">(</span>ctx<span class="op">,</span> redis<span class="op">.</span>TunnelDownCounterKey<span class="op">());</span> err <span class="op">==</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        ch <span class="op">&lt;-</span> prometheus<span class="op">.</span>MustNewConstMetric<span class="op">(</span>tunnelDownDesc<span class="op">,</span> prometheus<span class="op">.</span>CounterValue<span class="op">,</span> <span class="dt">float64</span><span class="op">(</span>v<span class="op">))</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Register it in <code>newMetrics</code> beside the vpn_up collector
+(<code>metrics.go:69</code>):</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>reg<span class="op">.</span>MustRegister<span class="op">(&amp;</span>aclCounterCollector<span class="op">{</span>bus<span class="op">:</span> bus<span class="op">})</span></span></code></pre></div>
+<p><code>Metrics</code> now holds <code>bus redis.StatusBus</code>. The
+public <code>IncACLDecision</code> / <code>IncTunnelDownResponse</code>
+seam (<code>metrics.go:74-82</code>) is retained as thin convenience
+wrappers that write the SAME keys via <code>bus.IncrCounter</code> (so
+the existing in-process test path <code>metrics_test.go:32-33</code>
+still drives the real loop, and both processes converge on identical
+keys):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>m <span class="op">*</span>Metrics<span class="op">)</span> IncACLDecision<span class="op">(</span>decision <span class="dt">string</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> decision <span class="op">!=</span> <span class="st">&quot;OK&quot;</span> <span class="op">&amp;&amp;</span> decision <span class="op">!=</span> <span class="st">&quot;ERR&quot;</span> <span class="op">{</span> decision <span class="op">=</span> <span class="st">&quot;ERR&quot;</span> <span class="op">}</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    _<span class="op">,</span> _ <span class="op">=</span> m<span class="op">.</span>bus<span class="op">.</span>IncrCounter<span class="op">(</span>context<span class="op">.</span>Background<span class="op">(),</span> redis<span class="op">.</span>ACLDecisionCounterKey<span class="op">(</span>decision<span class="op">),</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> decision <span class="op">==</span> <span class="st">&quot;ERR&quot;</span> <span class="op">{</span> _<span class="op">,</span> _ <span class="op">=</span> m<span class="op">.</span>bus<span class="op">.</span>IncrCounter<span class="op">(</span>context<span class="op">.</span>Background<span class="op">(),</span> redis<span class="op">.</span>TunnelDownCounterKey<span class="op">(),</span> <span class="dv">1</span><span class="op">)</span> <span class="op">}</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>m <span class="op">*</span>Metrics<span class="op">)</span> IncTunnelDownResponse<span class="op">()</span> <span class="op">{</span> _<span class="op">,</span> _ <span class="op">=</span> m<span class="op">.</span>bus<span class="op">.</span>IncrCounter<span class="op">(</span>context<span class="op">.</span>Background<span class="op">(),</span> redis<span class="op">.</span>TunnelDownCounterKey<span class="op">(),</span> <span class="dv">1</span><span class="op">)</span> <span class="op">}</span></span></code></pre></div>
+<h3 id="interface-ripple-fakes-must-gain-the-two-methods">5.6 Interface
+ripple — fakes MUST gain the two methods</h3>
+<p><code>aclhelper.Bus</code> and <code>redis.StatusBus</code> both grow
+<code>IncrCounter</code>/<code>GetCounter</code>, so every fake
+compiling against them MUST implement them or the packages will not
+build:</p>
+<ul>
+<li><code>internal/api/harness_test.go:557-585</code>
+<code>fakeBus</code> — add in-memory
+<code>IncrCounter</code>/<code>GetCounter</code> over a
+<code>map[string]int64</code> (guarded), plus a helper for baseline
+reads.</li>
+<li>any <code>aclhelper</code> decide-test fake Bus.</li>
+</ul>
+<p>This is a compile-time forcing function (a fake that forgets the
+methods fails <code>go build</code>), not optional.</p>
+<h2 id="redis-key-scheme-summary">6. Redis key scheme (summary)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Key</th>
+<th>Written by</th>
+<th>Read by</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>metrics:acl_decisions:OK</code></td>
+<td>acl-helper <code>RecordDecision</code> (<code>INCR</code>)</td>
+<td>API <code>aclCounterCollector</code> (<code>GET</code>)</td>
+<td><code>helix_proxy_acl_decisions_total{decision="OK"}</code></td>
+</tr>
+<tr>
+<td><code>metrics:acl_decisions:ERR</code></td>
+<td>acl-helper <code>RecordDecision</code> (<code>INCR</code>)</td>
+<td>API <code>aclCounterCollector</code> (<code>GET</code>)</td>
+<td><code>helix_proxy_acl_decisions_total{decision="ERR"}</code></td>
+</tr>
+<tr>
+<td><code>metrics:tunnel_down_responses</code></td>
+<td>acl-helper <code>RecordDecision</code> on ERR
+(<code>INCR</code>)</td>
+<td>API <code>aclCounterCollector</code> (<code>GET</code>)</td>
+<td><code>helix_proxy_tunnel_down_responses_total</code></td>
+</tr>
+</tbody>
+</table>
+<p>Prefix <code>metrics:</code> is consistent with the existing
+<code>vpn:status:</code> / <code>route:</code> / <code>vpn:events</code>
+colon-delimited naming (<code>redis.go:27-32</code>). Keys are plain
+integer counters; no TTL (a counter must not expire mid-flight, unlike
+<code>vpn:status:</code> whose TTL IS the fail-closed mechanism).</p>
+<h2 id="anti-bluff-proving-tests-11.4.115-red-polarity-1.1-mutation">7.
+Anti-bluff proving tests (§11.4.115 RED-polarity + §1.1 mutation)</h2>
+<h3
+id="in-process-go-test-gate-able-without-the-live-stack-primary-guard">7.1
+In-process Go test — gate-able WITHOUT the live stack (PRIMARY
+guard)</h3>
+<p>New <code>internal/api/metrics_bytepath_test.go</code> using
+<code>fakeBus</code> (or real Redis when <code>REDIS_ADDR</code> is set,
+honest SKIP otherwise):</p>
+<ol type="1">
+<li>Scrape the registry → assert
+<code>acl_decisions_total{decision="OK"}</code> == 0,
+<code>tunnel_down_responses_total</code> == 0 (baseline).</li>
+<li>Simulate the acl-helper’s write via the SHARED path:
+<code>aclhelper.RecordDecision(ctx, bus, true)</code> then
+<code>aclhelper.RecordDecision(ctx, bus, false)</code>.</li>
+<li>Re-scrape → assert <code>{OK}</code> == 1, <code>{ERR}</code> == 1,
+<code>tunnel_down_responses_total</code> == 1.</li>
+</ol>
+<p>This exercises write→Redis→collector→exposition in one process.
+<strong>§11.4.115 polarity / §1.1 paired mutation:</strong> point
+<code>aclCounterCollector</code> at a wrong key
+(e.g. <code>acl_decisions:OKX</code>) OR strip the
+<code>RecordDecision</code> ERR⇒tunnel_down line — the driven increment
+no longer appears in the scrape → the test FAILs. A test that still
+passes under either mutation is a bluff gate.</p>
+<h3 id="acl-helper-side-integration-test-real-binary-real-redis">7.2
+acl-helper-side integration test — real binary + real Redis</h3>
+<p>Extend <code>cmd/acl-helper/integration_test.go</code>
+(<code>TestIntegration_RealHelperRealRedis</code>, seeds route+status
+via the real client): after driving a request line that resolves to an
+UP route, assert
+<code>bus.GetCounter(redis.ACLDecisionCounterKey("OK"))</code>
+incremented; after a down/deleted-route line, assert <code>ERR</code> +
+<code>tunnel_down_responses</code> incremented. Honest §11.4.3 SKIP when
+Redis is unreachable (same pattern as the existing test,
+<code>integration_test.go:38-40</code>).</p>
+<h3
+id="live-end-to-end-the-56-shell-guard-with-the-flag-flipped-conductor-owned">7.3
+LIVE end-to-end — the §56 shell guard with the flag flipped
+(conductor-owned)</h3>
+<p><code>tests/observability/metrics_scrape_test.sh</code> is already
+written for this: run it with
+<code>HELIX_METRICS_BYTEPATH_WIRED=1</code>. It drives a real
+<code>curl -x</code> through Squid → the acl-helper decides and
+<code>INCR</code>s Redis → re-scrape of <code>proxy-api /metrics</code>
+reads the incremented Redis counter → <code>DELTA&gt;0</code>. A flat
+counter is then a HARD FAIL
+(<code>metrics_scrape_test.sh:250-254</code>). This is the §11.4.119
+single-owner live proof; it needs the topology in §8.</p>
+<h2
+id="deployment-topology-requirement-for-the-live-proof-load-bearing">8.
+Deployment topology requirement for the LIVE proof (load-bearing)</h2>
+<p>The live counter-increment proof needs the acl-helper (writer) and
+<code>proxy-api</code> (reader) pointed at the <strong>same</strong>
+Redis:</p>
+<ul>
+<li><code>proxy-api</code> reads
+<code>REDIS_ADDR=proxy-redis:6379</code>
+(<code>docker-compose.observability.yml:109</code>).</li>
+<li>The dynamic Squid+acl-helper stack
+(<code>docker-compose.dynamic.yml</code>) must dial that same
+<code>proxy-redis</code>.</li>
+</ul>
+<p><code>docker-compose.observability.yml</code> today ADDs only
+<code>proxy-api</code>; the live proof therefore requires the dynamic
+proxy stack up <strong>on the same Redis</strong> as
+<code>proxy-api</code>, and the shell test’s
+<code>HELIX_PROXY_URL</code> pointed at that Squid. Flag this as the
+enablement prerequisite for
+<code>HELIX_METRICS_BYTEPATH_WIRED=1</code>.</p>
+<h2 id="unconfirmed-honest-boundaries-11.4.6">9. UNCONFIRMED / honest
+boundaries (§11.4.6)</h2>
+<ul>
+<li><strong>UNCONFIRMED:</strong> the committed spec
+(<code>docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md</code>)
+does NOT prescribe the increment MECHANISM for these two counters — §11
+lists them as control-API metrics and §13 pairs egress with a generic
+“counter”, but neither states Redis-counter vs pub/sub vs HTTP. The A1
+recommendation is <strong>derived by mirroring the CONFIRMED
+<code>helix_proxy_vpn_up</code>-from-Redis pattern</strong>
+(<code>metrics.go:89-123</code>), not read from an explicit P5/P10
+sentence. <code>config/grafana/README.md:29</code> calls the tunnel-down
+metric a <em>“PLANNED custom control-plane counter (acl-helper →
+deny_info 503), built P5/P6 … confirmed/renamed P10”</em> — consistent
+with A1’s acl-helper-writer direction but silent on the transport.</li>
+<li><strong>CONFIRMED (not a guess):</strong> the ERR⇒503 1:1 mapping
+(§3) is from <code>routing.go:295-297</code>; the acl-helper’s
+Redis-only dependency from <code>main.go:13</code>; the API’s
+scrape-time Redis read pattern from <code>metrics.go:89-123</code>; the
+API’s Redis connectivity from
+<code>docker-compose.observability.yml:109</code>.</li>
+<li><strong>Counter-reset semantics:</strong> Redis-backed counters do
+NOT reset on API restart (better than in-process); a Redis flush resets
+them (normal, Prometheus <code>rate()</code> tolerates it).</li>
+</ul>
+<h2 id="recommendation">10. Recommendation</h2>
+<p>Adopt <strong>Option A1</strong>. It is the single-architecture
+mirror of the already-shipped <code>vpn_up</code>-from-Redis collector,
+keeps the acl-helper’s Redis-only surface, is lossless and restart-safe,
+and makes the already-written §56 guard’s
+<code>HELIX_METRICS_BYTEPATH_WIRED=1</code> path go green on real
+proxied traffic. Files to change: <code>internal/redis/redis.go</code>,
+<code>internal/redis/client.go</code>,
+<code>internal/aclhelper/record.go</code> (new) + <code>decide.go</code>
+(Bus interface), <code>cmd/acl-helper/main.go</code>
+(<code>loop</code>), <code>internal/api/metrics.go</code> — plus the
+fake-bus ripple in <code>internal/api/harness_test.go</code> and the
+three proving tests in §7.</p>
+<h2 id="sources-verified">Sources verified</h2>
+<ul>
+<li><code>control-plane/internal/api/metrics.go</code> (lines 14-17,
+43-82, 89-123) — accessed 2026-07-01.</li>
+<li><code>control-plane/cmd/acl-helper/main.go</code> (lines 1-13,
+62-122) — accessed 2026-07-01.</li>
+<li><code>control-plane/internal/aclhelper/decide.go</code> (lines
+14-70) — accessed 2026-07-01.</li>
+<li><code>control-plane/internal/redis/redis.go</code> (lines 27-52) +
+<code>client.go</code> (lines 42-164) — accessed 2026-07-01.</li>
+<li><code>control-plane/internal/routing/routing.go</code> (lines
+281-297) — accessed 2026-07-01.</li>
+<li><code>tests/observability/metrics_scrape_test.sh</code> (lines
+225-265) — accessed 2026-07-01.</li>
+<li><code>docker-compose.observability.yml</code> (line 109) +
+<code>docker-compose.dynamic.yml</code> (line 223) — accessed
+2026-07-01.</li>
+</ul>
+</body>
+</html>
