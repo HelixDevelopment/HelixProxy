@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>smokescreen_incorporation</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="smokescreen-incorporation-design--closing-the-dns-rebinding--toctou-ssrf-gap">Smokescreen
+incorporation design — closing the DNS-rebinding / TOCTOU SSRF gap</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T19:10:00Z <strong>Status:</strong> Design + phased
+incorporation plan. The gap is <strong>demonstrated
+autonomously</strong>
+(<code>tests/security/dns_rebinding_ssrf_gap.sh</code>, committed) and
+the resolved-IP-recheck fix logic is <strong>proven</strong> (T2 blocks
+all rebinding targets; <code>REBIND_MUT=1</code> proves the teeth).
+Actually incorporating smokescreen is <strong>operator-gated</strong>
+(§11.4.122 — adds a runtime component to the data-plane) and
+container-runtime-gated (§11.4.161, currently podman-blocked).
+<strong>Authority:</strong> inherits
+<code>constitution/Constitution.md</code> per §11.4.35.
+<strong>Companion:</strong> the gap demo <a
+href="dns_rebinding_ssrf.md"><code>dns_rebinding_ssrf.md</code></a> ·
+the OSS survey <a
+href="../../research/vpn_lan_opensource_survey_20260701/SURVEY.md"><code>../../research/vpn_lan_opensource_survey_20260701/SURVEY.md</code></a>
+(smokescreen = ranked recommendation #1).</p>
+<hr />
+<h2 id="1-the-gap-smokescreen-closes">1. The gap smokescreen closes</h2>
+<p>Our current egress floor matches on the <strong>requested host /
+destination</strong> at ACL-check time:</p>
+<ul>
+<li><strong>Squid</strong> (<code>config/squid/squid.conf</code>) —
+<code>http_access</code> ACLs on the request.</li>
+<li><strong>Dante</strong> (<code>config/dante/sockd.conf</code>) —
+<code>socks block</code>/<code>pass</code> rules on <code>to:</code>
+(the Phase-1 SSRF floor: RFC1918 + link-local + loopback + metadata
+blocked, one narrow <code>HELIX_BRIDGE_SUBNET</code> carve-out permitted
+above the <code>10/8</code> block).</li>
+</ul>
+<p>Both evaluate a <strong>name or a stated destination</strong>, then
+connect. A hostname that resolves to a <strong>public</strong> IP at
+check time and re-resolves to an <strong>internal</strong> IP at connect
+time (DNS-rebinding / TOCTOU) slips through — the static ACL never
+re-checks the <strong>actual connect-time resolved IP</strong> against
+the RFC1918/metadata floor. This is the class our
+<code>dns_rebinding_ssrf_gap.sh</code> demonstrates (T1: hostname-only
+policy permits the rebinding target; T2: a resolved-IP recheck blocks
+it).</p>
+<p><strong>Stripe smokescreen</strong> is a purpose-built egress/CONNECT
+proxy that, after DNS resolution, re-validates the <strong>resolved
+IP</strong> against a deny-list (RFC1918 / link-local / loopback /
+metadata / user-configured CIDRs) <strong>before</strong> dialing —
+closing exactly this TOCTOU sub-class.</p>
+<h2
+id="2-incorporation-options-11474-extend-dont-reimplement-11476-containers">2.
+Incorporation options (§11.4.74 extend-don't-reimplement, §11.4.76
+containers)</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Placement</th>
+<th>Pros</th>
+<th>Cons / honest boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A — smokescreen in front of Squid</strong> (egress hop)</td>
+<td>client → Squid → <strong>smokescreen</strong> → internet</td>
+<td>single choke point for HTTP(S)-CONNECT egress; resolved-IP recheck
+on every CONNECT</td>
+<td>only covers what traverses Squid (HTTP-shaped); adds one hop</td>
+</tr>
+<tr>
+<td><strong>B — smokescreen beside Squid</strong> (parallel CONNECT
+proxy)</td>
+<td>client → <strong>smokescreen</strong> for CONNECT; Squid for
+cache/HTTP</td>
+<td>clean separation; smokescreen owns the SSRF-sensitive CONNECT
+path</td>
+<td>two proxies to operate</td>
+</tr>
+<tr>
+<td><strong>C — resolved-IP recheck IN Dante/Squid</strong> (no new
+component)</td>
+<td>patch the existing floor</td>
+<td>no new dependency</td>
+<td>Dante/Squid do not natively re-validate the resolved IP; would be
+original work (§11.4.8), higher risk than adopting a hardened tool</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommended: Option A</strong> (smokescreen as an egress hop
+in front of Squid) — it reuses a hardened, purpose-built tool (§11.4.74)
+rather than reimplementing SSRF recheck in-house, and gives one
+enforcement point for the CONNECT path. Deploy on-demand via the
+<code>vasic-digital/containers</code> submodule
+(<code>pkg/boot</code>/<code>pkg/compose</code>/<code>pkg/health</code>,
+rootless Podman §11.4.161), config-injected (§11.4.28 — the deny-CIDR
+list + the narrow <code>HELIX_BRIDGE_SUBNET</code> allow are supplied
+from the project, never hardcoded into the tool).</p>
+<h2 id="3-composition-with-the-existing-floor-114120-no-collapse">3.
+Composition with the existing floor (§11.4.120 no-collapse)</h2>
+<p>Smokescreen's resolved-IP deny-list must be the <strong>same
+floor</strong> as the Dante SSRF floor: block RFC1918 + link-local
+(169.254/16) + loopback (127/8) + metadata (169.254.169.254), with the
+<strong>one narrow <code>HELIX_BRIDGE_SUBNET</code> host
+carve-out</strong> (Phase-1) as the only internal-range exception — and
+that carve-out stays <strong>bridge-gated + operator-gated</strong>
+(opening it before the VPN routes is a regression, §11.4.101/§11.4.133).
+The <code>ingress_allowlist_teeth.sh</code> +
+<code>ssrf_carveout_teeth.sh</code> +
+<code>dns_rebinding_ssrf_gap.sh</code> guards already prove the floor is
+narrow and non-collapsible; a smokescreen config would be validated by
+an analogous resolved-IP-recheck teeth test before it ships.</p>
+<h2 id="4-honest-boundary-1146">4. Honest boundary (§11.4.6)</h2>
+<ul>
+<li><strong>HTTP(S)-CONNECT only.</strong> Smokescreen protects the
+CONNECT egress path. It does <strong>NOT</strong> cover the
+<strong>SOCKS/Dante</strong> path nor the <strong>L3-routed
+mounts</strong> (SMB/NFS route directly over the VPN, not through a
+CONNECT proxy). Those need their <strong>own</strong> resolved-IP
+recheck — the Dante floor already blocks internal ranges statically, but
+the same TOCTOU class would need a Dante-side or resolver-side recheck
+to fully close. This is stated so no one reads "smokescreen adopted" as
+"all SSRF TOCTOU closed."</li>
+<li><strong>Not currently exploited.</strong> The gap is in policy
+logic; the <code>10/8</code> carve-out it concerns is itself
+operator-gated and not yet opened. This is hardening, not incident
+response.</li>
+<li><strong>Incorporation is operator-gated</strong> (§11.4.122 — new
+data-plane runtime component) and container-runtime-gated (§11.4.161 —
+the host podman is currently broken; see the data-plane env-block). The
+<strong>design + the gap demo</strong> are what is autonomous now.</li>
+</ul>
+<h2 id="5-phased-incorporation-plan-tasks--subtasks">5. Phased
+incorporation plan (tasks → subtasks)</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Task</th>
+<th>Sub-tasks</th>
+<th>Autonomous vs operator-gated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S0</td>
+<td>Gap proof (DONE)</td>
+<td><code>dns_rebinding_ssrf_gap.sh</code> (T1 gap / T2 fix /
+<code>REBIND_MUT</code>)</td>
+<td><strong>Autonomous — committed</strong></td>
+</tr>
+<tr>
+<td>S1</td>
+<td>Operator decision</td>
+<td>ask keep/adopt (§11.4.66); confirm Option A</td>
+<td><strong>Operator-gated</strong></td>
+</tr>
+<tr>
+<td>S2</td>
+<td>Containerize</td>
+<td>add smokescreen service decl (config-injected §11.4.28) via
+containers submodule; deny-CIDR floor + narrow carve from env</td>
+<td>Autonomous design; <strong>deploy operator-gated +
+podman-gated</strong></td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Resolved-IP-recheck teeth</td>
+<td>a local-stub test asserting the shipped smokescreen config blocks a
+rebinding target + permits the carve host (mirror of the Phase-1 teeth)
++ <code>MUT</code> mode</td>
+<td>Autonomous once S2 config exists</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Wire egress path</td>
+<td>client → Squid → smokescreen; re-run the S1/S3/S4 security guards to
+prove no floor collapse (§11.4.120)</td>
+<td><strong>Operator-gated (live data-plane)</strong></td>
+</tr>
+<tr>
+<td>S5</td>
+<td>Extend to SOCKS/L3</td>
+<td>design a Dante-side / resolver-side resolved-IP recheck for the
+non-CONNECT paths</td>
+<td>Future work</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-bidirectional-protocol-ingress-note">6. Bidirectional-protocol
+ingress note</h2>
+<p>The Phase-12 ingress surface (VPN→proxy) is governed default-deny +
+narrow allowlist (<code>ingress_allowlist_teeth.sh</code>). Smokescreen
+is an <strong>egress</strong> control and does not change the ingress
+posture; the reverse legs (NFS NLM/NSM callback, FTP active, Cast
+callback, adb reverse) remain gated by the ingress allowlist. The two
+controls are orthogonal and compose: egress resolved-IP recheck
+(smokescreen) + ingress default-deny allowlist (Phase 12) together bound
+both directions.</p>
+<h2 id="sources-verified-2026-07-01">Sources verified 2026-07-01</h2>
+<ul>
+<li>Stripe smokescreen — <a
+href="https://github.com/stripe/smokescreen">https://github.com/stripe/smokescreen</a>
+(README: post-resolution IP ACL, deny-list CIDRs, CONNECT proxy).</li>
+<li>OWASP SSRF Prevention Cheat Sheet — <a
+href="https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html">https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html</a>
+(validate the resolved IP, not the hostname; DNS-rebinding).</li>
+<li>RFC 1918 (private address space) — <a
+href="https://datatracker.ietf.org/doc/html/rfc1918">https://datatracker.ietf.org/doc/html/rfc1918</a>.</li>
+<li>RFC 3927 (link-local 169.254/16) — <a
+href="https://datatracker.ietf.org/doc/html/rfc3927">https://datatracker.ietf.org/doc/html/rfc3927</a>.</li>
+</ul>
+<p><em>Placement specifics (in-front-of vs beside Squid), the exact
+deny-CIDR wiring, and the SOCKS/L3 recheck are marked
+<strong>INFERENCE</strong> (§11.4.6) pending the operator decision + a
+live data-plane; this document is design + a proven gap demo, not a
+shipped incorporation.</em></p>
+</body>
+</html>
