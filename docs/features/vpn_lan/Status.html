@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="helix_proxy--vpn-lan-service-access-feature-status">helix_proxy
+— VPN-LAN Service Access Feature Status</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T17:10:00Z <strong>Status:</strong> Anti-bluff bridge scaffold
++ preflight doctor + operator guide + Challenge runner are PROVEN NOW
+(autonomously, no live VPN); every live protocol round-trip
+(SMB/NFS/FTP/SFTP/WebDAV/email/Cast/DIAL/ADB) is AUTHORED with real
+byte-integrity / sink-side evidence gating and honestly SKIPs while the
+svord bridge is down (§11.4.3) — never a fake PASS; Miracast is
+Won't-fix structurally-impossible (§11.4.112). The svord bridge (secrets
++ Mullvad + root/sudo), the multicast-reflector remote deployment, and
+any real-device flash are operator-gated. <strong>Authority:</strong>
+Inherits <code>constitution/Constitution.md</code> per §11.4.35. This is
+the §11.4.153 per-feature Status set (companion §11.4.56 two-audience <a
+href="Status_Summary.md"><code>Status_Summary.md</code></a>) for the
+VPN-LAN service-access feature workstream
+(<code>feature/vpn-aware-dynamic-routing</code>, §11.4.167). Every row
+is reconciled against real committed code + tests + design docs; no
+metadata-only PASS and no fabricated video-confirmation (§11.4 / §11.4.1
+/ §11.4.6). <strong>Companion / cross-refs:</strong> integration status
+<a
+href="../../design/vpn_lan_access/Status.md"><code>../../design/vpn_lan_access/Status.md</code></a>
+· plan <a
+href="../../design/vpn_lan_access/PLAN.md"><code>../../design/vpn_lan_access/PLAN.md</code></a>
+· Miracast verdict <a
+href="../../design/vpn_lan_access/miracast_verdict.md"><code>../../design/vpn_lan_access/miracast_verdict.md</code></a>
+· reflector design <a
+href="../../design/vpn_lan_access/reflector_design.md"><code>../../design/vpn_lan_access/reflector_design.md</code></a>
+· operator guide <a
+href="../../guides/vpn_lan_bridge_setup.md"><code>../../guides/vpn_lan_bridge_setup.md</code></a>.
+<strong>Repo anchor:</strong> branch
+<code>feature/vpn-aware-dynamic-routing</code>, HEAD
+<code>89f73b7</code> at authoring time. Landing commits: bridge scaffold
+<code>d781002</code> + standing-suite wiring <code>5c28f56</code>; Phase
+2/3 file protocols <code>182e80a</code>; Phase 4 email
+<code>2f31460</code>; Phase 5 reflector <code>d0b42df</code>; Phase 6/7
+Cast+ADB <code>65043ce</code>; Phase 8 Miracast <code>12faf12</code>;
+Phase 9 guide <code>a5e5616</code>; Phase 11 Challenge runner + HelixQA
+bank <code>89f73b7</code>.</p>
+<hr />
+<h2
+id="operator-blocked--operator-gated-items-read-first--11445-o1-surface">Operator-blocked
+/ operator-gated items (read first — §11.4.45 O(1) surface)</h2>
+<p>Every autonomous claim below is either PROVEN NOW against a committed
+file/evidence artefact, or an honest SKIP that flips to a live PASS the
+moment the operator supplies the input named here. No live round-trip is
+marked PASS without captured evidence (§11.4.6 / §11.4.69).</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why blocked / gated</th>
+<th>Unblock condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Live protocol round-trips (SMB / NFS / FTP / FTPS / SFTP / WebDAV /
+IMAP / SMTP-submission / POP3S / Cast / DIAL / ADB)</td>
+<td>Need the live svord bridge — secrets + Mullvad WireGuard + root/sudo
+on the bridge side (§11.4.21 / §11.4.10). The scaffold proves the
+honest-SKIP path + the anti-bluff gate NOW; the live
+byte/sha256/mailbox/serial evidence exists only when the bridge is
+genuinely up. Bridge-down ⇒ honest SKIP
+(<code>network_unreachable_external</code>), never a fake PASS (§11.4.3
+/ §11.4.69).</td>
+<td>Operator copies <code>.env.example</code>→<code>.env</code>, points
+the 6-var contract at <code>svord_toolkit</code>, brings the VPN up;
+each test then emits real captured round-trip evidence under
+<code>qa-results/vpn_lan/phase&lt;N&gt;/&lt;ts&gt;/</code>.</td>
+</tr>
+<tr>
+<td>Multicast discovery reflector — remote deployment</td>
+<td>Deploying an Avahi mDNS / SSDP-relay reflector changes a remote host
+(§11.4.122) — requires an interactive keep/deploy decision. The
+reflector <em>design</em> + the client-side enumeration <em>test</em>
+are committed and autonomous; only the remote deploy is gated.</td>
+<td>Operator authorizes the remote-side reflector deployment (Phase 10
+boots it on-demand via the containers submodule, §11.4.76).</td>
+</tr>
+<tr>
+<td>ADB flash over VPN (<code>usbip</code> USB-over-IP)</td>
+<td>Flashing a real device is high-blast-radius (§11.4.133
+target-hardware-safety) and USB-level, not network-routable (fastboot is
+USB-bound — recon 4 FACT). The test NEVER flashes; it records the honest
+boundary and SKIPs <code>operator_attended</code>.</td>
+<td>Operator authorizes the specific device flash via a remote host with
+the device attached over <code>usbip</code>.</td>
+</tr>
+<tr>
+<td>HelixQA <code>vpn_lan.yaml</code> autonomous session</td>
+<td>The <code>helixqa</code> binary cannot be built in this checkout —
+its <code>go.mod</code> <code>replace</code>s 6 un-vendored own-org
+sibling modules (§11.4.3). The bank is authored; no autonomous HelixQA
+session has been run and none is claimed. The runnable proof NOW is the
+Challenge runner.</td>
+<td>Vendor the 6 sibling modules under <code>submodules/</code>, then
+drive the bank via an autonomous HelixQA session.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="feature-status-table-114153">Feature status table
+(§11.4.153)</h2>
+<p><strong>Legend.</strong> <em>Wiring</em> = is the feature genuinely
+reachable/usable by an end user of the deployed helix_proxy through the
+env-var bridge (§11.4.108)? <em>Validation</em> ∈ {PASS, FAIL, SKIP,
+PENDING_FORENSICS, OPERATOR-BLOCKED}. A <strong>PASS</strong> cites a
+committed captured artefact or a self-proving standing-suite gate.
+<strong>SKIP</strong> = honest topology/precondition skip (bridge down /
+reflector not deployed / server absent — §11.4.3), never folded into a
+PASS. <em>Video-confirmation</em> is <strong>N/A</strong> for every row:
+helix_proxy VPN-LAN is a headless network feature with no rendered UI —
+its §11.4.107/§11.4.69 proof is captured exit codes + byte-integrity
+sha256 + sink-side protocol responses (SMB/NFS/mailbox/eureka
+JSON/device serial), not a rendered video (§11.4.153(3)
+autonomous-infeasible ⇒ honest non-video evidence). Live-path rows
+additionally carry no autonomous video because the live round-trip needs
+the operator-gated svord bridge.</p>
+<h3
+id="a-bridge-foundation--anti-bluff-scaffold--proven-now-autonomous-no-live-vpn">A.
+Bridge foundation &amp; anti-bluff scaffold — PROVEN NOW (autonomous, no
+live VPN)</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>env-var bridge contract</td>
+<td>6-var decoupled bridge contract (<code>HELIX_SVORD_DIR</code> /
+<code>_CONNECT</code> / <code>_DISCONNECT</code> / <code>_HEALTH</code>
+/ <code>_SUBNET</code> / <code>_HOST</code>); <code>bridge_load</code> /
+<code>bridge_up</code> / <code>bridge_require</code> primitives (rc 2 =
+OPERATOR-BLOCKED, rc 3 = misconfigured)</td>
+<td>foundation / decoupling (§11.4.28)</td>
+<td><code>.env.example</code> (tracked, no secrets);
+<code>tests/lib/svord_bridge.sh</code></td>
+<td>YES — every VPN-LAN test sources it; <code>.env</code>→bridge is the
+single, documented, gitignored wiring point (§11.4.10 / §11.4.30)</td>
+<td>Operator sources <code>.env</code>; the 6 vars resolve or
+<code>bridge_load</code> lists the unset names; no svord path is
+hardcoded</td>
+<td>unit (contract resolve + set-u safety) + wired into standing suite
+<code>test_vpn_lan_bridge</code> + §11.4.115 teeth (healthy stub ⇒ UP) +
+§1.1 mutation surface</td>
+<td><strong>PASS</strong> (<code>d781002</code>; standing suite GREEN
+<code>qa-results/suite/run_20260701T160156Z.log</code> 71/64/7/0)</td>
+<td>N/A — headless; proof is the contract-resolution + suite verdict,
+not video</td>
+</tr>
+<tr>
+<td>svord-doctor preflight</td>
+<td>Deterministic 3-verdict preflight — <code>BRIDGE: UP</code> (exit 0)
+/ <code>SKIP:network_unreachable_external</code> (exit 2) /
+<code>MISCONFIGURED:&lt;reason&gt;</code> (exit 3): env resolvable?
+hooks executable? <code>HELIX_BRIDGE_HEALTH</code> exit 0? remote host
+reachable? Never fakes UP</td>
+<td>preflight / anti-bluff gate</td>
+<td><code>scripts/svord_doctor.sh</code>; companion
+<code>docs/scripts/svord_doctor.md</code> (§11.4.18)</td>
+<td>YES — the mandatory first step every protocol test + the Challenge
+runner run; a DOWN/MISCONFIGURED verdict forces honest downstream
+SKIP</td>
+<td>Operator runs <code>sh scripts/svord_doctor.sh</code>; bridge-down
+NOW ⇒ <code>MISCONFIGURED:env_unset</code> / <code>SKIP</code> (honest),
+never UP</td>
+<td>standing suite <code>test_vpn_lan_bridge</code> (3-verdict
+discrimination) + §11.4.115 teeth (local UP-stub ⇒
+<code>BRIDGE: UP</code>, proving the SKIP is conditional not
+rubber-stamp) + <code>run-tests.sh:821-872</code></td>
+<td><strong>PASS</strong> (<code>d781002</code>/<code>5c28f56</code>;
+teeth GREEN in standing suite)</td>
+<td>N/A — headless; proof is the <code>BRIDGE:</code> verdict line +
+teeth, not video</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b-file-shares--authored-live-round-trip-operator-gated">B. File
+shares — AUTHORED, live round-trip operator-gated</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SMB / CIFS / NMB</td>
+<td>SMB/CIFS write→read-back→sha256 round-trip over the L3-routed VPN
+share (<code>smbclient</code>, <code>mount.cifs</code> fallback); NMB
+name-resolution by 10.x unicast (multicast NMB not routed)</td>
+<td>file-share / functional</td>
+<td><code>tests/vpn_lan/smb_nfs_roundtrip.sh</code> (SMB slice)</td>
+<td>Gated — reachable once the bridge is up +
+<code>HELIX_VPN_SMB_UNC</code> set; routes over L3, NOT SOCKS5</td>
+<td>Bridge-down NOW ⇒ honest SKIP + exit 0, zero <code>^PASS:</code>
+lines; bridge-up ⇒ real sha256-matched round-trip evidence</td>
+<td>test authored + <code>ab_pass_with_evidence</code> (empty artefact ⇒
+refused) + honest-SKIP gate + Challenge case <code>VLA-SMB</code> +
+HelixQA <code>VLA-SMB</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>182e80a</code>)</td>
+<td>N/A — headless; live path operator-gated (no autonomous video)</td>
+</tr>
+<tr>
+<td>NFS</td>
+<td>NFS write→read-back→sha256 round-trip over the VPN export
+(pre-mounted <code>HELIX_VPN_NFS_MOUNTED</code>, or root temp-mount
+<code>HELIX_VPN_NFS_EXPORT</code>); temp mount unmounted on every exit
+(§11.4.14)</td>
+<td>file-share / functional</td>
+<td><code>tests/vpn_lan/smb_nfs_roundtrip.sh</code> (NFS slice)</td>
+<td>Gated — reachable once bridge up + export configured; routes over
+L3</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ sha256-matched
+round-trip; sha256 mismatch ⇒ FAIL (teeth)</td>
+<td>test authored + evidence-gated PASS + cleanup trap + Challenge case
+<code>VLA-NFS</code> + HelixQA <code>VLA-NFS</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>182e80a</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c-file-transfer--authored-live-round-trip-operator-gated">C.
+File transfer — AUTHORED, live round-trip operator-gated</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FTP / FTPS</td>
+<td>FTP passive directory-list + fetch over routed :21 + pinned PASV
+range (PASV must advertise the 10.x addr); FTPS explicit
+(<code>AUTH TLS</code>) / implicit (:990)</td>
+<td>file-transfer / functional</td>
+<td><code>tests/vpn_lan/ftp_sftp_webdav.sh</code> (FTP slice)</td>
+<td>Gated — reachable once bridge up + <code>HELIX_VPN_FTP_URL</code>
+set</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured non-empty
+listing + byte fetch evidence</td>
+<td>test authored + evidence-gated PASS + Challenge case
+<code>VLA-FTP</code> + HelixQA <code>VLA-FTP</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>182e80a</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>SFTP</td>
+<td>SFTP single-connection byte round-trip over routed :22 (key-based,
+<code>BatchMode</code> — fully autonomous, §11.4.98); sha256 match
+required</td>
+<td>file-transfer / functional</td>
+<td><code>tests/vpn_lan/ftp_sftp_webdav.sh</code> (SFTP slice)</td>
+<td>Gated — reachable once bridge up + <code>HELIX_VPN_SFTP_HOST</code>
+set</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ sha256-matched
+round-trip; sha256 mismatch ⇒ FAIL (teeth)</td>
+<td>test authored + evidence-gated PASS + Challenge case
+<code>VLA-SFTP</code> + HelixQA <code>VLA-SFTP</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>182e80a</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>WebDAV (via existing Squid)</td>
+<td>WebDAV PROPFIND through the EXISTING Squid (no new component) —
+expect <code>207 Multi-Status</code> + non-empty XML body; a real
+non-207 HTTP response ⇒ FAIL (fail-closed §11.4.68)</td>
+<td>file-transfer / functional</td>
+<td><code>tests/vpn_lan/ftp_sftp_webdav.sh</code> (WebDAV slice)</td>
+<td>Gated — reachable once bridge up + <code>HELIX_VPN_WEBDAV_URL</code>
+set; traverses <code>HELIX_SQUID_PROXY</code> (default
+<code>:53128</code>)</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured 207 + XML;
+wrong-answer (non-207) ⇒ FAIL not SKIP</td>
+<td>test authored + wrong-answer-FAIL teeth + Challenge case
+<code>VLA-WEBDAV</code> + HelixQA <code>VLA-WEBDAV</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>182e80a</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d-email--authored-live-round-trip-operator-gated">D. Email —
+AUTHORED, live round-trip operator-gated</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IMAP / IMAPS</td>
+<td>IMAPS <code>LOGIN</code> + <code>LIST "" "*"</code> over
+implicit-TLS :993 (RFC 8314) — assert a real mailbox <code>* LIST</code>
+listing returns; <code>a1 NO/BAD</code> ⇒ FAIL</td>
+<td>email / functional</td>
+<td><code>tests/vpn_lan/email_roundtrip.sh</code> (T4.1)</td>
+<td>Gated — reachable once bridge up + <code>HELIX_MAIL_USER/PASS</code>
+set; creds via in-process <code>printf</code> stdin, never argv/logged
+(§11.4.10)</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured mailbox LIST
+body</td>
+<td>test authored + evidence-gated PASS + Challenge case
+<code>VLA-EMAIL</code> + HelixQA <code>VLA-EMAIL</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>2f31460</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>SMTP submission</td>
+<td>Authenticated submission send over :465 implicit / :587 STARTTLS — a
+self-addressed round-trip probe token must be 2xx/250-accepted</td>
+<td>email / functional</td>
+<td><code>tests/vpn_lan/email_roundtrip.sh</code> (T4.2)</td>
+<td>Gated — reachable once bridge up + creds set</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured 250 acceptance;
+non-2xx end-of-DATA ⇒ FAIL</td>
+<td>test authored + evidence-gated PASS + round-trip token links to
+POP3S retrieve + Challenge/HelixQA <code>VLA-EMAIL</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>2f31460</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>POP3S</td>
+<td>POP3S retrieve over implicit-TLS :995 — retrieve the just-sent T4.2
+message and verify its unique token (a true send→retrieve round-trip);
+token not returned within retries ⇒ FAIL</td>
+<td>email / functional</td>
+<td><code>tests/vpn_lan/email_roundtrip.sh</code> (T4.3)</td>
+<td>Gated — reachable once bridge up + creds + a successful T4.2
+send</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured retrieved
+message body carrying the sent token</td>
+<td>test authored + evidence-gated PASS + retry window +
+Challenge/HelixQA <code>VLA-EMAIL</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>2f31460</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>Open-relay guard (mandatory negative)</td>
+<td>§4.3 MANDATORY negative test — an UNAUTHENTICATED relay to an
+EXTERNAL domain MUST be REFUSED: captured 4xx/5xx of the external RCPT ⇒
+PASS; a captured 2xx acceptance ⇒ decisive FAIL (helix_proxy is NEVER an
+open relay / spam conduit); incomplete probe ⇒ honest SKIP (never
+fake-PASS the guard)</td>
+<td>email / security</td>
+<td><code>tests/vpn_lan/email_roundtrip.sh</code> (T4.4)</td>
+<td>Gated — reachable once bridge up + mail server present</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured refusal of the
+external-domain RCPT</td>
+<td>test authored + external-RCPT-accepted-⇒-FAIL teeth + no-DATA/RSET
+safety + Challenge/HelixQA <code>VLA-EMAIL</code> (category
+<code>security</code>)</td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>2f31460</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="e-discovery-reflector--authored-design--test-remote-deploy-operator-gated">E.
+Discovery reflector — AUTHORED design + test, remote deploy
+operator-gated</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mDNS / DNS-SD / SSDP / WS-Discovery reflector</td>
+<td>Remote-side multicast discovery reflector (Avahi
+<code>enable-reflector</code> for mDNS 5353 / DNS-SD; SSDP relay for
+1900; WS-Disc 3702) — multicast is subnet-local and NOT forwarded across
+the L3 VPN, so a remote-side reflector is required. Client test:
+<code>avahi-browse -rpt</code> surfaces a resolved (<code>^=</code>)
+remote service (SCORED); SSDP M-SEARCH count is
+supplementary/non-scored</td>
+<td>discovery / functional</td>
+<td>design <code>docs/design/vpn_lan_access/reflector_design.md</code>;
+test <code>tests/vpn_lan/discovery_reflect.sh</code></td>
+<td>Gated — enumeration reachable once bridge up + reflector deployed
+(<code>HELIX_VPN_REFLECTOR</code>); remote deploy is operator-gated
+(§11.4.122)</td>
+<td>Bridge-down / no-reflector NOW ⇒ honest SKIP
+(<code>feature_disabled_by_config</code>); reflector up ⇒ captured
+resolved DNS-SD record</td>
+<td>design doc + client enumeration test (evidence-gated PASS, empty
+output ⇒ SKIP not PASS) + honest-SKIP gate + §1.1 surface</td>
+<td><strong>SKIP</strong> (reflector deploy operator-gated;
+<code>d0b42df</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="f-casting-google-cast--dial--authored-live-round-trip-operator-gated">F.
+Casting (Google Cast / DIAL) — AUTHORED, live round-trip
+operator-gated</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chromecast eureka_info control</td>
+<td>Routed <code>GET http://&lt;ip&gt;:8008/setup/eureka_info</code>
+over the L3 VPN — a real JSON <code>name</code> field is the
+device-identity evidence; HTTP 200 without a JSON <code>name</code>, or
+a non-200 answer ⇒ FAIL (fail-closed §11.4.68)</td>
+<td>casting / functional</td>
+<td><code>tests/vpn_lan/chromecast_dial.sh</code> (T6.2)</td>
+<td>Gated — reachable once bridge up + <code>HELIX_VPN_CAST_IP</code>
+set; control routes as unicast TCP</td>
+<td>Bridge-down NOW ⇒ honest SKIP; bridge-up ⇒ captured eureka_info JSON
+<code>name</code> + CASTV2 :8009 TLS-reachability note</td>
+<td>test authored + JSON-name / non-200-FAIL teeth + Challenge case
+<code>VLA-CAST</code> + HelixQA <code>VLA-CAST</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>65043ce</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>CASTV2 liveness (§11.4.107)</td>
+<td>Cast status <em>transition</em> observed across two reads (advancing
+state, NOT a single frozen frame) via an operator-supplied status
+command; two DISTINCT reads ⇒ transition PASS; identical reads (device
+idle) ⇒ honest <code>operator_attended</code> SKIP (a transition needs
+media playing), never a fake PASS</td>
+<td>casting / functional (liveness)</td>
+<td><code>tests/vpn_lan/chromecast_dial.sh</code> (T6.3)</td>
+<td>Gated — reachable once bridge up +
+<code>HELIX_VPN_CAST_STATUS_CMD</code> set</td>
+<td>Bridge-down / no-status-tool NOW ⇒ honest SKIP; bridge-up + media ⇒
+captured status-transition cksum delta</td>
+<td>test authored + §11.4.107 transition-not-frame oracle +
+Challenge/HelixQA <code>VLA-CAST</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>65043ce</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>DIAL discovery + control</td>
+<td>DIAL discovery via the Phase-5 reflector (SSDP
+<code>M-SEARCH</code>) + <code>_googlecast._tcp</code> mDNS; HTTP
+control routes over the VPN as ordinary unicast TCP (the routable "cast
+to a remote display" alternative to Miracast)</td>
+<td>casting / functional</td>
+<td><code>tests/vpn_lan/chromecast_dial.sh</code> (T6.1 discovery) +
+<code>reflector_design.md</code></td>
+<td>Gated — discovery depends on the reflector (E); control routes once
+bridge up</td>
+<td>Bridge-down / no-reflector NOW ⇒ honest SKIP; reflector up ⇒
+reflected <code>_googlecast._tcp</code> enumeration</td>
+<td>discovery-via-reflector test + evidence-gated PASS +
+Challenge/HelixQA <code>VLA-CAST</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>65043ce</code>/<code>d0b42df</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="g-device-bridge-adb-over-vpn--authored-flash-operator-blocked">G.
+Device bridge (ADB over VPN) — AUTHORED; flash operator-blocked</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ADB connect / shell / getprop</td>
+<td><code>adb connect &lt;host&gt;:5555</code> over the routed VPN (no
+proxy hop — recon 4) + central adb-server model; assert OUR serial
+reaches <code>device</code> state then
+<code>adb -s &lt;serial&gt; shell getprop ro.product.model</code>
+returns real content; reachable-but-unusable state
+(offline/unauthorized) ⇒ FAIL. Safety: touches ONLY the env-configured
+serial — never <code>kill-server</code>, never a blanket disconnect,
+never any other/operator/lava-* device (§11.4.174);
+<code>adb disconnect &lt;our-serial&gt;</code> in the cleanup trap</td>
+<td>device-bridge / functional</td>
+<td><code>tests/vpn_lan/adb_over_vpn.sh</code> (T7.1/T7.3)</td>
+<td>Gated — reachable once bridge up + <code>HELIX_VPN_ADB_HOST</code>
+set</td>
+<td>Bridge-down NOW ⇒ honest SKIP (adb never invoked, no device
+touched); bridge-up ⇒ captured serial + getprop model content</td>
+<td>test authored + own-serial-only §11.4.174 safety +
+not-<code>device</code>-state-⇒-FAIL teeth + Challenge case
+<code>VLA-ADB</code> + HelixQA <code>VLA-ADB</code></td>
+<td><strong>SKIP</strong> (operator-gated live path;
+<code>65043ce</code>)</td>
+<td>N/A — headless; live path operator-gated</td>
+</tr>
+<tr>
+<td>ADB flash (usbip USB-over-IP)</td>
+<td>Honest boundary (§11.4.6): <code>fastboot</code> is USB-level and
+network fastboot is USB-bound (recon 4 FACT); the routable path is
+<code>usbip</code> from a remote host with the device attached. The test
+NEVER flashes and NEVER invokes fastboot/usbip — it records the boundary
+and SKIPs <code>operator_attended</code>; any real-device flash is
+operator-gated (§11.4.133 + §11.4.122)</td>
+<td>device-bridge / operator-safety</td>
+<td><code>tests/vpn_lan/adb_over_vpn.sh</code> (T7.4)</td>
+<td>Gated — real-device flash requires explicit operator
+authorization</td>
+<td>NOW ⇒ documented boundary evidence + honest
+<code>operator_attended</code> SKIP; no flash ever attempted
+autonomously</td>
+<td>test authored + boundary-record + never-flashes safety +
+Challenge/HelixQA <code>VLA-ADB</code> note</td>
+<td><strong>OPERATOR-BLOCKED</strong> (real-device flash §11.4.133 +
+§11.4.122; <code>65043ce</code>)</td>
+<td>N/A — headless; operator-gated</td>
+</tr>
+</tbody>
+</table>
+<h3 id="h-miracast--wont-fix-structurally-impossible">H. Miracast —
+Won't-fix, structurally-impossible</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Miracast over L3 VPN</td>
+<td>Won't-fix — structurally-impossible (§11.4.112): Miracast rides
+Wi-Fi Direct / 802.11 P2P at Layer 2 with no routable IP hop for an L3
+VPN to carry; cited Wi-Fi-Alliance + Wi-Fi-Direct evidence. The routable
+"cast to a remote display" capability is delivered by Google Cast / DIAL
+(§F). NO fake traversal test exists or will be authored (a green
+Miracast-over-VPN result would be fabricated)</td>
+<td>honest-boundary / structural verdict</td>
+<td><code>docs/design/vpn_lan_access/miracast_verdict.md</code> (cited
+spec text IS the artifact)</td>
+<td>N/A — out of scope by physics; positive capability lives in §F
+(Cast/DIAL)</td>
+<td>The verdict doc is the deliverable; reopen only on NEW evidence the
+platform constraint changed (§11.4.34 / §11.4.7)</td>
+<td>verdict doc with cited authoritative sources (§11.4.99
+latest-source, access 2026-07-01); no fake test (correct posture
+§11.4.112)</td>
+<td><strong>PASS (Won't-fix, §11.4.112)</strong>
+(<code>12faf12</code>)</td>
+<td>N/A — a structural verdict, not a runnable/renderable
+capability</td>
+</tr>
+</tbody>
+</table>
+<h3 id="i-documentation--verification-infrastructure">I. Documentation
+&amp; verification infrastructure</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Operator bridge-setup guide</td>
+<td>End-user manual — overview, one-line routing map, the 6-var
+contract, setup steps, per-protocol matrix, security notes, FAQ;
+HTML+PDF exports §11.4.65, §11.4.168 visually validated (no raw diagram
+source leaking)</td>
+<td>docs / operator</td>
+<td><code>docs/guides/vpn_lan_bridge_setup.md</code></td>
+<td>YES — the operator's out-of-the-box entry point to enable the
+feature</td>
+<td>Operator reads the guide, copies
+<code>.env.example</code>→<code>.env</code>, points the bridge at
+<code>svord_toolkit</code>, runs the doctor</td>
+<td>doc authored + §11.4.44 revision header + §11.4.65 HTML+PDF exports
+leak-clean</td>
+<td><strong>PASS</strong> (<code>a5e5616</code>)</td>
+<td>N/A — document; §11.4.168 exported-doc visual validation is its
+proof, not video</td>
+</tr>
+<tr>
+<td>VPN-LAN Challenge runner</td>
+<td>Runnable anti-bluff harness — runs <code>svord_doctor.sh</code>
+preflight then each <code>tests/vpn_lan/*.sh</code>, maps exit codes
+(doctor 0=UP/2=SKIP/3=MISCONFIGURED; tests 0=no-FAIL/1=FAIL), tallies
+PASS/FAIL/SKIP with per-item logs under host-safety caps
+(<code>GOMAXPROCS=2 nice ionice</code>, §12.6). Bridge-down ⇒ every item
+honest SKIP, exit 0 (never a fake PASS); a not-yet-present test ⇒ SKIP,
+never FAIL</td>
+<td>verification / Challenge (§11.4.27)</td>
+<td><code>challenges/scripts/run_vpn_lan_challenges.sh</code></td>
+<td>YES — an operator can run it NOW; it wraps the committed doctor +
+protocol tests + §1.1-hardened tally</td>
+<td>Operator runs
+<code>bash challenges/scripts/run_vpn_lan_challenges.sh</code>; NOW ⇒
+honest all-SKIP tally (bridge down), exit 0</td>
+<td>runner authored + exit-code→verdict mapping wired to the committed
+tests + <code>sh -n</code>/<code>bash -n</code> clean (§11.4.67);
+live-bridge PASS tally operator-gated</td>
+<td><strong>PASS</strong> (runnable harness + honest mapping proven;
+live tally operator-gated; <code>89f73b7</code>)</td>
+<td>N/A — headless; proof is the tally + per-item logs, not video</td>
+</tr>
+<tr>
+<td>HelixQA <code>vpn_lan.yaml</code> bank</td>
+<td>HelixQA test bank — one case per protocol
+(<code>VLA-BRIDGE-PREFLIGHT</code> / <code>VLA-SMB</code> /
+<code>VLA-NFS</code> / <code>VLA-FTP</code> / <code>VLA-SFTP</code> /
+<code>VLA-WEBDAV</code> / <code>VLA-EMAIL</code> / <code>VLA-CAST</code>
+/ <code>VLA-ADB</code>) dispatching <code>ActionTypeShell</code> to the
+real protocol test so the case verdict IS the real test verdict;
+documents the exit-code→verdict mapping</td>
+<td>verification / HelixQA (§11.4.27)</td>
+<td><code>tools/helixqa/banks/vpn_lan.yaml</code></td>
+<td>Gated — bank authored; the <code>helixqa</code> binary is
+un-buildable here (6 un-vendored own-org siblings)</td>
+<td>NOW ⇒ authored-but-run-blocked; the runnable proof is the Challenge
+runner; no autonomous HelixQA session claimed</td>
+<td>bank authored (schema-valid <code>shell:</code> actions) + honest
+run-blocked SKIP (§11.4.3); Challenge runner is the runnable
+surrogate</td>
+<td><strong>SKIP</strong> (authored-but-run-blocked §11.4.3;
+<code>89f73b7</code>)</td>
+<td>N/A — headless; would be the bank's <code>result.json</code>, not
+video</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="114169-test-type-coverage-note-honest-boundary">§11.4.169
+test-type coverage note (honest boundary)</h2>
+<p>The autonomously-provable layers today are: <strong>unit /
+config</strong> (bridge-contract resolution + set-u safety), the
+<strong>standing-suite gate</strong> (<code>test_vpn_lan_bridge</code> —
+3-verdict discrimination + §11.4.115 UP-stub teeth, GREEN), the
+<strong>Challenge runner</strong> (runnable NOW, honest bridge-down
+all-SKIP tally), and the <strong>structural verdict</strong> (Miracast,
+cited). The <strong>integration / e2e / full-automation / security /
+stress+chaos</strong> live layers per protocol are AUTHORED with
+evidence-gating + wrong-answer-FAIL teeth but <strong>honestly
+SKIP</strong> until the operator connects the svord bridge (§11.4.3) —
+they are never counted as PASS on a down bridge. HelixQA
+autonomous-session coverage is <strong>run-blocked</strong> (6
+un-vendored siblings, §11.4.3), surrogated by the Challenge runner. No
+metadata-only / config-only / absence-of-error PASS is recorded anywhere
+in this ledger (§11.4 / §11.4.1 / §11.4.69).</p>
+<h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
+<p>What is PROVEN NOW, autonomously, with committed evidence: the
+decoupled env-var bridge contract, the svord-doctor 3-verdict preflight
+with §11.4.115 teeth in the GREEN standing suite, the honest-SKIP
+anti-bluff gate across every protocol test (bridge-down ⇒ SKIP + exit 0
++ zero <code>^PASS:</code> lines — never a fake PASS), the
+wrong-answer-FAIL teeth (WebDAV non-207, SFTP/NFS/SMB sha-mismatch,
+open-relay external-RCPT-accepted, ADB not-<code>device</code>-state,
+Cast non-200/no-name), the runnable Challenge harness, the operator
+guide, and the Miracast structural-impossibility verdict. What is
+<strong>operator-gated</strong> and therefore SKIP/OPERATOR-BLOCKED
+until unblocked: every <strong>live</strong> protocol round-trip (real
+bytes, sha256, mailbox content, eureka JSON, device serials — needs the
+svord bridge up), the multicast-reflector remote deployment (§11.4.122),
+any real-device flash (§11.4.133), and the autonomous HelixQA session (6
+un-vendored siblings). No live capability is marked PASS without
+captured evidence on a genuinely-up bridge, and no feature is "done" for
+its live capability until its runtime signature verifies on a live
+bridge (§11.4.108) and it crosses the §11.4.169 test-type matrix +
+independent review (§11.4.142). This ledger does not substitute for the
+§11.4.40 full-suite retest before any release tag.</p>
+<p><strong>Feature tally:</strong> 4 rows PASS-now (bridge contract ·
+svord-doctor preflight · operator guide · Challenge runner) · 16 rows
+operator-gated SKIP/OPERATOR-BLOCKED (all live protocol round-trips +
+reflector deploy + ADB flash + HelixQA run) · 1 row Won't-fix (Miracast,
+structurally-impossible §11.4.112).</p>
+</body>
+</html>

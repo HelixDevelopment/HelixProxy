@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
+— VPN-LAN Service Access Feature Status Summary</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T17:10:00Z <strong>Status:</strong> Companion two-audience
+summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
+Page 1 is plain-language for the operator and stakeholders; Page 2 is
+the engineer phase matrix with commit refs and §-anchors.
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.153
+feature Status set for the VPN-LAN service-access workstream
+(<code>feature/vpn-aware-dynamic-routing</code>, §11.4.167).</p>
+<hr />
+<h2 id="page-1--for-the-operator-and-stakeholders-plain-language">Page 1
+— For the operator and stakeholders (plain language)</h2>
+<p>We are giving helix_proxy the ability to <strong>reach and use the
+everyday services that live on the far side of a VPN</strong> — shared
+folders, file transfer, email, casting to a TV, and Android device
+access. helix_proxy connects to that far-side network by driving your
+existing <code>svord_toolkit</code> scripts; it never changes those
+scripts and never touches a remote machine without asking you first.</p>
+<p><strong>What is finished and proven right now — without needing the
+live VPN:</strong></p>
+<ul>
+<li><strong>The connector and its safety guarantee.</strong> helix_proxy
+reads where your <code>svord_toolkit</code> scripts live from a private
+settings file, and a "doctor" tool checks whether the VPN is up. The
+crucial part: when the VPN is <strong>down</strong>, everything
+<strong>honestly reports "skipped" — never a fake success.</strong> Our
+test suite proves both halves: it skips when the VPN is down, and (with
+a healthy test stub) it correctly flips to "up." This is the promise
+that we never pretend a feature works when it does not.</li>
+<li><strong>All the service tests are written and
+self-checking.</strong> The folder-share (SMB/NFS), file-transfer
+(FTP/SFTP/WebDAV), email, casting, and Android tests each read and write
+<strong>real data and check it byte-for-byte</strong> when the VPN is
+up. Several include deliberate "trap" checks — e.g. the email test would
+<strong>fail</strong> helix_proxy if it ever accepted junk mail
+relaying, and the WebDAV/Android/casting tests <strong>fail</strong> on
+a wrong answer rather than quietly passing. When the VPN is down they
+all skip honestly.</li>
+<li><strong>Casting works via Chromecast; Miracast is honestly marked
+impossible.</strong> Miracast is a direct radio link between two devices
+in the same room — not an internet protocol — so it cannot travel over
+this kind of VPN, and we say so plainly (with cited evidence).
+<strong>Chromecast / DIAL</strong> is the working "cast to a far-side
+TV" alternative.</li>
+<li><strong>The operator guide is written</strong>, and a
+<strong>one-command Challenge runner</strong> lets you check the whole
+feature at once — today it produces an honest "all skipped" result
+because the VPN is not connected.</li>
+</ul>
+<p><strong>What needs you (clearly flagged — we always ask before
+acting):</strong></p>
+<ul>
+<li>The <strong>live VPN connection</strong> — your secrets, Mullvad,
+and admin rights — switches on all the real end-to-end tests.</li>
+<li>Deploying the small <strong>device-discovery helper</strong> on a
+far-side machine needs your go-ahead (it changes a remote host).</li>
+<li><strong>Flashing</strong> any real Android device is never done
+automatically — it needs your explicit approval.</li>
+</ul>
+<p><strong>Bottom line:</strong> the feature is designed, the anti-bluff
+plumbing is built and proven, the casting path works and Miracast is
+honestly ruled out, and every real service test switches on the moment
+you connect the VPN. Nothing is faked — skipped means skipped, and a
+wrong answer fails rather than passing quietly. Of the 21 tracked
+capabilities: <strong>4 are proven now</strong>, <strong>16 wait on
+you</strong> (the live VPN, the discovery-helper deploy, or a device
+flash), and <strong>1 (Miracast) is honestly ruled impossible</strong>
+with a working alternative in its place.</p>
+<hr />
+<h2 id="page-2--for-software-engineers">Page 2 — For software
+engineers</h2>
+<p>L3-routed VPN (WireGuard + L2TP/PPP over <code>ppp0</code>; subnet
+<code>10.0.0.0/8</code>; svord host <code>10.6.100.221</code>) ⇒
+<strong>route</strong> unicast · <strong>proxy</strong> HTTP-shaped via
+the existing <strong>Squid</strong> · <strong>reflect</strong> multicast
+discovery on the remote subnet · <strong>L2/Wi-Fi-Direct structurally
+impossible</strong>. Decoupled env-var bridge (§11.4.28):
+<code>tests/lib/svord_bridge.sh</code> (<code>bridge_require</code> rc 2
+= OPERATOR-BLOCKED §11.4.68), <code>scripts/svord_doctor.sh</code>
+3-verdict preflight, <code>.env.example</code> (tracked, no secrets
+§11.4.10/§11.4.30). Anti-bluff PASS emitter
+<code>ab_pass_with_evidence</code> (empty artefact ⇒ refused);
+honest-SKIP-first gate in every test; wrong-answer ⇒ FAIL (not SKIP)
+teeth per protocol.</p>
+<table>
+<thead>
+<tr>
+<th>Phase / component</th>
+<th>Scope</th>
+<th>Status</th>
+<th>Commit / evidence + teeth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>env-var bridge contract + svord-doctor preflight</td>
+<td><strong>PASS</strong></td>
+<td><code>d781002</code>; standing suite
+<code>test_vpn_lan_bridge</code> GREEN + §11.4.115 UP-stub teeth
+(<code>run-tests.sh:821-872</code>) <code>5c28f56</code>;
+<code>qa-results/suite/run_20260701T160156Z.log</code> 71/64/7/0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>L3 routed gateway + SSRF allowlist reconciliation</td>
+<td>PENDING</td>
+<td>conductor-owned, security-critical (§11.4.120); RFC1918 floor kept,
+narrow <code>HELIX_BRIDGE_SUBNET</code> carve-out; gated on bridge
+up</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SMB/CIFS/NMB + NFS round-trip</td>
+<td><strong>SKIP</strong> (authored, operator-gated)</td>
+<td><code>182e80a</code>
+<code>tests/vpn_lan/smb_nfs_roundtrip.sh</code>; sha256 round-trip;
+bridge-down ⇒ exit 0 + <code>PASS_lines=0</code>; sha-mismatch ⇒
+FAIL</td>
+</tr>
+<tr>
+<td>3</td>
+<td>FTP/FTPS · SFTP · WebDAV (via existing Squid)</td>
+<td><strong>SKIP</strong> (authored, operator-gated)</td>
+<td><code>182e80a</code> <code>tests/vpn_lan/ftp_sftp_webdav.sh</code>;
+WebDAV non-207 ⇒ FAIL, SFTP sha-mismatch ⇒ FAIL, unreachable ⇒ SKIP</td>
+</tr>
+<tr>
+<td>4</td>
+<td>IMAP(S) · SMTP-submission · POP3(S) + open-relay guard</td>
+<td><strong>SKIP</strong> (authored, operator-gated)</td>
+<td><code>2f31460</code> <code>tests/vpn_lan/email_roundtrip.sh</code>;
+T4.4 external-RCPT-accepted ⇒ FAIL; creds via in-process
+<code>printf</code> stdin, never argv (§11.4.10)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>mDNS/DNS-SD/SSDP/WS-Discovery reflector</td>
+<td><strong>SKIP</strong> (design + client test; deploy operator-gated
+§11.4.122)</td>
+<td><code>d0b42df</code> <code>reflector_design.md</code> +
+<code>tests/vpn_lan/discovery_reflect.sh</code>;
+<code>avahi-browse</code> <code>^=</code> resolved ⇒ PASS, empty ⇒
+SKIP</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Chromecast / DIAL (eureka_info control + CASTV2 liveness)</td>
+<td><strong>SKIP</strong> (authored, operator-gated)</td>
+<td><code>65043ce</code> <code>tests/vpn_lan/chromecast_dial.sh</code>;
+routed :8008 eureka JSON <code>name</code>; §11.4.107 status-transition
+(not a frame); non-200/no-name ⇒ FAIL</td>
+</tr>
+<tr>
+<td>7a</td>
+<td>ADB connect / shell / getprop (routed 5555)</td>
+<td><strong>SKIP</strong> (authored, operator-gated)</td>
+<td><code>65043ce</code> <code>tests/vpn_lan/adb_over_vpn.sh</code>;
+central adb-server; own-serial-only §11.4.174;
+not-<code>device</code>-state ⇒ FAIL</td>
+</tr>
+<tr>
+<td>7b</td>
+<td>ADB flash (usbip USB-over-IP)</td>
+<td><strong>OPERATOR-BLOCKED</strong></td>
+<td><code>65043ce</code>; fastboot USB-bound (recon 4 FACT); never
+flashes; §11.4.133 + §11.4.122</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Miracast</td>
+<td><strong>PASS (Won't-fix, §11.4.112)</strong></td>
+<td><code>12faf12</code> <code>miracast_verdict.md</code>; cited
+Wi-Fi-Alliance / Wi-Fi-Direct evidence; Google Cast as routable
+alternative; no fake traversal test</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Operator bridge-setup guide</td>
+<td><strong>PASS</strong></td>
+<td><code>a5e5616</code>
+<code>docs/guides/vpn_lan_bridge_setup.md</code>; §11.4.65 HTML+PDF
+exports leak-clean; §11.4.168 visually validated</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Containerize reflector + adb-server (§11.4.76)</td>
+<td>PENDING</td>
+<td>on-demand boot via <code>submodules/containers</code> (rootless
+§11.4.161); depends on Phase 5/6/7</td>
+</tr>
+<tr>
+<td>11a</td>
+<td>VPN-LAN Challenge runner</td>
+<td><strong>PASS</strong> (runnable harness; live tally
+operator-gated)</td>
+<td><code>89f73b7</code>
+<code>challenges/scripts/run_vpn_lan_challenges.sh</code>;
+exit-code→verdict mapping (doctor 0/2/3; tests 0/1); host caps §12.6;
+<code>sh -n</code>/<code>bash -n</code> clean §11.4.67</td>
+</tr>
+<tr>
+<td>11b</td>
+<td>HelixQA <code>vpn_lan.yaml</code> bank</td>
+<td><strong>SKIP</strong> (authored-but-run-blocked §11.4.3)</td>
+<td><code>89f73b7</code> <code>tools/helixqa/banks/vpn_lan.yaml</code>;
+<code>ActionTypeShell</code> dispatch to real tests;
+<code>helixqa</code> binary blocked by 6 un-vendored own-org
+siblings</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Autonomous value delivered:</strong> the anti-bluff gate
+(bridge-down ⇒ honest SKIP, exit 0, zero <code>^PASS:</code> lines), the
+§11.4.115 UP-stub teeth in the GREEN standing suite, the
+wrong-answer-FAIL teeth per protocol, the runnable Challenge harness,
+the operator guide, and the cited Miracast structural verdict.
+<strong>Live round-trip evidence</strong> (bytes / sha256 / mailbox body
+/ eureka JSON / device serials) is operator-gated on the svord
+connection — no live capability is PASS without captured evidence on a
+genuinely-up bridge (§11.4.6 / §11.4.69 / §11.4.108).
+<strong>Tally:</strong> 4 PASS-now · 16 operator-gated
+SKIP/OPERATOR-BLOCKED · 1 Won't-fix. Composes §11.4.3 / §11.4.6 /
+§11.4.10 / §11.4.28 / §11.4.44 / §11.4.45 / §11.4.56 / §11.4.68 /
+§11.4.69 / §11.4.107 / §11.4.108 / §11.4.112 / §11.4.115 / §11.4.122 /
+§11.4.133 / §11.4.153 / §11.4.167 / §11.4.169 / §11.4.174.</p>
+</body>
+</html>
