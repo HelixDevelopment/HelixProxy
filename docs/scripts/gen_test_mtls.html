@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>gen_test_mtls.sh</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">gen_test_mtls.sh</h1>
+</header>
+<h1
+id="gen_test_mtlssh--hermetic-mtls-test-cert--pg-password-generator">gen_test_mtls.sh
+— hermetic mTLS test-cert + pg-password generator</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Script:</strong> <a
+href="../../tests/observability/gen_test_mtls.sh"><code>tests/observability/gen_test_mtls.sh</code></a>
+<strong>Companion of:</strong> <a
+href="../../tests/observability/metrics_scrape_test.sh"><code>tests/observability/metrics_scrape_test.sh</code></a>
+→ <a
+href="run_proxy_challenges.md"><code>docs/scripts/run_proxy_challenges.md</code></a></p>
+<h2 id="overview">Overview</h2>
+<p><code>gen_test_mtls.sh</code> generates — with <code>openssl</code>,
+fully offline — the material the control-API needs to
+<strong>start</strong> so the conductor can boot the
+<code>proxy-api</code> service (<a
+href="../../docker-compose.observability.yml"><code>docker-compose.observability.yml</code></a>)
+and prove the plaintext Prometheus <code>/metrics</code> scrape
+live.</p>
+<p>The control-API is <strong>fail-closed</strong>: it will NOT start
+(and the plaintext <code>/metrics</code> listener therefore never binds)
+unless <code>buildTLSConfig</code> loads all three mTLS materials
+successfully. This is a FACT of the code, not an assumption:</p>
+<table>
+<thead>
+<tr>
+<th>Fact</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>buildTLSConfig</code> requires <strong>all three</strong>
+paths or it hard-errors</td>
+<td><code>control-plane/internal/api/tls.go:26-29</code></td>
+</tr>
+<tr>
+<td>Server cert+key loaded via
+<code>tls.LoadX509KeyPair(TLSCert, TLSKey)</code></td>
+<td><code>control-plane/internal/api/tls.go:31</code></td>
+</tr>
+<tr>
+<td>Client CA read + parsed into a <code>x509</code> pool (must contain
+≥1 usable cert)</td>
+<td><code>control-plane/internal/api/tls.go:36-43</code></td>
+</tr>
+<tr>
+<td><code>ClientAuth = tls.RequireAndVerifyClientCert</code> (mTLS, no
+plaintext fallback)</td>
+<td><code>control-plane/internal/api/tls.go:54</code></td>
+</tr>
+<tr>
+<td>Env → Config mapping
+(<code>CONTROL_API_TLS_CERT/KEY/CLIENT_CA</code>,
+<code>CONTROL_API_METRICS_ADDR</code>)</td>
+<td><code>control-plane/internal/api/api.go:26-32</code></td>
+</tr>
+<tr>
+<td><code>Start</code> calls <code>buildTLSConfig</code>
+<strong>first</strong>, then <code>startMetricsListener</code> — the
+metrics listener starts <strong>only after</strong> TLS config
+succeeds</td>
+<td><code>control-plane/internal/api/server.go:169-178</code></td>
+</tr>
+<tr>
+<td>The plaintext <code>/metrics</code> listener is a
+<strong>separate</strong> <code>net/http</code> server bound to
+<code>CONTROL_API_METRICS_ADDR</code> serving ONLY <code>/metrics</code>
+(no mTLS)</td>
+<td><code>control-plane/internal/api/server.go:133-158,110-114</code></td>
+</tr>
+</tbody>
+</table>
+<p>Because <code>Start</code> runs <code>buildTLSConfig</code> before
+binding the metrics socket, valid mTLS material is a hard precondition
+for the scrape — a broken/missing cert = no <code>/metrics</code> at
+all. That is exactly what this generator provisions.</p>
+<blockquote>
+<p>These are <strong>disposable test materials</strong> for a hermetic
+self-boot only. They are never operator/production keys and MUST NEVER
+be committed (§11.4.10 / §11.4.30).</p>
+</blockquote>
+<h3 id="san--cn-requirements-fact">SAN / CN requirements (FACT)</h3>
+<p>The generator mirrors the production test harness convention
+(<code>control-plane/internal/api/harness_test.go:138-143</code>):</p>
+<ul>
+<li><strong>Server cert</strong> — CN <code>helix-control-plane</code>;
+<code>extendedKeyUsage=serverAuth</code>; SANs
+<code>DNS:proxy-control-plane, DNS:localhost, IP:127.0.0.1, IP:::1</code>.
+The <code>proxy-control-plane</code> DNS name matches the container
+network alias / committed Prometheus scrape target
+(<code>docker-compose.observability.yml:99-101,143-144</code>).</li>
+<li><strong>Client cert</strong> — CN <code>admin@helix</code> (the
+audit actor); <code>extendedKeyUsage=clientAuth</code>; signed by the
+same test CA the api uses as its client-CA pool.</li>
+<li><strong>CA cert</strong> — self-signed <code>CA:TRUE</code>; signs
+both leaves. This CA cert IS the <code>helixproxy_api_client_ca</code>
+secret (the api verifies presented client certs against it).</li>
+</ul>
+<p><code>buildTLSConfig</code> (<code>tls.LoadX509KeyPair</code> +
+<code>AppendCertsFromPEM</code>) does <strong>not</strong> itself
+validate the server SAN against a hostname — the SANs matter to any mTLS
+<em>client</em> that dials the control port. The plaintext
+<code>/metrics</code> scrape needs no client cert and no SAN match (it
+is a separate non-TLS listener).</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>openssl</code> (≥1.1; verified on OpenSSL 3.5),
+<code>bash</code>, POSIX coreutils.</li>
+<li>No network, no containers, no root — pure local file
+generation.</li>
+</ul>
+<h2
+id="secret-name-mapping-fixed-by-the-observability-overlay">Secret-name
+mapping (FIXED by the observability overlay)</h2>
+<p>The four Podman-secret <strong>names</strong> are fixed by
+<code>docker-compose.observability.yml:63-71,116-130,137</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Podman secret</th>
+<th>Generated file</th>
+<th>Consumed as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>helixproxy_api_cert</code></td>
+<td><code>.mtls/server.crt</code></td>
+<td><code>CONTROL_API_TLS_CERT</code> →
+<code>/run/secrets/helixproxy_api_cert</code></td>
+</tr>
+<tr>
+<td><code>helixproxy_api_key</code></td>
+<td><code>.mtls/server.key</code></td>
+<td><code>CONTROL_API_TLS_KEY</code> →
+<code>/run/secrets/helixproxy_api_key</code></td>
+</tr>
+<tr>
+<td><code>helixproxy_api_client_ca</code></td>
+<td><code>.mtls/ca.crt</code></td>
+<td><code>CONTROL_API_TLS_CLIENT_CA</code> →
+<code>/run/secrets/helixproxy_api_client_ca</code></td>
+</tr>
+<tr>
+<td><code>helixproxy_pg_password</code></td>
+<td><code>.mtls/pg_password.txt</code></td>
+<td>Postgres DSN assembled at runtime (compose <code>command:</code>
+137-138)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="usage-examples">Usage examples</h2>
+<p>Generate (idempotent — re-runs reuse existing certs so a booted api
+is not invalidated; <code>--force</code> regenerates):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    bash tests/observability/gen_test_mtls.sh</span></code></pre></div>
+<p>Re-print only the <code>podman secret create</code> commands for
+already-generated material:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/observability/gen_test_mtls.sh <span class="at">--print-secrets-only</span></span></code></pre></div>
+<p>Output lands in the <strong>gitignored</strong>
+<code>tests/observability/.mtls/</code> (files <code>0600</code>, dir
+<code>0700</code>). The script prints the exact secret-create commands
+to stdout and NEVER prints key bytes or the pg-password value
+(§11.4.10).</p>
+<h2
+id="conductor-boot--scrape-sequence-owed-to-the-conductor-114119-single-owner">Conductor
+boot + scrape sequence (owed to the conductor; §11.4.119 single
+owner)</h2>
+<p>This script provisions material only — it boots nothing. The full
+live sequence:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1) Generate hermetic test material (writes tests/observability/.mtls/).</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/observability/gen_test_mtls.sh</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2) Create the 4 Podman secrets (rootless, §11.4.161) — exact commands are</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#    printed by step 1; run them (or `podman secret rm &lt;name&gt;` first if they exist):</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_cert      tests/observability/.mtls/server.crt</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_key       tests/observability/.mtls/server.key</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_client_ca tests/observability/.mtls/ca.crt</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_pg_password   tests/observability/.mtls/pg_password.txt</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3) Boot Postgres + Redis + the control-API on top of the base + dynamic stacks.</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="ex">podman-compose</span> <span class="at">-f</span> docker-compose.yml <span class="dt">\</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>               <span class="at">-f</span> docker-compose.dynamic.yml <span class="dt">\</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>               <span class="at">-f</span> docker-compose.observability.yml <span class="dt">\</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>               <span class="at">--profile</span> dynamic up <span class="at">-d</span> proxy-postgres proxy-redis proxy-api</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 4) Prove the live /metrics scrape (GREEN guard; asserts real exposition content).</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_OBSERVABILITY_STACK</span><span class="op">=</span>1 <span class="dt">\</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_METRICS_URL</span><span class="op">=</span>http://127.0.0.1:59090/metrics <span class="dt">\</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> tests/observability/metrics_scrape_test.sh</span></code></pre></div>
+<p>Port <code>59090</code> is <code>METRICS_PORT</code>
+(<code>.env.example:217</code>), published to loopback by
+<code>docker-compose.observability.yml:149</code>.
+<code>proxy-postgres</code> / <code>proxy-redis</code> live in the
+<code>dynamic</code> overlay; <code>proxy-api</code> is in the
+<code>dynamic</code> profile and <code>depends_on</code> both
+(<code>docker-compose.observability.yml:102-103,150-157</code>).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Secret already exists</strong> —
+<code>podman secret create</code> fails on a duplicate name;
+<code>podman secret rm &lt;name&gt;</code> first, then re-create (the
+script prints a reminder).</li>
+<li><strong><code>--print-secrets-only</code> before generating</strong>
+— exits non-zero with a hint (no fake success).</li>
+<li><strong>Postgres password characters</strong> — generated as hex
+(<code>openssl rand -hex 24</code>) so it is URL-safe inside the DSN
+(<code>postgres://user:PW@host/db</code>); no
+<code>@</code>/<code>/</code>/<code>+</code> to break URL parsing.</li>
+<li><strong>Missing <code>nice</code>/<code>ionice</code></strong> — the
+self-re-exec degrades gracefully (nice-only, or no cap) rather than
+failing.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Self-re-execs once under <code>nice -n 19 ionice -c 3</code> (§12.6
+host resource cap).</li>
+<li><code>umask 077</code>, <code>mkdir -p</code> +
+<code>chmod 700</code> the output dir (§11.4.10).</li>
+<li>Generates: test CA (P-256, <code>CA:TRUE</code>) → server leaf
+(serverAuth + SANs) → client leaf (clientAuth) → random pg password
+(hex).</li>
+<li>Verifies the material fail-closed: server/client certs parse, and
+the client cert <code>openssl verify -CAfile ca.crt</code> succeeds
+(mirrors what the api's client-CA pool will do).</li>
+<li>Prints the 4
+<code>podman secret create &lt;name&gt; &lt;path&gt;</code> commands
+(paths only).</li>
+</ol>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><a
+href="../../tests/observability/metrics_scrape_test.sh"><code>tests/observability/metrics_scrape_test.sh</code></a>
+— the RED/GREEN live scrape guard this generator enables.</li>
+<li><a
+href="run_proxy_challenges.md"><code>docs/scripts/run_proxy_challenges.md</code></a>
+— the proxy Challenge runner runbook.</li>
+</ul>
+<h2 id="sources-verified">Sources verified</h2>
+<ul>
+<li><code>control-plane/internal/api/tls.go</code>, <code>api.go</code>,
+<code>server.go</code> (read 2026-07-01) — cert env vars, fail-closed
+requirements, metrics-listener ordering.</li>
+<li><code>control-plane/internal/api/harness_test.go</code> (read
+2026-07-01) — SAN/CN convention.</li>
+<li><code>docker-compose.observability.yml</code> (read 2026-07-01) —
+secret names, ports, service dependencies.</li>
+</ul>
+<p><strong>Last verified date:</strong> 2026-07-01</p>
+</body>
+</html>
