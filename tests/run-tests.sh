@@ -871,6 +871,76 @@ test_vpn_lan_bridge() {
     fi
 }
 
+# VPN-LAN Phase 1 — SSRF carve-out teeth. Unlike the bridge-gated protocol tests
+# (which correctly SKIP when the svord bridge is down), this one is AUTONOMOUS:
+# it proves the Dante SOCKS SSRF floor survives the narrow VPN-subnet carve-out
+# with NO live VPN and the live sockd.conf READ-ONLY (§11.4.119). So it belongs
+# in the standing suite as permanent regression coverage (§11.4.135) and runs
+# GREEN now. The SSRF_MUT=1 run is the suite-level teeth: it proves the SSRF
+# teeth actually catch a collapsed floor (§11.4.115 / §1.1) rather than rubber-
+# stamping — a security-critical guard for the widen-egress SSRF surface (§4).
+test_vpn_lan_ssrf() {
+    local ssrf="$SCRIPT_DIR/vpn_lan/ssrf_carveout_teeth.sh"
+    if [[ ! -f "$ssrf" ]]; then
+        test_result "VPN-LAN SSRF carve-out teeth" "SKIP" "ssrf_carveout_teeth.sh absent (Phase 1 not present) §11.4.3"
+        return
+    fi
+    local _out _rc=0 _pass _fail
+    _out=$(sh "$ssrf" 2>&1) || _rc=$?
+    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:')
+    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:')
+    if [[ $_rc -eq 0 && $_pass -ge 3 && $_fail -eq 0 ]]; then
+        test_result "VPN-LAN SSRF carve-out teeth (floor blocks metadata+loopback+all RFC1918; narrow carve floor-preserving)" "PASS"
+    elif printf '%s\n' "$_out" | grep -q '^SKIP:' && [[ $_fail -eq 0 && $_pass -eq 0 ]]; then
+        test_result "VPN-LAN SSRF carve-out teeth (SSRF floor config absent — honest SKIP §11.4.3)" "SKIP" \
+            "$(printf '%s\n' "$_out" | grep -m1 '^SKIP:')"
+    else
+        test_result "VPN-LAN SSRF carve-out teeth" "FAIL" \
+            "expected rc=0 + >=3 PASS + 0 FAIL (rc=$_rc pass=$_pass fail=$_fail): ${_out}"
+    fi
+    local _mout _mrc=0
+    _mout=$(SSRF_MUT=1 sh "$ssrf" 2>&1) || _mrc=$?
+    if [[ $_mrc -eq 0 ]] && printf '%s\n' "$_mout" | grep -q '^PASS:'; then
+        test_result "VPN-LAN SSRF teeth catch golden-bad floor-collapse (not a bluff gate §11.4.115/§1.1)" "PASS"
+    else
+        test_result "VPN-LAN SSRF teeth catch golden-bad floor-collapse (not a bluff gate §11.4.115/§1.1)" "FAIL" \
+            "SSRF_MUT=1 did not catch the golden-bad fixtures (rc=$_mrc): ${_mout}"
+    fi
+}
+
+# VPN-LAN Phase 12 — ingress-allowlist teeth. Autonomous (pure policy logic, no
+# bridge): proves the VPN→proxy INGRESS surface (the bidirectional mandate) is
+# default-deny + narrow-allowlist. Permanent §11.4.135 regression coverage for
+# the ingress security surface, the mirror of the egress SSRF floor.
+# NOTE the mutation rc convention is INVERTED vs the SSRF teeth: INGRESS_MUT=1
+# exits 1 when it CAUGHT the golden-bad allow-all/wide policy (a slip-through
+# would exit 2, loud and != 1).
+test_vpn_lan_ingress() {
+    local ing="$SCRIPT_DIR/vpn_lan/ingress_allowlist_teeth.sh"
+    if [[ ! -f "$ing" ]]; then
+        test_result "VPN-LAN ingress-allowlist teeth" "SKIP" "ingress_allowlist_teeth.sh absent (Phase 12 not present) §11.4.3"
+        return
+    fi
+    local _out _rc=0 _pass _fail
+    _out=$(sh "$ing" 2>&1) || _rc=$?
+    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:')
+    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:')
+    if [[ $_rc -eq 0 && $_pass -ge 4 && $_fail -eq 0 ]]; then
+        test_result "VPN-LAN ingress-allowlist teeth (default-deny; only exact (host,port) permitted; host+port narrow)" "PASS"
+    else
+        test_result "VPN-LAN ingress-allowlist teeth" "FAIL" \
+            "expected rc=0 + >=4 PASS + 0 FAIL (rc=$_rc pass=$_pass fail=$_fail): ${_out}"
+    fi
+    local _mrc=0
+    INGRESS_MUT=1 sh "$ing" >/dev/null 2>&1 || _mrc=$?
+    if [[ $_mrc -eq 1 ]]; then
+        test_result "VPN-LAN ingress teeth catch golden-bad allow-all/wide policy (not a bluff gate §11.4.115/§1.1)" "PASS"
+    else
+        test_result "VPN-LAN ingress teeth catch golden-bad allow-all/wide policy (not a bluff gate §11.4.115/§1.1)" "FAIL" \
+            "INGRESS_MUT=1 expected rc=1 (teeth caught the golden-bad), got rc=$_mrc"
+    fi
+}
+
 #######################################
 # Print summary
 #######################################
@@ -912,6 +982,8 @@ main() {
     test_regression_guards
     test_security_guards
     test_vpn_lan_bridge
+    test_vpn_lan_ssrf
+    test_vpn_lan_ingress
     test_environment
     test_directories
     test_scripts
