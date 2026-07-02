@@ -423,7 +423,7 @@ rather than fabricated.
 <!-- doc-link-section:begin -->
 | Document | Last modified | Revision | Markdown | HTML | PDF |
 |----------|---------------|----------|----------|------|-----|
-| Continuation | 2026-07-02T13:29:30Z | 24 | [md](docs/CONTINUATION.md) | [html](docs/CONTINUATION.html) | [pdf](docs/CONTINUATION.pdf) |
+| Continuation | 2026-07-02T19:36:15Z | 28 | [md](docs/CONTINUATION.md) | [html](docs/CONTINUATION.html) | [pdf](docs/CONTINUATION.pdf) |
 | Feature Status | 2026-07-01T15:30:00Z | 3 | [md](docs/features/Status.md) | [html](docs/features/Status.html) | [pdf](docs/features/Status.pdf) |
 | Feature Status Summary | 2026-07-01T15:30:00Z | 3 | [md](docs/features/Status_Summary.md) | [html](docs/features/Status_Summary.html) | [pdf](docs/features/Status_Summary.pdf) |
 | Hardening Status | 2026-07-02T12:57:04Z | 6 | [md](docs/design/hardening/Status.md) | [html](docs/design/hardening/Status.html) | [pdf](docs/design/hardening/Status.pdf) |
