@@ -157,6 +157,14 @@ if [ "${1:-}" = "--inner" ]; then
 
     # normal: the real test must produce a genuine eureka PASS + exit 0
     if [ "$_trc" = 0 ] && grep -Eq '^PASS:.*eureka_info' "$_t_out"; then
+        # §11.4.111 negative control (self-evidencing): the eureka peer binds the
+        # WG-only overlay 10.10.0.2 ONLY, so the SAME GET aimed from netns A at the
+        # UNDERLAY peer IP 10.9.0.2:8008 (veth-reachable, nothing listening) MUST
+        # fail. A success would mean the eureka PASS was NOT gated by the tunnel.
+        _neg=0
+        timeout 6 python3 -c 'import urllib.request; urllib.request.urlopen("http://10.9.0.2:8008/setup/eureka_info", timeout=3).read()' >/dev/null 2>&1 || _neg=$?
+        [ "$_neg" != 0 ] || fail "NEG: underlay http://10.9.0.2:8008/setup/eureka_info unexpectedly answered — eureka traffic is NOT tunnel-gated"
+        log "NEG-OK: underlay 10.9.0.2:8008 refused/failed (rc=$_neg) — the eureka peer is overlay-only; the eureka PASS required the tunnel (§11.4.111)"
         log "H2_PASS: the UNMODIFIED chromecast_dial.sh eureka control leg produced a REAL PASS over the hermetic WireGuard tunnel (bridge_require flipped SKIP->UP; §11.4.52 promotion)"
         exit 0
     fi

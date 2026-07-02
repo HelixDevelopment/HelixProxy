@@ -266,6 +266,14 @@ PYEOF
 
     # normal: the real test must produce a genuine FTP PASS + exit 0
     if [ "$_trc" = 0 ] && grep -Eq '^PASS:.*FTP passive' "$_t_out"; then
+        # §11.4.111 negative control (self-evidencing): the FTP peer binds the WG-only
+        # overlay 10.10.0.2 ONLY, so the SAME passive connect aimed from netns A at the
+        # UNDERLAY peer IP 10.9.0.2:2121 (veth-reachable, nothing listening) MUST fail.
+        # A success would mean the FTP PASS was NOT gated by the tunnel.
+        _neg=0
+        curl --silent --show-error --ftp-pasv --connect-timeout 3 --max-time 6 "ftp://10.9.0.2:2121/" >/dev/null 2>&1 || _neg=$?
+        [ "$_neg" != 0 ] || fail "NEG: underlay ftp://10.9.0.2:2121/ unexpectedly listed — FTP traffic is NOT tunnel-gated"
+        log "NEG-OK: underlay ftp://10.9.0.2:2121/ refused/failed (rc=$_neg) — the FTP peer is overlay-only; the FTP PASS required the tunnel (§11.4.111)"
         log "FT_PASS: the UNMODIFIED ftp_sftp_webdav.sh FTP leg produced a REAL PASS over the hermetic WireGuard tunnel (bridge_require flipped SKIP->UP; §11.4.52 promotion)"
         exit 0
     fi

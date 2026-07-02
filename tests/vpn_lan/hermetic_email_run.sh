@@ -545,6 +545,16 @@ MAILSRV_PY
        && grep -Eq '^PASS:.*pop3s_retrieve_roundtrip' "$_t_out" \
        && grep -Eq '^PASS:.*open_relay_refused' "$_t_out" \
        && ! grep -Eq '^FAIL:' "$_t_out"; then
+        # §11.4.111 negative control (self-evidencing): the mail peer binds the WG-only
+        # overlay 10.10.0.2 ONLY, so the SAME implicit-TLS connect aimed from netns A at
+        # the UNDERLAY peer IP 10.9.0.2:$SUB_PORT (veth-reachable, nothing listening)
+        # MUST fail. A success would mean the mail PASSes were NOT gated by the tunnel.
+        # No credentials are sent (a bare QUIT), so evidence never carries the password
+        # (§11.4.10).
+        _neg=0
+        printf 'QUIT\n' | timeout 6 openssl s_client -connect "10.9.0.2:$SUB_PORT" -quiet -crlf >/dev/null 2>&1 || _neg=$?
+        [ "$_neg" != 0 ] || fail "NEG: underlay TLS 10.9.0.2:$SUB_PORT unexpectedly connected — the mail peer is NOT tunnel-gated"
+        log "NEG-OK: underlay TLS 10.9.0.2:$SUB_PORT refused/failed (rc=$_neg) — the mail peer binds the overlay 10.10.0.2 ONLY; the mail PASSes required the tunnel (§11.4.111)"
         log "HE_PASS: the UNMODIFIED email_roundtrip.sh ran AUTONOMOUSLY over the hermetic WireGuard tunnel against a pure-stdlib TLS mail peer — real IMAPS LIST + authenticated SMTP submission + POP3S send->retrieve round-trip + open-relay refusal, no operator/Mullvad (bridge_require flipped SKIP->UP; §11.4.52 promotion)"
         exit 0
     fi

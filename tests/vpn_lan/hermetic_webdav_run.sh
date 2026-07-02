@@ -382,6 +382,15 @@ PROXY_PY
 
     # normal: the real test's WebDAV leg must produce a genuine 207 PASS + exit 0.
     if [ "$_trc" = 0 ] && grep -Eq '^PASS:.*WebDAV' "$_t_out"; then
+        # §11.4.111 negative control (self-evidencing): the WebDAV origin binds the
+        # WG-only overlay 10.10.0.2 ONLY, so the SAME PROPFIND aimed from netns A
+        # DIRECTLY at the UNDERLAY origin IP 10.9.0.2:8080 (veth-reachable, nothing
+        # listening — bypassing the proxy so the probe is a clean origin connect) MUST
+        # fail. A success would mean the 207 PASS was NOT gated by the tunnel.
+        _neg=0
+        curl --silent --show-error -X PROPFIND -H 'Depth: 0' --connect-timeout 3 --max-time 6 http://10.9.0.2:8080/dav/ >/dev/null 2>&1 || _neg=$?
+        [ "$_neg" != 0 ] || fail "NEG: underlay http://10.9.0.2:8080/dav/ unexpectedly answered — the WebDAV origin is NOT tunnel-gated"
+        log "NEG-OK: underlay http://10.9.0.2:8080/dav/ refused/failed (rc=$_neg) — the WebDAV origin binds the overlay 10.10.0.2 ONLY; the 207 PASS required the tunnel (§11.4.111)"
         log "HW_PASS: the UNMODIFIED ftp_sftp_webdav.sh WebDAV leg produced a REAL 207 PASS over the hermetic WireGuard tunnel through a pure-stdlib forward proxy (bridge_require flipped SKIP->UP; §11.4.52 promotion)"
         exit 0
     fi

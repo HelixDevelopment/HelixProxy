@@ -151,9 +151,26 @@ if [ "${1:-}" = "--inner" ]; then
     log "peer-served nonce (over WG): $NONCE"
     log "fetched body               : $BODY"
     log "sha256 source / fetched     : $SHA_SRC / $SHA_GOT"
-    rm -rf "$SRVDIR" 2>/dev/null || true
     { [ "$SHA_SRC" = "$SHA_GOT" ] && [ "$BODY" = "$NONCE" ]; } || fail "sha256/body mismatch"
     { [ "$HS" != 0 ] && [ "$RX" -gt 0 ] 2>/dev/null && [ "$TX" -gt 0 ] 2>/dev/null; } || fail "WG handshake/transfer not confirmed (hs=$HS rx=$RX tx=$TX)"
+
+    # §11.4.111 negative control (self-evidencing tunnel-gating): the payload server
+    # binds the WG-only overlay 10.10.0.2 ONLY, so the SAME fetch aimed from netns A
+    # at the UNDERLAY peer IP 10.9.0.2:8080 (reachable over the veth, nothing
+    # listening there) MUST fail. A success would mean the payload was NOT gated by
+    # the tunnel (a real defect) — fail-closed. This proves the positive fetch to
+    # 10.10.0.2 could only have traversed wg0.
+    _neg=0
+    timeout 6 python3 -c 'import urllib.request; urllib.request.urlopen("http://10.9.0.2:8080/payload.txt", timeout=3).read()' >/dev/null 2>&1 || _neg=$?
+    [ "$_neg" != 0 ] || fail "NEG: underlay http://10.9.0.2:8080/payload.txt unexpectedly served the payload — traffic is NOT tunnel-gated"
+    log "NEG-OK: underlay 10.9.0.2:8080 fetch refused/failed (rc=$_neg) — the payload server is overlay-only; reaching it over 10.10.0.2 required the tunnel (§11.4.111)"
+    # NOTE: SRVDIR cleanup is deferred to HERE (past the §11.4.111 negative control) on
+    # purpose — if payload.txt is removed before the control, a reachable underlay would
+    # 404 and the probe would fail regardless of tunnel-gating, making NEG-OK a tautology
+    # (§11.4.107(10)). Keeping the file present at probe time makes the control load-bearing:
+    # underlay-reachable ⇒ HTTP 200 ⇒ _neg=0 ⇒ fail; overlay-only ⇒ refused ⇒ _neg≠0 ⇒ NEG-OK.
+    rm -rf "$SRVDIR" 2>/dev/null || true
+
     log "WG_PASS: real HTTP payload round-tripped over an encrypted kernel-WireGuard tunnel between 2 unprivileged netns, sha256 + handshake + transfer verified"
     exit 0
 fi

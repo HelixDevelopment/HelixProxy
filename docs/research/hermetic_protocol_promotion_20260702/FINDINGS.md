@@ -1,7 +1,7 @@
 # Hermetic protocol-promotion research — pure-python peer servers over a kernel-WireGuard netns tunnel
 
-**Revision:** 2
-**Last modified:** 2026-07-02T05:34:25Z
+**Revision:** 3
+**Last modified:** 2026-07-02T06:20:09Z
 **Status:** Research findings (deep multi-angle web research per §11.4.150 / §11.4.99).
 No code changed by the research pass. Authority: inherits `constitution/Constitution.md` per §11.4.35.
 **Scope:** strengthen the hermetic WireGuard test harness so operator-gated VPN-LAN
@@ -221,6 +221,53 @@ work**, grounded in the cited standards.
    (underlay) negative control**, and an optional `AF_PACKET` underlay-sniff differential
    as the rock-solid non-leak proof (§11.4.123).
 
+## 7. Underlay-sniff differential — the rock-solid non-leak proof (PLANNED, not yet implemented)
+
+Status (§11.4.6): DESIGN only — no harness implements this yet; claim no unshipped behaviour.
+This is the strongest hardening left for the hermetic stream (FINDINGS §5 point 5), and the
+natural successor to the wrong-destination negative control (task #62): that control proves
+the peer service is *reachable* only via the overlay; the underlay-sniff differential proves
+the *payload actually travelled encrypted* and never leaked in cleartext on the wire.
+
+**The gap it closes.** Today's oracles are (a) reachability-as-proof (overlay-only bind +
+underlay-destination negative), (b) `wg show` handshake/rx-tx counters, (c) the `WG_MUT=badkey`
+golden-bad (bad key ⇒ no traversal). None of them *reads the bytes on the underlay* to confirm
+the plaintext nonce is absent while ciphertext flows — a different-domain oracle (§11.4.107(2))
+and the canonical WireGuard self-audit method.
+
+**Design.** During the positive round-trip, in the CLIENT netns, capture on the **underlay**
+veth (the interface carrying the encrypted WG UDP, `10.9.0.x`) for the fetch window, then
+assert BOTH:
+1. **Ciphertext present** — ≥1 UDP datagram to the WG listen port whose payload begins with
+   the WireGuard transport-data type prefix `0x04 00 00 00` (type-4 data message; handshake
+   init/resp are types 1/2). Proves the tunnel actually carried traffic on the underlay.
+2. **Plaintext absent** — the per-run nonce/token (the same fresh value the §11.4.107
+   not-stale self-fetch already uses) does **NOT** appear anywhere in the raw captured
+   underlay bytes. Proves the payload was encrypted, not leaked.
+
+**Feasibility (rootless, verified by research §11.4.99).** An `AF_PACKET` raw socket requires
+`CAP_NET_RAW` *in the user namespace governing the netns* — which the harness's
+`unshare -Urnm` root-in-userns already holds for its OWN veth, so the capture runs with **zero
+host privilege / no install** (matches the whole hermetic design). Two implementation paths:
+`tcpdump -i <veth> -nn -w <pcap>` if present (SKIP-with-reason §11.4.3 if not), or a pure-python
+`socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))` bound to the veth (no dependency — the same
+zero-install stance as the stdlib peers). Capture to a bounded buffer / short `timeout` window
+(§12.6), teardown in the existing `trap`.
+
+**Anti-bluff golden-bad (§11.4.107(10)) — this analyzer MUST be self-validated.** A sniff that
+only ever runs against the encrypted path is a tautology (the nonce is *never* there). The
+load-bearing control: a golden-bad mode that routes the SAME fetch over a **plaintext** path on
+the underlay (e.g. fetch the peer's *underlay* HTTP directly, or `wg0` down + peer temporarily
+bound on `10.9.0.x`) so the nonce **DOES** appear in the captured cleartext → the "plaintext
+absent" assertion MUST then FAIL. Only if the golden-bad makes it fail is the sniff proven to
+gate anything. Pairs with a §1.1 meta-mutation.
+
+**Honest boundary (§11.4.6).** This proves non-leak on the LOCAL simulated underlay veth, NOT
+on the real Mullvad WAN path (that stays the §11.4.3 operator-gated confirmation). `AF_PACKET`
+in a userns has documented kernel-attack-surface history (Project Zero packet-socket CVEs) — we
+only *read* our own netns's veth, never the host's interfaces (§11.4.174). Scope it as ONE
+harness leg (start with `hermetic_wg_roundtrip.sh`, the substrate) before fanning out.
+
 ## Sources verified
 
 All URLs accessed **2026-07-02**.
@@ -259,6 +306,12 @@ All URLs accessed **2026-07-02**.
 - RFC 4954 (SMTP AUTH — AUTH LOGIN): https://www.rfc-editor.org/rfc/rfc4954
 - RFC 3501 (IMAP4rev1 — LOGIN/LIST/SELECT/FETCH): https://www.rfc-editor.org/rfc/rfc3501
 - RFC 1939 (POP3 — USER/PASS/RETR): https://www.rfc-editor.org/rfc/rfc1939
+- Project Zero — Exploiting the Linux kernel via packet sockets (AF_PACKET needs CAP_NET_RAW, obtainable in a userns): https://projectzero.google/2017/05/exploiting-linux-kernel-via-packet.html
+- man7 raw(7) / packet(7) — raw + AF_PACKET socket semantics: https://www.man7.org/linux/man-pages/man7/raw.7.html
+- mwalle/rawsocket — raw sockets as an unprivileged user (userns): https://github.com/mwalle/rawsocket
+- nickb.dev — Viewing WireGuard traffic with tcpdump (encrypted on the wire; `0x04` data-message prefix): https://nickb.dev/blog/viewing-wireguard-traffic-with-tcpdump/
+- Pro Custodibus — Troubleshooting WireGuard with tcpdump (capture underlay vs `wg0`): https://www.procustodibus.com/blog/2023/05/troubleshooting-wireguard-with-tcpdump/
+- IVPN — Self-audit your VPN Pt2 (confirm no plaintext leaks on the physical interface): https://www.ivpn.net/privacy-guides/self-audit-series-part2/
 - Podman docs — podman-unshare: https://docs.podman.io/en/latest/markdown/podman-unshare.1.html
 - slirp4netns: https://github.com/rootless-containers/slirp4netns
 - passt/pasta: https://passt.top/passt/about/
