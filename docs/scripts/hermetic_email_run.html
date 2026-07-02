@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>hermetic_email_run</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="hermetic_email_runsh--companion-guide-11418"><code>hermetic_email_run.sh</code>
+— companion guide (§11.4.18)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-02T00:00:00Z <strong>Status:</strong> H2.email for the hermetic
+WireGuard test harness (<a
+href="../design/vpn_lan_access/hermetic_wg_test_harness.md">design</a>)
+— the fourth §11.4.52 <strong>promotion</strong> of an operator-gated
+protocol test to autonomous (after the <a
+href="hermetic_bridge_run.md">Chromecast eureka leg</a>, the <a
+href="hermetic_ftp_run.md">FTP leg</a>, and the <a
+href="hermetic_webdav_run.md">WebDAV leg</a>). Authority: inherits
+<code>constitution/Constitution.md</code> per §11.4.35.</p>
+<h2 id="overview">Overview</h2>
+<p><code>tests/vpn_lan/hermetic_email_run.sh</code> promotes the
+operator-gated <code>tests/vpn_lan/email_roundtrip.sh</code> to run
+<strong>autonomously</strong> (§11.4.52). That test runs four scored
+checks against a VPN-internal mail server:</p>
+<ul>
+<li><strong>T4.1 IMAPS (993)</strong> — <code>LOGIN</code> +
+<code>LIST "" "*"</code> → PASS on a real <code>^\* LIST </code>
+line.</li>
+<li><strong>T4.2 SMTP submission (465 implicit-TLS)</strong> —
+<code>EHLO</code> → <code>AUTH LOGIN</code> → <code>MAIL</code> →
+<code>RCPT</code> → <code>DATA</code> (body carries
+<code>token=&lt;tok&gt;</code>) → PASS on a <strong>2xx</strong>
+end-of-DATA code (sets the round-trip token).</li>
+<li><strong>T4.3 POP3S (995)</strong> —
+<code>USER</code>/<code>PASS</code>/<code>STAT</code>/<code>RETR</code>
+→ PASS <strong>iff</strong> the retrieved body contains the T4.2 token
+(a real send→retrieve round-trip; missing ⇒ <strong>FAIL</strong>, not
+SKIP).</li>
+<li><strong>T4.4 open-relay negative (§4.3)</strong> — an
+<strong>unauthenticated</strong> relay to an external domain → PASS
+<strong>iff</strong> <code>MAIL</code>/<code>RCPT</code> is refused
+(4xx/5xx); a 2xx acceptance of the external RCPT is a
+<strong>FAIL</strong> (helix_proxy must never be an open relay).</li>
+<li><strong>T4.5 reverse leg</strong> — documented client→server-only
+N/A, always an honest SKIP.</li>
+</ul>
+<p>Because email connects <strong>directly</strong> (openssl
+<code>s_client</code> to <code>host:port</code>), the hermetic promotion
+needs <strong>no forward proxy</strong> (unlike the WebDAV leg). Inside
+one <code>unshare -Urnm</code> it: (1) stands up the H0-full
+kernel-WireGuard tunnel between two unprivileged netns (veth
+<code>10.9.0.x</code> underlay + real WG overlay
+<code>10.10.0.x</code>); (2) runs ONE pure-python3-stdlib TLS mail peer
+in netns B bound to the WG-only overlay <code>10.10.0.2</code> —
+implicit-TLS <strong>SMTP submission</strong>, <strong>POP3S</strong>,
+and <strong>IMAPS</strong> sharing one in-memory mailbox
+(<code>ssl.SSLContext(PROTOCOL_TLS_SERVER)</code> +
+<code>load_cert_chain</code> wrapping each listener; hand-rolled line
+handlers — <code>smtpd</code>/<code>asyncore</code> were removed in
+py3.12); (3) points the bridge contract + <code>HELIX_MAIL_*</code> at
+that peer; (4) runs the <strong>UNMODIFIED</strong>
+<code>email_roundtrip.sh</code> inside netns A, where its
+<code>bridge_require</code> gate flips SKIP→UP and its four legs produce
+<strong>real PASSes</strong> over the encrypted tunnel — no operator, no
+Mullvad, no live VPN. <strong>Zero host installs</strong> (§11.4.122):
+the peer is stdlib (<code>ssl</code> + <code>socket</code> +
+<code>threading</code>), the client is <code>openssl</code> +
+<code>base64</code>.</p>
+<h3 id="privileged-binds-with-an-honest-fallback-1146">Privileged binds,
+with an honest fallback (§11.4.6)</h3>
+<p><code>unshare -Urnm</code> maps our uid → root inside the user
+namespace, so the peer holds <code>CAP_NET_BIND_SERVICE</code> in netns
+B and the RFC 8314 implicit-TLS ports <strong>465/995/993</strong> bind
+directly (verified: the runs below all report
+<code>SMTP=465 POP3S=995 IMAPS=993</code>). If a privileged bind ever
+fails at runtime the peer falls back to high ports
+(<code>14650</code>/<code>19950</code>/<code>19930</code>) and
+<strong>publishes the actual bound ports</strong> to a ports file the
+harness reads before setting <code>HELIX_MAIL_*</code> — it
+<strong>detects, never guesses</strong>.</p>
+<h2 id="how-the-bridge-contract-is-pointed-at-the-hermetic-peer">How the
+bridge contract is pointed at the hermetic peer</h2>
+<table>
+<thead>
+<tr>
+<th>var</th>
+<th>hermetic value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELIX_SVORD_DIR</code></td>
+<td>a throwaway dir (non-empty, satisfies <code>bridge_load</code>)</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_CONNECT</code> / <code>_DISCONNECT</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HEALTH</code></td>
+<td>a <strong>real</strong> TCP connect to <code>10.10.0.2:465</code>
+over the tunnel</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_SUBNET</code></td>
+<td><code>10.10.0.0/24</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HOST</code></td>
+<td><code>10.10.0.2</code></td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_HOST</code></td>
+<td><code>10.10.0.2</code></td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_IMAPS_PORT</code> / <code>_POP3S_PORT</code> /
+<code>_SUBMISSION_PORT</code></td>
+<td>the actual bound ports
+(<code>993</code>/<code>995</code>/<code>465</code>, or the high-port
+fallbacks)</td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_SUBMISSION_TLS</code></td>
+<td><code>implicit</code> (RFC 8314)</td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_RELAY_PROBE_PORT</code> /
+<code>_RELAY_PROBE_TLS</code></td>
+<td>the submission port / <code>implicit</code></td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_EXTERNAL_RELAY_DOMAIN</code></td>
+<td><code>example.com</code></td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_USER</code></td>
+<td><code>helix</code></td>
+</tr>
+<tr>
+<td><code>HELIX_MAIL_PASS</code></td>
+<td>a <strong>fresh per-run random</strong> (never logged,
+§11.4.10)</td>
+</tr>
+</tbody>
+</table>
+<p>The peer binds ONLY the overlay <code>10.10.0.2</code> (never the
+underlay <code>10.9.0.2</code> / <code>0.0.0.0</code>), so reaching it
+from netns A is possible only through <code>wg0</code> — a successful
+TLS dialog is itself proof of tunnel traversal (§11.4.111).
+<code>HELIX_MAIL_FROM</code>/<code>_TO</code> are deliberately
+<strong>unset</strong> — the promoted test defaults them to
+<code>HELIX_MAIL_USER</code>. <code>HELIX_BRIDGE_MODE=hermetic</code>
+documents intent; the promotion is realised through the contract
+vars.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tests/vpn_lan/hermetic_email_run.sh</span>                    <span class="co"># PASS / SKIP / FAIL</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">MAIL_MUT</span><span class="op">=</span>openrelay <span class="ex">tests/vpn_lan/hermetic_email_run.sh</span> <span class="co"># §1.1 golden-bad (T4.4)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">MAIL_MUT</span><span class="op">=</span>droptoken <span class="ex">tests/vpn_lan/hermetic_email_run.sh</span> <span class="co"># §1.1 golden-bad (T4.3)</span></span></code></pre></div>
+<p>Evidence:
+<code>qa-results/vpn_lan/hermetic_email/&lt;UTC-ts&gt;_&lt;pass|mut_*&gt;_&lt;pid&gt;/run.evidence</code>
+(+ <code>selffetch.smtp.txt</code> / <code>selffetch.pop3.txt</code> /
+<code>selffetch.relay.txt</code> and the promoted test's captured
+<code>email_roundtrip.stdout</code>; the promoted test also writes its
+own <code>qa-results/vpn_lan/phase4/.../</code>).</p>
+<h2 id="anti-bluff-design">Anti-bluff design</h2>
+<p>The normal PASS is emitted <strong>only</strong> when the promoted
+<code>email_roundtrip.sh</code> exits 0 <strong>and</strong> its stdout
+carries real <code>^PASS:</code> lines for <strong>all four</strong>
+scored legs (<code>imaps_login_list</code>,
+<code>smtp_submission_send</code>,
+<code>pop3s_retrieve_roundtrip</code>, <code>open_relay_refused</code>)
+<strong>with zero <code>^FAIL:</code></strong> — a SKIP-only run can
+never satisfy that (the test's bridge-UP PASS is emitted to
+<code>/dev/null</code>, so <code>^PASS:</code> lines are real scored
+legs only).</p>
+<p><strong>Two golden-bad teeth (§1.1 / §11.4.107(10)).</strong> Each
+makes the UNMODIFIED test <strong>FAIL-closed</strong>
+(<code>_trc != 0</code> <strong>and</strong> a targeted
+<code>^FAIL:</code> line), and the harness PASSes in mutation mode
+<strong>only</strong> when it confirms that:</p>
+<ul>
+<li><code>MAIL_MUT=openrelay</code> → the peer accepts the
+unauthenticated external RCPT (<code>250</code>) → the test's
+<strong>T4.4</strong> open-relay guard fires
+(<code>FAIL: open_relay_refused ... OPEN RELAY — unauthenticated external RCPT accepted (code 250)</code>),
+proving the §4.3 guard is genuinely exercised, not a rubber-stamp.</li>
+<li><code>MAIL_MUT=droptoken</code> → the peer stores the message
+<strong>without</strong> the round-trip token → the test's
+<strong>T4.3</strong> POP3S retrieve fires
+(<code>FAIL: pop3s_retrieve_roundtrip ... sent token '…' not retrieved via POP3S after retries</code>),
+proving the real send→retrieve assertion is genuinely exercised.</li>
+</ul>
+<p>Each tooth makes <strong>only its own target leg</strong> FAIL; the
+other three legs still PASS in mutation mode, so the FAIL is
+unambiguously attributable to the mutation.</p>
+<p><strong>Self-fetch cross-check (§11.4.107 not-stale).</strong> Before
+running the promoted test the harness proves the mutation state itself
+over the tunnel: normal → an authenticated SMTP submit
+(<code>235</code>) → POP3S <code>RETR</code> byte round-trip of
+<strong>this run's fresh nonce</strong> must succeed;
+<code>droptoken</code> → that same round-trip must be
+<strong>broken</strong> (nonce absent); <code>openrelay</code> → an
+unauthenticated external RCPT must be <strong>accepted</strong>
+(<code>2xx</code>). This ties the eventual verdict to a real encrypted
+round-trip / a live mutation of <em>our</em> data, decoupled from the
+downstream grep string and forbidding a stale/wrong peer. A
+<strong>coupling-contract guard</strong> greps the promoted test for all
+four scored-leg description tokens, so a future rename fails with a
+clear diagnostic here.</p>
+<p><strong>The TLS <code>close_notify</code> gotcha (unique to the email
+leg).</strong> The peer sends a TLS close_notify
+(<code>tls.unwrap()</code> <strong>before</strong>
+<code>close()</code>). The UNMODIFIED test's <code>tcp_open</code>
+reachability probe is
+<code>printf 'QUIT\n' | openssl s_client -quiet ... &amp;&amp; return 0</code>
+(this host has <strong>no <code>nc</code></strong>, so it falls back to
+openssl), so each leg's reachability hinges on openssl's <strong>exit
+code</strong>. A bare <code>close()</code> leaves openssl with
+<code>unexpected eof while reading</code> → exit 1 → the leg would
+silently <strong>SKIP</strong> instead of PASS. FTP/WebDAV drive
+<code>curl</code>, not openssl, so they never hit this — it is specific
+to the email leg. <strong>Additionally</strong>, because
+<code>openssl s_client -quiet</code> implies <code>-ign_eof</code> (it
+never closes on stdin EOF — the <em>server</em> must close first), the
+IMAPS handler closes cleanly on the probe's bare <code>QUIT</code> (IMAP
+has no bare QUIT — it uses <code>tag LOGOUT</code>); without that the
+probe would hang to <code>timeout</code> → exit ≠ 0 → the IMAPS leg
+would SKIP. Both were caught by the §11.4.50 evidence, root-caused per
+§11.4.102, and fixed in the peer.</p>
+<p><strong>Host-safety self-bounding.</strong> The peer runs under
+<code>nsenter … timeout -k 2 90</code> (inside netns B) so an
+outer-SIGKILL orphan self-terminates (§12); the outer
+<code>timeout 80</code> reaps the whole <code>unshare</code> tree first.
+TLS accepts carry a 25 s socket timeout so a stalled handshake cannot
+wedge a thread.</p>
+<p><strong>Ambient-env determinism (§11.4.50).</strong> Before invoking
+the promoted test the harness <code>unset</code>s the
+<code>HELIX_MAIL_*</code> it does not set
+(<code>_FROM</code>/<code>_TO</code>/<code>_TIMEOUT</code>/
+<code>_PROBE_TIMEOUT</code>) plus the test overrides
+(<code>EMAIL_ROUNDTRIP_EVIDENCE_DIR</code>,
+<code>SVORD_BRIDGE_LIB</code>, <code>HELIX_REPO_ROOT</code>), so a
+leftover ambient-shell export cannot perturb the promoted test. This is
+a false-negative guard only — it can never manufacture a bluff PASS.</p>
+<h2 id="captured-evidence-verified-2026-07-02">Captured evidence
+(verified 2026-07-02)</h2>
+<p>Normal run embedded the promoted test's own output — <strong>all four
+scored legs PASS</strong>:</p>
+<pre><code>tunnel up: wg handshake=1782970857; mail peer @10.10.0.2 (netns B) SMTP=465 POP3S=995 IMAPS=993 ready
+self-fetch OK: authenticated SMTP submit (235) -&gt; POP3S RETR byte round-trip of this run&#39;s fresh nonce over the tunnel (§11.4.107 not-stale)
+INFO: svord bridge reports UP — running live email round-trips
+PASS: imaps_login_list(10.10.0.2:993) [evidence: .../phase4/.../t4_1_imaps_list.txt]
+PASS: smtp_submission_send(10.10.0.2:465/implicit) [evidence: .../phase4/.../t4_2_smtp_send.txt]
+PASS: pop3s_retrieve_roundtrip(10.10.0.2:995) [evidence: .../phase4/.../t4_3_pop3s_message.txt]
+PASS: open_relay_refused(10.10.0.2:465-&gt;@example.com) [evidence: .../phase4/.../t4_4_open_relay_probe.txt]
+SKIP: email_reverse_leg(... N/A §11.4.6) [reason: topology_unsupported]
+RESULT: no FAIL (PASS/SKIP only)
+HE_PASS: the UNMODIFIED email_roundtrip.sh ran AUTONOMOUSLY over the hermetic WireGuard tunnel ...</code></pre>
+<p><strong>3/3 deterministic</strong> (§11.4.50). Golden-bad teeth fired
+against the real test:</p>
+<pre><code># MAIL_MUT=openrelay
+FAIL: open_relay_refused(10.10.0.2:465-&gt;@example.com) [reason: OPEN RELAY — unauthenticated external RCPT accepted (code 250; ...)]
+# MAIL_MUT=droptoken
+FAIL: pop3s_retrieve_roundtrip(10.10.0.2:995) [reason: sent token &#39;helixproxy-vpnlan-p4-...&#39; not retrieved via POP3S after retries (...)]</code></pre>
+<p>Captured evidence holds <strong>server responses only</strong> — a
+leak scan confirmed the client AUTH base64 blobs never appear (the
+<code>334 VXNlcm5hbWU6</code> / <code>334 UGFzc3dvcmQ6</code> lines are
+the server's RFC 4954 <code>Username:</code>/<code>Password:</code>
+challenges, not credentials).</p>
+<h2 id="honest-scope-1146--1143">Honest scope (§11.4.6 / §11.4.3)</h2>
+<p>Proves the <strong>client-side email protocol logic</strong> (IMAPS
+LOGIN+LIST, implicit-TLS SMTP submission with AUTH LOGIN, POP3S
+send→retrieve round-trip, and the open-relay refusal decision)
+autonomously over an encrypted tunnel against a
+<strong>controlled</strong> pure-stdlib peer. It does
+<strong>not</strong> prove the real mail server on the real Mullvad
+topology (that stays the §11.4.3 operator-gated confirmation), and the
+peer's mailbox</p>
+<ul>
+<li>responses are controlled fixtures — it exercises the test's
+client-side dialog and verdict logic, not a full RFC-complete mail
+server.</li>
+</ul>
+<h2 id="prerequisites--skip">Prerequisites / SKIP</h2>
+<p>bash, unshare+nsenter, iproute2 <code>ip</code> (wireguard link
+type), <code>wg</code>, host <code>wireguard</code> kernel module,
+python3 (stdlib only), <code>openssl</code>, <code>base64</code>,
+<code>curl</code>, <code>timeout</code>, plus
+<code>tests/vpn_lan/email_roundtrip.sh</code> and
+<code>tests/lib/svord_bridge.sh</code>. Any missing → honest
+<code>SKIP:</code> (§11.4.3). Process-headroom guard SKIPs on a starved
+host (§12). An unknown <code>MAIL_MUT</code> value SKIPs (closed set:
+<code>openrelay</code> | <code>droptoken</code>).</p>
+<h2 id="security-11410">Security (§11.4.10)</h2>
+<p>WireGuard private keys <strong>and</strong> a throwaway self-signed
+cert/key: mode-0600 <code>mktemp</code> inside the namespace, used by
+path, removed on exit, never logged. The mail account password is a
+<strong>fresh per-run random</strong>, passed to the peer and the
+promoted test via the environment (never argv, so never in
+<code>ps</code>), and NEVER logged; captured evidence holds server
+responses only. The account is throwaway — never a real credential.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="hermetic_ftp_run.md"><code>hermetic_ftp_run.md</code></a> —
+the sibling H2.x FTP promotion.</li>
+<li><a
+href="hermetic_webdav_run.md"><code>hermetic_webdav_run.md</code></a> —
+the sibling H2.x WebDAV promotion.</li>
+<li><a
+href="hermetic_bridge_run.md"><code>hermetic_bridge_run.md</code></a> —
+the H2 template (Chromecast eureka leg).</li>
+<li><a
+href="hermetic_wg_roundtrip.md"><code>hermetic_wg_roundtrip.md</code></a>
+— the H0-full tunnel this reuses.</li>
+<li><code>tests/vpn_lan/email_roundtrip.sh</code> — the promoted
+protocol test (UNMODIFIED).</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-02 (host: ALT Linux kernel 6.12, <code>wireguard</code>
+module, wireguard-tools 1.0.20210914, python3 3.13 stdlib, OpenSSL
+3.5.4, <code>nc</code> absent → openssl reachability probe). Normal PASS
+(all four legs) + both golden-bad teeth + 3/3 determinism.</p>
+</body>
+</html>

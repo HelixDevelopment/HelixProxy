@@ -1,7 +1,7 @@
 # Hermetic protocol-promotion research — pure-python peer servers over a kernel-WireGuard netns tunnel
 
-**Revision:** 1
-**Last modified:** 2026-07-02T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-07-02T05:34:25Z
 **Status:** Research findings (deep multi-angle web research per §11.4.150 / §11.4.99).
 No code changed by the research pass. Authority: inherits `constitution/Constitution.md` per §11.4.35.
 **Scope:** strengthen the hermetic WireGuard test harness so operator-gated VPN-LAN
@@ -165,6 +165,48 @@ rootless kernel-WireGuard netns tunnel and did not leak on the underlay, via sel
 nonce + wg-transport-counter + wrong-key golden-bad." That specific composite is
 **original work**, well-grounded in the general MT/oracle literature.
 
+## 6. Pure-python-stdlib implicit-TLS mail (SMTPS/IMAPS/POP3S) round-trip — H2.email
+
+Promoting `email_roundtrip.sh` autonomously requires a mail peer bound to the WG-only
+overlay `10.10.0.2` speaking implicit-TLS SMTP/IMAP/POP3. Findings that shaped the
+`hermetic_email_run.sh` design:
+
+1. **Python 3.12 removed the `smtpd` module (PEP 594 "dead batteries").** The stdlib no
+   longer ships an SMTP *server*; the *clients* (`smtplib`, `imaplib`, `poplib`) remain.
+   The hermetic peer therefore hand-rolls a minimal SMTP/IMAP/POP3 server directly on
+   `socket` + `ssl` — no third-party install (§11.4.74 catalogue-check: no reusable
+   stdlib server exists post-3.12; original minimal server is the correct path).
+2. **Implicit TLS ("SMTPS/IMAPS/POP3S", ports 465/993/995) wraps the whole connection
+   in TLS from byte 0**, per RFC 8314 (which recommends implicit TLS over STARTTLS).
+   `ssl.SSLContext(PROTOCOL_TLS_SERVER).wrap_socket(server_side=True)` with a self-signed
+   cert generated per-run (mktemp, mode 0600, never logged — §11.4.10) is sufficient for a
+   hermetic peer; the client verifies against that per-run cert, not a CA.
+3. **CRITICAL load-bearing FACT (§11.4.6, captured in the de-risk PoC): the TLS server
+   MUST perform a clean bidirectional close — send `close_notify` (call
+   `SSLSocket.unwrap()` before `close()`).** A truncated TLS close makes `openssl
+   s_client` (and stricter clients) exit non-zero, which would silently drop the promoted
+   leg to SKIP instead of PASS — a false-negative that masquerades as an honest skip. This
+   is the single most important hermetic-mail implementation detail; the harness verifies a
+   clean close per leg.
+4. **Command grammar from the standards:** SMTP `EHLO`/`AUTH LOGIN`(base64)/`MAIL FROM`/
+   `RCPT TO`/`DATA` (RFC 5321 + RFC 4954 AUTH); IMAP `LOGIN`/`LIST` (RFC 3501); POP3
+   `USER`/`PASS`/`RETR` (RFC 1939). Each leg's PASS is gated on the protocol's own
+   success signal (SMTP 2xx end-of-DATA, IMAP `* LIST` untagged response, POP3 `+OK` +
+   retrieved body), never a mere TCP connect.
+5. **Round-trip oracle + two golden-bad teeth (§11.4.107(10)).** SMTP `DATA` embeds a
+   per-run nonce token; the round-trip PASSes only when POP3S `RETR` returns a body
+   containing that exact token (own-content golden source, strongest oracle). Two
+   independent mutations each prove a *distinct* assertion is load-bearing: `MAIL_MUT=
+   openrelay` (peer accepts an external-domain `RCPT` → the open-relay negative control
+   MUST flip to FAIL) and `MAIL_MUT=droptoken` (peer delivers a mailbox WITHOUT the sent
+   token → the round-trip MUST FAIL). One tooth guarding the security-negative, one
+   guarding the round-trip-positive — neither can be satisfied by a bluff peer.
+
+**Precedent (§11.4.8):** the RFCs + PEP 594 fully specify the protocol surface; no external
+project provides "a pure-stdlib implicit-TLS SMTP+IMAP+POP3 peer bound to a kernel-WG netns
+overlay with an open-relay + drop-token golden-bad pair." That composite is **original
+work**, grounded in the cited standards.
+
 ## Three most actionable findings for the next iterations
 
 1. **Promote FTP + WebDAV first with pure-stdlib peers bound to `10.10.0.2` — the
@@ -209,6 +251,14 @@ All URLs accessed **2026-07-02**.
 - Red Hat — "Use a net namespace for VPNs": https://www.redhat.com/en/blog/use-net-namespace-vpn
 - blog.0x1b.me — Unprivileged Linux Network Namespaces Pt 1: https://blog.0x1b.me/posts/unprivileged-linux-netns-pt1/
 - benjamintoll — On Unsharing Namespaces Pt 2: https://benjamintoll.com/2022/12/14/on-unsharing-namespaces-part-two/
+- PEP 594 — Removing dead batteries from the stdlib (`smtpd` removed in 3.12): https://peps.python.org/pep-0594/
+- Python stdlib `ssl` docs (`wrap_socket`, `unwrap`/close_notify): https://docs.python.org/3/library/ssl.html
+- Python stdlib `smtplib` / `imaplib` / `poplib` client docs: https://docs.python.org/3/library/smtplib.html
+- RFC 8314 (implicit TLS for email submission/access — ports 465/993/995): https://www.rfc-editor.org/rfc/rfc8314
+- RFC 5321 (SMTP — EHLO/MAIL/RCPT/DATA): https://www.rfc-editor.org/rfc/rfc5321
+- RFC 4954 (SMTP AUTH — AUTH LOGIN): https://www.rfc-editor.org/rfc/rfc4954
+- RFC 3501 (IMAP4rev1 — LOGIN/LIST/SELECT/FETCH): https://www.rfc-editor.org/rfc/rfc3501
+- RFC 1939 (POP3 — USER/PASS/RETR): https://www.rfc-editor.org/rfc/rfc1939
 - Podman docs — podman-unshare: https://docs.podman.io/en/latest/markdown/podman-unshare.1.html
 - slirp4netns: https://github.com/rootless-containers/slirp4netns
 - passt/pasta: https://passt.top/passt/about/
