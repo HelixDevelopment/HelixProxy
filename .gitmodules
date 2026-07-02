@@ -14,3 +14,27 @@
 [submodule "submodules/containers"]
 	path = submodules/containers
 	url = git@github.com:vasic-digital/containers.git
+[submodule "submodules/doc_processor"]
+	path = submodules/doc_processor
+	url = git@github.com:HelixDevelopment/DocProcessor.git
+	branch = master
+[submodule "submodules/llm_orchestrator"]
+	path = submodules/llm_orchestrator
+	url = git@github.com:HelixDevelopment/LLMOrchestrator.git
+	branch = master
+[submodule "submodules/llm_provider"]
+	path = submodules/llm_provider
+	url = git@github.com:HelixDevelopment/LLMProvider.git
+	branch = master
+[submodule "submodules/vision_engine"]
+	path = submodules/vision_engine
+	url = git@github.com:HelixDevelopment/VisionEngine.git
+	branch = master
+[submodule "submodules/security"]
+	path = submodules/security
+	url = git@github.com:vasic-digital/security.git
+	branch = main
+[submodule "submodules/llms_verifier"]
+	path = submodules/llms_verifier
+	url = git@github.com:vasic-digital/LLMsVerifier.git
+	branch = main
