@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>DYNAMIC_ROUTING_FINDINGS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="dynamic-routing-mvp-findings--proxy-through-gluetun-mullvad-e2e">Dynamic-routing
+MVP findings — proxy-through-gluetun (Mullvad) e2e</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-02T18:30:00Z</p>
+<p>Operator-authorized (2026-07-02): reset podman + prove the full
+proxy-through-gluetun Mullvad e2e. This document records the honest
+results (§11.4.6) — what is proven and the real MVP dynamic-routing
+defects that block the full squid-integrated path.</p>
+<h2 id="proven-live-rock-solid-captured-evidence">Proven live
+(rock-solid captured evidence)</h2>
+<ul>
+<li><strong>podman/aardvark-dns is NOT broken</strong> — throwaway
+inter-container DNS (<code>10.89.2.2</code>) and outbound DNS both
+resolve; the earlier "can't bind :53" fault has cleared. <strong>No
+destructive <code>podman system reset</code> was done</strong> — it
+would have destroyed the operator's 263 volumes
+(catalogizer/deploy/aosp/lava data — §9.2/§11.4.174).</li>
+<li><strong>squid-dynamic image rebuilt</strong> (control-plane + squid
+multi-stage, <code>config/squid</code> context) → bakes
+<code>http_port :34128</code> (E's §11.4.108 staleness RESOLVED; source
+was already 34128).</li>
+<li><strong>Dynamic stack boots</strong>; <strong>gluetun WireGuard
+tunnel to Mullvad is UP</strong> (exits observed Osaka / Denver / Malmö
+— public IP is a Mullvad exit each boot).</li>
+<li><strong>CORE proxy-through-gluetun egress PROVEN</strong>:
+<code>http_proxy=http://proxy-gluetun:8888</code> →
+<code>am.i.mullvad.net/json</code> = <code>mullvad_exit_ip:true</code>
+(194.114.136.116, Osaka). Evidence
+<code>qa-results/dynamic_e2e_20260702T175536Z/</code>.</li>
+<li><strong>Squid dynamic-routing LOGIC proven</strong>: un-routed
+target → fail-closed <code>TCP_DENIED/503 ERR_TUNNEL_DOWN</code>
+(§11.4.68); with a <code>route:&lt;host:port&gt;</code> + up-status the
+acl-helper returns <code>OK tag=&lt;tunnel&gt;</code> and squid flips to
+<code>TCP_TUNNEL</code> (allowed). The decision engine works.</li>
+</ul>
+<h2
+id="open-mvp-dynamic-routing-defects-the-full-squid-integrated-path-does-not-yet-pass">Open
+MVP dynamic-routing DEFECTS (the full squid-integrated path does NOT yet
+pass)</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Defect</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td>Compiler renders <code>cache_peer gluetun-&lt;profile&gt;</code> but
+the MVP ships one <code>proxy-gluetun</code> → peers unresolvable → all
+routed targets 503.</td>
+<td><strong>FIXED</strong> <code>068dc78</code> (network aliases on the
+gluetun compose service).</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>Route key is port-qualified: squid <code>%&gt;ha{Host}</code> sends
+<code>host:443</code> on CONNECT, so routes must be
+<code>route:&lt;host&gt;:&lt;port&gt;</code>.</td>
+<td>Documented (compiler/doc note).</td>
+</tr>
+<tr>
+<td>D3</td>
+<td><strong>healthd↔︎gluetun health signal BROKEN</strong>: gluetun
+control API (<code>/v1/publicip/ip</code>, <code>/v1/vpn/status</code>)
+returns EMPTY; healthd's <code>wg show &lt;if&gt;</code> reads a WG
+interface in gluetun's netns (not healthd's) → every profile held
+falsely "down" → squid fail-closes even though the tunnel is genuinely
+UP.</td>
+<td><strong>OPEN</strong> (deepest — needs gluetun to expose the data OR
+healthd to read gluetun's wg stats).</td>
+</tr>
+<tr>
+<td>D4</td>
+<td>gluetun compose <strong>healthcheck probes
+<code>/v1/openvpn/status</code></strong> for a WireGuard tunnel →
+gluetun labelled "unhealthy" though the WG tunnel is up.</td>
+<td><strong>OPEN</strong> (1-line compose fix to the WG status
+endpoint).</td>
+</tr>
+<tr>
+<td>D5</td>
+<td>Squid caches the <code>gluetun-*</code> peer <strong>negative
+DNS</strong> from its pre-alias startup; reconfigure did not clear it
+(peer stays dead). Needs squid to (re)resolve peers after gluetun is up
+(startup ordering / DNS lifecycle).</td>
+<td><strong>OPEN</strong>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-conclusion-1146">Honest conclusion (§11.4.6)</h2>
+<p>The proxy-through-gluetun <strong>egress capability</strong> is
+proven live (gluetun's proxy egresses via Mullvad). The <strong>full
+squid-integrated</strong> path is blocked by D3+D4+D5 (real integration
+bugs), so it is <strong>NOT a passing e2e</strong> — no PASS is claimed
+on it. D1 fixed; D2–D5 tracked here for a proper source-side fix
+pass.</p>
+</body>
+</html>
