@@ -178,26 +178,34 @@
 <body>
 <h1 id="helix_proxy--vpn-lan-service-access-feature-status">helix_proxy
 — VPN-LAN Service Access Feature Status</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T19:15:00Z <strong>Status:</strong> Feature COMPLETE (Phases
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-02T05:20:00Z <strong>Status:</strong> Feature COMPLETE (Phases
 0-12 on <code>main</code>). Anti-bluff bridge scaffold + preflight
 doctor + operator guide + Challenge runner + <strong>Phase-1 SSRF
 carve-out teeth</strong> + <strong>Phase-12 bidirectional
 ingress-allowlist teeth</strong> + the <strong>§11.4.135 autonomous
 battery</strong> (stress+chaos, benchmark+memory, concurrency+load,
 DNS-rebinding gap) are PROVEN NOW (autonomously, no live VPN, no podman)
-and wired GREEN into the standing suite. Every live protocol round-trip
-(SMB/NFS/FTP/SFTP/WebDAV/email/Cast/DIAL/ADB) is AUTHORED with real
-byte-integrity / sink-side evidence gating <strong>plus a Phase-12
-both-way reverse-leg assertion</strong> (NFS NLM/NSM callback, FTP
-active, Cast callback, adb reverse, email N/A §11.4.6) and honestly
-SKIPs while the svord bridge is down (§11.4.3) — never a fake PASS;
-Miracast is Won't-fix structurally-impossible (§11.4.112).
-Operator-gated: the svord bridge (secrets + Mullvad + root/sudo) →
-unlocks all live round-trips BOTH directions; the multicast-reflector
-remote deployment; any real-device flash. <strong>⚠️ Data-plane
-env-block (operator-actionable, NOT a code defect):</strong> host
-rootless-podman <code>aardvark-dns</code> cannot bind netavark
+and wired GREEN into the standing suite. <strong>NEW (§J, §11.4.52
+hermetic promotions):</strong> the Chromecast-eureka, FTP-passive, and
+WebDAV-PROPFIND protocol legs now ALSO run <strong>AUTONOMOUSLY</strong>
+— their client-side protocol logic proven over a real rootless
+kernel-WireGuard tunnel between two unprivileged netns against a
+pure-stdlib peer (zero installs, no operator/podman/VPN), each with
+golden-bad teeth + a not-stale self-fetch + 3/3 determinism +
+independent GO; the <strong>live</strong> Mullvad round-trip stays
+operator-gated (these COMPLEMENT, never replace, §11.4.6). Every live
+protocol round-trip (SMB/NFS/FTP/SFTP/WebDAV/email/Cast/DIAL/ADB) is
+AUTHORED with real byte-integrity / sink-side evidence gating
+<strong>plus a Phase-12 both-way reverse-leg assertion</strong> (NFS
+NLM/NSM callback, FTP active, Cast callback, adb reverse, email N/A
+§11.4.6) and honestly SKIPs while the svord bridge is down (§11.4.3) —
+never a fake PASS; Miracast is Won't-fix structurally-impossible
+(§11.4.112). Operator-gated: the svord bridge (secrets + Mullvad +
+root/sudo) → unlocks all live round-trips BOTH directions; the
+multicast-reflector remote deployment; any real-device flash. <strong>⚠️
+Data-plane env-block (operator-actionable, NOT a code defect):</strong>
+host rootless-podman <code>aardvark-dns</code> cannot bind netavark
 <code>:53</code> → <code>:53128</code>/<code>:51080</code> don't serve +
 <code>./start</code> fails; the standing suite honestly reports this (3
 env FAILs) rather than hanging. <strong>Authority:</strong> Inherits
@@ -232,7 +240,9 @@ teeth <code>1d87b3a</code>; Phase 10 containerization
 both-way protocol assertions <code>cc8b620</code>; stress+chaos
 <code>97d9733</code>; bench+memory + dns-rebinding <code>4e2810c</code>;
 concurrency+load <code>7e73b08</code>; §11.4.135 suite guards
-<code>6d8893f</code>.</p>
+<code>6d8893f</code>; <strong>hermetic H0 substrate + H2
+Chromecast-eureka promotion <code>18a21bd</code>; H2.ftp + H2.webdav
+promotions <code>3b98d02</code></strong> (§J, §11.4.52).</p>
 <hr />
 <h2
 id="operator-blocked--operator-gated-items-read-first--11445-o1-surface">Operator-blocked
@@ -240,7 +250,12 @@ id="operator-blocked--operator-gated-items-read-first--11445-o1-surface">Operato
 <p>Every autonomous claim below is either PROVEN NOW against a committed
 file/evidence artefact, or an honest SKIP that flips to a live PASS the
 moment the operator supplies the input named here. No live round-trip is
-marked PASS without captured evidence (§11.4.6 / §11.4.69).</p>
+marked PASS without captured evidence (§11.4.6 / §11.4.69). <strong>Note
+(§J):</strong> the FTP-passive, WebDAV-PROPFIND, and Chromecast-eureka
+legs' <em>client-side protocol logic</em> is ALREADY proven AUTONOMOUSLY
+over a hermetic WireGuard tunnel (no operator/VPN needed) — only the
+<em>live Mullvad-topology</em> round-trip below stays
+operator-gated.</p>
 <table>
 <thead>
 <tr>
@@ -909,6 +924,148 @@ video</td>
 </tr>
 </tbody>
 </table>
+<h3
+id="j-hermetic-tunnel-autonomous-protocol-promotions-11452--proven-now-autonomous-no-live-vpn-no-operator">J.
+Hermetic-tunnel autonomous protocol promotions (§11.4.52) — PROVEN NOW
+(autonomous, no live VPN, no operator)</h3>
+<p><strong>What these add.</strong> Three protocol legs that were
+previously <em>only</em> operator-gated SKIP now ALSO have an
+<strong>autonomous PASS path</strong>: their client-side protocol logic
+is proven over a <strong>real kernel-WireGuard tunnel</strong> between
+two unprivileged network namespaces (<code>unshare -Urnm</code>, veth
+underlay <code>10.9.0.x</code> + <code>wg0</code> overlay
+<code>10.10.0.x</code>), with a <strong>pure-python-stdlib peer</strong>
+serving the protocol — <strong>zero host installs</strong>, no podman,
+no live Mullvad, no operator. Each harness drives the
+<strong>UNMODIFIED</strong> protocol test inside netns A (its
+<code>bridge_require</code> gate flips SKIP→UP), carries a
+<strong>golden-bad mutation</strong> that MUST make the real assertion
+FAIL (§11.4.107(10)/§11.4.68 teeth), and a <strong>self-fetch not-stale
+cross-check</strong> (§11.4.107) — all <strong>3/3
+deterministic</strong> (§11.4.50) and <strong>independently reviewed to
+GO</strong> (§11.4.142). <strong>Honest boundary (§11.4.6):</strong>
+these prove the <em>client-side protocol logic</em> over an encrypted
+tunnel against a <em>controlled</em> peer — they do NOT prove the real
+live server on the Mullvad topology (that stays the operator-gated live
+round-trip above), and the peer bodies are controlled fixtures. They
+COMPLEMENT, never replace, the live rows.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring (reachable?)</th>
+<th>Real-use</th>
+<th>Tests-coverage (four-layer §11.4.4(b))</th>
+<th>Validation</th>
+<th>Video-confirmation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>H0 hermetic WG substrate</td>
+<td>Rootless two-netns kernel-WireGuard round-trip (veth underlay + real
+<code>wg0</code> overlay); the reusable substrate every H2.x promotion
+builds on</td>
+<td>test-harness / foundation</td>
+<td><code>tests/vpn_lan/hermetic_netns_poc.sh</code> (veth L3) +
+<code>hermetic_wg_roundtrip.sh</code> (full WG)</td>
+<td>YES — runnable NOW with zero installs; SKIPs honestly if
+<code>wireguard</code> module / <code>unshare -Urnm</code> unavailable
+(§11.4.3)</td>
+<td>Anyone runs the two scripts NOW → sha256-verified L3 + tunnel
+round-trip, self-bounded (§12)</td>
+<td>PoC + full-WG round-trip, golden-bad (bad WG key ⇒ no traversal),
+3/3 deterministic; companion docs (§11.4.18)</td>
+<td><strong>PASS</strong> (<code>18a21bd</code>;
+<code>docs/scripts/hermetic_netns_poc.md</code> /
+<code>hermetic_wg_roundtrip.md</code>)</td>
+<td>N/A — headless; proof is the sha256-matched round-trip + teeth</td>
+</tr>
+<tr>
+<td>Chromecast eureka_info — hermetic promotion</td>
+<td>The UNMODIFIED <code>chromecast_dial.sh</code> eureka control leg
+run AUTONOMOUSLY over the hermetic tunnel against a stdlib
+<code>eureka_info</code> JSON peer on <code>10.10.0.2:8008</code>;
+golden-bad = a name-less body ⇒ the real test FAILs fail-closed</td>
+<td>casting / functional (autonomous)</td>
+<td><code>tests/vpn_lan/hermetic_bridge_run.sh</code></td>
+<td>YES NOW — no operator/podman/VPN; self-fetch asserts this run's
+fresh <code>name</code> nonce over the tunnel (§11.4.107 not-stale)</td>
+<td>Run <code>tests/vpn_lan/hermetic_bridge_run.sh</code> → real eureka
+<code>name</code> PASS over <code>wg0</code>;
+<code>H2_MUT=badeureka</code> ⇒ teeth fire</td>
+<td>promoted-test drive + golden-bad teeth + self-fetch cross-check +
+coupling guard, 3/3 deterministic; companion
+<code>docs/scripts/hermetic_bridge_run.md</code></td>
+<td><strong>PASS</strong> (autonomous protocol logic; live Mullvad
+round-trip still §F SKIP; <code>18a21bd</code>)</td>
+<td>N/A — headless; proof is the promoted-test PASS + teeth + evidence
+dir</td>
+</tr>
+<tr>
+<td>FTP passive — hermetic promotion</td>
+<td>The UNMODIFIED <code>ftp_sftp_webdav.sh</code> FTP leg run
+AUTONOMOUSLY over the hermetic tunnel against an embedded ~85-line
+stdlib FTP server on <code>10.10.0.2:2121</code> (PASV advertises
+<code>10.10.0.2</code>, EPSV carries none — both traverse
+<code>wg0</code>); harness ADDITIONALLY content-verifies a byte RETR of
+a fresh nonce (§11.4.107(9)); golden-bad = empty listing ⇒ the real test
+SKIPs (no PASS)</td>
+<td>file-transfer / functional (autonomous)</td>
+<td><code>tests/vpn_lan/hermetic_ftp_run.sh</code></td>
+<td>YES NOW — no operator/podman/VPN; self-list + content-verified
+self-RETR over the tunnel</td>
+<td>Run <code>tests/vpn_lan/hermetic_ftp_run.sh</code> → real
+passive-listing PASS + byte round-trip; <code>FT_MUT=empty</code> ⇒
+teeth fire</td>
+<td>promoted-test drive + golden-bad teeth + self-RETR ground-truth
+check + ambient-env determinism scrub, 3/3 deterministic; companion
+<code>docs/scripts/hermetic_ftp_run.md</code> (Rev 2)</td>
+<td><strong>PASS</strong> (autonomous protocol logic; live Mullvad
+round-trip still §C SKIP; <code>3b98d02</code>)</td>
+<td>N/A — headless; proof is the promoted-test PASS + self-RETR +
+teeth</td>
+</tr>
+<tr>
+<td>WebDAV PROPFIND — hermetic promotion</td>
+<td>The UNMODIFIED <code>ftp_sftp_webdav.sh</code> WebDAV leg run
+AUTONOMOUSLY over the hermetic tunnel: a stdlib
+<code>207 Multi-Status</code> origin on <code>10.10.0.2:8080</code>
+reached THROUGH a stdlib forward proxy on <code>127.0.0.1:3128</code>
+(RFC 7230 §5.3.2→§5.3.1); golden-bad = origin flips to <code>200</code>
+⇒ the real test FAILs fail-closed (§11.4.68) — the mutation surface IS
+exactly the promoted test's only PASS gate</td>
+<td>file-transfer / functional (autonomous)</td>
+<td><code>tests/vpn_lan/hermetic_webdav_run.sh</code></td>
+<td>YES NOW — no operator/Squid/VPN; self-PROPFIND asserts 207 + this
+run's fresh nonce (§11.4.107 not-stale)</td>
+<td>Run <code>tests/vpn_lan/hermetic_webdav_run.sh</code> → real 207
+PASS through the proxy; <code>WEBDAV_MUT=bad207</code> ⇒ teeth fire</td>
+<td>promoted-test drive + golden-bad teeth + self-PROPFIND cross-check +
+ambient-env determinism scrub, 3/3 deterministic; companion
+<code>docs/scripts/hermetic_webdav_run.md</code> (Rev 1)</td>
+<td><strong>PASS</strong> (autonomous protocol logic; live Mullvad
+round-trip still §C SKIP; <code>3b98d02</code>)</td>
+<td>N/A — headless; proof is the promoted-test 207 PASS + self-fetch +
+teeth</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not (yet) hermetic-promotable — honest verdict (§11.4.6 /
+§11.4.3).</strong> SFTP needs an SSH server (<code>sshd</code> absent on
+host + no stdlib SSH server; paramiko/asyncssh are pip → §11.4.122);
+SMB/NFS need samba/nfsd (absent + root); the
+<code>discovery_reflect.sh</code> scored mDNS leg hard-requires the
+<code>avahi-browse</code> <em>client</em> (absent) so a stdlib mDNS
+responder wouldn't help the UNMODIFIED test; ADB/container need a
+device/podman. <strong>Email</strong> (SMTP-implicit-TLS + POP3S/IMAPS)
+is pure-stdlib-feasible and under active de-risking (a standalone
+TLS-mail PoC precedes any <code>hermetic_email_run.sh</code>).
+Deep-research: <a
+href="../../research/hermetic_protocol_promotion_20260702/FINDINGS.md"><code>../../research/hermetic_protocol_promotion_20260702/FINDINGS.md</code></a>.</p>
 <hr />
 <h2 id="114169-test-type-coverage-note-honest-boundary">§11.4.169
 test-type coverage note (honest boundary)</h2>
@@ -948,10 +1105,17 @@ its live capability until its runtime signature verifies on a live
 bridge (§11.4.108) and it crosses the §11.4.169 test-type matrix +
 independent review (§11.4.142). This ledger does not substitute for the
 §11.4.40 full-suite retest before any release tag.</p>
-<p><strong>Feature tally:</strong> 4 rows PASS-now (bridge contract ·
-svord-doctor preflight · operator guide · Challenge runner) · 16 rows
-operator-gated SKIP/OPERATOR-BLOCKED (all live protocol round-trips +
-reflector deploy + ADB flash + HelixQA run) · 1 row Won't-fix (Miracast,
-structurally-impossible §11.4.112).</p>
+<p><strong>Feature tally:</strong> 4 rows PASS-now foundation (bridge
+contract · svord-doctor preflight · operator guide · Challenge runner) ·
+<strong>4 rows PASS-now §J hermetic autonomous protocol
+promotions</strong> (H0 WG substrate · Chromecast-eureka · FTP-passive ·
+WebDAV-PROPFIND — client-side protocol logic proven over a hermetic
+tunnel, zero installs, golden-bad teeth, 3/3 deterministic, independent
+GO) · 16 rows operator-gated SKIP/OPERATOR-BLOCKED for their
+<strong>live Mullvad</strong> round-trip (all live protocol round-trips
++ reflector deploy + ADB flash + HelixQA run; note the
+FTP/WebDAV/Cast-eureka <em>protocol logic</em> is additionally PASS via
+§J) · 1 row Won't-fix (Miracast, structurally-impossible §11.4.112).
+Email hermetic promotion is under active de-risking (§J footer).</p>
 </body>
 </html>

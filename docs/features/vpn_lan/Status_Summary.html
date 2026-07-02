@@ -179,20 +179,24 @@
 <h1
 id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
 — VPN-LAN Service Access Feature Status Summary</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-01T19:15:00Z <strong>Status:</strong> Companion two-audience
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-02T05:20:00Z <strong>Status:</strong> Companion two-audience
 summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
 Page 1 is plain-language for the operator and stakeholders; Page 2 is
 the engineer phase matrix with commit refs and §-anchors. <strong>Rev
-2:</strong> feature COMPLETE (Phases 0-12 on <code>main</code>) —
-Phase-12 bidirectional (design + ingress teeth + both-way reverse-leg
-assertions in all 5 protocol tests) + the §11.4.135 autonomous suite
-battery (stress+chaos / benchmark+memory / concurrency+load /
-DNS-rebinding gap) are all GREEN; the data-plane is env-blocked on a
-host rootless-podman aardvark-dns failure (operator-actionable, not a
-code defect). <strong>Authority:</strong> Inherits
-<code>constitution/Constitution.md</code> per §11.4.35. §11.4.153
-feature Status set for the VPN-LAN service-access workstream
+3:</strong> feature COMPLETE (Phases 0-12 on <code>main</code>) —
+Phase-12 bidirectional + the §11.4.135 autonomous suite battery are all
+GREEN; the data-plane is env-blocked on a host rootless-podman
+aardvark-dns failure (operator-actionable, not a code defect).
+<strong>NEW — §J hermetic autonomous promotions (§11.4.52):</strong> the
+Chromecast-eureka, FTP-passive and WebDAV-PROPFIND protocol legs now
+ALSO prove their client-side logic AUTONOMOUSLY over a real rootless
+kernel-WireGuard tunnel against a pure-stdlib peer (zero installs, no
+operator/VPN), each with golden-bad teeth + not-stale self-fetch + 3/3
+determinism + independent GO; the live Mullvad round-trip stays
+operator-gated (COMPLEMENT, never replace). <strong>Authority:</strong>
+Inherits <code>constitution/Constitution.md</code> per §11.4.35.
+§11.4.153 feature Status set for the VPN-LAN service-access workstream
 (<code>feature/vpn-aware-dynamic-routing</code>, §11.4.167).</p>
 <hr />
 <h2 id="page-1--for-the-operator-and-stakeholders-plain-language">Page 1
@@ -233,6 +237,18 @@ TV" alternative.</li>
 <strong>one-command Challenge runner</strong> lets you check the whole
 feature at once — today it produces an honest "all skipped" result
 because the VPN is not connected.</li>
+<li><strong>NEW — three service tests now prove themselves without any
+VPN at all.</strong> We build a tiny, real, private encrypted tunnel
+entirely on this machine (nothing installed, no admin rights, no
+internet) and run the <strong>file-transfer (FTP)</strong>,
+<strong>WebDAV</strong>, and <strong>Chromecast device-lookup</strong>
+tests across it against a small built-in stand-in server. This proves
+the actual protocol behaviour works end-to-end — and each test includes
+a deliberate "trap" variant that <strong>must fail</strong> to prove the
+check is real, and repeats identically three times. This is genuine
+proof of the software's protocol logic, delivered today with no waiting
+on you. (Connecting your real VPN still adds the final proof against
+your actual servers.)</li>
 </ul>
 <p><strong>What needs you (clearly flagged — we always ask before
 acting):</strong></p>
@@ -248,11 +264,16 @@ automatically — it needs your explicit approval.</li>
 plumbing is built and proven, the casting path works and Miracast is
 honestly ruled out, and every real service test switches on the moment
 you connect the VPN. Nothing is faked — skipped means skipped, and a
-wrong answer fails rather than passing quietly. Of the 21 tracked
-capabilities: <strong>4 are proven now</strong>, <strong>16 wait on
-you</strong> (the live VPN, the discovery-helper deploy, or a device
-flash), and <strong>1 (Miracast) is honestly ruled impossible</strong>
-with a working alternative in its place.</p>
+wrong answer fails rather than passing quietly. Of the tracked
+capabilities: <strong>4 foundation pieces are proven now</strong>,
+<strong>4 more protocol behaviours (FTP, WebDAV, Chromecast-lookup, and
+the private-tunnel substrate) are now also proven autonomously
+today</strong> via the on-machine encrypted-tunnel harnesses, <strong>16
+live end-to-end round-trips wait on you</strong> (the live VPN, the
+discovery-helper deploy, or a device flash), and <strong>1 (Miracast) is
+honestly ruled impossible</strong> with a working alternative in its
+place. Email is being prepared for the same autonomous treatment
+next.</p>
 <hr />
 <h2 id="page-2--for-software-engineers">Page 2 — For software
 engineers</h2>
@@ -395,6 +416,52 @@ exit-code→verdict mapping (doctor 0/2/3; tests 0/1); host caps §12.6;
 <code>helixqa</code> binary blocked by 6 un-vendored own-org
 siblings</td>
 </tr>
+<tr>
+<td>J.0</td>
+<td>Hermetic kernel-WG substrate (rootless two-netns, veth
+<code>10.9.0.x</code> + <code>wg0</code> <code>10.10.0.x</code>)</td>
+<td><strong>PASS</strong> (autonomous, zero installs)</td>
+<td><code>18a21bd</code> <code>hermetic_netns_poc.sh</code> +
+<code>hermetic_wg_roundtrip.sh</code>; sha256 round-trip; bad-WG-key
+golden-bad; 3/3 deterministic; §12 self-bounded</td>
+</tr>
+<tr>
+<td>J.1</td>
+<td>Chromecast eureka — UNMODIFIED <code>chromecast_dial.sh</code>
+promoted over the tunnel</td>
+<td><strong>PASS</strong> (autonomous protocol logic; live §6 SKIP)</td>
+<td><code>18a21bd</code> <code>hermetic_bridge_run.sh</code>; stdlib
+eureka peer <code>10.10.0.2:8008</code>; <code>H2_MUT=badeureka</code>
+teeth; self-fetch name-nonce; §11.4.142 GO</td>
+</tr>
+<tr>
+<td>J.2</td>
+<td>FTP passive — UNMODIFIED <code>ftp_sftp_webdav.sh</code> FTP leg
+promoted over the tunnel</td>
+<td><strong>PASS</strong> (autonomous protocol logic; live §3 SKIP)</td>
+<td><code>3b98d02</code> <code>hermetic_ftp_run.sh</code>; ~85-line
+stdlib FTP peer <code>10.10.0.2:2121</code> (PASV/EPSV traverse
+<code>wg0</code>); content-verified self-RETR (§11.4.107(9));
+<code>FT_MUT=empty</code> teeth; 3/3</td>
+</tr>
+<tr>
+<td>J.3</td>
+<td>WebDAV PROPFIND — UNMODIFIED <code>ftp_sftp_webdav.sh</code> WebDAV
+leg promoted over the tunnel</td>
+<td><strong>PASS</strong> (autonomous protocol logic; live §3 SKIP)</td>
+<td><code>3b98d02</code> <code>hermetic_webdav_run.sh</code>; stdlib 207
+origin <code>10.10.0.2:8080</code> via stdlib forward proxy
+<code>127.0.0.1:3128</code> (RFC 7230 §5.3.2→§5.3.1);
+<code>WEBDAV_MUT=bad207</code> teeth = the exact PASS gate; 3/3</td>
+</tr>
+<tr>
+<td>J.4</td>
+<td>Email (SMTP-implicit-TLS + POP3S/IMAPS) hermetic promotion</td>
+<td><strong>IN-PROGRESS</strong> (de-risking PoC)</td>
+<td>pure-stdlib TLS-mail PoC precedes
+<code>hermetic_email_run.sh</code>; research
+<code>docs/research/hermetic_protocol_promotion_20260702/FINDINGS.md</code></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Autonomous value delivered:</strong> the anti-bluff gate
@@ -405,11 +472,19 @@ the operator guide, and the cited Miracast structural verdict.
 <strong>Live round-trip evidence</strong> (bytes / sha256 / mailbox body
 / eureka JSON / device serials) is operator-gated on the svord
 connection — no live capability is PASS without captured evidence on a
-genuinely-up bridge (§11.4.6 / §11.4.69 / §11.4.108).
-<strong>Tally:</strong> 4 PASS-now · 16 operator-gated
+genuinely-up bridge (§11.4.6 / §11.4.69 / §11.4.108). <strong>NEW §J
+autonomous value:</strong> the FTP/WebDAV/Cast-eureka client-side
+protocol logic is now proven over a hermetic kernel-WG tunnel with a
+pure-stdlib peer (zero installs), each with a golden-bad mutation that
+FAILs the real assertion + a not-stale self-fetch + 3/3 determinism +
+independent §11.4.142 GO — the live Mullvad round-trip stays
+operator-gated (§J COMPLEMENTS, never replaces). <strong>Tally:</strong>
+4 PASS-now foundation · 4 §J PASS-now hermetic autonomous protocol
+promotions (+ email in-progress) · 16 live round-trips operator-gated
 SKIP/OPERATOR-BLOCKED · 1 Won't-fix. Composes §11.4.3 / §11.4.6 /
-§11.4.10 / §11.4.28 / §11.4.44 / §11.4.45 / §11.4.56 / §11.4.68 /
-§11.4.69 / §11.4.107 / §11.4.108 / §11.4.112 / §11.4.115 / §11.4.122 /
-§11.4.133 / §11.4.153 / §11.4.167 / §11.4.169 / §11.4.174.</p>
+§11.4.10 / §11.4.28 / §11.4.44 / §11.4.45 / §11.4.52 / §11.4.56 /
+§11.4.68 / §11.4.69 / §11.4.107 / §11.4.108 / §11.4.111 / §11.4.112 /
+§11.4.115 / §11.4.122 / §11.4.133 / §11.4.142 / §11.4.147 / §11.4.153 /
+§11.4.167 / §11.4.169 / §11.4.174.</p>
 </body>
 </html>

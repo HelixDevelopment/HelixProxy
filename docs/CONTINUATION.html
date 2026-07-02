@@ -179,14 +179,54 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
-2026-07-02T01:00:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
+2026-07-02T05:25:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-13 wave (HEAD
-<code>b76065c</code>, branch <code>main</code>, all FF to
-origin):</strong> <strong>hermetic-harness H0-FULL DONE — a REAL
-encrypted kernel-WireGuard tunnel round-trip proven autonomously
+future work on <code>main</code>"</strong>). <strong>Rev-14 wave (HEAD
+<code>3b98d02</code>, branch <code>main</code>, all FF to
+origin):</strong> <strong>H2.x hermetic protocol promotions — three
+operator-gated protocol legs now run AUTONOMOUSLY over the hermetic
+kernel-WireGuard tunnel (§11.4.52).</strong> <code>18a21bd</code> landed
+H2 = the UNMODIFIED <code>chromecast_dial.sh</code> eureka control leg
+promoted (<code>hermetic_bridge_run.sh</code>, stdlib eureka peer
+<code>10.10.0.2:8008</code>, <code>H2_MUT=badeureka</code> teeth,
+self-fetch name-nonce). <code>3b98d02</code> landed <strong>H2.ftp +
+H2.webdav</strong>: <code>hermetic_ftp_run.sh</code> (embedded ~85-line
+stdlib FTP server <code>10.10.0.2:2121</code>, PASV/EPSV both traverse
+<code>wg0</code> §11.4.111, harness content-verifies a self-RETR against
+ground truth §11.4.107(9), <code>FT_MUT=empty</code> teeth) +
+<code>hermetic_webdav_run.sh</code> (stdlib 207 origin
+<code>10.10.0.2:8080</code> reached THROUGH a stdlib forward proxy
+<code>127.0.0.1:3128</code> RFC 7230 §5.3.2→§5.3.1,
+<code>WEBDAV_MUT=bad207</code> = the exact PASS gate). Both harnesses
+additionally <strong>scrub ambient-shell sibling-leg env vars</strong>
+before invoking the promoted test (§11.4.50 determinism,
+independent-review nit — false-negative guard, never a bluff PASS).
+<strong>All verified GREEN: FTP normal+teeth, WebDAV normal+teeth (207
+through proxy, self-fetch body 779 B), both 3/3 deterministic;
+independent §11.4.142 review returned GO on both.</strong> WebDAV
+harness was drafted by a session-limit-crashed builder subagent, resumed
+residue-clean per §11.4.147. Feature Status bumped to <strong>Rev 3 (new
+§J)</strong> + Status_Summary Rev 3 + companion docs
+<code>hermetic_ftp_run.md</code> (Rev 2) /
+<code>hermetic_webdav_run.md</code> (Rev 1) + research
+<code>FINDINGS.md</code>, all with synced HTML+PDF (0 fence-leaks
+§11.4.168). <strong>Honest gate verdict (§11.4.6):</strong> the clean
+zero-install promotion set is now COMPLETE (Cast-eureka+FTP+WebDAV);
+SFTP needs <code>sshd</code> (absent, no stdlib SSH server), SMB/NFS
+need samba/nfsd, <code>discovery_reflect.sh</code> scored leg
+hard-requires the absent <code>avahi-browse</code> client, ADB/container
+need device/podman — all genuinely operator-gated (§11.4.122/§11.4.3).
+<strong>Email (SMTP-implicit-TLS + POP3S/IMAPS) is pure-stdlib-feasible
+and under active de-risking</strong> — a standalone TLS-mail PoC
+subagent (<code>ac86a45fcd50747dd</code>) is in flight before any
+<code>hermetic_email_run.sh</code>. <strong>Next: on PoC GO,
+build+review+land H2.email; the loop continues (no tag — "keep
+hardening").</strong> <strong>Rev-13 wave (HEAD <code>b76065c</code>,
+branch <code>main</code>, all FF to origin):</strong>
+<strong>hermetic-harness H0-FULL DONE — a REAL encrypted
+kernel-WireGuard tunnel round-trip proven autonomously
 (<code>b76065c</code>).</strong> The planned <code>wireguard-go</code>
 build was unnecessary: the host <code>wireguard</code> <strong>kernel
 module</strong> works inside an unprivileged userns netns
