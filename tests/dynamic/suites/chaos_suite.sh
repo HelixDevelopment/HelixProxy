@@ -34,7 +34,71 @@
 # =============================================================================
 DIR=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=/dev/null
-. "$DIR/../lib/analyzer_common.sh"
+# Idempotent: on normal execution $0 resolves DIR and this sources the lib; when
+# the §11.4.135 guard has ALREADY sourced analyzer_common.sh (its $0-based DIR would
+# be wrong here), skip the re-source so a failed `.` never aborts the guard.
+command -v dyn_run_analyzer >/dev/null 2>&1 || . "$DIR/../lib/analyzer_common.sh"
+
+# ---------------------------------------------------------------------------
+# Reusable no-leak evaluation helpers (single-source, §11.4.107(10)). These are
+# exercised BOTH by the C1 body below AND by the §11.4.135 regression guard
+# tests/regression/chaos_no_leak_argshape_test.sh, which sources this file with
+# CHAOS_SOURCE_ONLY=1 (defines the functions, runs NO live probes / NO side
+# effects) — no divergent copy of the fix logic.
+# ---------------------------------------------------------------------------
+
+# chaos_target_leak_key <target-url-or-host-or-ip>
+# Reduce the C1 target to the bare host/IP shape a tcpdump line actually carries,
+# so no_leak_analyzer's " IP .*<key>" grep can match a leaked packet. The pre-fix
+# call site passed the FULL URL (http://target-a.internal/); a scheme-prefixed URL
+# NEVER appears in a tcpdump line, so the count was always 0 and a REAL leak passed
+# as "no leak" (§11.4.107(10) bluff). Strip scheme:// + user@ + /path + ?query +
+# :port to the bare host, then resolve the host to an IP when a resolver answers
+# (numeric tcpdump lines carry IPs; the analyzer self-test keys on an IP). §11.4.6
+# residual: when NO resolver answers (an internal name with no live DNS — needs the
+# live stack), fall back to the bare HOST (still NEVER the URL); a purely-numeric
+# capture then depends on the live stack's DNS to resolve the name.
+chaos_target_leak_key() {
+    _t=$1
+    _t=${_t#*://}          # strip scheme://
+    _t=${_t%%/*}           # strip /path
+    _t=${_t%%\?*}          # strip ?query (defensive)
+    _t=${_t##*@}           # strip user@ (defensive)
+    _host=${_t%%:*}        # strip :port
+    if [ -z "$_host" ]; then printf '%s' "$_t"; return 0; fi
+    case "$_host" in
+        *[!0-9.]*) : ;;                        # has non-numeric chars — try resolve
+        *) printf '%s' "$_host"; return 0 ;;   # already a bare IPv4 literal
+    esac
+    _ip=""
+    if command -v getent >/dev/null 2>&1; then
+        _ip=$(getent hosts "$_host" 2>/dev/null | awk 'NR==1{print $1}')
+    fi
+    if [ -z "$_ip" ] && command -v dig >/dev/null 2>&1; then
+        _ip=$(dig +short "$_host" 2>/dev/null | awk '/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/{print;exit}')
+    fi
+    if [ -n "$_ip" ]; then printf '%s' "$_ip"; else printf '%s' "$_host"; fi
+}
+
+# chaos_leak_signal <capture> <target>
+# Honest C1 no-leak sub-signal (§11.4.6/§11.4.69 — no absence-as-evidence):
+#   rc 0  real no-leak evidence: capture non-empty AND analyzer PASS (0 target pkts)
+#   rc 1  LEAK: the analyzer counted >=1 packet to the resolved target key
+#   rc 2  UNEVALUATED: capture absent/empty — NOT "no leak" (missing evidence)
+# The target is reduced to the host/IP leak-key first (never the scheme-prefixed
+# URL). rc 2 is turned into an honest SKIP by the caller, never a no-leak PASS.
+chaos_leak_signal() {
+    _cap=$1
+    _tgt=$2
+    if [ -z "$_cap" ] || [ ! -f "$_cap" ] || [ ! -s "$_cap" ]; then
+        return 2
+    fi
+    _key=$(chaos_target_leak_key "$_tgt")
+    dyn_run_analyzer no_leak_analyzer.sh "$_cap" "$_key"
+}
+
+# Sourced for its functions only (regression guard) — stop before any side effect.
+if [ "${CHAOS_SOURCE_ONLY:-0}" = "1" ]; then return 0 2>/dev/null || exit 0; fi
 
 SUITE="chaos"
 RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
@@ -86,7 +150,16 @@ pid_after=$(sh -c "${HELIX_SQUID_PID_CMD:-echo 0}" 2>/dev/null)
 } > "$QA/c1_503.manifest"
 
 g503_rc=0; dyn_run_analyzer graceful_503_analyzer.sh "$QA/c1_503.manifest" || g503_rc=1
-leak_rc=0; [ -n "$cap" ] && { dyn_run_analyzer no_leak_analyzer.sh "$cap" "$TARGET" || leak_rc=1; }
+# §11.4.6/§11.4.69/§11.4.107(10): no-leak is a MANDATORY C1 sub-signal. The target
+# is resolved to the host/IP leak-key the analyzer greps — NEVER the full URL
+# ($TARGET, a scheme-prefixed URL that never appears in a tcpdump line and would
+# make a REAL leak count 0 and pass). An absent/empty uplink capture is missing
+# evidence (rc 2), NOT "no leak" — turned into an honest SKIP below, never a PASS.
+chaos_leak_signal "$cap" "$TARGET"; leak_rc=$?
+if [ "$leak_rc" -eq 2 ]; then
+    ab_skip_with_reason "$SUITE C1 (no-leak evidence absent — uplink capture empty/missing)" "network_unreachable_external"
+    exit 0
+fi
 
 # Recovery: bring the tunnel back, assert the next request is 200 (no reconfigure).
 sh -c "${HELIX_CHAOS_RESTART_CMD:-true}" >/dev/null 2>&1

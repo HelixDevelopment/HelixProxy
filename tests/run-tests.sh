@@ -770,6 +770,28 @@ test_regression_guards() {
             *) test_result "LE Phase-5 rotation guard RED" "FAIL" "RED could not reproduce — §11.4.7" ;;
         esac
     fi
+
+    # task #73 (dynamic-audit ac3f1c89) — GREEN guard: chaos_suite C1 no-leak
+    # sub-signal can NEVER vacuously PASS. Drives the REAL no_leak analyzer + the
+    # REAL chaos_target_leak_key/chaos_leak_signal fix functions (§11.4.107(10),
+    # no divergent copy). Proves a URL target is stripped to its host/IP so a real
+    # leak is CAUGHT, and an empty/absent uplink capture is UNEVALUATED (honest
+    # SKIP) not a silent no-leak PASS (§11.4.6/§11.4.120). Pure logic, no live stack.
+    if bash "$SCRIPT_DIR/regression/chaos_no_leak_argshape_test.sh" >/dev/null 2>&1; then
+        test_result "task#73 chaos no-leak arg-shape + empty-capture (GREEN)" "PASS"
+    else
+        test_result "task#73 chaos no-leak arg-shape + empty-capture (GREEN)" "FAIL" \
+            "run: bash tests/regression/chaos_no_leak_argshape_test.sh"
+    fi
+    # task #73 — RED self-check: the URL-as-key vacuous PASS on a REAL leak AND the
+    # pre-fix empty-capture-assumed-no-leak must reproduce. A RED that cannot
+    # reproduce is a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/chaos_no_leak_argshape_test.sh" >/dev/null 2>&1; then
+        test_result "task#73 chaos no-leak vacuous-PASS RED reproduces" "PASS"
+    else
+        test_result "task#73 chaos no-leak vacuous-PASS RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################
