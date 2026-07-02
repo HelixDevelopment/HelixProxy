@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>hermetic_ftp_run</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1
+id="hermetic_ftp_runsh--companion-guide-11418"><code>hermetic_ftp_run.sh</code>
+— companion guide (§11.4.18)</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-02T00:00:00Z <strong>Status:</strong> H2.ftp for the hermetic
+WireGuard test harness (<a
+href="../design/vpn_lan_access/hermetic_wg_test_harness.md">design</a>)
+— the second §11.4.52 <strong>promotion</strong> of an operator-gated
+protocol test to autonomous (after the <a
+href="hermetic_bridge_run.md">Chromecast eureka leg</a>). Authority:
+inherits <code>constitution/Constitution.md</code> per §11.4.35.</p>
+<h2 id="overview">Overview</h2>
+<p><code>tests/vpn_lan/hermetic_ftp_run.sh</code> promotes the
+<strong>FTP leg</strong> of the operator-gated
+<code>tests/vpn_lan/ftp_sftp_webdav.sh</code> to run
+<strong>autonomously</strong> (§11.4.52). Inside one
+<code>unshare -Urnm</code> it: (1) stands up the H0-full
+kernel-WireGuard tunnel between two unprivileged netns; (2) runs a
+<strong>real, pure-python-stdlib FTP server</strong> in netns B bound to
+the WG-only overlay <code>10.10.0.2:2121</code>; (3) points the bridge
+contract (<code>tests/lib/svord_bridge.sh</code>) at it; (4) runs the
+<strong>UNMODIFIED</strong> protocol test <em>inside</em> netns A, where
+its own <code>bridge_require</code> gate flips SKIP→UP and the FTP leg
+does a <strong>real passive directory listing</strong> over the
+encrypted tunnel and produces a genuine PASS with captured evidence — no
+operator, no podman, no live VPN server. The harness
+<strong>additionally</strong> content-verifies a <strong>byte fetch
+(RETR)</strong> of a fresh nonce file over the tunnel itself
+(§11.4.107(9)) — the promoted test's own fetch is best-effort + ungated
+(its PASS is listing-only), so the byte-transfer proof is earned by the
+harness self-check, not claimed on the test's behalf.</p>
+<p><strong>Zero host installs (§11.4.122):</strong> python has no stdlib
+FTP <em>server</em> (only the <code>ftplib</code> client), so the
+harness embeds a ~85-line pure-stdlib FTP server answering exactly the
+command set <code>curl --ftp-pasv</code> drives:
+<code>USER/PASS(anonymous)/SYST/TYPE/PWD/CWD/SIZE/FEAT/OPTS/EPSV/PASV/LIST/RETR/QUIT</code>.</p>
+<h2 id="why-it-works-over-a-point-to-point-wireguard-link-114111">Why it
+works over a point-to-point WireGuard link (§11.4.111)</h2>
+<p>FTP passive mode is the tricky part. A naïve server advertises
+<code>127,0,0,1</code> in its <code>227 Entering Passive Mode</code>
+reply; the client (curl, in netns A) then dials its own loopback and the
+data channel dies. This server advertises the <strong>overlay address
+<code>10.10.0.2</code></strong> (<code>PASV</code>) — or uses
+<strong>EPSV</strong> <code>229 (|||port|)</code>, which carries no IP
+so the client reuses the control connection's peer (already
+<code>10.10.0.2</code> over the tunnel). Both are handled; curl prefers
+EPSV. The data connection then traverses <code>wg0</code>, inside the WG
+<code>allowed-ips</code> <code>10.10.0.1/32 ↔︎ 10.10.0.2/32</code>.</p>
+<h2 id="how-the-bridge-contract-is-pointed-at-the-hermetic-peer">How the
+bridge contract is pointed at the hermetic peer</h2>
+<table>
+<thead>
+<tr>
+<th>var</th>
+<th>hermetic value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELIX_SVORD_DIR</code></td>
+<td>the served dir (non-empty)</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_CONNECT</code> / <code>_DISCONNECT</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HEALTH</code></td>
+<td>a <strong>real</strong> TCP probe of <code>10.10.0.2:2121</code>
+over the tunnel</td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_SUBNET</code></td>
+<td><code>10.10.0.0/24</code></td>
+</tr>
+<tr>
+<td><code>HELIX_BRIDGE_HOST</code></td>
+<td><code>10.10.0.2</code></td>
+</tr>
+<tr>
+<td><code>HELIX_VPN_FTP_URL</code></td>
+<td><code>ftp://10.10.0.2:2121/</code> (anonymous — no credentials,
+§11.4.10)</td>
+</tr>
+</tbody>
+</table>
+<p><code>HELIX_BRIDGE_MODE=hermetic</code> documents intent; the library
+realises the promotion through the contract vars above. The SFTP +
+WebDAV legs of the same test SKIP honestly (their vars unset) — exactly
+as designed.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tests/vpn_lan/hermetic_ftp_run.sh</span>              <span class="co"># PASS / SKIP / FAIL</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">FT_MUT</span><span class="op">=</span>empty <span class="ex">tests/vpn_lan/hermetic_ftp_run.sh</span> <span class="co"># §1.1 golden-bad</span></span></code></pre></div>
+<p>Evidence:
+<code>qa-results/vpn_lan/hermetic_ftp/&lt;UTC-ts&gt;_&lt;pass|mut&gt;_&lt;pid&gt;/run.evidence</code>
+(the promoted test also writes its own
+<code>qa-results/vpn_lan/phase3/.../ftp/</code>).</p>
+<h2 id="anti-bluff-design">Anti-bluff design</h2>
+<p>The normal PASS is emitted <strong>only</strong> when the promoted
+<code>ftp_sftp_webdav.sh</code> exits 0 <strong>and</strong> its stdout
+carries a real <code>^PASS:.*FTP passive</code> line — a SKIP-only run
+can never satisfy that. The <strong>golden-bad</strong>
+(<code>FT_MUT=empty</code>) makes the FTP server serve an <strong>empty
+directory listing</strong>; the promoted test then cannot list, so it
+<strong>SKIPs</strong> (<code>^SKIP:.*FTP passive</code>, never PASS).
+The harness reports PASS on the mutation <strong>only</strong> when it
+confirms that suppression — proving a real PASS provably requires a real
+non-empty listing+fetch over the tunnel, not a rubber-stamp
+(§11.4.107(10) / §11.4.68).</p>
+<p><strong>Self-fetch freshness cross-check (§11.4.107
+not-stale).</strong> Before running the promoted test, the harness lists
+<code>ftp://10.10.0.2:2121/</code> <strong>itself</strong> over the
+tunnel and asserts THIS run's fresh nonce filename is present (normal) /
+the listing is empty (golden-bad). This ties the eventual PASS to a real
+passive round-trip of <em>our</em> data over the encrypted overlay,
+decoupled from the downstream grep string and forbidding a stale/cached
+peer. A <strong>coupling-contract guard</strong>
+(<code>grep -q 'FTP passive' "$TEST"</code>) makes a future rename of
+the promoted leg fail with a clear diagnostic here.</p>
+<p><strong>Content-verified byte fetch (§11.4.107(9) full-reference
+oracle).</strong> On the normal path the harness then RETRs the nonce
+file <code>ftp://10.10.0.2:2121/&lt;nonce&gt;.txt</code> by its exact
+(CRLF-free, self-constructed) name over the tunnel and asserts the
+returned bytes equal the known payload
+<code>ftp-payload-&lt;nonce&gt;</code>. This is what genuinely EARNS the
+"+fetch" claim — a real byte transfer over the encrypted tunnel,
+content-checked against ground truth — rather than relying on the
+promoted test's own fetch, which is best-effort and NOT part of its PASS
+gate (its listing is CRLF-terminated, so the test's
+<code>awk</code>-extracted filename carries a trailing <code>\r</code>
+and curl rejects the URL — harmless, because that fetch is ungated; the
+harness proves the fetch on its own).</p>
+<p><strong>Host-safety self-bounding.</strong> The FTP server runs under
+<code>timeout -k 2 90</code> <em>inside</em> the netns so an
+outer-SIGKILL orphan self-terminates (§12); the outer
+<code>timeout 70</code> reaps the whole <code>unshare</code> tree first,
+the inner self-bound is belt-and-suspenders.</p>
+<p><strong>Ambient-env determinism (§11.4.50).</strong> Before invoking
+the promoted test the harness <code>unset</code>s the SFTP + WebDAV leg
+contract vars (and the FTP
+<code>_USER</code>/<code>_PASS</code>/<code>_ACTIVE_CMD</code>
+auxiliaries), so a leftover ambient-shell export cannot make a sibling
+leg attempt a (from-netns unreachable) real connection and flip the
+promoted test's exit code into a spurious FAIL. This is a false-negative
+guard only — it can never manufacture a bluff PASS — and pins the
+promoted-test environment to exactly the one configured leg.</p>
+<h2 id="captured-evidence-verified-2026-07-02">Captured evidence
+(verified 2026-07-02)</h2>
+<p>Normal run embedded the promoted test's own output:</p>
+<pre><code>ftp_sftp_webdav: svord bridge UP — running live FTP/SFTP/WebDAV checks (subnet=10.10.0.0/24 host=10.10.0.2)
+PASS: FTP passive directory-list + fetch (VPN server) [evidence: .../phase3/.../ftp/roundtrip.evidence]
+FT_PASS: the UNMODIFIED ftp_sftp_webdav.sh FTP leg produced a REAL PASS over the hermetic WireGuard tunnel</code></pre>
+<p><strong>3/3 deterministic</strong> (§11.4.50). Golden-bad → the real
+test SKIPped on the empty listing
+(<code>network_unreachable_external</code>), the teeth fired.</p>
+<h2 id="honest-scope-1146--1143">Honest scope (§11.4.6 / §11.4.3)</h2>
+<p>Proves the <strong>FTP passive listing+fetch logic</strong>
+autonomously over an encrypted tunnel against a controlled peer. It does
+NOT prove a real FTP server on the real Mullvad topology (that stays the
+§11.4.3 operator-gated confirmation), and it does not promote the SFTP
+leg (needs <code>sshd</code> / an <code>sftp</code> client — both
+absent, so operator-gated) or the WebDAV leg (routes through the
+data-plane Squid — see <a
+href="hermetic_webdav_run.md"><code>hermetic_webdav_run.md</code></a>).</p>
+<h2 id="prerequisites--skip">Prerequisites / SKIP</h2>
+<p>bash, unshare+nsenter, iproute2 <code>ip</code> (wireguard link
+type), <code>wg</code>, host <code>wireguard</code> kernel module,
+python3 (stdlib only), curl, <code>timeout</code>, plus
+<code>tests/vpn_lan/ftp_sftp_webdav.sh</code>. Any missing → honest
+<code>SKIP:</code> (§11.4.3). Process-headroom guard SKIPs on a starved
+host (§12).</p>
+<h2 id="security-11410">Security (§11.4.10)</h2>
+<p>WireGuard private keys: mode-0600 <code>mktemp</code> inside the
+namespace, used by path, removed on exit, never logged. FTP is
+<strong>anonymous</strong> — no credentials anywhere. The served file is
+a per-run nonce (fresh value, §11.4.107 not-stale).</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><a
+href="hermetic_bridge_run.md"><code>hermetic_bridge_run.md</code></a> —
+the H2 template (Chromecast eureka leg).</li>
+<li><a
+href="hermetic_wg_roundtrip.md"><code>hermetic_wg_roundtrip.md</code></a>
+— the H0-full tunnel this reuses.</li>
+<li><a
+href="hermetic_netns_poc.md"><code>hermetic_netns_poc.md</code></a> —
+the veth substrate.</li>
+<li><code>tests/vpn_lan/ftp_sftp_webdav.sh</code> — the promoted
+protocol test.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-07-02 (host: ALT Linux kernel 6.12, <code>wireguard</code>
+module, wireguard-tools 1.0.20210914, python3 stdlib, curl).</p>
+</body>
+</html>

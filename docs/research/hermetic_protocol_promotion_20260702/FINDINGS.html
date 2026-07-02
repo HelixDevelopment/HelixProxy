@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>FINDINGS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="hermetic-protocol-promotion-research--pure-python-peer-servers-over-a-kernel-wireguard-netns-tunnel">Hermetic
+protocol-promotion research — pure-python peer servers over a
+kernel-WireGuard netns tunnel</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-02T00:00:00Z <strong>Status:</strong> Research findings (deep
+multi-angle web research per §11.4.150 / §11.4.99). No code changed by
+the research pass. Authority: inherits
+<code>constitution/Constitution.md</code> per §11.4.35.
+<strong>Scope:</strong> strengthen the hermetic WireGuard test harness
+so operator-gated VPN-LAN protocol round-trips (Chromecast/DIAL, FTP,
+WebDAV, SMB, mDNS, SMTP/IMAP) can be promoted to run AUTONOMOUSLY inside
+unprivileged <code>unshare -Urnm</code> user+net namespaces joined by a
+real kernel-WireGuard tunnel, with pure-python-stdlib peer servers bound
+to the WG overlay address.</p>
+<h2 id="harness-context-this-research-feeds">Harness context this
+research feeds</h2>
+<p>The committed harnesses
+(<code>tests/vpn_lan/hermetic_wg_roundtrip.sh</code>,
+<code>hermetic_bridge_run.sh</code>, <code>hermetic_ftp_run.sh</code>)
+prove a real payload round-trips over an encrypted kernel-WireGuard
+tunnel between two unprivileged network namespaces, fully rootless:</p>
+<pre><code> netns A (in the userns)                    netns B (peer / holder)
+ veth0 10.9.0.1  ── underlay (UDP) ──── veth1 10.9.0.2     &lt;- carries encrypted WG
+ wg0   10.10.0.1 ═══ WireGuard tunnel ═════ wg0 10.10.0.2  &lt;- the overlay
+                                            python3 peer server bound to 10.10.0.2</code></pre>
+<p>The peer server binds the WG-only overlay <code>10.10.0.2</code>
+(allowed-ips <code>10.10.0.2/32</code>), reachable ONLY through the
+tunnel; independent oracles gate PASS (payload round-trip +
+<code>wg show</code> handshake with
+<code>rx&gt;0 &amp;&amp; tx&gt;0</code>); a per-layer golden-bad
+(<code>WG_MUT=badkey</code>, <code>H2_MUT=badeureka</code>,
+<code>FT_MUT=empty</code>) is the §1.1 control. The live protocol tests
+(SMB/NFS/FTP/SFTP/WebDAV/IMAP/SMTP/POP3S/Cast/DIAL/ADB) are AUTHORED but
+SKIP-gated on the operator's svord/Mullvad bridge. This research is
+about replacing the "need a live remote server" gate with a pure-stdlib
+peer server inside netns B.</p>
+<h2
+id="1-pure-python-stdlib-ftp-server-correctness-in-a-network-namespace">1.
+Pure-python-stdlib FTP server correctness in a network namespace</h2>
+<p>RFC 959 §4.1.2: the
+<code>227 Entering Passive Mode (h1,h2,h3,h4,p1,p2)</code> reply encodes
+the <strong>host address the server is listening on</strong> (h1 = high
+octet) and the data port as <code>p1*256 + p2</code>. The load-bearing
+gotcha: a naïve server advertises <code>127,0,0,1</code> (or the
+underlay), so the client dials an unreachable address and the data
+channel hangs — the classic FTP-in-NAT/namespace bug (vsftpd fixes it
+with <code>pasv_address</code>). For our harness the reachable address
+is the WG overlay <code>10.10.0.2</code>; the server MUST encode
+<code>10,10,0,2</code> in the 227 reply. <strong>EPSV</strong>
+(<code>229 Entering Extended Passive Mode (|||port|)</code>, RFC 2428)
+sidesteps the IP-encoding entirely — it carries no address, so the
+client reuses the control connection's peer (<code>10.10.0.2</code> over
+the tunnel); curl prefers EPSV. Because the overlay is
+<code>allowed-ips 10.10.0.2/32</code>, a successful data connection is
+itself proof of tunnel traversal (the client cannot reach
+<code>10.10.0.2</code> any other way).</p>
+<p>Minimal command set <code>curl --ftp-pasv</code> drives for LIST +
+RETR: <code>USER/PASS/SYST/PWD/TYPE/(EPSV|PASV)/LIST/RETR/QUIT</code>.
+Python has NO stdlib FTP <em>server</em> (only the <code>ftplib</code>
+client), so a ~85–120-line <code>socket</code>-based server is required
+— no <code>pyftpdlib</code> install (§11.4.122).
+<strong>Implemented</strong> in <code>hermetic_ftp_run.sh</code>
+(EPSV/PASV both advertise <code>10.10.0.2</code>; golden-bad
+<code>FT_MUT=empty</code> serves an empty listing → the promoted test
+SKIPs, proving a real PASS needs a real non-empty listing).</p>
+<p><strong>Gotcha found in review:</strong> the <code>LIST</code> output
+is CRLF-terminated; the promoted test's <code>awk 'NF{print $NF}'</code>
+leaves a trailing <code>\r</code> on the filename, and curl rejects a
+URL with an embedded <code>\r</code> (CVE-2014-8150 →
+<code>CURLE_URL_MALFORMAT</code>). The promoted test's fetch is
+best-effort and NOT part of its PASS gate, so this is harmless there —
+but the harness must prove the byte-transfer half itself:
+<code>hermetic_ftp_run.sh</code> RETRs the nonce file by its exact
+(self-constructed, CRLF-free) name and byte-compares to the known
+payload (§11.4.107(9)).</p>
+<h2 id="2-webdav-origin--forward-proxy-in-pure-python-stdlib">2. WebDAV
+origin + forward proxy in pure python stdlib</h2>
+<p><code>http.server.BaseHTTPRequestHandler</code> dispatches by method
+name → define <code>do_PROPFIND</code>, <code>do_OPTIONS</code>,
+<code>do_GET</code>, <code>do_PUT</code>. RFC 4918 §9.1: PROPFIND with
+<code>Depth: 0|1</code>, response <code>207 Multi-Status</code>,
+<code>Content-Type: application/xml</code>, body rooted at
+<code>DAV:multistatus</code> with per-resource <code>DAV:response</code>
+→ <code>DAV:href</code> +
+<code>DAV:propstat</code>(<code>DAV:prop</code> +
+<code>DAV:status</code>). Minimal valid body:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;D:multistatus xmlns:D=&quot;DAV:&quot;&gt;
+  &lt;D:response&gt;
+    &lt;D:href&gt;/dav/file.txt&lt;/D:href&gt;
+    &lt;D:propstat&gt;
+      &lt;D:prop&gt;&lt;D:displayname&gt;file.txt&lt;/D:displayname&gt;
+             &lt;D:getcontentlength&gt;12&lt;/D:getcontentlength&gt;
+             &lt;D:resourcetype/&gt;&lt;/D:prop&gt;
+      &lt;D:status&gt;HTTP/1.1 200 OK&lt;/D:status&gt;
+    &lt;/D:propstat&gt;
+  &lt;/D:response&gt;
+&lt;/D:multistatus&gt;</code></pre>
+<p>Forward proxy (RFC 7230 §5.3.2): a proxy MUST accept
+<strong>absolute-form</strong> request targets;
+<code>curl -x http://proxy http://upstream/path</code> sends
+<code>PROPFIND http://upstream/path HTTP/1.1</code> to the proxy, which
+parses the absolute-URI, connects upstream, and <strong>re-emits
+origin-form</strong> (<code>PROPFIND /path HTTP/1.1</code> + a fresh
+<code>Host:</code> from the request-target, §5.3.1). Both origin and a
+~40-line stdlib forward proxy are feasible. The promoted WebDAV leg
+(<code>ftp_sftp_webdav.sh</code>) routes through
+<code>HELIX_SQUID_PROXY</code> and expects <code>207</code> (non-207 ⇒
+FAIL, fail-closed §11.4.68) — so the hermetic promotion needs BOTH a
+<code>207</code>-returning origin at <code>10.10.0.2</code> and a
+client-side forward proxy the curl <code>-x</code> routes through.
+Golden-bad <code>WEBDAV_MUT=plain200</code> (origin returns
+<code>200</code>) MUST trip the test's fail-closed non-207 branch.</p>
+<h2
+id="3-kernel-wireguard-in-an-unprivileged-user-namespace--caveats">3.
+Kernel-WireGuard in an unprivileged user namespace — caveats</h2>
+<p>Works because <code>CLONE_NEWUSER + CLONE_NEWNET</code> grants
+<code>CAP_NET_ADMIN</code> <strong>inside</strong> the new userns, so
+<code>ip link add wg0 type wireguard</code> + <code>wg set</code>
+succeed with the host <code>wireguard</code> module loaded — no
+<code>wireguard-go</code>, no host root. <code>ip netns add</code> still
+needs root (persists under <code>/run/netns/</code>);
+<code>unshare -Urn</code> is the rootless path but namespaces are
+process-lifetime, non-persistent, invisible to <code>ip netns</code>
+(our harness relies on this).</p>
+<p><strong>The real risk is portability, not a WG-specific CVE.</strong>
+Independent research (Edera, kernel 6.18): creating virtual net devices
+auto-loads 15+ kernel modules unprivileged; 40+ kernel CVEs (2020–2025)
+had userns as a prerequisite; userns raised reachable sensitive kernel
+operations 8/40 → 27/40 (~262%). Hardening:
+<code>kernel.unprivileged_userns_clone=0</code> AND
+<code>user.max_user_namespaces=0</code>. <strong>Ubuntu 23.10+ restricts
+unprivileged userns via AppArmor</strong>
+(<code>kernel.apparmor_restrict_unprivileged_userns=1</code>): an
+unconfined process CANNOT create a userns without a profile carrying
+<code>userns,</code> — so a tool invoking <code>unshare -Urn</code> from
+an arbitrary path simply fails on such hosts.
+<strong>Actionable:</strong> keep the honest-SKIP taxonomy first-class —
+probe + SKIP-with-reason separately on (a)
+<code>/sys/module/wireguard</code> absent, (b)
+<code>unshare -Urnm true</code> denied, (c)
+<code>ip link add type wireguard</code> failing — so a hardened CI host
+SKIPs honestly, never false-greens. Our harnesses already SKIP on (a)
+and (b); (c) is covered by the inner <code>|| fail</code>.</p>
+<h2 id="4-oss--tools-for-rootless-hermetic-network-testing-11474">4. OSS
+/ tools for rootless hermetic network testing (§11.4.74)</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What</th>
+<th>Root/install</th>
+<th>Relevance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unshare -Urn</code> + kernel WG (current)</td>
+<td>rootless userns + in-kernel WG</td>
+<td>none; needs host WG module + userns permitted</td>
+<td>simplest, real encryption; fragile on userns-hardened hosts</td>
+</tr>
+<tr>
+<td>slirp4netns</td>
+<td>user-mode TCP/IP stack for a netns</td>
+<td>none; small binary</td>
+<td>netns egress w/o veth/CAP_NET_ADMIN; NAT overhead</td>
+</tr>
+<tr>
+<td>pasta / passt</td>
+<td>newer user-mode net; Podman rootless default</td>
+<td>none; small binary</td>
+<td>faster than slirp4netns (no NAT); best rootless egress</td>
+</tr>
+<tr>
+<td>wireguard-go</td>
+<td>compliant userspace WG (Go, TUN)</td>
+<td>Go binary; <code>/dev/net/tun</code></td>
+<td>kernel-module fallback when WG module absent</td>
+</tr>
+<tr>
+<td>boringtun</td>
+<td>Cloudflare userspace WG (Rust)</td>
+<td>binary; drop-priv caveat</td>
+<td>same fallback, faster; Rust binary dep</td>
+</tr>
+<tr>
+<td>wireguard4netns (CMU)</td>
+<td>patched wireguard-go for unprivileged netns</td>
+<td>none</td>
+<td>closest art to "hermetic WG w/o kernel module"; reuse per
+§11.4.74</td>
+</tr>
+<tr>
+<td>gVisor netstack</td>
+<td>userspace TCP/IP as a Go lib</td>
+<td>Go build</td>
+<td>fully in-process encrypted stack (no TUN/netns/module); future
+direction</td>
+</tr>
+<tr>
+<td>rootless podman + <code>vasic-digital/containers</code></td>
+<td>container fixtures</td>
+<td>rootless podman; §11.4.76</td>
+<td>for SMB/NFS/TLS-mail: boot a real server container in netns B rather
+than hand-roll</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-protocol promotion verdict (autonomous, no host
+install):</strong> FTP, WebDAV, Cast/DIAL eureka, plaintext
+SMTP/IMAP/POP3, HTTP-family → pure-stdlib peer feasible now.
+Implicit-TLS mail (465/993/995) → stdlib <code>ssl</code> + a
+self-signed cert generated at test time (bounded dep for cert-gen).
+mDNS/DNS-SD → pure-python multicast responder feasible
+(<code>socket</code> + <code>IP_ADD_MEMBERSHIP</code> on
+<code>224.0.0.251:5353</code>) — but bind the overlay addr, not
+localhost (python-zeroconf caveat), and note real cross-subnet mDNS
+still needs a reflector in production. <strong>SMB, NFS → no faithful
+pure-stdlib server; use a container-backed peer via
+<code>vasic-digital/containers</code> (§11.4.76) or stay operator-gated.
+Do NOT hand-roll SMB/NFS.</strong></p>
+<h2 id="5-anti-bluff-verification-patterns-the-oracle-problem">5.
+Anti-bluff verification patterns (the oracle problem)</h2>
+<p>Determining "did the round-trip really happen over the encrypted
+tunnel vs leak over the underlay" is a test-oracle problem;
+<strong>metamorphic testing</strong> (checking relations between related
+runs) is the standard escape when there is no golden output. Our stack
+maps to it:</p>
+<ol type="1">
+<li><strong>Byte/sha256 payload verification</strong> (own-content
+golden source) — strongest oracle when we control the payload.</li>
+<li><strong>Wrong-key negative control</strong>
+(<code>WG_MUT=badkey</code>) — a metamorphic relation with negation
+(corrupt key → PASS transitions to hard-FAIL); doubles as §11.4.107(10)
+self-validated golden-bad. Replicate per protocol.</li>
+<li><strong>Reachability-as-proof</strong> —
+<code>allowed-ips 10.10.0.2/32</code> means a successful L4 connection
+is itself tunnel-traversal evidence. Strengthen with a wrong-destination
+negative control (same fetch to underlay <code>10.9.0.2</code> /
+wg0-down MUST fail).</li>
+<li><strong>Transport-counter cross-check</strong> (<code>wg show</code>
+handshake + <code>rx/tx</code>) — an oracle in a different domain than
+the payload check (§11.4.107(2) multi-oracle).</li>
+<li><strong>Underlay-sniff differential</strong> (optional, strongest) —
+capture on the underlay veth
+(<code>AF_PACKET</code>/<code>tcpdump</code>) and assert the plaintext
+nonce never appears in cleartext on the underlay while ciphertext flows.
+Gate behind an honest SKIP where unavailable.</li>
+</ol>
+<p><strong>Precedent (§11.4.8):</strong> mature literature exists for
+metamorphic testing / the oracle problem generally (Wikipedia; arXiv
+1912.05278 security-flavoured MT), but <strong>no external precedent
+covers the exact composite</strong> — "prove a plaintext payload
+round-tripped over a rootless kernel-WireGuard netns tunnel and did not
+leak on the underlay, via self-fetched nonce + wg-transport-counter +
+wrong-key golden-bad." That specific composite is <strong>original
+work</strong>, well-grounded in the general MT/oracle literature.</p>
+<h2 id="three-most-actionable-findings-for-the-next-iterations">Three
+most actionable findings for the next iterations</h2>
+<ol type="1">
+<li><strong>Promote FTP + WebDAV first with pure-stdlib peers bound to
+<code>10.10.0.2</code> — the 227-reply IP (or EPSV) is the load-bearing
+correctness rule.</strong> FTP done (<code>hermetic_ftp_run.sh</code>);
+WebDAV needs a <code>207</code>-returning <code>do_PROPFIND</code>
+origin + a client-side forward proxy the curl <code>-x</code> routes
+through.</li>
+<li><strong>Make the userns/kernel-WG environment dependency an explicit
+greppable SKIP taxonomy</strong> — Ubuntu 23.10+/hardened kernels deny
+<code>unshare -Urn</code>; separate SKIP reasons prevent a hardened host
+from false-greening. Note wireguard-go/boringtun/wireguard4netns/
+gVisor-netstack as the no-kernel-module fallback (build cost accepted
+only then).</li>
+<li><strong>Replicate the <code>WG_MUT=badkey</code> golden-bad per
+protocol + add a wrong-destination (underlay) negative control</strong>,
+and an optional <code>AF_PACKET</code> underlay-sniff differential as
+the rock-solid non-leak proof (§11.4.123).</li>
+</ol>
+<h2 id="sources-verified">Sources verified</h2>
+<p>All URLs accessed <strong>2026-07-02</strong>.</p>
+<ul>
+<li>RFC 959 (FTP — PASV/227, TYPE, RETR/LIST): <a
+href="https://www.rfc-editor.org/rfc/rfc959">https://www.rfc-editor.org/rfc/rfc959</a></li>
+<li>RFC 2428 (FTP EPSV/EPRT): <a
+href="https://www.rfc-editor.org/rfc/rfc2428">https://www.rfc-editor.org/rfc/rfc2428</a></li>
+<li>D. J. Bernstein, "The PASV, RETR, REST, and PORT verbs": <a
+href="https://cr.yp.to/ftp/retr.html">https://cr.yp.to/ftp/retr.html</a></li>
+<li>IBM support — internal IP in 227 reply: <a
+href="https://www.ibm.com/support/pages/remote-ftp-client-doing-passive-mode-gets-internal-ip-address-returned-227-entering-passive-mode-message">https://www.ibm.com/support/pages/remote-ftp-client-doing-passive-mode-gets-internal-ip-address-returned-227-entering-passive-mode-message</a></li>
+<li>oneuptime — FTP passive mode troubleshooting: <a
+href="https://oneuptime.com/blog/post/2026-03-20-ftp-passive-mode-troubleshoot-ipv4/view">https://oneuptime.com/blog/post/2026-03-20-ftp-passive-mode-troubleshoot-ipv4/view</a></li>
+<li>Cerberus FTP support — passive data connection failures: <a
+href="https://support.cerberusftp.com/hc/en-us/articles/202639399">https://support.cerberusftp.com/hc/en-us/articles/202639399</a></li>
+<li>Check Point sk169993 — 227 header IP vs command IP mismatch: <a
+href="https://support.checkpoint.com/results/sk/sk169993">https://support.checkpoint.com/results/sk/sk169993</a></li>
+<li>everything.curl.dev — FTP directory listing (CRLF): <a
+href="https://everything.curl.dev/ftp/dirlist.html">https://everything.curl.dev/ftp/dirlist.html</a></li>
+<li>curl(1) man page: <a
+href="https://curl.se/docs/manpage.html">https://curl.se/docs/manpage.html</a></li>
+<li>libcurl error codes (CURLE_URL_MALFORMAT): <a
+href="https://curl.se/libcurl/c/libcurl-errors.html">https://curl.se/libcurl/c/libcurl-errors.html</a></li>
+<li>Debian LTS — CVE-2014-8150 URL sanitization: <a
+href="https://lists.debian.org/debian-lts/2015/01/msg00012.html">https://lists.debian.org/debian-lts/2015/01/msg00012.html</a></li>
+<li>MicroPython FTPdLite — minimalist RFC-959 asyncio FTP server: <a
+href="https://github.com/orgs/micropython/discussions/13016">https://github.com/orgs/micropython/discussions/13016</a></li>
+<li>Python stdlib <code>http.server</code> docs: <a
+href="https://docs.python.org/3/library/http.server.html">https://docs.python.org/3/library/http.server.html</a></li>
+<li>PEP 268 — Extended HTTP functionality and WebDAV: <a
+href="https://peps.python.org/pep-0268/">https://peps.python.org/pep-0268/</a></li>
+<li>RFC 4918 (WebDAV — PROPFIND, 207 Multi-Status): <a
+href="https://www.rfc-editor.org/rfc/rfc4918">https://www.rfc-editor.org/rfc/rfc4918</a></li>
+<li>sourceperl gist — WebDAV PROPFIND in python: <a
+href="https://gist.github.com/sourceperl/8d50995a5265f84fa5ea1dd4adf7522f">https://gist.github.com/sourceperl/8d50995a5265f84fa5ea1dd4adf7522f</a></li>
+<li>RFC 7230 (§5.3.1 origin-form, §5.3.2 absolute-form/proxy): <a
+href="https://www.rfc-editor.org/rfc/rfc7230.html">https://www.rfc-editor.org/rfc/rfc7230.html</a></li>
+<li>curl issue #6769 — proxy request absolute-form vs RFC 7230: <a
+href="https://github.com/curl/curl/issues/6769">https://github.com/curl/curl/issues/6769</a></li>
+<li>Edera — "User namespaces are not a security boundary": <a
+href="https://edera.dev/stories/user-namespaces-are-not-a-security-boundary">https://edera.dev/stories/user-namespaces-are-not-a-security-boundary</a></li>
+<li>Ubuntu — "Ubuntu 23.10 restricted unprivileged user namespaces": <a
+href="https://ubuntu.com/blog/ubuntu-23-10-restricted-unprivileged-user-namespaces">https://ubuntu.com/blog/ubuntu-23-10-restricted-unprivileged-user-namespaces</a></li>
+<li>Ubuntu bug 2046477 — enable userns restrictions by default: <a
+href="https://bugs.launchpad.net/ubuntu/+source/apparmor/+bug/2046477">https://bugs.launchpad.net/ubuntu/+source/apparmor/+bug/2046477</a></li>
+<li>systemshardening.com — Restricting Unprivileged User Namespaces: <a
+href="https://www.systemshardening.com/articles/linux/linux-unprivileged-namespace-restriction/">https://www.systemshardening.com/articles/linux/linux-unprivileged-namespace-restriction/</a></li>
+<li>Kicksecure — User Namespace hardening: <a
+href="https://www.kicksecure.com/wiki/User_Namespace">https://www.kicksecure.com/wiki/User_Namespace</a></li>
+<li>Red Hat — "Use a net namespace for VPNs": <a
+href="https://www.redhat.com/en/blog/use-net-namespace-vpn">https://www.redhat.com/en/blog/use-net-namespace-vpn</a></li>
+<li>blog.0x1b.me — Unprivileged Linux Network Namespaces Pt 1: <a
+href="https://blog.0x1b.me/posts/unprivileged-linux-netns-pt1/">https://blog.0x1b.me/posts/unprivileged-linux-netns-pt1/</a></li>
+<li>benjamintoll — On Unsharing Namespaces Pt 2: <a
+href="https://benjamintoll.com/2022/12/14/on-unsharing-namespaces-part-two/">https://benjamintoll.com/2022/12/14/on-unsharing-namespaces-part-two/</a></li>
+<li>Podman docs — podman-unshare: <a
+href="https://docs.podman.io/en/latest/markdown/podman-unshare.1.html">https://docs.podman.io/en/latest/markdown/podman-unshare.1.html</a></li>
+<li>slirp4netns: <a
+href="https://github.com/rootless-containers/slirp4netns">https://github.com/rootless-containers/slirp4netns</a></li>
+<li>passt/pasta: <a
+href="https://passt.top/passt/about/">https://passt.top/passt/about/</a></li>
+<li>sanj.dev — Podman pasta vs slirp4netns: <a
+href="https://sanj.dev/post/podman-pasta-vs-slirp4netns-networking/">https://sanj.dev/post/podman-pasta-vs-slirp4netns-networking/</a></li>
+<li>Cloudflare — BoringTun userspace WireGuard: <a
+href="https://blog.cloudflare.com/boringtun-userspace-wireguard-rust/">https://blog.cloudflare.com/boringtun-userspace-wireguard-rust/</a></li>
+<li>cloudflare/boringtun: <a
+href="https://github.com/cloudflare/boringtun">https://github.com/cloudflare/boringtun</a></li>
+<li>cmusatyalab/wireguard4netns: <a
+href="https://github.com/cmusatyalab/wireguard4netns">https://github.com/cmusatyalab/wireguard4netns</a></li>
+<li>gVisor <code>pkg/tcpip/stack</code> GoDoc: <a
+href="https://pkg.go.dev/gvisor.dev/gvisor/pkg/tcpip/stack">https://pkg.go.dev/gvisor.dev/gvisor/pkg/tcpip/stack</a></li>
+<li>ryan-schachte — userspace WireGuard with netstack: <a
+href="https://ryan-schachte.com/blog/userspace_wireguard_tunnels/">https://ryan-schachte.com/blog/userspace_wireguard_tunnels/</a></li>
+<li>python-zeroconf (pure-python mDNS): <a
+href="https://github.com/python-zeroconf/python-zeroconf">https://github.com/python-zeroconf/python-zeroconf</a></li>
+<li>Wikipedia — Metamorphic testing: <a
+href="https://en.wikipedia.org/wiki/Metamorphic_testing">https://en.wikipedia.org/wiki/Metamorphic_testing</a></li>
+<li>emergentmind — Metamorphic Relations: <a
+href="https://www.emergentmind.com/topics/metamorphic-relations-mrs">https://www.emergentmind.com/topics/metamorphic-relations-mrs</a></li>
+<li>arXiv 1912.05278 — Metamorphic Security Testing for Web Systems: <a
+href="https://arxiv.org/pdf/1912.05278">https://arxiv.org/pdf/1912.05278</a></li>
+</ul>
+</body>
+</html>
