@@ -746,6 +746,32 @@ test_regression_guards() {
             "RED could not reproduce the defect — §11.4.7"
     fi
 
+    # GLUETUN-AUTH-READONLY (§11.4.135/§11.4.10) — GREEN guard: the tracked gluetun
+    # v3.40 control-server auth config (config/gluetun/auth-config.toml, auth="none")
+    # must grant ONLY read-only status routes and NEVER a mutating/VPN-control route
+    # (PUT/DELETE, /v1/vpn/start|stop, /v1/openvpn/settings, /v1/dns/, /v1/updater/).
+    # PURE static TOML parse — no toml lib, no container, no live stack. A control
+    # grant would let an unauthenticated pod-internal caller change VPN state
+    # (§11.4.133 target safety) or read secrets (§11.4.10) — this guard fails-closed.
+    if bash "$SCRIPT_DIR/regression/gluetun_auth_readonly_test.sh" >/dev/null 2>&1; then
+        test_result "GLUETUN-AUTH read-only-only control grants (GREEN)" "PASS"
+    else
+        test_result "GLUETUN-AUTH read-only-only control grants (GREEN)" "FAIL" \
+            "run: bash tests/regression/gluetun_auth_readonly_test.sh"
+    fi
+
+    # GLUETUN-AUTH-READONLY — RED self-check: the SAME parser+validator run against a
+    # synthesized config granting a mutating route (PUT /v1/openvpn/settings + a VPN
+    # /v1/vpn/stop control route) MUST reject it, proving the read-only assertion has
+    # teeth (§11.4.115). RED never touches the real file. A RED that cannot reproduce
+    # is a §11.4.7 finding — it would prove the GREEN assertion is a tautology.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/gluetun_auth_readonly_test.sh" >/dev/null 2>&1; then
+        test_result "GLUETUN-AUTH mutating-grant RED reproduces" "PASS"
+    else
+        test_result "GLUETUN-AUTH mutating-grant RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
     # LE Phase-3 hermetic DNS-01 issuance guard (§11.4.135). Unlike the pure-logic
     # guards above, this BOOTS the hermetic Pebble+CoreDNS+Caddy stack, so it uses
     # a 3-way exit (0=PASS, 2=topology SKIP when the built image is absent §11.4.3,

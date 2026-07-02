@@ -1,0 +1,15 @@
+# gluetun v3.40 control-server auth (mounted at /gluetun/auth/config.toml).
+#
+# gluetun v3.40 made ALL control-API routes private by default (401 without auth).
+# healthd (the vpn-health-publisher) polls GET /v1/vpn/status + GET /v1/publicip/ip
+# with NO credentials, and the compose healthcheck probes GET /v1/vpn/status — so
+# WITHOUT this file every request 401s, healthd holds every tunnel falsely "down"
+# (egress=""), and squid fail-closes every routed target (§11.4.6/§11.4.68).
+#
+# These are READ-ONLY status routes (no config-mutating / no VPN-control routes), so
+# allowing them unauthenticated on the pod-internal control port is safe. NO mutating
+# route (PUT/DELETE, /v1/vpn/start|stop, /v1/openvpn/settings, /v1/dns/...) is granted.
+[[roles]]
+name = "healthd-readonly"
+routes = ["GET /v1/publicip/ip", "GET /v1/vpn/status", "GET /v1/openvpn/status"]
+auth = "none"

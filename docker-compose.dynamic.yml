@@ -134,6 +134,11 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
+    volumes:
+      # gluetun v3.40 makes ALL control routes private (401 without auth). This file
+      # allows healthd's + the healthcheck's READ-ONLY status routes (no mutating
+      # route granted) so the health signal works (config/gluetun/auth-config.toml).
+      - ./config/gluetun/auth-config.toml:/gluetun/auth/config.toml:ro
     environment:
       - TZ=${TZ:-UTC}
       # Kill-switch ON — no traffic escapes if the tunnel drops (§11.4.74 / fail-closed).
@@ -169,7 +174,9 @@ services:
     healthcheck:
       # gluetun ships its own healthcheck binary; this control-server probe is
       # explicit + name-resolved (§11.4.111).
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:${GLUETUN_CONTROL_PORT:-8000}/v1/openvpn/status"]
+      # D4: probe the VPN-agnostic /v1/vpn/status (was /v1/openvpn/status — 401/wrong
+      # for a WireGuard tunnel, marking gluetun "unhealthy" though the WG tunnel is up).
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:${GLUETUN_CONTROL_PORT:-8000}/v1/vpn/status"]
       interval: 15s
       timeout: 10s
       retries: 5
