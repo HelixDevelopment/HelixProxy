@@ -697,6 +697,29 @@ test_regression_guards() {
             "RED could not reproduce the defect — §11.4.7"
     fi
 
+    # BUGFIX-F1 (task #72) — GREEN guard: the security-suite group verdict
+    # (single-source acl_group_verdict(), tests/lib/acl_group_verdict.sh —
+    # §11.4.107(10)) must NEVER report PASS when a security-CRITICAL check
+    # (S1 ACL-deny / S4 SOCKS-SSRF) merely SKIPPED — a non-critical S2/S3 PASS
+    # can no longer over-claim group coverage (§11.4.120/§11.4.1). Pure logic,
+    # no network/containers.
+    if bash "$SCRIPT_DIR/regression/security_group_critical_gate_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-F1 security group verdict no over-claim (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-F1 security group verdict no over-claim (GREEN)" "FAIL" \
+            "run: bash tests/regression/security_group_critical_gate_test.sh"
+    fi
+
+    # BUGFIX-F1 — RED self-check: the pre-fix over-claim rule (n_pass>0 && n_fail==0
+    # => PASS) must reproduce a group PASS for the S3-only shape. A RED that cannot
+    # reproduce is a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/security_group_critical_gate_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-F1 security group over-claim RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-F1 security group over-claim RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
     # LE Phase-3 hermetic DNS-01 issuance guard (§11.4.135). Unlike the pure-logic
     # guards above, this BOOTS the hermetic Pebble+CoreDNS+Caddy stack, so it uses
     # a 3-way exit (0=PASS, 2=topology SKIP when the built image is absent §11.4.3,

@@ -88,6 +88,10 @@ if [ -z "${REPO_ROOT:-}" ]; then
 fi
 # shellcheck source=/dev/null
 . "$REPO_ROOT/tests/lib/evidence.sh"
+# §11.4.107(10) single source of truth for the honest group verdict — the SAME
+# function the §11.4.135 regression guard drives (no divergent copy).
+# shellcheck source=/dev/null
+. "$REPO_ROOT/tests/lib/acl_group_verdict.sh"
 
 # --- Config -----------------------------------------------------------------
 PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
@@ -394,16 +398,11 @@ fi
 # ---------------------------------------------------------------------------
 echo
 echo "=== $SUITE aggregate: pass=$N_PASS fail=$N_FAIL skip=$N_SKIP (S1_PASS=$S1_PASS S4_PASS=$S4_PASS) ==="
-if [ "$N_FAIL" -gt 0 ]; then
-    echo "OVERALL=FAIL ($N_FAIL security defect(s))"
-    exit 1
-fi
-if [ "$S1_PASS" -eq 1 ] && [ "$S4_PASS" -eq 1 ]; then
-    echo "OVERALL=PASS (both critical checks proven: S1 ACL-deny + S4 SOCKS-SSRF, 0 leaks)"
-    exit 0
-fi
-_absent=""
-[ "$S1_PASS" -eq 1 ] || _absent="S1 ACL-deny"
-[ "$S4_PASS" -eq 1 ] || _absent="${_absent:+$_absent, }S4 SOCKS-SSRF"
-echo "OVERALL=SKIP (critical security check(s) not asserted on this topology: ${_absent:-none})"
-exit 3
+# §11.4.107(10): the group decision is the SINGLE-SOURCE acl_group_verdict()
+# (tests/lib/acl_group_verdict.sh) — the IDENTICAL function the §11.4.135
+# regression guard drives. Behaviour-preserving: same PASS/FAIL/SKIP text + same
+# 0/1/3 exit as the prior inline block.
+_agg_verdict=$(acl_group_verdict "$S1_PASS" "$S4_PASS" "$N_FAIL")
+_agg_rc=$?
+echo "OVERALL=$_agg_verdict"
+exit "$_agg_rc"
