@@ -179,8 +179,8 @@
 <h1
 id="dynamic-routing-mvp-findings--proxy-through-gluetun-mullvad-e2e">Dynamic-routing
 MVP findings — proxy-through-gluetun (Mullvad) e2e</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-07-02T20:08:09Z</p>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-07-02T20:22:00Z</p>
 <p>Operator-authorized (2026-07-02): reset podman + prove the full
 proxy-through-gluetun Mullvad e2e. This document records the honest
 results (§11.4.6) — what is proven and the real MVP dynamic-routing
@@ -277,24 +277,43 @@ status 200; mutating routes 401) + §11.4.135 guard.</td>
 DNS</strong> from its pre-alias startup; reconfigure did not clear it
 (peer stays dead). Needs squid to (re)resolve peers after gluetun is up
 (startup ordering / DNS lifecycle).</td>
-<td><strong>OPEN</strong>.</td>
+<td><strong>FIXED</strong> <code>973ff59</code> (#81): a
+<code>config/squid/wait-for-gluetun.sh</code> ENTRYPOINT wrapper (baked
+via Containerfile.dynamic) waits (bounded, fail-open-safe) for a
+<code>gluetun-*</code> peer alias to resolve, so squid's startup peer
+resolution is POSITIVE-cached, then execs the base entrypoint unchanged.
+Root cause confirmed by §11.4.150 research (squid resolves cache_peer
+names only at startup + caches NXDOMAIN with no reliable retry);
+podman-compose ignores <code>depends_on: service_healthy</code> so a
+container-level wait is the reliable mechanism. Independently reviewed
+GO (6/6); logic-validated standalone (resolve→exec, nxdomain→fail-open
+bounded). Engages on the next squid image rebuild.</td>
 </tr>
 </tbody>
 </table>
 <h2 id="honest-conclusion-1146">Honest conclusion (§11.4.6)</h2>
 <p>The proxy-through-gluetun <strong>egress capability</strong> is
-proven live (gluetun's proxy egresses via Mullvad). <strong>Rev 2 update
-(2026-07-02):</strong> <strong>D3 and D4 are now FIXED</strong> (this
-session) — D3 (the deepest blocker, healthd false-down) resolved by the
-fresh through-tunnel liveness probe (#79, LIVE-PROVEN healthd publishes
-<code>state=up</code>) and D4 by the gluetun control-auth + VPN-agnostic
-healthcheck. The <strong>full squid-integrated</strong> path's LAST
-remaining blocker is <strong>D5</strong> (squid caches the
-<code>gluetun-*</code> peer negative-DNS from its pre-alias startup —
-peer stays dead until squid re-resolves after gluetun is up; a
-startup-ordering / DNS-lifecycle fix, tracked as a task). Until D5 is
-fixed, the full squid-integrated e2e is <strong>NOT yet a passing
-e2e</strong> — no PASS is claimed on it (§11.4.6). D1 fixed; D2
-documented; D3+D4 FIXED; D5 open.</p>
+proven live (gluetun's proxy egresses via Mullvad). <strong>Rev 3 update
+(2026-07-02): ALL THREE deep blockers (D3, D4, D5) are now
+FIXED</strong> (this session): D3 (the deepest — healthd false-down) by
+the fresh through-tunnel liveness probe (#79, LIVE-PROVEN healthd
+publishes <code>state=up</code>), D4 by the gluetun control-auth +
+VPN-agnostic healthcheck (live-validated), and D5 (squid peer
+negative-DNS) by the startup wait-for-gluetun ENTRYPOINT wrapper (#81,
+independently reviewed GO + logic-validated). Each fix's mechanism is
+proven live individually (D3 healthd=up; D4 gluetun healthy +
+auth-enforced; D5 the peer alias resolves on a fresh start).
+<strong>Remaining to a passing FULL e2e: only the DEPLOY</strong> — a
+<code>./start --dynamic</code> that rebuilds the control-plane image (so
+the running proxy-healthd carries the #79 D3 binary — it's currently the
+old always-down build) and the squid image (so it carries the D5
+entrypoint), then redeploys. With D3+D4+D5 all deployed + healthd=up:
+<code>curl -x http://127.0.0.1:34128 &lt;a routed host:port&gt;</code>
+egresses via the mullvad exit (mullvad_exit_ip=true), NOT the branded
+503. Honest boundary (§11.4.6): the full squid-integrated e2e is
+<strong>not yet claimed PASS</strong> — the source fixes are complete +
+individually proven, but the composed e2e is proven only after the
+rebuild+redeploy. D1 fixed; D2 documented; <strong>D3+D4+D5
+FIXED</strong>; full-e2e = the deploy step.</p>
 </body>
 </html>
