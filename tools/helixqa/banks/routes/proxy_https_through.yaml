@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Route-execution slice of tools/helixqa/banks/proxy.yaml — HTTPS through HTTP proxy.
 # Runner drives this via: helixqa http --bank <this> \
-#   --base-url https://connectivitycheck.gstatic.com  (HTTPS_PROXY=http://127.0.0.1:53128)
-# Go DefaultTransport issues a CONNECT tunnel to Squid :53128 for https:// targets.
+#   --base-url https://connectivitycheck.gstatic.com  (HTTPS_PROXY=http://127.0.0.1:34128)
+# Go DefaultTransport issues a CONNECT tunnel to Squid :34128 for https:// targets.
 version: "1.0"
-name: "helix_proxy route: HTTPS through HTTP proxy (Squid :53128 CONNECT)"
-description: "HTTPS-through-proxy cases; base-url https://connectivitycheck.gstatic.com via HTTPS_PROXY=http://127.0.0.1:53128."
+name: "helix_proxy route: HTTPS through HTTP proxy (Squid :34128 CONNECT)"
+description: "HTTPS-through-proxy cases; base-url https://connectivitycheck.gstatic.com via HTTPS_PROXY=http://127.0.0.1:34128."
 test_cases:
   - id: PRX-HTTPS-001
     name: "HTTPS-through-proxy: CONNECT tunnel to generate_204 returns 204"

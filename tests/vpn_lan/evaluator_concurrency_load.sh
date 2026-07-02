@@ -76,7 +76,7 @@
 #   Host caps (§12.6): the process re-execs itself once under `nice -n 19`
 #   (+ `ionice -c 3` when present) with GOMAXPROCS=2; N and M are bounded +
 #   clamped so the whole run stays light (10 workers, bounded M). NEVER
-#   pkill/kill, NEVER touches the data-plane :53128/:51080, NEVER signals or
+#   pkill/kill, NEVER touches the data-plane :34128/:34080, NEVER signals or
 #   self-matches another process (§11.4.174) — background workers are reaped ONLY
 #   by their exact recorded PIDs.
 #
@@ -120,7 +120,7 @@
 #   path (trap, §11.4.14). NEVER edits config/dante/sockd.conf, ssrf_carveout_teeth.sh,
 #   ingress_allowlist_teeth.sh, ssrf_bridge_stress_chaos.sh, or
 #   evaluator_bench_memory.sh; NEVER (re)starts/kills a proxy; NEVER runs
-#   pkill/kill; NEVER touches the data-plane :53128/:51080; reaps its OWN
+#   pkill/kill; NEVER touches the data-plane :34128/:34080; reaps its OWN
 #   background workers by exact recorded PID only (§11.4.174).
 #
 # Dependencies:

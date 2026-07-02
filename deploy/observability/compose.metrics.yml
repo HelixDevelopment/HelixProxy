@@ -36,11 +36,11 @@
 #   referenced; the isolated names carry the `obs-` prefix).
 #
 # HOST PORTS (all loopback-pinned; chosen to avoid the in-use set
-#   5432/6379/53128/51080/58080/59090 — §11.4.6):
-#   * obs-api  /metrics   127.0.0.1:59091 -> 59091   (base overlay uses 59090)
+#   5432/6379/34128/34080/34088/34090 — §11.4.6):
+#   * obs-api  /metrics   127.0.0.1:59091 -> 59091   (base overlay uses 34090)
 #   * obs-postgres         127.0.0.1:55432 -> 5432    (debug/verify only)
 #   * obs-redis            127.0.0.1:56379 -> 6379    (debug/verify only)
-#   The mTLS control port (:58080) is INTERNAL to the obs-metrics network — never
+#   The mTLS control port (:34088) is INTERNAL to the obs-metrics network — never
 #   published (the mutating surface is the trust boundary; only /metrics is
 #   published, and only to loopback — unauthenticated metrics never reach the
 #   wider network).
@@ -195,9 +195,9 @@ services:
       - PG_DB=${PG_DB:-proxy}
       # Fail-closed status bus — the ISOLATED redis (cmd/api/main.go:78).
       - REDIS_ADDR=obs-redis:6379
-      # mTLS control port (cmd/api/main.go:47 default :58080). INTERNAL to obs-metrics
+      # mTLS control port (cmd/api/main.go:47 default :34088). INTERNAL to obs-metrics
       # only — NOT published to the host (the mutating surface is the trust boundary).
-      - CONTROL_API_ADDR=${CONTROL_API_ADDR:-:58080}
+      - CONTROL_API_ADDR=${CONTROL_API_ADDR:-:34088}
       # mTLS materials — FILE PATHS to the mounted podman secrets (§11.4.10; the server
       # fails closed without all three — control-plane/internal/api/tls.go:26).
       - CONTROL_API_TLS_CERT=/run/secrets/helixproxy_api_cert
@@ -228,7 +228,7 @@ services:
     ports:
       # Publish ONLY the plaintext /metrics port, pinned to loopback by default so
       # unauthenticated metrics never reach the wider network. The mTLS control port
-      # (58080) is intentionally NOT published.
+      # (34088) is intentionally NOT published.
       - "${OBS_METRICS_BIND_ADDRESS:-127.0.0.1}:${OBS_METRICS_PORT:-59091}:59091"
     depends_on:
       # podman-compose ignores `service_healthy`; `restart: unless-stopped` lets the

@@ -36,8 +36,8 @@
 version: "1.0"
 name: "helix_proxy — data-plane proxy features (HTTP forward / HTTPS-through / SOCKS5 / cache)"
 description: >-
-  Anti-bluff HelixQA bank for the helix_proxy Squid(HTTP/HTTPS, :53128) +
-  Dante(SOCKS5, :51080) data plane. Every case drives a REAL request through
+  Anti-bluff HelixQA bank for the helix_proxy Squid(HTTP/HTTPS, :34128) +
+  Dante(SOCKS5, :34080) data plane. Every case drives a REAL request through
   the live proxy to a real upstream and asserts the real status code returned
   by that upstream (positive sink-side evidence per Helix Constitution
   §11.4.68/§11.4.69). No metadata-only checks. Cache HIT is a Squid TCP_*HIT
@@ -46,21 +46,21 @@ description: >-
   status/body/json-path.
 
 metadata:
-  proxy_http_port: "53128"
-  proxy_socks_port: "51080"
+  proxy_http_port: "34128"
+  proxy_socks_port: "34080"
   http_executor: "submodules/helix_qa/pkg/autonomous/http_executor.go"
   route_banks_dir: "tools/helixqa/banks/routes/"
   runner: "tools/helixqa/runner/run_proxy_bank.sh"
   squid_container: "proxy-squid"
 
 test_cases:
-  # ── Feature 1: HTTP forward proxy (Squid :53128) ────────────────────────
+  # ── Feature 1: HTTP forward proxy (Squid :34128) ────────────────────────
   - id: PRX-HTTP-001
     name: "HTTP forward: GET generate_204 through Squid returns 204"
     description: >-
-      Proves the Squid HTTP forward proxy on :53128 forwards a plain-HTTP GET
+      Proves the Squid HTTP forward proxy on :34128 forwards a plain-HTTP GET
       to the upstream and relays the upstream's 204. Route bank base-url
-      http://connectivitycheck.gstatic.com with HTTP_PROXY=http://127.0.0.1:53128.
+      http://connectivitycheck.gstatic.com with HTTP_PROXY=http://127.0.0.1:34128.
     category: functional
     priority: critical
     platforms: [desktop]
@@ -71,7 +71,7 @@ test_cases:
         action: "http: GET /generate_204"
         expected: "Upstream returns 204 No Content, relayed by Squid (proves HTTP forwarding + egress)"
         expect_status: 204
-    expected_result: "HTTP 204 relayed through Squid :53128 from connectivitycheck.gstatic.com"
+    expected_result: "HTTP 204 relayed through Squid :34128 from connectivitycheck.gstatic.com"
     documentation_refs:
       - type: verification_script
         section: "conn_check HTTP Proxy"
@@ -81,9 +81,9 @@ test_cases:
   - id: PRX-HTTPS-001
     name: "HTTPS-through-proxy: CONNECT tunnel to generate_204 returns 204"
     description: >-
-      Proves Squid :53128 establishes a CONNECT tunnel for an HTTPS upstream
+      Proves Squid :34128 establishes a CONNECT tunnel for an HTTPS upstream
       and the TLS request succeeds end-to-end. Route bank base-url
-      https://connectivitycheck.gstatic.com with HTTPS_PROXY=http://127.0.0.1:53128
+      https://connectivitycheck.gstatic.com with HTTPS_PROXY=http://127.0.0.1:34128
       (Go DefaultTransport issues CONNECT for https:// targets).
     category: functional
     priority: critical
@@ -101,13 +101,13 @@ test_cases:
         section: "conn_check HTTPS through HTTP Proxy"
         path: "tests/verify-proxy.sh"
 
-  # ── Feature 3: SOCKS5 proxy (Dante :51080) ──────────────────────────────
+  # ── Feature 3: SOCKS5 proxy (Dante :34080) ──────────────────────────────
   - id: PRX-SOCKS5-001
     name: "SOCKS5: GET generate_204 through Dante returns 204"
     description: >-
-      Proves the Dante SOCKS5 proxy on :51080 relays an HTTP GET to the
+      Proves the Dante SOCKS5 proxy on :34080 relays an HTTP GET to the
       upstream. Route bank base-url http://connectivitycheck.gstatic.com with
-      HTTP_PROXY=socks5://127.0.0.1:51080 (Go Transport dials the target via
+      HTTP_PROXY=socks5://127.0.0.1:34080 (Go Transport dials the target via
       SOCKS5 when the proxy URL scheme is socks5).
     category: functional
     priority: critical
@@ -117,9 +117,9 @@ test_cases:
     steps:
       - name: "SOCKS5-relay GET /generate_204"
         action: "http: GET /generate_204"
-        expected: "204 relayed through Dante SOCKS5 :51080 (proves SOCKS5 forwarding + egress)"
+        expected: "204 relayed through Dante SOCKS5 :34080 (proves SOCKS5 forwarding + egress)"
         expect_status: 204
-    expected_result: "HTTP 204 relayed through Dante SOCKS5 :51080 from connectivitycheck.gstatic.com"
+    expected_result: "HTTP 204 relayed through Dante SOCKS5 :34080 from connectivitycheck.gstatic.com"
     documentation_refs:
       - type: verification_script
         section: "conn_check SOCKS5 Proxy"
@@ -128,9 +128,9 @@ test_cases:
   - id: PRX-SOCKS5-002
     name: "SOCKS5: HTTPS CONNECT to generate_204 returns 204"
     description: >-
-      Proves Dante SOCKS5 :51080 carries a TLS (https) upstream request.
+      Proves Dante SOCKS5 :34080 carries a TLS (https) upstream request.
       Route bank base-url https://connectivitycheck.gstatic.com with
-      HTTPS_PROXY=socks5://127.0.0.1:51080.
+      HTTPS_PROXY=socks5://127.0.0.1:34080.
     category: functional
     priority: high
     platforms: [desktop]
@@ -141,7 +141,7 @@ test_cases:
         action: "http: GET /generate_204"
         expected: "204 over TLS through Dante SOCKS5 (proves HTTPS-over-SOCKS5)"
         expect_status: 204
-    expected_result: "HTTP 204 over TLS through Dante SOCKS5 :51080"
+    expected_result: "HTTP 204 over TLS through Dante SOCKS5 :34080"
     documentation_refs:
       - type: verification_script
         section: "conn_check HTTPS through SOCKS5"
@@ -160,7 +160,7 @@ test_cases:
     name: "Cache warm: first GET of a cacheable object is served (MISS)"
     description: >-
       Warms the Squid cache with a cacheable HTTP image. Route bank base-url
-      http://www.gnu.org with HTTP_PROXY=http://127.0.0.1:53128.
+      http://www.gnu.org with HTTP_PROXY=http://127.0.0.1:34128.
     category: performance
     priority: high
     platforms: [desktop]

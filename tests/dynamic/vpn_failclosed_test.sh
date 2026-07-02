@@ -24,7 +24,7 @@
 #               fail-closed path with NO WireGuard credentials, NO gluetun egress.
 #
 # Live proof:   The CONDUCTOR owns the live boot (§11.4.119 single owner):
-#                 ./start --dynamic          # boots the dynamic profile, binds :53128
+#                 ./start --dynamic          # boots the dynamic profile, binds :34128
 #                 HELIX_DYNAMIC_STACK=1 bash tests/dynamic/vpn_failclosed_test.sh
 #               This script performs NO up/start/stop/build. Undeclared / unreachable
 #               stack ⇒ honest §11.4.3 SKIP-with-reason, NEVER a fake PASS.
@@ -53,7 +53,7 @@
 #   RED_MODE                     0 = GREEN guard (default), 1 = RED self-validation.
 #   HELIX_DYNAMIC_STACK          set to 1 (by the conductor, post-boot) to declare
 #                                the dynamic stack up. Unset ⇒ honest topology SKIP.
-#   HELIX_PROXY_URL              HTTP proxy URL (default http://127.0.0.1:53128).
+#   HELIX_PROXY_URL              HTTP proxy URL (default http://127.0.0.1:34128).
 #   HELIX_FAILCLOSED_TARGET      target fetched THROUGH the proxy (default
 #                                http://example.com/). Reachable-if-leaked, so a
 #                                fail-OPEN would return the origin's 200 (a LEAK
@@ -79,7 +79,7 @@
 #               Redis keys (cleaned in trap ... EXIT, §11.4.14 — leaves the stack
 #               quiescent). Runs live curl through the proxy. Creates a gitignored
 #               qa-results/ evidence dir. NEVER boots/starts/stops/builds anything.
-#               NEVER touches operator resources (wg0-mullvad / lava-* / whoami:58080).
+#               NEVER touches operator resources (wg0-mullvad / lava-* / whoami:34088).
 # Dependencies: POSIX sh, awk, grep, curl. A container runtime (podman/docker) ONLY
 #               for the redis-cli exec + Squid PID probe (exec, NOT a start/stop
 #               workflow — mirrors lib/container-runtime.sh's own podman exec/ps use).
@@ -160,7 +160,7 @@ fi
 
 # --- config -------------------------------------------------------------------
 RED_MODE=${RED_MODE:-0}
-PROXY_URL=${HELIX_PROXY_URL:-http://127.0.0.1:53128}
+PROXY_URL=${HELIX_PROXY_URL:-http://127.0.0.1:34128}
 TARGET=${HELIX_FAILCLOSED_TARGET:-http://example.com/}
 PROFILE=${HELIX_FAILCLOSED_PROFILE:-failclosed-test}
 SQUID_CTR=${HELIX_SQUID_CONTAINER:-proxy-squid}

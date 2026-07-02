@@ -31,7 +31,7 @@
 #
 # Usage:
 #   tests/egress_proof/real_vpn_egress_proof.sh          # auto-detect creds
-#   PROXY_PORT=53128 tests/egress_proof/real_vpn_egress_proof.sh
+#   PROXY_PORT=34128 tests/egress_proof/real_vpn_egress_proof.sh
 #
 # Inputs (all optional — the creds path is only taken when the 5 WireGuard vars
 #         are present in the environment OR in the gitignored ./.env):
@@ -41,7 +41,7 @@
 #     :149-153 / .env.example :177-182. NEVER printed by this script, §11.4.10.)
 #   EXPECTED_EXIT_IP  (optional) the tunnel's known exit public IP; if unset it is
 #     derived at runtime from gluetun's own /v1/publicip/ip control endpoint.
-#   PROXY_PORT        (default 53128 — HTTP_PROXY_PORT the dynamic squid binds).
+#   PROXY_PORT        (default 34128 — HTTP_PROXY_PORT the dynamic squid binds).
 #   GLUETUN_CTRL_PORT (default 8000 — gluetun control-API port inside the netns).
 #   IP_ECHO_URL       (default https://icanhazip.com — the sink IP-echo service).
 #   BOOT_TIMEOUT      (default 180 — seconds to wait for the tunnel to come UP).
@@ -61,7 +61,7 @@
 #   Boots + tears down the OWN dynamic stack via the sanctioned `./start --dynamic`
 #   / `./stop` orchestrators (rootless podman, §11.4.161 — NEVER raw podman run).
 #   Leaves the system quiescent on every exit path (trap cleanup, §11.4.14).
-#   NEVER touches operator resources wg0-mullvad / lava-* / :58080 (§11.4.174) —
+#   NEVER touches operator resources wg0-mullvad / lava-* / :34088 (§11.4.174) —
 #   it only ever inspects :PROXY_PORT and the proxy-squid / proxy-gluetun names
 #   the dynamic overlay itself creates, and refuses (exit 3) rather than disturb a
 #   pre-existing owner.
@@ -97,7 +97,7 @@ VERDICT_FILE="$EVID_DIR/verdict.txt"
 # shellcheck source=/dev/null
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
-PROXY_PORT="${PROXY_PORT:-${HTTP_PROXY_PORT:-53128}}"
+PROXY_PORT="${PROXY_PORT:-${HTTP_PROXY_PORT:-34128}}"
 PROXY_URL="http://127.0.0.1:$PROXY_PORT"
 GLUETUN_CTRL_PORT="${GLUETUN_CTRL_PORT:-${GLUETUN_CONTROL_PORT:-8000}}"
 IP_ECHO_URL="${IP_ECHO_URL:-${EVIDENCE_IP_ECHO_URL:-https://icanhazip.com}}"

@@ -18,7 +18,7 @@
 #               the defect; RED_MODE=0 (default) is the GREEN guard asserting the
 #               stack sustains the load.
 # Usage:        bash tests/dynamic/suites/stress_suite.sh
-#               HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+#               HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
 #                   STRESS_SEQ=100 STRESS_CONC=10 bash .../stress_suite.sh
 # Env:          STRESS_SEQ (default 100), STRESS_CONC (default 10),
 #               STRESS_TARGET (default http://target-a.internal/),

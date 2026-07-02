@@ -130,7 +130,7 @@ get_external_ip() {
 #######################################
 get_proxy_ip() {
     local proxy_host="${1:-localhost}"
-    local proxy_port="${2:-53128}"
+    local proxy_port="${2:-34128}"
     
     curl -s --max-time 15 \
         --proxy "http://${proxy_host}:${proxy_port}" \
@@ -146,7 +146,7 @@ get_proxy_ip() {
 #######################################
 get_socks_proxy_ip() {
     local proxy_host="${1:-localhost}"
-    local proxy_port="${2:-51080}"
+    local proxy_port="${2:-34080}"
     
     curl -s --max-time 15 \
         --proxy "socks5://${proxy_host}:${proxy_port}" \
@@ -309,7 +309,7 @@ test_containers() {
 # _ports_check_one). A listening host port proves the SERVICE works ONLY if the
 # PROJECT container that owns it is running AND publishes it — a NON-project
 # process listening on the port is NOT the project's service (a fail-open bluff;
-# observed: a foreign `whoami` on :58080 answers 200 to any path and even echoes
+# observed: a foreign `whoami` on :34088 answers 200 to any path and even echoes
 # `Hostname: proxy-admin`). Truth table:
 #   owner publishes + listening      -> PASS  (project service up and serving)
 #   owner publishes + NOT listening  -> FAIL  (owner up but nothing bound)
@@ -342,9 +342,9 @@ test_ports() {
 
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
 
-    local http_port="${HTTP_PROXY_PORT:-53128}"
-    local socks_port="${SOCKS_PROXY_PORT:-51080}"
-    local admin_port="${PROXY_ADMIN_PORT:-58080}"
+    local http_port="${HTTP_PROXY_PORT:-34128}"
+    local socks_port="${SOCKS_PROXY_PORT:-34080}"
+    local admin_port="${PROXY_ADMIN_PORT:-34088}"
 
     _port_topology_check "$http_port"  "proxy-squid" "HTTP proxy port"
     _port_topology_check "$socks_port" "proxy-dante" "SOCKS proxy port"
@@ -418,7 +418,7 @@ test_http_proxy() {
     test_header "HTTP PROXY TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-53128}"
+    local port="${HTTP_PROXY_PORT:-34128}"
 
     # §11.4.1 / F1 (BUGFIX-0017): basic connectivity + HTTPS-through-proxy canaries
     # now classify a proxy miss (outage -> SKIP; directly-reachable-but-proxy-fails
@@ -468,7 +468,7 @@ test_socks_proxy() {
     test_header "SOCKS5 PROXY TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${SOCKS_PROXY_PORT:-51080}"
+    local port="${SOCKS_PROXY_PORT:-34080}"
 
     # §11.4.1 / F1 (BUGFIX-0017): SOCKS connectivity + HTTPS-through-SOCKS canaries
     # classify a proxy miss (outage -> SKIP; directly-reachable-but-proxy-fails ->
@@ -489,8 +489,8 @@ test_vpn_routing() {
     test_header "VPN ROUTING TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local http_port="${HTTP_PROXY_PORT:-53128}"
-    local socks_port="${SOCKS_PROXY_PORT:-51080}"
+    local http_port="${HTTP_PROXY_PORT:-34128}"
+    local socks_port="${SOCKS_PROXY_PORT:-34080}"
     
     # Get host IP (direct)
     local host_ip
@@ -542,7 +542,7 @@ test_caching() {
     test_header "CACHING TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-53128}"
+    local port="${HTTP_PROXY_PORT:-34128}"
     local cache_dir="${CACHE_DIR:-$PROJECT_ROOT/cache}"
     # CACHE_DIR may be unset or the .env.example placeholder path; fall back to
     # the repo runtime cache dir (§11.4.3).
@@ -612,11 +612,11 @@ test_admin() {
     test_header "ADMIN INTERFACE TESTS"
 
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${PROXY_ADMIN_PORT:-58080}"
+    local port="${PROXY_ADMIN_PORT:-34088}"
 
     # §11.4.68/§11.4.69 ownership gate: a 200 from :$port is proof ONLY if the
     # PROJECT's proxy-admin container is running AND publishes that host port.
-    # Otherwise a non-project responder (observed: a foreign `whoami` on :58080
+    # Otherwise a non-project responder (observed: a foreign `whoami` on :34088
     # answers 200 to ANY path and even echoes `Hostname: proxy-admin`) would be a
     # fail-open bluff. When not project-owned, SKIP-with-reason (§11.4.3) — we
     # refuse to assert whatever happens to answer on the port.
@@ -736,7 +736,7 @@ test_dns() {
     test_header "DNS RESOLUTION TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-53128}"
+    local port="${HTTP_PROXY_PORT:-34128}"
     local dns_url="https://dns.google/resolve?name=google.com"
 
     # §11.4.6 / §11.4.1 / F1 (BUGFIX-0017): this canary asserts BODY content (a
@@ -786,7 +786,7 @@ test_large_file() {
     test_header "LARGE FILE DOWNLOAD TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-53128}"
+    local port="${HTTP_PROXY_PORT:-34128}"
     
     # §11.4.6 root-caused (2026-07-01, captured direct-vs-proxy sizes):
     # httpbin.org/bytes/1048576 now CAPS at ~100KB at the SOURCE
@@ -820,7 +820,7 @@ test_concurrent() {
     test_header "CONCURRENT CONNECTION TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local port="${HTTP_PROXY_PORT:-53128}"
+    local port="${HTTP_PROXY_PORT:-34128}"
     
     echo -e "  ${BLUE}Making 10 concurrent requests...${NC}"
 
@@ -890,8 +890,8 @@ test_network_client() {
     test_header "NETWORK CLIENT SIMULATION TESTS"
     
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
-    local http_port="${HTTP_PROXY_PORT:-53128}"
-    local socks_port="${SOCKS_PROXY_PORT:-51080}"
+    local http_port="${HTTP_PROXY_PORT:-34128}"
+    local socks_port="${SOCKS_PROXY_PORT:-34080}"
     
     # Get host IP for network testing.
     # §11.4.1 (same script-internal-abort class as audit B4): `hostname -I` is

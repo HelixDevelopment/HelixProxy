@@ -187,9 +187,9 @@ load_environment() {
     if [[ "${LOG_DIR}" != /* ]]; then
         LOG_DIR="$PROJECT_ROOT/$LOG_DIR"
     fi
-    export HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-53128}"
-    export SOCKS_PROXY_PORT="${SOCKS_PROXY_PORT:-51080}"
-    export PROXY_ADMIN_PORT="${PROXY_ADMIN_PORT:-58080}"
+    export HTTP_PROXY_PORT="${HTTP_PROXY_PORT:-34128}"
+    export SOCKS_PROXY_PORT="${SOCKS_PROXY_PORT:-34080}"
+    export PROXY_ADMIN_PORT="${PROXY_ADMIN_PORT:-34088}"
     export USE_VPN="${USE_VPN:-false}"
     export TZ="${TZ:-UTC}"
     export PUID="${PUID:-1000}"

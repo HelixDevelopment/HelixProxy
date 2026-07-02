@@ -13,7 +13,7 @@
 # Source of truth for ports/components:
 #   - docs/superpowers/specs/2026-06-30-vpn-aware-proxy-extension-design.md §11③, §7
 #   - docs/DYNAMIC_ROUTING.md
-#   - .env.example  (METRICS_PORT=59090, CONTROL_API_PORT=58081, REDIS_ADDR, gluetun :8000)
+#   - .env.example  (METRICS_PORT=34090, CONTROL_API_PORT=58081, REDIS_ADDR, gluetun :8000)
 #
 # Compose service hostnames below (proxy-*) are FORWARD REFERENCES. The actual
 # integration wiring (compose service names, network, exporter container) is
@@ -47,7 +47,7 @@ scrape_configs:
   # Job 2 — Helix Proxy control-plane (Go module) Prometheus /metrics.
   # FORWARD REFERENCE — built in P6 (control-API + admin UI). Per spec §4
   # component 4 the control-plane exposes Prometheus metrics; .env.example
-  # dedicates METRICS_PORT=59090 with METRICS_ENABLED=true to this endpoint.
+  # dedicates METRICS_PORT=34090 with METRICS_ENABLED=true to this endpoint.
   # This is where the PLANNED custom metrics live:
   #   - helix_proxy_vpn_up{profile="..."}                 (health-publisher; from Redis vpn:status:<profile>)
   #   - helix_proxy_tunnel_down_responses_total           (acl-helper / ERR_TUNNEL_DOWN -> deny_info 503)
@@ -59,14 +59,14 @@ scrape_configs:
   - job_name: helix-control-plane
     metrics_path: /metrics
     static_configs:
-      - targets: ['proxy-control-plane:59090']   # CONTROL: METRICS_PORT (.env.example)
+      - targets: ['proxy-control-plane:34090']   # CONTROL: METRICS_PORT (.env.example)
         labels:
           service: control-plane
 
   # ---------------------------------------------------------------------------
   # Job 3 — Squid cache metrics via boynux/squid-exporter.
   # FORWARD REFERENCE — exporter container wired in P7/P10. The exporter
-  # connects to Squid (:53128, HTTP_PROXY_PORT) over the cache-manager (mgr:)
+  # connects to Squid (:34128, HTTP_PROXY_PORT) over the cache-manager (mgr:)
   # interface and republishes squid_* metrics on its own HTTP port.
   # See squid-exporter.md in this directory for image + scrape detail.
   # squid_* metric names (e.g. squid_client_http_requests_total,

@@ -128,7 +128,7 @@ func TestFailClosed_AssembledDynamicConfig(t *testing.T) {
 		// §11.4.115 RED: reconstruct the PRE-FIX fail-OPEN assembly and assert the
 		// guard catches it (unconditional allow localnet BEFORE deny all; include
 		// appended at the END — the exact shipped defect).
-		preFixBase := "http_port 0.0.0.0:53128\n" +
+		preFixBase := "http_port 0.0.0.0:34128\n" +
 			"acl localnet src 10.0.0.0/8\n" +
 			"http_access allow localnet\n" + // <-- unconditional, pre-include (the leak)
 			"http_access allow localhost\n" +

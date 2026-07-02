@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Route-execution slice of tools/helixqa/banks/proxy.yaml — SOCKS5 (Dante), HTTPS scheme.
 # Runner drives this via: helixqa http --bank <this> \
-#   --base-url https://connectivitycheck.gstatic.com  (HTTPS_PROXY=socks5://127.0.0.1:51080)
+#   --base-url https://connectivitycheck.gstatic.com  (HTTPS_PROXY=socks5://127.0.0.1:34080)
 # Proves TLS (CONNECT-equivalent) upstream carried over SOCKS5.
 version: "1.0"
-name: "helix_proxy route: SOCKS5 HTTPS (Dante :51080)"
-description: "SOCKS5 relay of a TLS request; base-url https://connectivitycheck.gstatic.com via HTTPS_PROXY=socks5://127.0.0.1:51080."
+name: "helix_proxy route: SOCKS5 HTTPS (Dante :34080)"
+description: "SOCKS5 relay of a TLS request; base-url https://connectivitycheck.gstatic.com via HTTPS_PROXY=socks5://127.0.0.1:34080."
 test_cases:
   - id: PRX-SOCKS5-002
     name: "SOCKS5: HTTPS to generate_204 returns 204"

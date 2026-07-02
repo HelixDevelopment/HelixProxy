@@ -8,7 +8,7 @@
 // cert/key/client-CA come from FILE PATHS (the Podman-secret mount points named by
 // CONTROL_API_TLS_CERT / CONTROL_API_TLS_KEY / CONTROL_API_TLS_CLIENT_CA) — never
 // embedded key material (§11.4.10). The listen address is CONTROL_API_ADDR
-// (default :58080). The server fails closed: it refuses to start without its
+// (default :34088). The server fails closed: it refuses to start without its
 // backends and without a verified-client-cert TLS config.
 //
 // OPTIONAL plaintext metrics: when CONTROL_API_METRICS_ADDR is set, the server ALSO
@@ -44,7 +44,7 @@ func getenv(key, def string) string {
 
 func main() {
 	showVersion := flag.Bool("version", false, "print version and exit")
-	addr := flag.String("addr", getenv("CONTROL_API_ADDR", ":58080"), "control-API listen address")
+	addr := flag.String("addr", getenv("CONTROL_API_ADDR", ":34088"), "control-API listen address")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println("api", version)

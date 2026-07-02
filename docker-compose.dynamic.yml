@@ -310,7 +310,7 @@ services:
       - ${CACHE_DIR:-./cache}/squid:/var/spool/squid
       - ${LOG_DIR:-./logs}:/var/log/squid
     ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}:${HTTP_PROXY_PORT:-53128}"
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-34128}:${HTTP_PROXY_PORT:-34128}"
     networks:
       - proxy-dynamic
     depends_on:

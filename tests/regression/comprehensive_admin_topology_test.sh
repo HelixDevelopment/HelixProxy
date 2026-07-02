@@ -7,7 +7,7 @@
 #   Prove tests/comprehensive-test.sh NEVER reports a PASS for a host port that
 #   is held by a NON-project process. Pre-fix, test_ports/test_admin did
 #   `ss -tuln | grep :PORT -> PASS` (and curled :PORT asserting HTTP 200), so a
-#   foreign `whoami` listening on :58080 (which answers 200 to ANY path and even
+#   foreign `whoami` listening on :34088 (which answers 200 to ANY path and even
 #   echoes `Hostname: proxy-admin`) produced 3 FALSE PASSes — a §11.4.68/§11.4.69
 #   fail-open-to-whatever-answers bluff. The fix gates on PROJECT-container
 #   ownership (`podman port <owner> | grep :PORT`): a port that is listening but
@@ -57,7 +57,7 @@ trap 'rm -f "$PROBE"' EXIT INT TERM
 
 {
     echo 'set -u'
-    # Verdict sink + stubs. Scenario = a foreign process is LISTENING on :58080
+    # Verdict sink + stubs. Scenario = a foreign process is LISTENING on :34088
     # while the project's proxy-admin container is running but publishes NO port
     # (podman port prints nothing) — the exact live situation the retest hit.
     echo 'VERDICT=""; DETAIL=""'
@@ -65,7 +65,7 @@ trap 'rm -f "$PROBE"' EXIT INT TERM
     echo 'get_runtime() { echo podman; }'
     echo 'container_running() { return 0; }'          # owner container running
     echo 'podman() { :; }'                            # `podman port <owner>` -> empty (publishes nothing)
-    echo 'ss() { printf "%s\n" "tcp LISTEN 0 4096 *:58080 *:* users:((\"whoami\",pid=1,fd=3))"; }'
+    echo 'ss() { printf "%s\n" "tcp LISTEN 0 4096 *:34088 *:* users:((\"whoami\",pid=1,fd=3))"; }'
 
     if [ "$RED_MODE" = "1" ]; then
         # Faithful PRE-FIX replica: PASS iff ANYTHING is listening (fail-open).
@@ -74,20 +74,20 @@ trap 'rm -f "$PROBE"' EXIT INT TERM
             '    port="$1"' \
             '    if ss -tuln | grep -q ":${port} "; then test_result "x" "PASS"; else test_result "x" "SKIP" "Optional"; fi' \
             '}' \
-            '_port_topology_check 58080 proxy-admin "Admin port"' \
+            '_port_topology_check 34088 proxy-admin "Admin port"' \
             'echo "FOREIGN_VERDICT=$VERDICT"'
     else
         # Extract the REAL, current _port_topology_check from the tracked suite.
         awk '/^_port_topology_check\(\) \{/{f=1} f{print} /^\}/{if(f){exit}}' \
             "$REPO_ROOT/tests/comprehensive-test.sh"
         # (a) foreign-listener scenario -> expect SKIP (bluff refused)
-        printf '%s\n' '_port_topology_check 58080 proxy-admin "Admin port"' \
+        printf '%s\n' '_port_topology_check 34088 proxy-admin "Admin port"' \
             'echo "FOREIGN_VERDICT=$VERDICT"'
-        # (b) healthy owned scenario -> expect PASS. Re-stub podman to publish :53128.
+        # (b) healthy owned scenario -> expect PASS. Re-stub podman to publish :34128.
         printf '%s\n' \
-            'podman() { echo "53128/tcp -> 0.0.0.0:53128"; }' \
-            'ss() { printf "%s\n" "tcp LISTEN 0 4096 *:53128 *:* users:((\"rootlessport\",pid=2,fd=10))"; }' \
-            '_port_topology_check 53128 proxy-squid "HTTP proxy port"' \
+            'podman() { echo "34128/tcp -> 0.0.0.0:34128"; }' \
+            'ss() { printf "%s\n" "tcp LISTEN 0 4096 *:34128 *:* users:((\"rootlessport\",pid=2,fd=10))"; }' \
+            '_port_topology_check 34128 proxy-squid "HTTP proxy port"' \
             'echo "OWNED_VERDICT=$VERDICT"'
     fi
 } >"$PROBE"

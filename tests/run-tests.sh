@@ -259,8 +259,8 @@ test_container_runtime() {
 # §11.4.3 topology-aware port classification (PURE — no I/O).
 #
 # Pre-fix BLUFF: test_ports reported any port that was IN USE as FAIL —
-# so the running, healthy proxy's own listening ports (squid 53128,
-# dante 51080) were reported as FAILURES. A port in use BY ITS OWN
+# so the running, healthy proxy's own listening ports (squid 34128,
+# dante 34080) were reported as FAILURES. A port in use BY ITS OWN
 # RUNNING SERVICE is the HEALTHY state, not a failure (§11.4.1 false-FAIL).
 #
 # port_verdict resolves the truth-table from two topology booleans:
@@ -296,9 +296,9 @@ test_ports() {
 
     source "$PROJECT_ROOT/.env" 2>/dev/null || true
 
-    local http_port="${HTTP_PROXY_PORT:-53128}"
-    local socks_port="${SOCKS_PROXY_PORT:-51080}"
-    local admin_port="${PROXY_ADMIN_PORT:-58080}"
+    local http_port="${HTTP_PROXY_PORT:-34128}"
+    local socks_port="${SOCKS_PROXY_PORT:-34080}"
+    local admin_port="${PROXY_ADMIN_PORT:-34088}"
 
     _ports_check_one "$http_port"  "proxy-squid" "HTTP proxy (squid)"
     _ports_check_one "$socks_port" "proxy-dante" "SOCKS proxy (dante)"
@@ -839,6 +839,27 @@ test_regression_guards() {
         test_result "task#76 assert_no_leak absence-as-evidence RED reproduces" "PASS"
     else
         test_result "task#76 assert_no_leak absence-as-evidence RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # BUGFIX-PORTS-34XXX — GREEN guard: the canonical behavior files must carry the
+    # operator-mandated 34XXX host-port scheme AND no old 5XXXX proxy port may leak
+    # back into the behavior scope (§11.4.108 SOURCE/ARTIFACT consistency). The exact
+    # old->new mapping lives in the guard's own doc-block.
+    if bash "$SCRIPT_DIR/regression/port_prefix_34xxx_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-PORTS-34XXX host-port re-prefix (GREEN)" "PASS"
+    else
+        test_result "BUGFIX-PORTS-34XXX host-port re-prefix (GREEN)" "FAIL" \
+            "run: bash tests/regression/port_prefix_34xxx_test.sh"
+    fi
+
+    # BUGFIX-PORTS-34XXX — RED self-check: the old-port scanner must DETECT a
+    # planted old-port leak. A RED that cannot reproduce is a §11.4.7 finding
+    # (it would prove the GREEN zero-leak assertion is a tautology).
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/port_prefix_34xxx_test.sh" >/dev/null 2>&1; then
+        test_result "BUGFIX-PORTS-34XXX old-port leak RED reproduces" "PASS"
+    else
+        test_result "BUGFIX-PORTS-34XXX old-port leak RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
 }

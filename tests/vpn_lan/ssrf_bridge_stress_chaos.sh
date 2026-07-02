@@ -83,7 +83,7 @@
 #   evidence) under a private temp dir + qa-results only. Removes the temp dir
 #   on every exit path (trap, §11.4.14). NEVER edits config/dante/sockd.conf or
 #   ssrf_carveout_teeth.sh, NEVER (re)starts/kills a proxy, NEVER runs
-#   pkill/kill, NEVER touches the data-plane :53128/:51080, NEVER self-matches
+#   pkill/kill, NEVER touches the data-plane :34128/:34080, NEVER self-matches
 #   or signals another process (§11.4.174).
 #
 # Dependencies:

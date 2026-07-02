@@ -31,8 +31,8 @@
         respond {
             body {
                 "proxy": {
-                    "http": "${HTTP_PROXY_PORT:-53128}",
-                    "socks": "${SOCKS_PROXY_PORT:-51080}",
+                    "http": "${HTTP_PROXY_PORT:-34128}",
+                    "socks": "${SOCKS_PROXY_PORT:-34080}",
                     "vpn": "${USE_VPN:-false}"
                 }
             }

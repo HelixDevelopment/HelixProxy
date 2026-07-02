@@ -117,34 +117,34 @@ else
     . "$LIB"
 
     EVIDENCE_OBSERVED_IP_FILE="$HOST_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "203.0.113.45" "unknown" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "203.0.113.45" "unknown" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host UNKNOWN + egress==host (hidden §15 bluff) -> OPERATOR-BLOCKED(2)" 2 "$rc"
 
     EVIDENCE_OBSERVED_IP_FILE="$VPN_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "unknown" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "unknown" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host UNKNOWN + egress==expected -> OPERATOR-BLOCKED(2)" 2 "$rc"
 
     EVIDENCE_OBSERVED_IP_FILE="$VPN_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host EMPTY + egress==expected -> OPERATOR-BLOCKED(2)" 2 "$rc"
 
     EVIDENCE_OBSERVED_IP_FILE="$VPN_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "1.2.3.4" "unknown" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "1.2.3.4" "unknown" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host UNKNOWN + WRONG exit -> FAIL(1) (provable defect survives)" 1 "$rc"
 
     EVIDENCE_OBSERVED_IP_FILE="$VPN_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "203.0.113.45" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "203.0.113.45" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host KNOWN + egress==exit && !=host -> genuine PASS(0) preserved" 0 "$rc"
 
     # F-1 hardening: a non-empty, non-"unknown" GARBAGE host_real (captive-portal HTML
     # body a `curl -s` 200 can echo, or a non-public 0.0.0.0 sentinel) is exactly as
     # unverifiable as empty/unknown — same OPERATOR-BLOCKED(2), never a fake-PASS.
     EVIDENCE_OBSERVED_IP_FILE="$VPN_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "0.0.0.0" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "0.0.0.0" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host 0.0.0.0 sentinel + egress==expected -> OPERATOR-BLOCKED(2) (F-1)" 2 "$rc"
 
     EVIDENCE_OBSERVED_IP_FILE="$HOST_IP" \
-        assert_egress_ip "http://127.0.0.1:53128" "203.0.113.45" "<html>login</html>" >/dev/null 2>&1 && rc=0 || rc=$?
+        assert_egress_ip "http://127.0.0.1:34128" "203.0.113.45" "<html>login</html>" >/dev/null 2>&1 && rc=0 || rc=$?
     record "host GARBAGE HTML + HIDDEN egress==host bluff -> OPERATOR-BLOCKED(2) (F-1)" 2 "$rc"
 
     if [ "$fails" -eq 0 ]; then

@@ -19,7 +19,7 @@
 #   `include: "..."` and `include "..."` with a syntax error —
 #   qa-results/p4_templates/dante_parse.txt). So the compiler builds the deployed
 #   sockd.conf by APPENDING these rendered `route` blocks AFTER the SHIPPED
-#   config/dante/sockd.conf content verbatim (which keeps internal: :51080,
+#   config/dante/sockd.conf content verbatim (which keeps internal: :34080,
 #   external: proxy-dante, socksmethod: none, and its client/socks pass rules
 #   exactly as today). The base lines are preserved unchanged; this file ONLY
 #   ADDS per-tunnel egress `route` blocks — it never rewrites or removes them.

@@ -63,7 +63,7 @@
 #   READ-ONLY on the live config. Writes candidate configs + evidence under a
 #   private temp dir + qa-results only. Removes temp on every exit (§11.4.14).
 #   NEVER edits config/dante/sockd.conf, NEVER (re)starts/kills any proxy,
-#   NEVER runs pkill/kill, NEVER touches the data-plane :53128/:51080.
+#   NEVER runs pkill/kill, NEVER touches the data-plane :34128/:34080.
 #
 # Dependencies:
 #   POSIX sh + awk (integer arithmetic for CIDR matching). No network, no root.

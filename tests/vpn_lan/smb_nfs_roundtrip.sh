@@ -302,7 +302,7 @@ fi
 # of this class — documented N/A below, NOT fabricated (§11.4.6). Because the
 # script already exited 0 at the bridge gate when the bridge is DOWN, this section
 # runs only on a genuinely-up bridge; it opens NO listener and touches NO
-# data-plane port (:53128/:51080).
+# data-plane port (:34128/:34080).
 # ============================================================================
 nfs_rev_desc='NFS reverse leg — NLM lock GRANT / NSM SM_NOTIFY callback server->client (bidir §2)'
 NFS_CB_OBSERVE=${HELIX_VPN_NFS_CALLBACK_OBSERVE_CMD:-}

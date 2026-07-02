@@ -7,8 +7,8 @@
 #               concern) with NO cross-talk — no response served to the wrong
 #               client, no truncation, no corruption. It launches a HIGH number
 #               of clients (default 40) released AT ONCE by a start barrier,
-#               MIXING the HTTP forward proxy (localhost:53128) AND the SOCKS5
-#               proxy (localhost:51080) round-robin, each fetching a DISTINCT
+#               MIXING the HTTP forward proxy (localhost:34128) AND the SOCKS5
+#               proxy (localhost:34080) round-robin, each fetching a DISTINCT
 #               identifiable resource: a per-client unique token echoed back in
 #               the response body. Cross-talk is then mechanically detectable —
 #               every client MUST receive ITS OWN token and NO OTHER client's
@@ -26,12 +26,12 @@
 #               GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 #                   bash tests/concurrency/proxy_concurrency_test.sh
 #               CONC_CLIENTS=40 bash tests/concurrency/proxy_concurrency_test.sh
-# Inputs:       Live curl through http://localhost:53128 (forward) AND
-#               socks5h://localhost:51080 (SOCKS5) — READ-ONLY client use.
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
-#                    SOCKS_PROXY_URL (default socks5h://localhost:51080),
-#                    SOCKS_PROXY_PORT (default 51080),
+# Inputs:       Live curl through http://localhost:34128 (forward) AND
+#               socks5h://localhost:34080 (SOCKS5) — READ-ONLY client use.
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
+#                    SOCKS_PROXY_URL (default socks5h://localhost:34080),
+#                    SOCKS_PROXY_PORT (default 34080),
 #                    CONC_CLIENTS (default 40; clamped 2..80 for §12.6 safety),
 #                    CONC_ECHO_URL_TEMPLATE
 #                       (default https://postman-echo.com/get?htok=__TOKEN__ —
@@ -53,7 +53,7 @@
 #               §11.4.1, never a fake pass).
 # Side-effects: Live curl only. NEVER stops/starts/restarts/reconfigures any
 #               container and NEVER touches operator resources (wg0-mullvad,
-#               lava-*, whoami:58080). Creates the evidence dir under qa-results/
+#               lava-*, whoami:34088). Creates the evidence dir under qa-results/
 #               (gitignored). `trap` cleanup reaps OUR worker PIDs + removes the
 #               scratch dir on every exit path (§11.4.14).
 # Dependencies: bash, curl, awk, sed, sort, grep, tr, date; tests/lib/evidence.sh.
@@ -102,10 +102,10 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-HTTP_PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-HTTP_PROXY_PORT=${HTTP_PROXY_PORT:-53128}
-SOCKS_PROXY_URL=${SOCKS_PROXY_URL:-socks5h://localhost:51080}
-SOCKS_PROXY_PORT=${SOCKS_PROXY_PORT:-51080}
+HTTP_PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+HTTP_PROXY_PORT=${HTTP_PROXY_PORT:-34128}
+SOCKS_PROXY_URL=${SOCKS_PROXY_URL:-socks5h://localhost:34080}
+SOCKS_PROXY_PORT=${SOCKS_PROXY_PORT:-34080}
 URL_TEMPLATE=${CONC_ECHO_URL_TEMPLATE:-https://postman-echo.com/get?htok=__TOKEN__}
 EXPECT=${CONC_EXPECT:-200}
 ENDPOINT_LIMIT_CODES=${CONC_ENDPOINT_LIMIT_CODES:-429 500 502 503 504}

@@ -10,9 +10,9 @@ func TestGenerate_FindProxyForURL_DeterministicAndSorted(t *testing.T) {
 	g := NewGenerator()
 	// Intentionally unsorted + one empty-proxy entry (normalised to DefaultProxy).
 	entries := []Entry{
-		{HostGlob: "metrics.helix", Proxy: "PROXY proxy-squid:53128"},
+		{HostGlob: "metrics.helix", Proxy: "PROXY proxy-squid:34128"},
 		{HostGlob: "db-bastion.helix", Proxy: ""},
-		{HostGlob: "internal-wiki.helix", Proxy: "PROXY proxy-squid:53128"},
+		{HostGlob: "internal-wiki.helix", Proxy: "PROXY proxy-squid:34128"},
 	}
 	b1, err := g.Generate(context.Background(), entries)
 	if err != nil {
@@ -27,7 +27,7 @@ func TestGenerate_FindProxyForURL_DeterministicAndSorted(t *testing.T) {
 		t.Fatalf("missing DIRECT default:\n%s", body)
 	}
 	// Empty proxy normalised to the default.
-	if !strings.Contains(body, `shExpMatch(host, "db-bastion.helix")) { return "PROXY proxy-squid:53128"; }`) {
+	if !strings.Contains(body, `shExpMatch(host, "db-bastion.helix")) { return "PROXY proxy-squid:34128"; }`) {
 		t.Fatalf("empty proxy not normalised to default:\n%s", body)
 	}
 	// Sorted: db-bastion < internal-wiki < metrics.

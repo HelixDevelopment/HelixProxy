@@ -27,7 +27,7 @@
       "gridPos": { "h": 5, "w": 24, "x": 0, "y": 0 },
       "options": {
         "mode": "markdown",
-        "content": "**NOT YET LIVE.** This is a P7 observability *plan*. Scrape targets are built in **P6** (control-plane `/metrics`, port 59090) and **P7/P10** (`boynux/squid-exporter`, :9301). The live scrape + 'renders real data' proof is owed to **P10** (Constitution §11.4.6).\n\n**Metric provenance / confidence:**\n- `squid_client_http_*` — from `boynux/squid-exporter` (spec §11③). Exact names depend on exporter version + Squid 6.13 `mgr:counters`; **confirmed live in P10**.\n- `helix_proxy_vpn_up{profile}` — **PLANNED custom** control-plane gauge derived from Redis `vpn:status:<profile>` (health-publisher, P3/P6). Speculative name.\n- `helix_proxy_tunnel_down_responses_total` — **PLANNED custom** control-plane counter for `ERR_TUNNEL_DOWN`→`deny_info 503` (acl-helper, P5/P6). Speculative name.\n\nUntil P6/P10, panels below render **No data** — expected."
+        "content": "**NOT YET LIVE.** This is a P7 observability *plan*. Scrape targets are built in **P6** (control-plane `/metrics`, port 34090) and **P7/P10** (`boynux/squid-exporter`, :9301). The live scrape + 'renders real data' proof is owed to **P10** (Constitution §11.4.6).\n\n**Metric provenance / confidence:**\n- `squid_client_http_*` — from `boynux/squid-exporter` (spec §11③). Exact names depend on exporter version + Squid 6.13 `mgr:counters`; **confirmed live in P10**.\n- `helix_proxy_vpn_up{profile}` — **PLANNED custom** control-plane gauge derived from Redis `vpn:status:<profile>` (health-publisher, P3/P6). Speculative name.\n- `helix_proxy_tunnel_down_responses_total` — **PLANNED custom** control-plane counter for `ERR_TUNNEL_DOWN`→`deny_info 503` (acl-helper, P5/P6). Speculative name.\n\nUntil P6/P10, panels below render **No data** — expected."
       }
     },
     {
@@ -104,7 +104,7 @@
       "id": 4,
       "type": "timeseries",
       "title": "503 / ERR_TUNNEL_DOWN rate",
-      "description": "SPECULATIVE / PLANNED custom metric. helix_proxy_tunnel_down_responses_total is a control-plane counter (acl-helper -> deny_info 503 ERR_TUNNEL_DOWN) built in P5/P6 on METRICS_PORT 59090. Name confirmed/renamed against live /metrics in P10 (§11.4.6). Not yet live.",
+      "description": "SPECULATIVE / PLANNED custom metric. helix_proxy_tunnel_down_responses_total is a control-plane counter (acl-helper -> deny_info 503 ERR_TUNNEL_DOWN) built in P5/P6 on METRICS_PORT 34090. Name confirmed/renamed against live /metrics in P10 (§11.4.6). Not yet live.",
       "gridPos": { "h": 6, "w": 8, "x": 16, "y": 5 },
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": {

@@ -2,8 +2,8 @@
 # =============================================================================
 # proxy_flood_test.sh — §11.4.169 DDoS / load-flood test for the LIVE proxy
 # -----------------------------------------------------------------------------
-# Purpose:      Prove the LIVE proxy (HTTP forward on localhost:53128, SOCKS5 on
-#               localhost:51080) DEGRADES GRACEFULLY under a bounded high-rate
+# Purpose:      Prove the LIVE proxy (HTTP forward on localhost:34128, SOCKS5 on
+#               localhost:34080) DEGRADES GRACEFULLY under a bounded high-rate
 #               request flood — it may shed load (503/429/timeout/reset) but it
 #               MUST stay UP and keep serving: under overload the process MUST
 #               NOT crash, MUST keep both listeners bound, and MUST recover to
@@ -34,12 +34,12 @@
 #                   bash tests/ddos/proxy_flood_test.sh
 #               FLOOD_TOTAL=400 FLOOD_CONC=30 bash tests/ddos/proxy_flood_test.sh
 #
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use)
-#               + a SOCKS5 survival probe through localhost:51080. Env:
-#                 HTTP_PROXY_URL   (default http://localhost:53128)
-#                 HTTP_PROXY_PORT  (default 53128)
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use)
+#               + a SOCKS5 survival probe through localhost:34080. Env:
+#                 HTTP_PROXY_URL   (default http://localhost:34128)
+#                 HTTP_PROXY_PORT  (default 34128)
 #                 SOCKS_PROXY_HOST (default localhost)
-#                 SOCKS_PROXY_PORT (default 51080)
+#                 SOCKS_PROXY_PORT (default 34080)
 #                 FLOOD_TARGET     (default https://www.gstatic.com/generate_204)
 #                 FLOOD_EXPECT     (default "204 200")
 #                 FLOOD_TOTAL      (default 300; bounded burst, hard-capped 500)
@@ -110,10 +110,10 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 SOCKS_HOST=${SOCKS_PROXY_HOST:-localhost}
-SOCKS_PORT=${SOCKS_PROXY_PORT:-51080}
+SOCKS_PORT=${SOCKS_PROXY_PORT:-34080}
 TARGET=${FLOOD_TARGET:-https://www.gstatic.com/generate_204}
 EXPECT=${FLOOD_EXPECT:-204 200}
 MAX_TIME=${FLOOD_MAX_TIME:-5}

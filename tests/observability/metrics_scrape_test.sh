@@ -27,12 +27,12 @@
 #                §12.6 / resource cap holds regardless of caller.)
 # Env (inputs):
 #   RED_MODE                     0 = GREEN guard (default), 1 = RED reproduction.
-#   HELIX_METRICS_URL            full scrape URL (default http://127.0.0.1:59090/metrics —
-#                                METRICS_PORT=59090 per .env.example + prometheus.yml).
+#   HELIX_METRICS_URL            full scrape URL (default http://127.0.0.1:34090/metrics —
+#                                METRICS_PORT=34090 per .env.example + prometheus.yml).
 #   HELIX_OBSERVABILITY_STACK    set to 1 (by the conductor, post-boot) to declare
 #                                proxy-api up. Unset ⇒ GREEN SKIPs (service not booted).
 #   HELIX_PROXY_URL              HTTP proxy for the proxied-request step
-#                                (default http://127.0.0.1:53128 — HTTP_PROXY_PORT).
+#                                (default http://127.0.0.1:34128 — HTTP_PROXY_PORT).
 #   HELIX_METRICS_PROBE_TARGET   URL fetched through the proxy to drive a decision
 #                                (default http://target-a.internal/).
 #   HELIX_METRICS_BYTEPATH_WIRED set to 1 ONCE the byte-path→api counter increment
@@ -92,8 +92,8 @@ fi
 
 # --- config -------------------------------------------------------------------
 RED_MODE=${RED_MODE:-0}
-METRICS_URL=${HELIX_METRICS_URL:-http://127.0.0.1:59090/metrics}
-PROXY_URL=${HELIX_PROXY_URL:-http://127.0.0.1:53128}
+METRICS_URL=${HELIX_METRICS_URL:-http://127.0.0.1:34090/metrics}
+PROXY_URL=${HELIX_PROXY_URL:-http://127.0.0.1:34128}
 PROBE_TARGET=${HELIX_METRICS_PROBE_TARGET:-http://target-a.internal/}
 BYTEPATH_WIRED=${HELIX_METRICS_BYTEPATH_WIRED:-0}
 PROBE_TIMEOUT=${HELIX_PROBE_TIMEOUT:-10}

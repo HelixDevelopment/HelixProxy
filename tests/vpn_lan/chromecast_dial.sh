@@ -327,7 +327,7 @@ fi
 # controller-side status twice); T6.4 asserts the receiver-INITIATED inbound
 # callback specifically. This section runs only on a genuinely-up bridge
 # (bridge-down already exited 0 at the gate); it opens NO listener and touches NO
-# data-plane port (:53128/:51080).
+# data-plane port (:34128/:34080).
 # ============================================================================
 cast_rev_desc='Cast reverse leg — receiver->controller status callback (bidir §2)'
 CAST_CB_OBSERVE=${HELIX_VPN_CAST_CALLBACK_OBSERVE_CMD:-}

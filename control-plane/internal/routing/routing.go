@@ -48,7 +48,7 @@ const DefaultPeerPort = 8888
 
 // DefaultPACProxy is the PAC return value for VPN-routed targets when the operator
 // does not override it. Non-target hosts return DIRECT (split-tunnel, spec §11 ⑤).
-const DefaultPACProxy = "PROXY proxy-squid:53128"
+const DefaultPACProxy = "PROXY proxy-squid:34128"
 
 // Artifacts is the rendered output set produced by one compile pass.
 type Artifacts struct {

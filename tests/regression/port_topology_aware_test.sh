@@ -6,8 +6,8 @@
 # Purpose:
 #   Prove the suite never reports a HEALTHY, serving proxy port as a
 #   FAILURE. The pre-fix test_ports treated ANY port that was IN USE as
-#   FAIL — so the running proxy's own listening ports (squid 53128,
-#   dante 51080) were reported as failures and the whole suite exited 1
+#   FAIL — so the running proxy's own listening ports (squid 34128,
+#   dante 34080) were reported as failures and the whole suite exited 1
 #   against a perfectly healthy serving proxy (a §11.4.1 false-FAIL, as
 #   forbidden as a false-PASS).
 #

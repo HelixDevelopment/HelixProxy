@@ -102,9 +102,9 @@ show_network_access() {
     local bind_addr="${BIND_ADDRESS:-0.0.0.0}"
     local host_ip
     host_ip=$(get_local_ip)
-    local http_port="${HTTP_PROXY_PORT:-53128}"
-    local socks_port="${SOCKS_PROXY_PORT:-51080}"
-    local admin_port="${PROXY_ADMIN_PORT:-58080}"
+    local http_port="${HTTP_PROXY_PORT:-34128}"
+    local socks_port="${SOCKS_PROXY_PORT:-34080}"
+    local admin_port="${PROXY_ADMIN_PORT:-34088}"
     local allowed_networks="${ALLOWED_NETWORKS:-192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}"
     
     echo ""
@@ -130,7 +130,7 @@ show_network_access() {
 #######################################
 test_http_proxy() {
     local host="${BIND_ADDRESS:-127.0.0.1}"
-    local port="${HTTP_PROXY_PORT:-53128}"
+    local port="${HTTP_PROXY_PORT:-34128}"
     
     if timeout 5 curl -x "http://${host}:${port}" -s -o /dev/null -w "%{http_code}" "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null | grep -q "204\|200"; then
         echo "WORKING"
@@ -144,7 +144,7 @@ test_http_proxy() {
 #######################################
 test_socks_proxy() {
     local host="${BIND_ADDRESS:-127.0.0.1}"
-    local port="${SOCKS_PROXY_PORT:-51080}"
+    local port="${SOCKS_PROXY_PORT:-34080}"
     
     if timeout 5 curl -x "socks5://${host}:${port}" -s -o /dev/null -w "%{http_code}" "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null | grep -q "204\|200"; then
         echo "WORKING"
@@ -219,9 +219,9 @@ show_basic_status() {
     # Port status
     echo "Port Status:"
     echo "────────────"
-    echo "  HTTP Proxy  (${HTTP_PROXY_PORT:-53128}): $(check_port ${HTTP_PROXY_PORT:-53128})"
-    echo "  SOCKS Proxy (${SOCKS_PROXY_PORT:-51080}): $(check_port ${SOCKS_PROXY_PORT:-51080})"
-    echo "  Admin Panel (${PROXY_ADMIN_PORT:-58080}): $(check_port ${PROXY_ADMIN_PORT:-58080})"
+    echo "  HTTP Proxy  (${HTTP_PROXY_PORT:-34128}): $(check_port ${HTTP_PROXY_PORT:-34128})"
+    echo "  SOCKS Proxy (${SOCKS_PROXY_PORT:-34080}): $(check_port ${SOCKS_PROXY_PORT:-34080})"
+    echo "  Admin Panel (${PROXY_ADMIN_PORT:-34088}): $(check_port ${PROXY_ADMIN_PORT:-34088})"
     
     echo ""
     
@@ -308,21 +308,21 @@ show_json_status() {
         "http_proxy": {
             "container": "proxy-squid",
             "running": $squid_running,
-            "port": ${HTTP_PROXY_PORT:-53128},
-            "port_status": "$(check_port ${HTTP_PROXY_PORT:-53128})",
+            "port": ${HTTP_PROXY_PORT:-34128},
+            "port_status": "$(check_port ${HTTP_PROXY_PORT:-34128})",
             "connection_test": "$(test_http_proxy)"
         },
         "socks_proxy": {
             "container": "proxy-dante",
             "running": $dante_running,
-            "port": ${SOCKS_PROXY_PORT:-51080},
-            "port_status": "$(check_port ${SOCKS_PROXY_PORT:-51080})",
+            "port": ${SOCKS_PROXY_PORT:-34080},
+            "port_status": "$(check_port ${SOCKS_PROXY_PORT:-34080})",
             "connection_test": "$(test_socks_proxy)"
         },
         "admin": {
             "container": "proxy-admin",
             "running": $admin_running,
-            "port": ${PROXY_ADMIN_PORT:-58080}
+            "port": ${PROXY_ADMIN_PORT:-34088}
         },
         "vpn": {
             "container": "proxy-vpn",
@@ -340,10 +340,10 @@ show_json_status() {
         "host_ip": "$(get_local_ip)",
         "bind_address": "${BIND_ADDRESS:-0.0.0.0}",
         "allowed_networks": "${ALLOWED_NETWORKS:-192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}",
-        "http_proxy": "http://$(get_local_ip):${HTTP_PROXY_PORT:-53128}",
-        "https_proxy": "http://$(get_local_ip):${HTTP_PROXY_PORT:-53128}",
-        "socks_proxy": "socks5://$(get_local_ip):${SOCKS_PROXY_PORT:-51080}",
-        "admin_panel": "http://$(get_local_ip):${PROXY_ADMIN_PORT:-58080}"
+        "http_proxy": "http://$(get_local_ip):${HTTP_PROXY_PORT:-34128}",
+        "https_proxy": "http://$(get_local_ip):${HTTP_PROXY_PORT:-34128}",
+        "socks_proxy": "socks5://$(get_local_ip):${SOCKS_PROXY_PORT:-34080}",
+        "admin_panel": "http://$(get_local_ip):${PROXY_ADMIN_PORT:-34088}"
     }
 }
 EOF

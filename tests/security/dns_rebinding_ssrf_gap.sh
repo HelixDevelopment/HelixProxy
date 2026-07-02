@@ -73,7 +73,7 @@
 #   Writes evidence + a scratch temp dir only; removes temp on every exit
 #   (§11.4.14). NEVER opens a socket to any address, NEVER resolves a real name,
 #   NEVER edits any config, NEVER (re)starts/kills a proxy, NEVER runs
-#   pkill/kill, NEVER touches the data-plane :53128/:51080 (§11.4.174).
+#   pkill/kill, NEVER touches the data-plane :34128/:34080 (§11.4.174).
 #
 # Dependencies:
 #   POSIX sh + awk (integer arithmetic for CIDR matching). No network, no root,

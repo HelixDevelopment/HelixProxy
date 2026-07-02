@@ -197,9 +197,9 @@ show_status() {
     
     echo ""
     echo "Connection Information:"
-    echo "  HTTP Proxy:  ${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-53128}"
-    echo "  SOCKS Proxy: ${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-51080}"
-    echo "  Admin Panel: http://localhost:${PROXY_ADMIN_PORT:-58080}"
+    echo "  HTTP Proxy:  ${BIND_ADDRESS:-0.0.0.0}:${HTTP_PROXY_PORT:-34128}"
+    echo "  SOCKS Proxy: ${BIND_ADDRESS:-0.0.0.0}:${SOCKS_PROXY_PORT:-34080}"
+    echo "  Admin Panel: http://localhost:${PROXY_ADMIN_PORT:-34088}"
     
     local host_ip
     host_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "127.0.0.1")
@@ -209,10 +209,10 @@ show_status() {
     echo "  Bind Address:   ${BIND_ADDRESS:-0.0.0.0}"
     echo "  Allowed Networks: ${ALLOWED_NETWORKS:-192.168.0.0/16,10.0.0.0/8,172.16.0.0/12}"
     echo ""
-    echo "  HTTP Proxy:     http://${host_ip}:${HTTP_PROXY_PORT:-53128}"
-    echo "  HTTPS Proxy:    http://${host_ip}:${HTTP_PROXY_PORT:-53128}"
-    echo "  SOCKS5 Proxy:   socks5://${host_ip}:${SOCKS_PROXY_PORT:-51080}"
-    echo "  Admin Panel:    http://${host_ip}:${PROXY_ADMIN_PORT:-58080}"
+    echo "  HTTP Proxy:     http://${host_ip}:${HTTP_PROXY_PORT:-34128}"
+    echo "  HTTPS Proxy:    http://${host_ip}:${HTTP_PROXY_PORT:-34128}"
+    echo "  SOCKS5 Proxy:   socks5://${host_ip}:${SOCKS_PROXY_PORT:-34080}"
+    echo "  Admin Panel:    http://${host_ip}:${PROXY_ADMIN_PORT:-34088}"
     
     echo ""
     get_cache_stats

@@ -2,7 +2,7 @@
 # =============================================================================
 # proxy_memory_soak_test.sh — §11.4.169 MEMORY/soak proof for the LIVE proxy
 # -----------------------------------------------------------------------------
-# Purpose:      Prove the LIVE HTTP forward proxy (Squid, localhost:53128,
+# Purpose:      Prove the LIVE HTTP forward proxy (Squid, localhost:34128,
 #               container `proxy-squid`) does NOT leak memory under sustained
 #               load. Reads the proxy container's RSS at BASELINE (before any
 #               load) NON-INVASIVELY, drives a sustained soak of N>=200 proxied
@@ -24,11 +24,11 @@
 #               MEM_SOAK_REQUESTS=400 MEM_SOAK_MIN_SECONDS=60 \
 #                   MEM_GROWTH_FACTOR=1.4 \
 #                   bash tests/memory/proxy_memory_soak_test.sh
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use)
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use)
 #               + READ-ONLY container introspection of `proxy-squid` (podman/
 #               docker `ps` / `stats` / `inspect` — NEVER exec/stop/restart).
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
 #                    MEM_SOAK_CONTAINER (default proxy-squid),
 #                    MEM_SOAK_TARGET (default https://www.gstatic.com/generate_204),
 #                    MEM_SOAK_EXPECT (default "204 200"),
@@ -102,8 +102,8 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 CONTAINER=${MEM_SOAK_CONTAINER:-proxy-squid}
 TARGET=${MEM_SOAK_TARGET:-https://www.gstatic.com/generate_204}
 EXPECT=${MEM_SOAK_EXPECT:-204 200}

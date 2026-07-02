@@ -257,7 +257,7 @@ log 'flash is operator-gated (usbip USB-over-IP; real-device flash §11.4.133) �
 # 'tcp:8081 tcp:8081'): register it, confirm via the READ-ONLY `adb -s <serial>
 # reverse --list`, and REMOVE it in the cleanup trap (scoped to OUR serial only,
 # §11.4.14). Registering a reverse arms a DEVICE-side forward — it opens NO host
-# listener and touches NO host data-plane port (:53128/:51080); nothing dials it
+# listener and touches NO host data-plane port (:34128/:34080); nothing dials it
 # in this test (a full device->host data flow would need a host-side target service
 # — operator-gated §11.4.122, honest boundary §11.4.6). This section runs only on a
 # genuinely-up bridge (bridge-down already exited 0 at the gate).

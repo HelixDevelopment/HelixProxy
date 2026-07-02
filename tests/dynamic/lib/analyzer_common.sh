@@ -121,7 +121,7 @@ ac_selftest_summary() {
 # is an honest §11.4.69 SKIP (return 0, honest non-evidence), NEVER a fake PASS.
 # ----------------------------------------------------------------------------
 # dyn_stack_proxy_url — the HTTP proxy URL the suites drive (default Squid port).
-dyn_stack_proxy_url() { printf '%s' "${HELIX_PROXY_URL:-http://127.0.0.1:53128}"; }
+dyn_stack_proxy_url() { printf '%s' "${HELIX_PROXY_URL:-http://127.0.0.1:34128}"; }
 
 # dyn_live_stack_available — 0 if the operator has declared + the proxy answers.
 # The dynamic stack does not exist in this repo yet (design-only); P10 sets

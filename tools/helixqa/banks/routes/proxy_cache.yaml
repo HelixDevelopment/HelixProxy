@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Route-execution slice of tools/helixqa/banks/proxy.yaml — Squid cache.
 # Runner drives this via: helixqa http --bank <this> \
-#   --base-url http://www.gnu.org   (HTTP_PROXY=http://127.0.0.1:53128)
+#   --base-url http://www.gnu.org   (HTTP_PROXY=http://127.0.0.1:34128)
 # The two http: steps prove the cacheable object is served consistently
 # THROUGH the proxy (functional). The runner then captures the DECISIVE cache
 # evidence sink-side: a Squid TCP_*HIT for this URL in proxy-squid's
@@ -9,8 +9,8 @@
 # ./cachectl stats. HTTPS bodies are never cacheable by Squid, so the target
 # is deliberately plain HTTP.
 version: "1.0"
-name: "helix_proxy route: Squid cache (:53128)"
-description: "Cache warm+verify cases; base-url http://www.gnu.org via HTTP_PROXY=http://127.0.0.1:53128. HIT proven sink-side by the runner."
+name: "helix_proxy route: Squid cache (:34128)"
+description: "Cache warm+verify cases; base-url http://www.gnu.org via HTTP_PROXY=http://127.0.0.1:34128. HIT proven sink-side by the runner."
 test_cases:
   - id: PRX-CACHE-001
     name: "Cache warm: first GET of a cacheable object is served (MISS)"

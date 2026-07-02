@@ -2,8 +2,8 @@
 // VPN-routed target aliases go through the proxy; everything else is DIRECT
 // (split-tunnel, spec §11 ⑤). Regenerated only on a structural change.
 function FindProxyForURL(url, host) {
-    if (shExpMatch(host, "db-bastion.helix")) { return "PROXY proxy-squid:53128"; }
-    if (shExpMatch(host, "internal-wiki.helix")) { return "PROXY proxy-squid:53128"; }
-    if (shExpMatch(host, "metrics.helix")) { return "PROXY proxy-squid:53128"; }
+    if (shExpMatch(host, "db-bastion.helix")) { return "PROXY proxy-squid:34128"; }
+    if (shExpMatch(host, "internal-wiki.helix")) { return "PROXY proxy-squid:34128"; }
+    if (shExpMatch(host, "metrics.helix")) { return "PROXY proxy-squid:34128"; }
     return "DIRECT";
 }

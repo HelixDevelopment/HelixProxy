@@ -2,7 +2,7 @@
 # =============================================================================
 # proxy_acl_security.sh — §11.4.169/§11.4.85 SECURITY: proxy ACL + header hygiene
 # -----------------------------------------------------------------------------
-# Purpose:      Assert the LIVE HTTP forward proxy's (Squid, localhost:53128)
+# Purpose:      Assert the LIVE HTTP forward proxy's (Squid, localhost:34128)
 #               SECURITY posture with captured evidence (§11.4.69), two hard-gated
 #               anti-bluff checks:
 #                 S1 ACL DENY is enforced + does NOT leak — a CONNECT to a non-SSL
@@ -33,9 +33,9 @@
 #               only (default squid `forwarded_for on`), never a hard gate.
 # Usage:        bash tests/security/proxy_acl_security.sh
 #               GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/security/proxy_acl_security.sh
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use).
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use).
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
 #                    SEC_DENY_TARGET (default https://example.com:80/ — CONNECT to
 #                        non-SSL port 80; Squid denies via deny CONNECT !SSL_ports),
 #                    SEC_DENY_HOSTPORT (default example.com:80 — the host:port token
@@ -94,8 +94,8 @@ fi
 . "$REPO_ROOT/tests/lib/acl_group_verdict.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 DENY_TARGET=${SEC_DENY_TARGET:-https://example.com:80/}
 ECHO_URL=${SEC_HEADER_ECHO_URL:-http://httpbin.org/headers}
 MAX_TIME=${CURL_MAX_TIME:-15}
@@ -324,7 +324,7 @@ fi
 # as corroborating evidence in the artifact, not as the decision.
 # ---------------------------------------------------------------------------
 S4_EV="$EVIDENCE_DIR/s4_socks_ssrf.evidence"
-SOCKS_URL=${SEC_SOCKS_URL:-socks5h://127.0.0.1:51080}
+SOCKS_URL=${SEC_SOCKS_URL:-socks5h://127.0.0.1:34080}
 SSRF_TARGET=${SEC_SSRF_TARGET:-169.254.169.254}
 DANTE_CTR=${SEC_DANTE_CONTAINER:-proxy-dante}
 DANTE_LOG=${SEC_DANTE_LOG:-/var/log/sockd.log}
@@ -332,7 +332,7 @@ socks_ctrl=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$MAX_TIME" -x "$
 if [ "$socks_ctrl" != "204" ]; then
     printf '=== S4: SOCKS5 SSRF ===\nverdict=SKIP (SOCKS5 control probe=%s, not 204)\n' "$socks_ctrl" > "$S4_EV"
     echo "[S4] SKIP SOCKS5 proxy not serving (control=$socks_ctrl) — SSRF gate not assertable"
-    ab_skip_with_reason "S4 SOCKS5 SSRF (proxy :51080 not serving / topology absent)" "topology_unsupported"
+    ab_skip_with_reason "S4 SOCKS5 SSRF (proxy :34080 not serving / topology absent)" "topology_unsupported"
     N_SKIP=$((N_SKIP + 1))
 else
     # Snapshot dante's own log length BEFORE the probe so we read ONLY the lines

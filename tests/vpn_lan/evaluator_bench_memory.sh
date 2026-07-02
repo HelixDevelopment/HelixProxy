@@ -62,7 +62,7 @@
 #   Host caps (§12.6): the process re-execs itself once under `nice -n 19`
 #   (+ `ionice -c 3` when present) with GOMAXPROCS=2; N is bounded + clamped so
 #   the whole run stays light. NEVER pkill/kill, NEVER touches the data-plane
-#   :53128/:51080, NEVER signals or self-matches another process (§11.4.174).
+#   :34128/:34080, NEVER signals or self-matches another process (§11.4.174).
 #
 # Usage:
 #   tests/vpn_lan/evaluator_bench_memory.sh                 # normal — must PASS (rc 0)
@@ -97,7 +97,7 @@
 #   NEVER edits config/dante/sockd.conf, ssrf_carveout_teeth.sh,
 #   ingress_allowlist_teeth.sh, or ssrf_bridge_stress_chaos.sh; NEVER
 #   (re)starts/kills a proxy; NEVER runs pkill/kill; NEVER touches the
-#   data-plane :53128/:51080.
+#   data-plane :34128/:34080.
 #
 # Dependencies:
 #   POSIX sh + awk + sort + GNU `date +%s.%N` (millisecond timing) +

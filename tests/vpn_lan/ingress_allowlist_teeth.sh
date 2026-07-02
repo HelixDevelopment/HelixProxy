@@ -49,7 +49,7 @@
 #   "done" only when its runtime signature verifies BOTH directions with captured
 #   evidence on a genuinely-up bridge (§11.4.108). This test NEVER opens a
 #   listening socket, NEVER edits any live config, NEVER runs pkill/kill, and
-#   NEVER touches the data-plane :53128/:51080.
+#   NEVER touches the data-plane :34128/:34080.
 #
 # Usage:
 #   tests/vpn_lan/ingress_allowlist_teeth.sh             # normal — teeth PASS, rc=0
@@ -82,7 +82,7 @@
 #   Writes candidate policies + evidence under a private temp dir + qa-results
 #   only. Removes temp on every exit (§11.4.14). NEVER edits any live config,
 #   NEVER opens a listening socket, NEVER (re)starts/kills any proxy, NEVER runs
-#   pkill/kill, NEVER touches the data-plane :53128/:51080.
+#   pkill/kill, NEVER touches the data-plane :34128/:34080.
 #
 # Dependencies:
 #   POSIX sh + awk (integer arithmetic for CIDR matching). No network, no root,

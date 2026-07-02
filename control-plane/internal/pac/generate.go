@@ -16,7 +16,7 @@ import (
 
 // DefaultProxy is the PAC return value used when an Entry leaves Proxy empty.
 // Mirrors routing.DefaultPACProxy so the API endpoint and the compiler agree.
-const DefaultProxy = "PROXY proxy-squid:53128"
+const DefaultProxy = "PROXY proxy-squid:34128"
 
 // FindProxyGenerator renders the FindProxyForURL artifact. The zero value is
 // ready to use; New is provided for symmetry with the other packages.

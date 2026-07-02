@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 # Purpose:      Measure forward-proxy request LATENCY (p50/p95/p99 + min/max/mean)
 #               and sequential THROUGHPUT (successful requests per wall-second)
-#               against the LIVE HTTP forward proxy (Squid, 127.0.0.1:53128).
+#               against the LIVE HTTP forward proxy (Squid, 127.0.0.1:34128).
 #               Drives N (default 200) sequential plain-HTTP requests through the
 #               proxy to a 204-returning endpoint, records EVERY request's
 #               %{http_code} + %{time_total} to a captured latency.txt (the
@@ -20,10 +20,10 @@
 #               # host-safety caps applied by the conductor's invocation:
 #               GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 #                   bash tests/benchmark/proxy_forward_benchmark.sh
-#               BENCH_N=200 PROXY_ADDR=127.0.0.1:53128 \
+#               BENCH_N=200 PROXY_ADDR=127.0.0.1:34128 \
 #                   bash tests/benchmark/proxy_forward_benchmark.sh
 # Inputs:       Live curl through http://$PROXY_ADDR (READ-ONLY client use).
-#               Env: PROXY_ADDR (default 127.0.0.1:53128),
+#               Env: PROXY_ADDR (default 127.0.0.1:34128),
 #                    BENCH_TARGET (default http://www.gstatic.com/generate_204),
 #                    BENCH_EXPECT (default "204"),
 #                    BENCH_N (default 200), CURL_MAX_TIME (default 20),
@@ -81,7 +81,7 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_ADDR=${PROXY_ADDR:-127.0.0.1:53128}
+PROXY_ADDR=${PROXY_ADDR:-127.0.0.1:34128}
 PROXY_URL="http://$PROXY_ADDR"
 PROXY_PORT=${PROXY_ADDR##*:}
 TARGET=${BENCH_TARGET:-http://www.gstatic.com/generate_204}

@@ -97,15 +97,15 @@ run_case 1 "wg_transfer_delta: counter reset/decrease -> FAIL (negative)" \
 # --- assert_egress_ip (seam: EVIDENCE_OBSERVED_IP_FILE) --------------------
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_vpn.ip"
 run_case 0 "assert_egress_ip: egress==exit && !=host -> PASS" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "203.0.113.45"
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "203.0.113.45"
 run_case 1 "assert_egress_ip: wrong exit -> FAIL (negative)" \
-    assert_egress_ip "http://127.0.0.1:53128" "1.2.3.4" "203.0.113.45"
+    assert_egress_ip "http://127.0.0.1:34128" "1.2.3.4" "203.0.113.45"
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_host.ip"
 run_case 1 "assert_egress_ip: egress==host (the §15 bluff) -> FAIL (negative)" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "203.0.113.45"
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "203.0.113.45"
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_empty.ip"
 run_case 1 "assert_egress_ip: no egress observed -> FAIL (negative)" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "203.0.113.45"
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "203.0.113.45"
 
 # --- assert_egress_ip F7 fail-open guard (§11.4.68) -------------------------
 # When the host's real IP is UNKNOWN or empty (the caller's `curl ifconfig.me
@@ -116,28 +116,28 @@ run_case 1 "assert_egress_ip: no egress observed -> FAIL (negative)" \
 # definitively-wrong exit is still a provable FAIL(1).
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_vpn.ip"
 run_case 2 "assert_egress_ip: host UNKNOWN + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F7)" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "unknown"
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "unknown"
 run_case 2 "assert_egress_ip: host EMPTY + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F7)" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" ""
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" ""
 run_case 1 "assert_egress_ip: host UNKNOWN + WRONG exit -> FAIL(1) (provable defect survives the F7 guard)" \
-    assert_egress_ip "http://127.0.0.1:53128" "1.2.3.4" "unknown"
+    assert_egress_ip "http://127.0.0.1:34128" "1.2.3.4" "unknown"
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_host.ip"
 run_case 2 "assert_egress_ip: HIDDEN §15 bluff — egress==host but host reported UNKNOWN -> OPERATOR-BLOCKED(2), NOT fake-PASS (F7)" \
-    assert_egress_ip "http://127.0.0.1:53128" "203.0.113.45" "unknown"
+    assert_egress_ip "http://127.0.0.1:34128" "203.0.113.45" "unknown"
 # --- F-1 hardening: non-empty, non-"unknown" GARBAGE host_real is exactly as
 # unverifiable as empty/unknown (a `curl -s` 200 can echo a captive-portal / rate-limit
 # HTML body, or a non-public sentinel like 0.0.0.0) — it MUST take the same exit-2
 # OPERATOR-BLOCKED branch, never fall through to a fake-PASS on the collapsed !=host half.
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_vpn.ip"
 run_case 2 "assert_egress_ip: host GARBAGE (HTML body) + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F-1)" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "<html>captive portal login</html>"
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "<html>captive portal login</html>"
 run_case 2 "assert_egress_ip: host 0.0.0.0 sentinel + egress==exit -> OPERATOR-BLOCKED(2), NOT fake-PASS (F-1)" \
-    assert_egress_ip "http://127.0.0.1:53128" "185.65.135.70" "0.0.0.0"
+    assert_egress_ip "http://127.0.0.1:34128" "185.65.135.70" "0.0.0.0"
 run_case 1 "assert_egress_ip: host GARBAGE + WRONG exit -> FAIL(1) (provable defect survives the F-1 guard)" \
-    assert_egress_ip "http://127.0.0.1:53128" "1.2.3.4" "not-an-ip"
+    assert_egress_ip "http://127.0.0.1:34128" "1.2.3.4" "not-an-ip"
 export EVIDENCE_OBSERVED_IP_FILE="$FIX/egress_observed_host.ip"
 run_case 2 "assert_egress_ip: HIDDEN §15 bluff — egress==host but host reported as 0.0.0.0 sentinel -> OPERATOR-BLOCKED(2), NOT fake-PASS (F-1)" \
-    assert_egress_ip "http://127.0.0.1:53128" "203.0.113.45" "0.0.0.0"
+    assert_egress_ip "http://127.0.0.1:34128" "203.0.113.45" "0.0.0.0"
 unset EVIDENCE_OBSERVED_IP_FILE
 
 # --- assert_cache_hit -------------------------------------------------------
@@ -154,16 +154,16 @@ run_case 1 "assert_cache_hit: url present but only MISS -> FAIL (url-specific ne
 export EVIDENCE_503_CODE_OVERRIDE="503"
 export EVIDENCE_503_BODY_FILE="$FIX/squid_503_body.html"
 run_case 0 "assert_graceful_503: 503 + branded body + PID unchanged -> PASS" \
-    assert_graceful_503 "http://127.0.0.1:53128" "http://blocked.example" "12345" "12345"
+    assert_graceful_503 "http://127.0.0.1:34128" "http://blocked.example" "12345" "12345"
 run_case 1 "assert_graceful_503: PID changed (crash) -> FAIL (negative)" \
-    assert_graceful_503 "http://127.0.0.1:53128" "http://blocked.example" "12345" "12999"
+    assert_graceful_503 "http://127.0.0.1:34128" "http://blocked.example" "12345" "12999"
 export EVIDENCE_503_CODE_OVERRIDE="200"
 run_case 1 "assert_graceful_503: HTTP 200 not 503 -> FAIL (negative)" \
-    assert_graceful_503 "http://127.0.0.1:53128" "http://blocked.example" "12345" "12345"
+    assert_graceful_503 "http://127.0.0.1:34128" "http://blocked.example" "12345" "12345"
 export EVIDENCE_503_CODE_OVERRIDE="503"
 export EVIDENCE_503_BODY_FILE="$FIX/squid_503_blank_body.html"
 run_case 1 "assert_graceful_503: blank 503 body -> FAIL (negative)" \
-    assert_graceful_503 "http://127.0.0.1:53128" "http://blocked.example" "12345" "12345"
+    assert_graceful_503 "http://127.0.0.1:34128" "http://blocked.example" "12345" "12345"
 unset EVIDENCE_503_CODE_OVERRIDE EVIDENCE_503_BODY_FILE
 
 # --- assert_no_leak ---------------------------------------------------------

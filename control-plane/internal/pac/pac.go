@@ -11,7 +11,7 @@ import "context"
 // Entry is one host->proxy mapping rendered into FindProxyForURL.
 type Entry struct {
 	HostGlob string // e.g. "*.internal.example"
-	Proxy    string // a PAC return value, e.g. "PROXY squid:53128" or "DIRECT"
+	Proxy    string // a PAC return value, e.g. "PROXY squid:34128" or "DIRECT"
 }
 
 // Generator renders a PAC file body from the resolved entry set (spec §11 ⑤).

@@ -35,7 +35,7 @@
 #     HELIX_VPN_SFTP_KEY  identity file (key-based, BatchMode — no interactive pw)
 #   Optional WebDAV target (traverses the existing Squid):
 #     HELIX_VPN_WEBDAV_URL WebDAV collection URL, e.g. http://10.6.100.221/dav/
-#     HELIX_SQUID_PROXY    proxy endpoint (default http://127.0.0.1:53128)
+#     HELIX_SQUID_PROXY    proxy endpoint (default http://127.0.0.1:34128)
 #   SVORD_BRIDGE_LIB (optional) — path to tests/lib/svord_bridge.sh override.
 #
 # Outputs:
@@ -275,7 +275,7 @@ fi
 # ============================================================================
 webdav_desc='WebDAV PROPFIND via existing Squid (expect 207 Multi-Status)'
 WEBDAV_URL=${HELIX_VPN_WEBDAV_URL:-}
-SQUID_PROXY=${HELIX_SQUID_PROXY:-http://127.0.0.1:53128}
+SQUID_PROXY=${HELIX_SQUID_PROXY:-http://127.0.0.1:34128}
 if [ -z "$WEBDAV_URL" ]; then
     ab_skip_with_reason "$webdav_desc" feature_disabled_by_config
     log 'HELIX_VPN_WEBDAV_URL unset — no WebDAV origin configured; SKIP (not a PASS)'
@@ -332,7 +332,7 @@ fi
 # request/response via Squid) have NO host-initiated server->client leg —
 # documented N/A below, NOT fabricated (§11.4.6). This section runs only on a
 # genuinely-up bridge (bridge-down already exited 0 at the gate); it opens NO
-# listener and touches NO data-plane port (:53128/:51080).
+# listener and touches NO data-plane port (:34128/:34080).
 # ============================================================================
 ftp_rev_desc='FTP reverse leg — ACTIVE-mode (PORT) data connection server->client (bidir §2)'
 FTP_ACTIVE_CMD=${HELIX_VPN_FTP_ACTIVE_CMD:-}

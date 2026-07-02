@@ -2,7 +2,7 @@
 # =============================================================================
 # proxy_restart_recovery.sh — §11.4.85/§11.4.169 CHAOS: squid restart recovery
 # -----------------------------------------------------------------------------
-# Purpose:      Prove the LIVE HTTP forward proxy (Squid, localhost:53128)
+# Purpose:      Prove the LIVE HTTP forward proxy (Squid, localhost:34128)
 #               RECOVERS after a mid-flight container restart — the §11.4.85
 #               process-death / §11.4.144 detect->wait->re-attach contract:
 #                 (1) capture a WORKING proxied request (baseline 204/200),
@@ -32,10 +32,10 @@
 #               PROXY_CHAOS_RESTART_CMD='<containers-submodule restart proxy-squid>' \
 #                   bash tests/chaos/proxy_restart_recovery.sh             # conductor run
 #               GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/chaos/proxy_restart_recovery.sh
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use);
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use);
 #               `podman ps` / `docker ps` (READ-ONLY container detection).
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
 #                    CHAOS_SQUID_CONTAINER (default proxy-squid),
 #                    CHAOS_TARGET (default https://www.gstatic.com/generate_204),
 #                    CHAOS_EXPECT (default "204 200"),
@@ -85,8 +85,8 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 CONTAINER=${CHAOS_SQUID_CONTAINER:-proxy-squid}
 TARGET=${CHAOS_TARGET:-https://www.gstatic.com/generate_204}
 EXPECT=${CHAOS_EXPECT:-204 200}

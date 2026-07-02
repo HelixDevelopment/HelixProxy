@@ -3,7 +3,7 @@
 # proxy_forward_stress.sh — §11.4.85/§11.4.169 STRESS suite for the LIVE proxy
 # -----------------------------------------------------------------------------
 # Purpose:      Sustained-load + concurrent-contention stress against the LIVE
-#               HTTP forward proxy (Squid, localhost:53128). Drives N>=100
+#               HTTP forward proxy (Squid, localhost:34128). Drives N>=100
 #               sequential HTTPS-CONNECT requests through the proxy PLUS a
 #               concurrent burst (>=10 parallel), captures each request's
 #               %{http_code} + %{time_total} to its OWN file (the B3 bluff fix —
@@ -20,9 +20,9 @@
 #               GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 #                   bash tests/stress/proxy_forward_stress.sh
 #               STRESS_SEQ=100 STRESS_CONC=10 bash tests/stress/proxy_forward_stress.sh
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use).
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use).
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
 #                    STRESS_TARGET (default https://www.gstatic.com/generate_204),
 #                    STRESS_EXPECT (default "204 200"),
 #                    STRESS_VIA_TARGET (default http://www.gstatic.com/generate_204),
@@ -76,8 +76,8 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 TARGET=${STRESS_TARGET:-https://www.gstatic.com/generate_204}
 VIA_TARGET=${STRESS_VIA_TARGET:-http://www.gstatic.com/generate_204}
 EXPECT=${STRESS_EXPECT:-204 200}
