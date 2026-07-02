@@ -179,12 +179,56 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 23 <strong>Last modified:</strong>
-2026-07-02T12:57:04Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 24 <strong>Last modified:</strong>
+2026-07-02T13:29:30Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-23 wave (HEAD
-<code>3ec39d3</code>+doc, branch <code>main</code>, FF to
+future work on <code>main</code>"</strong>). <strong>Rev-24 wave (HEAD
+<code>860d38e</code>, branch <code>main</code>, FF to origin):</strong>
+<strong>anti-bluff audit ledger CLOSED + core evidence library provably
+audited.</strong> <code>c44e90c</code> <strong>#74/#75</strong> (F-C
+<code>vpn_failclosed</code> all-timeout SKIP reason → honest
+inconclusive; F-D <code>memory_soak</code> degenerate-final-RSS-sample →
+honest SKIP not "bounded" — each §11.4.135-guarded, single-source,
+conductor-inline-reviewed). <code>860d38e</code> <strong>#76 (F-E,
+MEDIUM)</strong> — an INLINE §11.4.118 audit of the core
+<code>tests/lib/evidence.sh</code> (which the dynamic-audit had
+EXCLUDED) found + DEMONSTRATED a THIRD absence-as-evidence bluff at the
+LIBRARY ROOT: <code>assert_no_leak</code> scored an EMPTY/malformed
+capture as "no leak" PASS (reachable via
+<code>no_leak_analyzer.sh:62</code>); fixed FAIL-closed (empty→FAIL;
+fallback branch requires positive tcpdump structure) with NO false-FAIL
+(a genuine tcpdump-footer-0 still PASSes) + 3 selftest negatives (48/48)
++ a §11.4.135 guard <code>assert_no_leak_empty_capture_test.sh</code>,
+conductor-inline-reviewed. <strong>Then audited the WHOLE core evidence
+library</strong> (§11.4.118 completeness): 8 verdict helpers —
+<code>ab_pass_with_evidence</code> (empty/absent→FAIL),
+<code>ab_skip_with_reason</code> (invalid reason→FAIL rc2),
+<code>proxy_conn_verdict</code> (timeout can't PASS),
+<code>wg_transfer_delta</code> (flat/missing→FAIL),
+<code>assert_egress_ip</code> (unverifiable half→OPERATOR-BLOCKED not
+PASS, §11.4.68/F7), <code>assert_cache_hit</code> (requires access.log
+<code>TCP_*HIT</code>), <code>assert_graceful_503</code>
+(timeout/blank/PID-change→FAIL) all verified fail-closed-SOLID; only
+<code>assert_no_leak</code> had a bluff (F-E, now fixed). <strong>AUDIT
+LEDGER COMPLETE — SIX findings:</strong> F1 (#71/#72) · F-A/F-B (#73) ·
+F-C/F-D (#74/#75) · F-E (#76), all §11.4.118-discovered → RED-first
+fixed → §11.4.135-guarded (a standing regression suite of 4 new guards:
+security-group-critical-gate, chaos-no-leak-argshape,
+vpn_failclosed-reason, memory_soak-degenerate, assert_no_leak-empty).
+<strong>⚠ Throttle oscillates:</strong> saturates even SOLO dispatches
+when the rolling rate window is full, recovers after ~10min of
+conductor-inline (no-dispatch) work; <strong>conductor-inline review is
+throttle-immune AND a valid §11.4.70/§11.4.142 reviewer for
+subagent-authored fixes</strong> (conductor ≠ builder subagent) — it
+reviewed #73/#74/#75/#76 + captured #69 this session. <strong>The
+non-operator-gated actionable queue is now EXHAUSTED</strong> (all
+ledger tasks done, audit ledger closed, evidence library provably
+clean). Remaining is ALL operator-gated: live svord bridge (biggest
+unlock — flips ~16 protocol SKIPs to live PASS + a full data-plane e2e),
+LE #59, podman aardvark-dns compose-network, real-device flash, HelixQA
+6-sibling vendoring. No tag ("keep hardening"). <strong>Rev-23 wave
+(HEAD <code>3ec39d3</code>+doc, branch <code>main</code>, FF to
 origin):</strong> <strong>#73 (second demonstrated bluff) CLOSED + #69
 RESOLVED.</strong> (a) Solo dynamic-audit <code>ac3f1c89</code> found
 <strong>F-A</strong>: <code>chaos_suite.sh</code> C1 no-leak proof was
@@ -1316,8 +1360,8 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>3ec39d3</code>+doc (== <code>main</code> == origin; integrate
-any newer foreign commit per §11.4.71, no force §11.4.113). The single
+HEAD <code>860d38e</code> (== <code>main</code> == origin; integrate any
+newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
 HARDENED:</strong> the H0-full real kernel-WireGuard tunnel
@@ -1349,40 +1393,41 @@ the per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
 golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
 FAIL (not a tautology, §11.4.107(10)), honest exit-3 on empty capture,
 honest <code>SNIFF-SKIP</code> when unavailable, 3/3 deterministic.
-FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED). <strong>#63-#73 + #70/#71/#72
-LANDED; #69 RESOLVED</strong> (<code>91af9c6</code> underlay-sniff ·
+FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED). <strong>ALL ledger tasks #63-#76
+LANDED/RESOLVED</strong> (<code>91af9c6</code> underlay-sniff ·
 <code>cdb0ccd</code> ethertype guard · <code>85d8b32</code> sniff
 fan-out · <code>b66b2fa</code> email-wiring · <code>172eb5c</code>
 orphan-test · <code>c32dcad</code> healthd coverage ·
-<code>6e3e031</code>+<code>adca02e</code> <strong>F1 fix + §11.4.135
-guard</strong> · <code>5771a46</code> <strong>#68 orphan wiring</strong>
-· <strong>#67 COMPLETE</strong> = DDoS <code>0c51f61</code> +
-memory-soak <code>ceb4839</code> + chaos <code>159fcbc</code> ·
-<code>3ec39d3</code> <strong>#73 chaos no-leak vacuity fix +
-guard</strong> (2nd demonstrated bluff, §11.4.107(10)) — all independent
-§11.4.142 GO; <strong>#69 Integration PASS</strong>
-(<code>go test -run Integration -v</code> → 14 real podman
-Postgres/redis/gluetun PASS / 1 honest §11.4.3 SKIP / 0 FAIL,
-THIS-session captured, §11.4.6 correction of a prior PENDING) +
-<strong>E2E honest §11.4.3 SKIP</strong> (no in-project e2e suite;
-covered by P10 fail-closed + integration; compose-wired stack e2e
-operator-gated) — hardening Status Rev 6). <strong>Top
-non-operator-gated actionables now (⚠ throttle now saturates even SOLO
-dispatches — ~16 subagents this session, rolling rate window full;
-conductor-INLINE work is throttle-immune AND a valid §11.4.70/§11.4.142
-reviewer for subagent-authored fixes — it reviewed #73 + captured #69
-this window):</strong> (1) <strong>#74</strong> (LOW) —
-<code>vpn_failclosed</code> all-timeout SKIP reason over-claims
-"fail-closed held"; reword to honest inconclusive (§11.4.6). (2)
-<strong>#75</strong> (LOW) — <code>memory_soak_suite</code> scores a
-mid-run sampler death as "bounded" (-100% growth → PASS); reject a
-degenerate final RSS sample → honest SKIP. Both need a fix + an
-INDEPENDENT reviewer (author-vs-reviewer separation): either wait for
-the subagent rate to cool, or fresh-subagent-authors +
-conductor-reviews-inline. All OTHER remaining work is operator-gated
-(live svord bridge, LE #59, podman compose network / aardvark-dns,
-real-device flash, HelixQA 6-sibling vendoring). No release tag ("keep
-hardening"). Run ONE netns owner at a time (§11.4.119). Design
+<code>6e3e031</code>+<code>adca02e</code> <strong>F1 fix +
+guard</strong> · <code>5771a46</code> <strong>#68</strong> · <strong>#67
+COMPLETE</strong> = DDoS <code>0c51f61</code> + soak
+<code>ceb4839</code> + chaos <code>159fcbc</code> · <code>3ec39d3</code>
+<strong>#73</strong> chaos no-leak vacuity · <code>c44e90c</code>
+<strong>#74/#75</strong> vpn_failclosed-reason + memory_soak-degenerate
+· <code>860d38e</code> <strong>#76</strong> assert_no_leak fail-closed —
+all independent §11.4.142 GO (subagent OR conductor-inline); <strong>#69
+Integration PASS</strong> (<code>go test -run Integration -v</code> → 14
+real podman Postgres/redis/gluetun PASS / 1 honest §11.4.3 SKIP / 0
+FAIL, §11.4.6 correction of a prior PENDING) + <strong>E2E honest
+§11.4.3 SKIP</strong>, hardening Status Rev 6). <strong>ANTI-BLUFF AUDIT
+LEDGER COMPLETE — 6 findings, all §11.4.118-discovered → RED-first fixed
+→ §11.4.135-guarded:</strong> F1 (#71/#72) · F-A/F-B (#73) · F-C/F-D
+(#74/#75) · F-E (#76); the core <code>tests/lib/evidence.sh</code>
+library is provably audited (8 verdict helpers — 7 fail-closed-solid +
+<code>assert_no_leak</code> F-E fixed). <strong>The non-operator-gated
+actionable queue is now EXHAUSTED</strong> — every tracked ledger task
+done, audit ledger closed, evidence library clean. <strong>ALL remaining
+work is OPERATOR-GATED (surface per §11.4.66, never fake a
+PASS):</strong> <strong>live svord bridge</strong> (biggest unlock —
+flips ~16 protocol SKIPs to live PASS + a full data-plane e2e),
+<strong>LE #59</strong> (Phase 4/6 credentials/DNS), <strong>podman
+aardvark-dns compose-network</strong> fix (restores the data-plane
+:53128/:51080 + the full-stack e2e), <strong>real-device flash</strong>,
+<strong>HelixQA 6-sibling vendoring</strong>. When re-engaging: a
+further §11.4.118 pass MAY audit the lower-traffic evidence.sh probes +
+the P10-pending analyzers (no live callers yet — no call-site bluff
+possible until wired). No release tag ("keep hardening"). Run ONE netns
+owner at a time (§11.4.119). Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
 2.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
