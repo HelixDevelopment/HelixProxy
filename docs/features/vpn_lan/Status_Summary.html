@@ -179,8 +179,8 @@
 <h1
 id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
 — VPN-LAN Service Access Feature Status Summary</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-07-02T05:52:00Z <strong>Status:</strong> Companion two-audience
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-07-02T06:36:11Z <strong>Status:</strong> Companion two-audience
 summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
 Page 1 is plain-language for the operator and stakeholders; Page 2 is
 the engineer phase matrix with commit refs and §-anchors. <strong>Rev
@@ -486,11 +486,14 @@ genuinely-up bridge (§11.4.6 / §11.4.69 / §11.4.108). <strong>NEW §J
 autonomous value:</strong> the Cast-eureka/FTP/WebDAV/email client-side
 protocol logic is now proven over a hermetic kernel-WG tunnel with a
 pure-stdlib peer (zero installs), each with a golden-bad mutation that
-FAILs the real assertion (email has two) + a not-stale self-fetch + 3/3
-determinism + independent §11.4.142 GO, all wired into the standing
-suite as §11.4.135 guards — the live Mullvad round-trip stays
-operator-gated (§J COMPLEMENTS, never replaces). <strong>Tally:</strong>
-4 PASS-now foundation · 5 §J PASS-now hermetic rows (1 WG substrate</p>
+FAILs the real assertion (email has two) + a wrong-destination negative
+control (a fetch to the underlay 10.9.0.2 MUST fail — §11.4.111
+reachability-as-proof, proven load-bearing: bind-0.0.0.0 ⇒ harness
+FAILs) + a not-stale self-fetch + 3/3 determinism + independent
+§11.4.142 GO, all wired into the standing suite as §11.4.135 guards —
+the live Mullvad round-trip stays operator-gated (§J COMPLEMENTS, never
+replaces). <strong>Tally:</strong> 4 PASS-now foundation · 5 §J PASS-now
+hermetic rows (1 WG substrate</p>
 <ul>
 <li>4 autonomous protocol promotions: Cast-eureka/FTP/WebDAV/email) · 16
 live round-trips operator-gated SKIP/OPERATOR-BLOCKED · 1 Won't-fix.

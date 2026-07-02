@@ -179,17 +179,48 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
-2026-07-02T05:52:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
+2026-07-02T06:36:11Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-15 wave (HEAD
-<code>3b73f02</code>, branch <code>main</code>, all FF to
-origin):</strong> <strong>H2.email promoted + all hermetic promotions
-wired into the standing suite as regression guards.</strong>
-<code>71e0bac</code> added <code>test_vpn_lan_hermetic()</code> to
-<code>tests/run-tests.sh</code> — the 4 hermetic harnesses
-(<code>hermetic_wg_roundtrip.sh</code>,
+future work on <code>main</code>"</strong>). <strong>Rev-16 wave (HEAD
+<code>4dd5fc6</code>, branch <code>main</code>, all FF to
+origin):</strong> <strong>§11.4.111 wrong-destination negative control
+added to all 5 hermetic harnesses + FINDINGS §7 (next hardening)
+designed.</strong> <code>4dd5fc6</code>: after each positive round-trip,
+the harness probes the peer's service on the UNDERLAY IP
+<code>10.9.0.2</code> and asserts it FAILS (the peer binds the WG-only
+overlay <code>10.10.0.2</code>, so a positive success could only have
+traversed <code>wg0</code> — reachability-as-proof made self-evidencing,
+not structural-only); a wrong-destination SUCCESS ⇒ fail-closed.
+<strong>Independent §11.4.142 review ran TWO rounds (iterate-to-GO
+§11.4.134):</strong> round 1 caught a REAL tautology (§11.4.107(10)) —
+<code>hermetic_wg_roundtrip.sh</code> probed <code>/payload.txt</code>
+but <code>rm</code>'d <code>$SRVDIR</code> BEFORE the probe, so a
+reachable underlay 404'd and <code>NEG-OK</code> printed unconditionally
+(proven by the reviewer binding the peer to <code>0.0.0.0</code>:
+pre-fix the harness wrongly PASSed); fix = defer the <code>SRVDIR</code>
+cleanup to AFTER the control, so post-fix bind-<code>0.0.0.0</code> ⇒
+<code>WG_FAIL … unexpectedly served the payload</code> exit 1 (control
+now load-bearing), NORMAL still PASS, <code>WG_MUT=badkey</code> tooth
+still fires, 3/3 deterministic; round 2 re-verified ⇒ GO. The other 4
+controls (bridge/ftp/webdav/email) were proven load-bearing in round 1
+(each FAILs when its peer binds <code>0.0.0.0</code>). Part (b)
+(<code>/usr/sbin/wg</code> preflight) was already satisfied in all 5 —
+verified, no redundant edit (§11.4.6). <code>FINDINGS.md</code> Rev 3 §7
+designs the next hardening — the <strong>underlay-sniff AF_PACKET
+non-leak differential</strong> (assert WG ciphertext <code>0x04</code>
+present + plaintext nonce absent on the underlay), cited
+§11.4.99/§11.4.150, <strong>queued as task #63</strong> (blocked-by #62,
+now unblocked). Anti-bluff win: a decorative <code>NEG-OK</code> that
+gated nothing was REFUSED by review, not shipped. <strong>Next: task #63
+(underlay-sniff) — the loop continues (no tag — "keep
+hardening").</strong> <strong>Rev-15 wave (HEAD <code>3b73f02</code>,
+branch <code>main</code>, all FF to origin):</strong> <strong>H2.email
+promoted + all hermetic promotions wired into the standing suite as
+regression guards.</strong> <code>71e0bac</code> added
+<code>test_vpn_lan_hermetic()</code> to <code>tests/run-tests.sh</code>
+— the 4 hermetic harnesses (<code>hermetic_wg_roundtrip.sh</code>,
 <code>hermetic_bridge_run.sh</code>/Cast-eureka,
 <code>hermetic_ftp_run.sh</code>, <code>hermetic_webdav_run.sh</code>)
 now run on every suite invocation as <strong>§11.4.135 standing
@@ -545,7 +576,7 @@ HelixQA vendoring (6 un-vendored siblings), release tag.</p>
 first)</h2>
 <p><strong><code>main</code> FF-tracks HEAD (§11.4.113 FF-only), so
 <code>main..HEAD</code> is empty — HEAD == <code>main</code> ==
-github/origin/upstream == <code>3b73f02</code>.</strong> The full
+github/origin/upstream == <code>4dd5fc6</code>.</strong> The full
 feature-branch history since the original branch point is below; the
 historical table (numbered 1–28) is retained for the earlier
 construction wave.</p>
@@ -1048,33 +1079,41 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>3b73f02</code> (== <code>main</code> == origin; integrate any
+HEAD <code>4dd5fc6</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
-(§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE:</strong>
-the H0-full real kernel-WireGuard tunnel
+(§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
+HARDENED:</strong> the H0-full real kernel-WireGuard tunnel
 (<code>hermetic_wg_roundtrip.sh</code>) + the model-A protocol
 promotions over it are all landed + independently reviewed + wired into
 the standing suite as §11.4.135 guards
-(<code>test_vpn_lan_hermetic</code> in <code>tests/run-tests.sh</code>).
-<strong>The clean zero-install promotion set is COMPLETE (§11.4.6):
-Cast-eureka + FTP + WebDAV + email</strong> all run AUTONOMOUSLY over
-the tunnel (unmodified protocol tests, stdlib peers on
+(<code>test_vpn_lan_hermetic</code> in <code>tests/run-tests.sh</code>),
+and all 5 harnesses now carry the §11.4.111 wrong-destination negative
+control (proven load-bearing — bind-<code>0.0.0.0</code> ⇒ harness
+FAILs). <strong>The clean zero-install promotion set is COMPLETE
+(§11.4.6): Cast-eureka + FTP + WebDAV + email</strong> all run
+AUTONOMOUSLY over the tunnel (unmodified protocol tests, stdlib peers on
 <code>10.10.0.2</code>, golden-bad teeth, 3/3 deterministic). Remaining
 protocol legs are genuinely operator-gated (§11.4.122/§11.4.3): SFTP (no
 <code>sshd</code>), SMB/NFS (no samba/nfsd),
 <code>discovery_reflect.sh</code> scored leg (no
 <code>avahi-browse</code> client), ADB (device), container (podman) — do
 NOT manufacture bluff harnesses for these. <strong>Top
-non-operator-gated actionable = the hermetic-hardening follow-up
-batch</strong> (one separate, independently-reviewed change): (a) add an
-explicit wrong-destination negative (fetch to underlay
-<code>10.9.0.2</code> / wg-down MUST-fail) to each harness so the
-§11.4.111 reachability-as-proof claim is self-evidencing rather than
-structural-only; (b) make each sibling harness's wg-preflight accept
-<code>/usr/sbin/wg</code> (the email harness already does via
-<code>PATH+=:/usr/sbin</code>), so they PASS wherever wireguard-tools is
-installed, not only when <code>wg</code> is on <code>PATH</code>. Design
+non-operator-gated actionable = task #63, the underlay-sniff AF_PACKET
+non-leak differential</strong> (the strongest remaining non-leak proof,
+designed in
+<code>docs/research/hermetic_protocol_promotion_20260702/FINDINGS.md</code>
+§7, Rev 3, cited §11.4.99/§11.4.150): during the positive round-trip,
+capture on the underlay veth (rootless AF_PACKET — CAP_NET_RAW held by
+<code>unshare -Urnm</code>; or <code>tcpdump</code> with §11.4.3 SKIP
+fallback) and assert BOTH ciphertext present (WG data-message
+<code>0x04</code> prefix) AND the per-run plaintext nonce ABSENT in the
+raw underlay bytes. MUST ship a load-bearing golden-bad (a plaintext
+path where the nonce DOES appear ⇒ the "plaintext absent" assertion
+FAILs — else it is a tautology, §11.4.107(10)). Start with
+<code>hermetic_wg_roundtrip.sh</code> (the substrate) before fanning
+out; builder → independent §11.4.142 review iterate-to-GO §11.4.134 → FF
+push. Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
 2.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>

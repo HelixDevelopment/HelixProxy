@@ -1,7 +1,7 @@
 # helix_proxy — VPN-LAN Service Access Feature Status Summary
 
-**Revision:** 4
-**Last modified:** 2026-07-02T05:52:00Z
+**Revision:** 5
+**Last modified:** 2026-07-02T06:36:11Z
 **Status:** Companion two-audience summary of [`Status.md`](Status.md) (§11.4.56). Page 1 is plain-language for the operator and stakeholders; Page 2 is the engineer phase matrix with commit refs and §-anchors. **Rev 3:** feature COMPLETE (Phases 0-12 on `main`) — Phase-12 bidirectional + the §11.4.135 autonomous suite battery are all GREEN; the data-plane is env-blocked on a host rootless-podman aardvark-dns failure (operator-actionable, not a code defect). **NEW — §J hermetic autonomous promotions (§11.4.52):** the Chromecast-eureka, FTP-passive, WebDAV-PROPFIND and email (SMTPS/IMAPS/POP3S) protocol legs now ALSO prove their client-side logic AUTONOMOUSLY over a real rootless kernel-WireGuard tunnel against a pure-stdlib peer (zero installs, no operator/VPN), each with golden-bad teeth + not-stale self-fetch + 3/3 determinism + independent GO, **all wired into the standing suite as §11.4.135 regression guards (`test_vpn_lan_hermetic`)**; the live Mullvad round-trip stays operator-gated (COMPLEMENT, never replace).
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.153 feature Status set for the VPN-LAN service-access workstream (`feature/vpn-aware-dynamic-routing`, §11.4.167).
 
@@ -111,6 +111,8 @@ no live capability is PASS without captured evidence on a genuinely-up bridge (�
 §11.4.69 / §11.4.108). **NEW §J autonomous value:** the Cast-eureka/FTP/WebDAV/email client-side
 protocol logic is now proven over a hermetic kernel-WG tunnel with a pure-stdlib peer (zero
 installs), each with a golden-bad mutation that FAILs the real assertion (email has two) + a
+wrong-destination negative control (a fetch to the underlay 10.9.0.2 MUST fail — §11.4.111
+reachability-as-proof, proven load-bearing: bind-0.0.0.0 ⇒ harness FAILs) + a
 not-stale self-fetch + 3/3 determinism + independent §11.4.142 GO, all wired into the standing
 suite as §11.4.135 guards — the live Mullvad round-trip stays operator-gated (§J COMPLEMENTS,
 never replaces). **Tally:** 4 PASS-now foundation · 5 §J PASS-now hermetic rows (1 WG substrate
