@@ -107,6 +107,14 @@ SENTINEL_CANARY_NAME="X-Leak-Canary"
 FAKE_PROXY_AUTH="Proxy-Authorization: Basic c2VudGluZWw6bGVhaw=="
 
 N_PASS=0; N_FAIL=0; N_SKIP=0
+# §11.4.120/§11.4.1 honest-aggregate: the group verdict is PASS only when the
+# security-CRITICAL checks actually PASSED — S1 (ACL-deny + no-leak) and S4
+# (SOCKS5-SSRF block). S2 (Proxy-Authorization strip) + S3 (Via hygiene) are
+# non-critical to the group gate (S3 is an info-leak regression guard; run-tests.sh
+# surfaces only S1 + S4 as the critical checks). A non-critical PASS while a
+# critical check SKIPPED must NOT manufacture a group PASS (that over-claims
+# security coverage). These per-critical flags drive the aggregate below.
+S1_PASS=0; S4_PASS=0
 
 # §11.4.14: no background workers are spawned (all curls are foreground +
 # --max-time bounded). Cleanup is a documented no-op; captured evidence under
@@ -183,7 +191,7 @@ elif [ -n "$deny_line" ]; then
         printf 'verdict=PASS (TCP_DENIED + HIER_NONE = deny enforced, no upstream contacted, no leak)\n' >> "$S1_EV"
         echo "[S1] PASS ACL deny enforced + no leak (TCP_DENIED, HIER_NONE): $deny_line"
         ab_pass_with_evidence "S1 ACL deny enforced + HIER_NONE no-leak for must-deny $DENY_HOSTPORT" "$S1_EV"
-        N_PASS=$((N_PASS + 1))
+        N_PASS=$((N_PASS + 1)); S1_PASS=1
     else
         printf 'verdict=FAIL (denied but hierarchy != HIER_NONE — cannot prove no upstream contact)\n' >> "$S1_EV"
         echo "[S1] FAIL deny line lacks HIER_NONE: $deny_line"
@@ -366,7 +374,7 @@ else
     elif [ "$block_log_seen" = yes ]; then
         echo "[S4] PASS SOCKS5 SSRF blocked ($SSRF_TARGET — dante block() log line present, code=$ssrf_code ${ssrf_dt}s fast=$fast)"
         ab_pass_with_evidence "S4 SOCKS5 SSRF: internal $SSRF_TARGET blocked by ruleset (dante block() log line, §11.4.69 sink-side)" "$S4_EV"
-        N_PASS=$((N_PASS + 1))
+        N_PASS=$((N_PASS + 1)); S4_PASS=1
     else
         echo "[S4] FAIL SOCKS5 did NOT block $SSRF_TARGET (no dante block() log line; code=$ssrf_code rc=$ssrf_rc ${ssrf_dt}s fast=$fast) — CONNECT forwarded, SSRF possible"
         _evidence_emit FAIL "S4 SOCKS5 SSRF" "[reason: no dante block() line for internal $SSRF_TARGET — the CONNECT was forwarded, not blocked (SSRF, §11.4.68/.69/.169); add/restore socks block rules; see $S4_EV]"
@@ -375,17 +383,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Aggregate — FAIL if any FAIL ; PASS if >=1 PASS and 0 FAIL ; else SKIP.
+# Aggregate (§11.4.120/§11.4.1 honest verdict) —
+#   FAIL  if ANY sub-check FAILed (a real leak/defect trumps everything);
+#   PASS  ONLY if BOTH security-CRITICAL checks PASSed — S1 (ACL-deny + no-leak)
+#         AND S4 (SOCKS5-SSRF block). A non-critical PASS (S2/S3) while a critical
+#         check SKIPPED does NOT earn a group PASS — that would over-claim security
+#         coverage the run never proved;
+#   SKIP  otherwise (a critical check could not run — coverage honestly absent),
+#         naming which critical check(s) were absent.
 # ---------------------------------------------------------------------------
 echo
-echo "=== $SUITE aggregate: pass=$N_PASS fail=$N_FAIL skip=$N_SKIP ==="
+echo "=== $SUITE aggregate: pass=$N_PASS fail=$N_FAIL skip=$N_SKIP (S1_PASS=$S1_PASS S4_PASS=$S4_PASS) ==="
 if [ "$N_FAIL" -gt 0 ]; then
     echo "OVERALL=FAIL ($N_FAIL security defect(s))"
     exit 1
 fi
-if [ "$N_PASS" -gt 0 ]; then
-    echo "OVERALL=PASS ($N_PASS security check(s) proven, 0 leaks)"
+if [ "$S1_PASS" -eq 1 ] && [ "$S4_PASS" -eq 1 ]; then
+    echo "OVERALL=PASS (both critical checks proven: S1 ACL-deny + S4 SOCKS-SSRF, 0 leaks)"
     exit 0
 fi
-echo "OVERALL=SKIP (no security check assertable on this topology)"
+_absent=""
+[ "$S1_PASS" -eq 1 ] || _absent="S1 ACL-deny"
+[ "$S4_PASS" -eq 1 ] || _absent="${_absent:+$_absent, }S4 SOCKS-SSRF"
+echo "OVERALL=SKIP (critical security check(s) not asserted on this topology: ${_absent:-none})"
 exit 3

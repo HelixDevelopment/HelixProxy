@@ -767,10 +767,20 @@ test_security_guards() {
     # captured — the BUGFIX-0003 lesson, mirroring the if-condition guards above.
     _sec_out=""; _sec_rc=0
     _sec_out=$(bash "$SCRIPT_DIR/security/proxy_acl_security.sh" 2>&1) || _sec_rc=$?
+    # §11.4.120/§11.4.1 honest headline: the aggregate exit 0 now REQUIRES both
+    # security-critical checks (S1 ACL-deny + S4 SOCKS-SSRF) to have PASSED, so we
+    # never claim a specific check "GREEN live" on a topology SKIP. On SKIP, name
+    # which critical check(s) were absent (parsed from the [S1]/[S4] PASS lines).
+    _s1_ok=no; printf '%s\n' "$_sec_out" | grep -q '\[S1\] PASS' && _s1_ok=yes
+    _s4_ok=no; printf '%s\n' "$_sec_out" | grep -q '\[S4\] PASS' && _s4_ok=yes
+    _sec_absent=""
+    [ "$_s1_ok" = yes ] || _sec_absent="S1 ACL-deny"
+    [ "$_s4_ok" = yes ] || _sec_absent="${_sec_absent:+$_sec_absent, }S4 SOCKS-SSRF"
     case "$_sec_rc" in
-        0) test_result "Security guards (S3 Via + S4 SOCKS-SSRF, GREEN live)" "PASS" ;;
-        3) test_result "Security guards (S3 Via + S4 SOCKS-SSRF)" "SKIP" "proxy not serving — topology absent §11.4.3" ;;
-        *) test_result "Security guards (S3 Via + S4 SOCKS-SSRF, GREEN live)" "FAIL" \
+        0) test_result "Security guards (S1 ACL-deny + S4 SOCKS-SSRF critical, GREEN live)" "PASS" ;;
+        3) test_result "Security guards (critical checks)" "SKIP" \
+               "critical security check(s) absent: ${_sec_absent:-topology absent} — §11.4.3" ;;
+        *) test_result "Security guards (S1 ACL-deny + S4 SOCKS-SSRF critical, live)" "FAIL" \
                "run: bash tests/security/proxy_acl_security.sh" ;;
     esac
     # RED negation is assertable ONLY when S4 itself ran GREEN (dante reachable);
