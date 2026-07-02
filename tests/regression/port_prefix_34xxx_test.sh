@@ -78,6 +78,7 @@ scan_old_ports() {
         'deploy/observability/compose.metrics.yml' \
         'start' 'stop' 'init' 'status' 'restart' 'lib/container-runtime.sh' \
         'services/admin/index.html' 'control-plane' 'tests' 'tools/helixqa/banks' \
+        'challenges/scripts' 'tools/helixqa/runner' \
         2>/dev/null \
         | grep -vE '\.(md|pdf):' \
         | grep -vE '/README\.md:|/README\.html:|DNS_LEAK_TEST\.md:|squid-exporter\.md:|config/security/README\.html:' \

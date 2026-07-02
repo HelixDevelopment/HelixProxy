@@ -2,7 +2,7 @@
 # =============================================================================
 # proxy_socks5_challenge.sh — SOCKS5 forward-proxy anti-bluff Challenge
 # -----------------------------------------------------------------------------
-# Purpose:      Prove the LIVE SOCKS5 proxy (localhost:51080) actually forwards
+# Purpose:      Prove the LIVE SOCKS5 proxy (localhost:34080) actually forwards
 #               a real end-user journey — a plain-HTTP GET to a 204 endpoint AND
 #               an HTTPS GET — driven through `curl --proxy socks5://...`. The
 #               THROUGH-PROXY %{http_code} must match the expected code, cross-
@@ -12,9 +12,9 @@
 #               captured evidence file (§11.4.69/§11.4.2/§11.4.5).
 # Usage:        bash challenges/scripts/proxy_socks5_challenge.sh
 #               CHALLENGE_EVIDENCE_DIR=<dir> bash .../proxy_socks5_challenge.sh
-# Inputs:       Live curl through socks5://localhost:51080 (READ-ONLY client).
-#               Env: SOCKS5_PROXY (default socks5://localhost:51080),
-#                    SOCKS5_PORT (default 51080),
+# Inputs:       Live curl through socks5://localhost:34080 (READ-ONLY client).
+#               Env: SOCKS5_PROXY (default socks5://localhost:34080),
+#                    SOCKS5_PORT (default 34080),
 #                    CHALLENGE_EVIDENCE_DIR (default qa-results/challenges/<ts>),
 #                    CURL_MAX_TIME (default 20).
 # Outputs:      One structured verdict per sub-probe + an overall verdict line;
@@ -55,8 +55,8 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-SOCKS_PROXY=${SOCKS5_PROXY:-socks5://localhost:51080}
-SOCKS_PORT=${SOCKS5_PORT:-51080}
+SOCKS_PROXY=${SOCKS5_PROXY:-socks5://localhost:34080}
+SOCKS_PORT=${SOCKS5_PORT:-34080}
 MAX_TIME=${CURL_MAX_TIME:-20}
 RUN_TS=$(date -u +%Y%m%dT%H%M%SZ)
 EVIDENCE_DIR=${CHALLENGE_EVIDENCE_DIR:-$REPO_ROOT/qa-results/challenges/$RUN_TS}

@@ -4,8 +4,8 @@
 # -----------------------------------------------------------------------------
 # Purpose:
 #   Execute the HelixQA proxy test bank (tools/helixqa/banks/proxy.yaml, sliced
-#   into tools/helixqa/banks/routes/*.yaml) against the running Squid(:53128) +
-#   Dante(:51080) data plane, using HelixQA's own LLM-free `helixqa http`
+#   into tools/helixqa/banks/routes/*.yaml) against the running Squid(:34128) +
+#   Dante(:34080) data plane, using HelixQA's own LLM-free `helixqa http`
 #   subcommand. Requests are routed THROUGH the proxy via HTTP_PROXY/HTTPS_PROXY
 #   (Go DefaultTransport => http.ProxyFromEnvironment; the HTTPExecutor uses a
 #   nil-Transport client, submodules/helix_qa/pkg/autonomous/http_executor.go).
@@ -18,11 +18,11 @@
 #
 # Usage:
 #   tools/helixqa/runner/run_proxy_bank.sh
-#   HTTP_PROXY_PORT=53128 SOCKS_PROXY_PORT=51080 tools/helixqa/runner/run_proxy_bank.sh
+#   HTTP_PROXY_PORT=34128 SOCKS_PROXY_PORT=34080 tools/helixqa/runner/run_proxy_bank.sh
 #
 # Inputs (env, all optional — defaults shown):
-#   HTTP_PROXY_PORT=53128     Squid HTTP/HTTPS proxy port
-#   SOCKS_PROXY_PORT=51080    Dante SOCKS5 proxy port
+#   HTTP_PROXY_PORT=34128     Squid HTTP/HTTPS proxy port
+#   SOCKS_PROXY_PORT=34080    Dante SOCKS5 proxy port
 #   HELIXQA_BIN=<autodetect>  Path to a prebuilt helixqa binary (skips build)
 #   HELIX_HTTP_TARGET, HELIX_HTTPS_TARGET, HELIX_CACHE_TARGET   override upstreams
 #
@@ -62,8 +62,8 @@ RUN_TS=$(date -u +%Y%m%dT%H%M%SZ)
 EV="$PROJECT_ROOT/qa-results/helixqa/$RUN_TS"
 mkdir -p "$EV"
 
-HTTP_PORT="${HTTP_PROXY_PORT:-53128}"
-SOCKS_PORT="${SOCKS_PROXY_PORT:-51080}"
+HTTP_PORT="${HTTP_PROXY_PORT:-34128}"
+SOCKS_PORT="${SOCKS_PROXY_PORT:-34080}"
 HTTP_TARGET="${HELIX_HTTP_TARGET:-http://connectivitycheck.gstatic.com}"
 HTTPS_TARGET="${HELIX_HTTPS_TARGET:-https://connectivitycheck.gstatic.com}"
 CACHE_TARGET="${HELIX_CACHE_TARGET:-http://www.gnu.org}"

@@ -2,7 +2,7 @@
 # =============================================================================
 # proxy_forward_http_challenge.sh — HTTP forward-proxy anti-bluff Challenge
 # -----------------------------------------------------------------------------
-# Purpose:      Prove the LIVE HTTP forward proxy (localhost:53128) actually
+# Purpose:      Prove the LIVE HTTP forward proxy (localhost:34128) actually
 #               forwards real end-user traffic — a plain-HTTP GET to a 204
 #               endpoint AND a CONNECT-tunnelled HTTPS GET — by asserting the
 #               THROUGH-PROXY %{http_code} matches the expected code, cross-
@@ -14,9 +14,9 @@
 #               proof the bytes really transited proxy-squid.
 # Usage:        bash challenges/scripts/proxy_forward_http_challenge.sh
 #               CHALLENGE_EVIDENCE_DIR=<dir> bash .../proxy_forward_http_challenge.sh
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use).
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use).
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
 #                    CHALLENGE_EVIDENCE_DIR (default qa-results/challenges/<ts>),
 #                    CURL_MAX_TIME (default 20).
 # Outputs:      One structured verdict per sub-probe + an overall verdict line;
@@ -57,8 +57,8 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 MAX_TIME=${CURL_MAX_TIME:-20}
 RUN_TS=$(date -u +%Y%m%dT%H%M%SZ)
 EVIDENCE_DIR=${CHALLENGE_EVIDENCE_DIR:-$REPO_ROOT/qa-results/challenges/$RUN_TS}

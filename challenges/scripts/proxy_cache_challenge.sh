@@ -2,7 +2,7 @@
 # =============================================================================
 # proxy_cache_challenge.sh — Squid cache-HIT anti-bluff Challenge
 # -----------------------------------------------------------------------------
-# Purpose:      Prove the LIVE HTTP proxy (localhost:53128) caches. A reliably-
+# Purpose:      Prove the LIVE HTTP proxy (localhost:34128) caches. A reliably-
 #               cacheable plain-HTTP URL (default: a Debian mirror README) is
 #               fetched TWICE through the proxy; the AUTHORITATIVE proof is a Squid
 #               TCP_*HIT result code for THAT url in the Squid access.log (asserted
@@ -21,11 +21,11 @@
 #               evidence either way.
 # Usage:        bash challenges/scripts/proxy_cache_challenge.sh
 #               CHALLENGE_EVIDENCE_DIR=<dir> bash .../proxy_cache_challenge.sh
-# Inputs:       Live curl through http://localhost:53128 (READ-ONLY client use);
+# Inputs:       Live curl through http://localhost:34128 (READ-ONLY client use);
 #               the Squid access.log read inside the container (READ-ONLY) or from
 #               the host fallback path resolved from the project config.
-#               Env: HTTP_PROXY_URL (default http://localhost:53128),
-#                    HTTP_PROXY_PORT (default 53128),
+#               Env: HTTP_PROXY_URL (default http://localhost:34128),
+#                    HTTP_PROXY_PORT (default 34128),
 #                    CACHE_URL (default http://ftp.debian.org/debian/README),
 #                    SQUID_CONTAINER (default proxy-squid — authoritative log read),
 #                    SQUID_CONTAINER_LOG (default /var/log/squid/access.log),
@@ -75,8 +75,8 @@ fi
 . "$REPO_ROOT/tests/lib/evidence.sh"
 
 # --- Config -----------------------------------------------------------------
-PROXY_URL=${HTTP_PROXY_URL:-http://localhost:53128}
-PROXY_PORT=${HTTP_PROXY_PORT:-53128}
+PROXY_URL=${HTTP_PROXY_URL:-http://localhost:34128}
+PROXY_PORT=${HTTP_PROXY_PORT:-34128}
 # Default is a reliably-cacheable plain-HTTP static asset (a Debian mirror README
 # served with a cache-permitting Cache-Control) — fetched twice it yields a Squid
 # TCP_MEM_HIT. Overridable for other topologies. NOTE: many origins forbid caching
