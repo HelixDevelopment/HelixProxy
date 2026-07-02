@@ -1,7 +1,7 @@
 # Hermetic protocol-promotion research — pure-python peer servers over a kernel-WireGuard netns tunnel
 
-**Revision:** 3
-**Last modified:** 2026-07-02T06:20:09Z
+**Revision:** 4
+**Last modified:** 2026-07-02T07:05:29Z
 **Status:** Research findings (deep multi-angle web research per §11.4.150 / §11.4.99).
 No code changed by the research pass. Authority: inherits `constitution/Constitution.md` per §11.4.35.
 **Scope:** strengthen the hermetic WireGuard test harness so operator-gated VPN-LAN
@@ -221,10 +221,23 @@ work**, grounded in the cited standards.
    (underlay) negative control**, and an optional `AF_PACKET` underlay-sniff differential
    as the rock-solid non-leak proof (§11.4.123).
 
-## 7. Underlay-sniff differential — the rock-solid non-leak proof (PLANNED, not yet implemented)
+## 7. Underlay-sniff differential — the rock-solid non-leak proof (IMPLEMENTED on the WG substrate — 91af9c6)
 
-Status (§11.4.6): DESIGN only — no harness implements this yet; claim no unshipped behaviour.
-This is the strongest hardening left for the hermetic stream (FINDINGS §5 point 5), and the
+Status (§11.4.6): **IMPLEMENTED** in `hermetic_wg_roundtrip.sh` (commit `91af9c6`, task #63) —
+the substrate harness now carries the sniff; the design below is what shipped. Independent
+§11.4.142 review `a2b3c696` returned **GO** on 11/11 checks against real runs: `SNIFF_MUT=plain`
+flips ONLY assertion (b) "plaintext absent" to FAIL 3/3 while ciphertext stays present
+(load-bearing, not a tautology, §11.4.107(10)); NORMAL → `ciphertext(0x04 :51820)=present
+plaintext_nonce=absent` 3/3; header-only pcap → analyzer exit 3 (honest FAIL); forced-iface +
+no-tcpdump → honest `SNIFF-SKIP`; `WG_MUT=badkey` undisturbed (sniff sits past the `UP!=1` gate);
+veth0-only capture, 3.5 s / 4 MB / `timeout`-bounded, `SNIFF_PID` reaped, `wg0-mullvad` untouched
+(§11.4.174); `sh -n` + `bash -n` clean. Two tracked follow-ups: **(#64)** a one-line Ethernet
+ethertype guard on the frame analyzer (reviewer nit — VLAN-tag offset shift, structurally
+impossible on the harness's own fresh veth, correct-by-construction hardening); **(#65)** fan the
+differential out to the 4 protocol harnesses (bridge/ftp/webdav/email), each with a per-protocol
+plaintext marker + its own load-bearing `SNIFF_MUT=plain`.
+
+It was the strongest hardening left for the hermetic stream (FINDINGS §5 point 5), and the
 natural successor to the wrong-destination negative control (task #62): that control proves
 the peer service is *reachable* only via the overlay; the underlay-sniff differential proves
 the *payload actually travelled encrypted* and never leaked in cleartext on the wire.

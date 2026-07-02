@@ -179,8 +179,8 @@
 <h1
 id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
 — VPN-LAN Service Access Feature Status Summary</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-07-02T06:36:11Z <strong>Status:</strong> Companion two-audience
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-07-02T07:05:29Z <strong>Status:</strong> Companion two-audience
 summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
 Page 1 is plain-language for the operator and stakeholders; Page 2 is
 the engineer phase matrix with commit refs and §-anchors. <strong>Rev
@@ -428,7 +428,10 @@ siblings</td>
 <td><strong>PASS</strong> (autonomous, zero installs)</td>
 <td><code>18a21bd</code> <code>hermetic_netns_poc.sh</code> +
 <code>hermetic_wg_roundtrip.sh</code>; sha256 round-trip; bad-WG-key
-golden-bad; 3/3 deterministic; §12 self-bounded</td>
+golden-bad; <strong>underlay-sniff non-leak differential</strong>
+(<code>91af9c6</code>: ciphertext-<code>0x04</code>-present +
+plaintext-nonce-absent, <code>SNIFF_MUT=plain</code> teeth, §11.4.107,
+§11.4.142 GO 11/11); 3/3 deterministic; §12 self-bounded</td>
 </tr>
 <tr>
 <td>J.1</td>
@@ -489,11 +492,15 @@ pure-stdlib peer (zero installs), each with a golden-bad mutation that
 FAILs the real assertion (email has two) + a wrong-destination negative
 control (a fetch to the underlay 10.9.0.2 MUST fail — §11.4.111
 reachability-as-proof, proven load-bearing: bind-0.0.0.0 ⇒ harness
-FAILs) + a not-stale self-fetch + 3/3 determinism + independent
-§11.4.142 GO, all wired into the standing suite as §11.4.135 guards —
-the live Mullvad round-trip stays operator-gated (§J COMPLEMENTS, never
-replaces). <strong>Tally:</strong> 4 PASS-now foundation · 5 §J PASS-now
-hermetic rows (1 WG substrate</p>
+FAILs) + — on the WG substrate — an underlay-sniff AF_PACKET non-leak
+differential (ciphertext-<code>0x04</code>-present +
+plaintext-nonce-absent on <code>veth0</code>, <code>91af9c6</code>
+§11.4.107, load-bearing <code>SNIFF_MUT=plain</code>; fan-out to the 4
+protocol harnesses tracked #65) + a not-stale self-fetch + 3/3
+determinism + independent §11.4.142 GO, all wired into the standing
+suite as §11.4.135 guards — the live Mullvad round-trip stays
+operator-gated (§J COMPLEMENTS, never replaces). <strong>Tally:</strong>
+4 PASS-now foundation · 5 §J PASS-now hermetic rows (1 WG substrate</p>
 <ul>
 <li>4 autonomous protocol promotions: Cast-eureka/FTP/WebDAV/email) · 16
 live round-trips operator-gated SKIP/OPERATOR-BLOCKED · 1 Won't-fix.

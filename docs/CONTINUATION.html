@@ -179,11 +179,50 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
-2026-07-02T06:36:11Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
+2026-07-02T07:05:29Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-16 wave (HEAD
+future work on <code>main</code>"</strong>). <strong>Rev-17 wave (HEAD
+<code>91af9c6</code>, branch <code>main</code>, FF to origin):</strong>
+<strong>§11.4.107 underlay-sniff AF_PACKET non-leak differential landed
+on the WG substrate.</strong> <code>91af9c6</code> adds to
+<code>hermetic_wg_roundtrip.sh</code> a rootless <code>AF_PACKET</code>
+capture on the underlay <code>veth0</code> during the positive
+round-trip asserting BOTH (a) WG <strong>ciphertext present</strong>
+(type-4 <code>0x04</code> datagram to <code>:51820</code>) AND (b) the
+per-run <strong>plaintext nonce ABSENT</strong> in raw underlay bytes —
+a different-domain oracle (§11.4.107(2)) + the canonical WireGuard
+self-audit method; the third independent layer of the tunnel-integrity
+claim after §11.4.111 destination-binding + wrong-destination negative.
+<strong>Independent §11.4.142 review <code>a2b3c696</code> = GO on 11/11
+checks against real runs (§11.4.134):</strong> load-bearing golden-bad
+<code>SNIFF_MUT=plain</code> (emits the nonce as cleartext UDP to
+discard <code>:9</code>, distinct from the §11.4.111 TCP
+<code>:8080</code> control) flips ONLY assertion (b) to FAIL 3/3 while
+ciphertext stays present (not a tautology, §11.4.107(10)); NORMAL →
+<code>ciphertext(0x04 :51820)=present plaintext_nonce=absent</code> 3/3;
+header-only pcap → analyzer exit 3 (honest FAIL); forced-iface +
+no-tcpdump → honest <code>SNIFF-SKIP</code>; <code>WG_MUT=badkey</code>
+tooth undisturbed (sniff sits past the <code>UP!=1</code> gate);
+veth0-only capture, 3.5 s / 4 MB / <code>timeout</code>-bounded,
+<code>SNIFF_PID</code> reaped, <code>wg0-mullvad</code> untouched
+(§11.4.174); <code>sh -n</code> + <code>bash -n</code> clean.
+<code>FINDINGS.md</code> → Rev 4 §7 (PLANNED → IMPLEMENTED). Two tracked
+follow-ups: <strong>task #64</strong> one-line Ethernet-ethertype guard
+on the frame analyzer (reviewer nit — VLAN offset shift, structurally
+impossible on the harness's own fresh veth, correct-by-construction);
+<strong>task #65</strong> fan the differential out to the 4 protocol
+harnesses (bridge/ftp/webdav/email), each with a per-protocol plaintext
+marker + its own <code>SNIFF_MUT=plain</code>. <strong>Anti-bluff
+§11.4.118 pass this wave:</strong> a mechanical smell-scan of all 26
+test scripts (bare <code>ab_pass</code>,
+<code>|| true</code>-before-verdict, fail-open SKIP→PASS, unconditional
+PASS) came back clean — enumerated coverage evidence, with the honest
+boundary that grep cannot catch a <em>semantic</em> tautology (only
+adversarial re-run can, as in the #62 negative-control fix).
+<strong>Next: task #64 (tiny) or #65 (fan-out) — the loop continues (no
+tag — "keep hardening").</strong> <strong>Rev-16 wave (HEAD
 <code>4dd5fc6</code>, branch <code>main</code>, all FF to
 origin):</strong> <strong>§11.4.111 wrong-destination negative control
 added to all 5 hermetic harnesses + FINDINGS §7 (next hardening)
@@ -1079,7 +1118,7 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>4dd5fc6</code> (== <code>main</code> == origin; integrate any
+HEAD <code>91af9c6</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
@@ -1098,22 +1137,31 @@ protocol legs are genuinely operator-gated (§11.4.122/§11.4.3): SFTP (no
 <code>sshd</code>), SMB/NFS (no samba/nfsd),
 <code>discovery_reflect.sh</code> scored leg (no
 <code>avahi-browse</code> client), ADB (device), container (podman) — do
-NOT manufacture bluff harnesses for these. <strong>Top
-non-operator-gated actionable = task #63, the underlay-sniff AF_PACKET
-non-leak differential</strong> (the strongest remaining non-leak proof,
-designed in
-<code>docs/research/hermetic_protocol_promotion_20260702/FINDINGS.md</code>
-§7, Rev 3, cited §11.4.99/§11.4.150): during the positive round-trip,
-capture on the underlay veth (rootless AF_PACKET — CAP_NET_RAW held by
-<code>unshare -Urnm</code>; or <code>tcpdump</code> with §11.4.3 SKIP
-fallback) and assert BOTH ciphertext present (WG data-message
-<code>0x04</code> prefix) AND the per-run plaintext nonce ABSENT in the
-raw underlay bytes. MUST ship a load-bearing golden-bad (a plaintext
-path where the nonce DOES appear ⇒ the "plaintext absent" assertion
-FAILs — else it is a tautology, §11.4.107(10)). Start with
-<code>hermetic_wg_roundtrip.sh</code> (the substrate) before fanning
-out; builder → independent §11.4.142 review iterate-to-GO §11.4.134 → FF
-push. Design
+NOT manufacture bluff harnesses for these. <strong>The underlay-sniff
+AF_PACKET non-leak differential (task #63) is LANDED on the WG
+substrate</strong> (<code>91af9c6</code>,
+<code>hermetic_wg_roundtrip.sh</code>, independent §11.4.142 review
+<code>a2b3c696</code> GO 11/11): during the positive round-trip it
+captures on the underlay <code>veth0</code> and asserts BOTH ciphertext
+present (type-4 <code>0x04</code> datagram to <code>:51820</code>) AND
+the per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
+golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
+FAIL (not a tautology, §11.4.107(10)), honest exit-3 on empty capture,
+honest <code>SNIFF-SKIP</code> when unavailable, 3/3 deterministic.
+FINDINGS §7 → Rev 4 (PLANNED → IMPLEMENTED). <strong>Top
+non-operator-gated actionables now:</strong> <strong>(task #64,
+tiny)</strong> a one-line Ethernet-ethertype guard on the sniff frame
+analyzer (reviewer nit — a VLAN tag would shift Eth/IPv4/UDP offsets;
+structurally impossible on the harness's own fresh veth, so
+correct-by-construction hardening + a crafted-pcap unit assertion);
+<strong>(task #65, fan-out)</strong> replicate the sniff differential on
+the 4 protocol harnesses
+(<code>hermetic_bridge_run.sh</code>/<code>_ftp_run.sh</code>/<code>_webdav_run.sh</code>/<code>_email_run.sh</code>),
+each with a per-protocol plaintext marker (eureka JSON / FTP listing /
+WebDAV 207 body / mail token) + its own load-bearing
+<code>SNIFF_MUT=plain</code>. Both: builder → independent §11.4.142
+review iterate-to-GO §11.4.134 → FF push; run ONE netns owner at a time
+(§11.4.119). Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
 2.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
