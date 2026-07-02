@@ -56,6 +56,125 @@ set -u
 export PATH="$PATH:/usr/sbin:/sbin"
 
 # ---------------------------------------------------------------------------
+# _emit_an_py — SINGLE SOURCE of the §11.4.107 underlay-sniff frame analyzer. Emitted
+# both by the inner sniff differential (fed a real veth0 capture) and by the guarded
+# `--selftest-analyzer` mode below (fed crafted frames). One definition => the unit
+# self-test exercises the SAME parser the harness uses (no drift, no bluff §11.4.107(10)).
+# ---------------------------------------------------------------------------
+_emit_an_py(){
+cat <<'PY'
+import sys, struct
+
+def scan_frames(raw, e, network, nonce, lport):
+    off = 24; ct = False; pt = False; pkts = 0; blob = bytearray()
+    while off + 16 <= len(raw):
+        _, _, incl, _ = struct.unpack(e + "IIII", raw[off:off+16]); off += 16
+        if off + incl > len(raw):
+            break
+        fr = raw[off:off+incl]; off += incl; pkts += 1; blob += fr
+        p = 14 if network == 1 else 0        # skip Ethernet header for LINKTYPE_ETHERNET
+        if network == 1 and fr[12:14] != b"\x08\x00":  # Ethernet II ethertype MUST be IPv4 (0x0800); VLAN(0x8100)/ARP/IPv6 shift the L3 offset -> skip (never misparse)
+            continue
+        if len(fr) < p + 20:
+            continue
+        vihl = fr[p]
+        if (vihl >> 4) != 4:                 # IPv4 only
+            continue
+        ihl = (vihl & 0x0f) * 4
+        if ihl < 20 or fr[p + 9] != 17:      # UDP only
+            continue
+        u = p + ihl
+        if len(fr) < u + 8:
+            continue
+        sport = struct.unpack(">H", fr[u:u+2])[0]
+        dport = struct.unpack(">H", fr[u+2:u+4])[0]
+        pl = fr[u+8:]
+        if (dport == lport or sport == lport) and pl[:4] == b"\x04\x00\x00\x00":
+            ct = True                        # WireGuard type-4 transport-data message
+    if nonce in bytes(blob):
+        pt = True
+    return pkts, ct, pt
+
+if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
+    # §11.4.107(10) self-validated analyzer — crafted-frame unit tests proving the Ethernet
+    # ethertype guard. Feeds the SAME scan_frames() the sniff differential uses (never a copy).
+    lport = 51820
+    def rec(fr):
+        return struct.pack("<IIII", 0, 0, len(fr), len(fr)) + fr
+    def pcap(*frames):
+        b = struct.pack("<IHHiIII", 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1)  # LINKTYPE_ETHERNET, as cap.py
+        for fr in frames:
+            b += rec(fr)
+        return b
+    def eth(ethertype):                       # 14-byte Ethernet II header: dst(6)+src(6)+ethertype(2)
+        return b"\x00\x11\x22\x33\x44\x55" + b"\x66\x77\x88\x99\xaa\xbb" + struct.pack(">H", ethertype)
+    # ONE identical L3 body: IPv4(proto=17 UDP) + UDP(dport=51820) + WG type-4 marker.
+    ip = bytes([0x45, 0, 0, 0, 0, 0, 0, 0, 64, 17, 0, 0]) + b"\x0a\x09\x00\x01" + b"\x0a\x09\x00\x02"
+    udp = struct.pack(">HHHH", 12345, lport, 0, 0)
+    l3 = ip + udp + b"\x04\x00\x00\x00"       # a fully WG-detectable structure at the L3 offset
+    tn = b"SELFTEST-NONCE-3f9a"
+    # (a) VLAN-tagged frame (ethertype 0x8100) with the SAME l3 right after the 14B Ethernet
+    #     header: WITHOUT the guard, parsing at offset 14 WOULD flag ct; WITH the guard it MUST
+    #     be skipped (ct absent). Since (a) and (b) share the identical l3, the ONLY variable is
+    #     the ethertype -> the guard is provably load-bearing, not a tautology.
+    _, ct_vlan, _ = scan_frames(pcap(eth(0x8100) + l3), "<", 1, tn, lport)
+    # (b) plain IPv4 frame (ethertype 0x0800), same l3 + the run nonce trailing: the happy path
+    #     MUST still detect ct AND still scan the nonce (pt) — the guard must not break it.
+    _, ct_ip, pt_ip = scan_frames(pcap(eth(0x0800) + l3 + tn), "<", 1, tn, lport)
+    ok = (not ct_vlan) and ct_ip and pt_ip
+    sys.stderr.write("AN-SELFTEST: vlan_ct=%s ipv4_ct=%s ipv4_nonce=%s\n" % (
+        "present" if ct_vlan else "absent",
+        "present" if ct_ip else "absent",
+        "present" if pt_ip else "absent"))
+    if ok:
+        print("AN-SELFTEST-OK: VLAN(0x8100) frame skipped by ethertype guard (ct=absent); "
+              "IPv4(0x0800) WG frame still detected (ct=present) + nonce scanned (pt=present)")
+        sys.exit(0)
+    print("AN-SELFTEST-FAIL: ethertype-guard assertions not met "
+          "(vlan_ct MUST be absent; ipv4_ct + ipv4_nonce MUST be present)")
+    sys.exit(1)
+
+capp, nonce, lport = sys.argv[1], sys.argv[2].encode(), int(sys.argv[3])
+try:
+    raw = open(capp, "rb").read()
+except Exception as e:
+    sys.stderr.write("SNIFF-ERR read %r\n" % e); sys.exit(4)
+if len(raw) < 24:
+    sys.stderr.write("SNIFF-ERR short %d\n" % len(raw)); sys.exit(4)
+m = raw[:4]
+if m == b"\xd4\xc3\xb2\xa1":
+    e = "<"
+elif m == b"\xa1\xb2\xc3\xd4":
+    e = ">"
+else:
+    sys.stderr.write("SNIFF-ERR magic %r\n" % m); sys.exit(4)
+network = struct.unpack(e + "I", raw[20:24])[0]
+pkts, ct, pt = scan_frames(raw, e, network, nonce, lport)
+sys.stderr.write("SNIFF: packets=%d ciphertext(0x04 :%d)=%s plaintext_nonce=%s\n" % (
+    pkts, lport, "present" if ct else "absent", "present" if pt else "absent"))
+if pt:
+    sys.exit(2)   # plaintext leaked -> the "plaintext absent" assertion FAILS
+if not ct:
+    sys.exit(3)   # no WG data on the underlay
+sys.exit(0)
+PY
+}
+
+# ---------------------------------------------------------------------------
+# --selftest-analyzer: §11.4.107(10) self-validated-analyzer gate. Materialize the SAME
+# an.py the sniff differential uses and run its crafted-frame unit tests (VLAN-skip +
+# IPv4 happy-path). Pure string parsing — needs no wireguard/unshare/root, safe anywhere.
+# Guarded: NEVER part of the normal PASS/SKIP/FAIL flow.
+# ---------------------------------------------------------------------------
+if [ "${1:-}" = "--selftest-analyzer" ]; then
+    _std=$(mktemp -d)
+    _emit_an_py > "$_std/an.py"
+    if python3 "$_std/an.py" --selftest; then _r=0; else _r=$?; fi
+    rm -rf "$_std" 2>/dev/null || true
+    exit "$_r"
+fi
+
+# ---------------------------------------------------------------------------
 # INNER: runs inside `unshare -Urnm` (uid 0-in-userns). Builds the veth underlay,
 # the two-ended WireGuard tunnel, serves + fetches over the tunnel, verifies.
 # ---------------------------------------------------------------------------
@@ -198,56 +317,7 @@ try:
 except Exception:
     pass
 PY
-    cat > "$SNIFFDIR/an.py" <<'PY'
-import sys, struct
-capp, nonce, lport = sys.argv[1], sys.argv[2].encode(), int(sys.argv[3])
-try:
-    raw = open(capp, "rb").read()
-except Exception as e:
-    sys.stderr.write("SNIFF-ERR read %r\n" % e); sys.exit(4)
-if len(raw) < 24:
-    sys.stderr.write("SNIFF-ERR short %d\n" % len(raw)); sys.exit(4)
-m = raw[:4]
-if m == b"\xd4\xc3\xb2\xa1":
-    e = "<"
-elif m == b"\xa1\xb2\xc3\xd4":
-    e = ">"
-else:
-    sys.stderr.write("SNIFF-ERR magic %r\n" % m); sys.exit(4)
-network = struct.unpack(e + "I", raw[20:24])[0]
-off = 24; ct = False; pt = False; pkts = 0; blob = bytearray()
-while off + 16 <= len(raw):
-    _, _, incl, _ = struct.unpack(e + "IIII", raw[off:off+16]); off += 16
-    if off + incl > len(raw):
-        break
-    fr = raw[off:off+incl]; off += incl; pkts += 1; blob += fr
-    p = 14 if network == 1 else 0        # skip Ethernet header for LINKTYPE_ETHERNET
-    if len(fr) < p + 20:
-        continue
-    vihl = fr[p]
-    if (vihl >> 4) != 4:                 # IPv4 only
-        continue
-    ihl = (vihl & 0x0f) * 4
-    if ihl < 20 or fr[p + 9] != 17:      # UDP only
-        continue
-    u = p + ihl
-    if len(fr) < u + 8:
-        continue
-    sport = struct.unpack(">H", fr[u:u+2])[0]
-    dport = struct.unpack(">H", fr[u+2:u+4])[0]
-    pl = fr[u+8:]
-    if (dport == lport or sport == lport) and pl[:4] == b"\x04\x00\x00\x00":
-        ct = True                        # WireGuard type-4 transport-data message
-if nonce in bytes(blob):
-    pt = True
-sys.stderr.write("SNIFF: packets=%d ciphertext(0x04 :%d)=%s plaintext_nonce=%s\n" % (
-    pkts, lport, "present" if ct else "absent", "present" if pt else "absent"))
-if pt:
-    sys.exit(2)   # plaintext leaked -> the "plaintext absent" assertion FAILS
-if not ct:
-    sys.exit(3)   # no WG data on the underlay
-sys.exit(0)
-PY
+    _emit_an_py > "$SNIFFDIR/an.py"    # §11.4.107 frame analyzer — single source (see _emit_an_py)
     timeout -k 1 8 python3 "$SNIFFDIR/cap.py" "$SNIFF_IFACE" "$SNIFF_CAP" "$SNIFF_READY" "$SNIFF_WINDOW" "$SNIFF_CAPB" >/dev/null 2>>"$EV" &
     SNIFF_PID=$!
     for _ in $(seq 1 30); do
