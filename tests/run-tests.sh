@@ -829,6 +829,18 @@ test_regression_guards() {
         test_result "task#75 memory_soak degenerate-scored-bounded RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+    if bash "$SCRIPT_DIR/regression/assert_no_leak_empty_capture_test.sh" >/dev/null 2>&1; then
+        test_result "task#76 assert_no_leak empty/structureless-capture fail-closed (GREEN)" "PASS"
+    else
+        test_result "task#76 assert_no_leak empty/structureless-capture fail-closed (GREEN)" "FAIL" \
+            "run: bash tests/regression/assert_no_leak_empty_capture_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/assert_no_leak_empty_capture_test.sh" >/dev/null 2>&1; then
+        test_result "task#76 assert_no_leak absence-as-evidence RED reproduces" "PASS"
+    else
+        test_result "task#76 assert_no_leak absence-as-evidence RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################

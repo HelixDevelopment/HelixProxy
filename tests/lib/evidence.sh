@@ -466,6 +466,17 @@ assert_no_leak() {
         _evidence_emit FAIL "assert_no_leak" "[reason: capture file missing: $capture]"
         return 1
     fi
+    # An EMPTY capture is a broken/absent sniff, NOT evidence of no-leak: the
+    # no-leak claim cannot be made from a capture that recorded nothing (the
+    # sniff broke / wrong iface / tcpdump crashed). Fail-closed — never score
+    # absence as evidence (§11.4.68 / §11.4.120). A caller whose sniff
+    # legitimately could not run must ab_skip_with_reason BEFORE reaching
+    # assert_no_leak; reaching it with an empty capture is a broken-evidence
+    # condition.
+    if [ ! -s "$capture" ]; then
+        _evidence_emit FAIL "assert_no_leak" "[reason: capture empty — sniff produced no data; no-leak cannot be asserted ($capture)]"
+        return 1
+    fi
 
     if grep -qi 'packets captured' "$capture" 2>/dev/null; then
         n=$(grep -i 'packets captured' "$capture" | awk '{print $1; exit}')
@@ -492,12 +503,26 @@ assert_no_leak() {
         return 1
     fi
 
-    # Fallback: count IP packet lines in a raw text capture.
+    # Fallback: a raw text capture WITHOUT the tcpdump 'packets captured' footer
+    # (branch a) and WITHOUT the '=== AFTER' proc-delta markers (branch b). Count
+    # IP packet lines. A zero-count PASS requires POSITIVE proof the capture
+    # actually ran — a recognizable tcpdump line shape (an HH:MM:SS.frac
+    # timestamp). A non-empty capture with NO recognizable capture structure AND
+    # zero ' IP ' lines is INDISTINGUISHABLE from a broken sniff (wrong iface /
+    # tcpdump crashed / malformed) — fail-closed, never absence-as-evidence
+    # (§11.4.68 / §11.4.120). The canonical genuine tcpdump zero-packet case
+    # carries the footer and is handled by branch (a) above; a genuinely-ran
+    # capture that recorded only non-IPv4 traffic (ARP / IP6) still carries
+    # timestamps and PASSes here (no false-FAIL).
     n=$(grep -c ' IP ' "$capture" 2>/dev/null)
     n=${n:-0}
     if [ "$n" -eq 0 ] 2>/dev/null; then
-        _evidence_emit PASS "assert_no_leak" "[evidence: zero IP packet lines on real uplink ($capture)]"
-        return 0
+        if grep -q '[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\.' "$capture" 2>/dev/null; then
+            _evidence_emit PASS "assert_no_leak" "[evidence: zero IP packet lines on a capture that provably ran (tcpdump timestamps present) — real uplink ($capture)]"
+            return 0
+        fi
+        _evidence_emit FAIL "assert_no_leak" "[reason: capture has no tcpdump footer / proc-delta / timestamp structure and zero IP lines — indistinguishable from a broken sniff; no-leak cannot be asserted ($capture)]"
+        return 1
     fi
     _evidence_emit FAIL "assert_no_leak" "[reason: $n IP packet line(s) — LEAK ($capture)]"
     return 1

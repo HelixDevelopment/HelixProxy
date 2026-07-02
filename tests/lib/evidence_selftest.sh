@@ -175,6 +175,20 @@ run_case 0 "assert_no_leak: /proc/net/dev eth0 tx-delta == 0 -> PASS" \
     assert_no_leak "$FIX/proc_net_dev_noleak.delta"
 run_case 1 "assert_no_leak: /proc/net/dev eth0 tx-delta > 0 -> FAIL (negative)" \
     assert_no_leak "$FIX/proc_net_dev_leak.delta"
+# --- F-E: absence-as-evidence guards (task #76; §11.4.68/§11.4.120) ----------
+# A broken/absent sniff MUST NOT score as no-leak. An EMPTY capture and a
+# non-empty capture with NO recognizable capture structure (no footer, no
+# '=== AFTER', no ' IP ' lines, no tcpdump timestamp) are indistinguishable
+# from a failed sniff -> FAIL-closed, never a vacuous zero-IP-lines PASS.
+run_case 1 "assert_no_leak: EMPTY capture -> FAIL (broken sniff, not no-leak) (negative)" \
+    assert_no_leak "$FIX/egress_empty.ip"
+run_case 1 "assert_no_leak: malformed non-empty, no capture structure -> FAIL (negative)" \
+    assert_no_leak "$FIX/tcpdump_malformed_nostructure.txt"
+# Positive control: a capture that provably RAN (tcpdump timestamps) but recorded
+# only non-IPv4 traffic (ARP/IP6) has zero ' IP ' lines yet is genuine no-leak
+# -> PASS via the fallback structure check (proves NO false-FAIL on a real 0).
+run_case 0 "assert_no_leak: ran-but-zero-IPv4 (timestamps, ARP/IP6 only) -> PASS (no false-FAIL)" \
+    assert_no_leak "$FIX/tcpdump_noleak_nonipv4.txt"
 
 # --- procdev_field parser (direct value assertions) ------------------------
 check_value 900   "procdev_field: wg0 tx-packets (field 10)" \

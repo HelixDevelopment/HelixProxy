@@ -1,0 +1,3 @@
+garbage header line — not a capture at all
+some unrelated diagnostic text with no packet records
+no tcpdump footer, no proc-delta marker, no timestamp, no packet lines

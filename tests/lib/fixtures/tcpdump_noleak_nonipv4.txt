@@ -1,0 +1,3 @@
+13:45:01.100001 ARP, Request who-has 192.168.1.1 tell 192.168.1.50, length 28
+13:45:01.100050 ARP, Reply 192.168.1.1 is-at 00:11:22:33:44:55, length 28
+13:45:02.200003 IP6 fe80::1 > ff02::2: ICMP6, router solicitation, length 16
