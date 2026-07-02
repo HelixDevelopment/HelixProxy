@@ -1206,6 +1206,74 @@ test_vpn_lan_hermetic() {
     done
 }
 
+# Dynamic-profile VPN fail-closed LIVE negative guard (§11.4.68/§11.4.69/§11.4.108/
+# §11.4.115/§11.4.135). Wires the LIVE branded-503 fail-closed proof
+# tests/dynamic/vpn_failclosed_test.sh — the NEGATIVE half (A): tunnel DOWN ⇒
+# branded ERR_TUNNEL_DOWN 503 + NO leak (access.log TCP_DENIED). Before this the
+# default suite exercised ONLY the unit-level vpn_failclosed_reason_test.sh
+# (functions-only, in test_regression_guards) — the LIVE negative path was
+# unguarded in default runs.
+#
+# SCOPE: this wires ONLY the NEGATIVE fail-closed test (it PASSES today). The
+# POSITIVE egress test tests/dynamic/real_vpn_egress_proof.sh is DELIBERATELY NOT
+# wired here — it currently fails-closed on a known healthd bug (D3, task #79) and
+# is wired only after #79 fixes it.
+#
+# The harness needs a CONDUCTOR-owned live dynamic stack (§11.4.119 single owner —
+# `./start --dynamic`) and does NO up/start/stop/build itself. So the section is
+# a §11.4.3 topology-gated LIVE guard: it runs the harness ONLY when the operator
+# has declared the stack up via HELIX_DYNAMIC_STACK=1; otherwise it emits an
+# honest topology_unsupported SKIP (no fake PASS) and returns — the default
+# fresh-checkout run stays GREEN without needing podman or a live stack.
+#
+# SKIP-AWARE verdict map (IDENTICAL shape to test_vpn_lan_hermetic above; the
+# harness emits exactly one '^PASS:'/'^SKIP:'/'^FAIL:' line via the §11.4.69
+# ab_pass_with_evidence / ab_skip_with_reason helpers, rc 0 on PASS/SKIP and 1 on
+# FAIL):
+#   rc0 + PASS>=1 + FAIL0                 => PASS  (branded 503 + no leak proven)
+#   rc0 + SKIP>=1 + PASS0 + FAIL0         => SKIP  (harness's own honest §11.4.3 /
+#                                                   operator_attended SKIP)
+#   anything else (incl. a harness FAIL:  => FAIL  — a real harness FAIL PROPAGATES
+#     line / rc!=0)                              to a suite FAIL, NEVER swallowed as
+#                                                a silent SKIP (§11.4.1/§11.4.68).
+# set-e-safe capture ('rc=0; cmd || rc=$?', 'grep -c ... || true'); resource-capped
+# + timeout-bounded (§12/§12.6) above the harness's own inner timeout.
+test_dynamic_failclosed() {
+    echo -e "\n${BLUE}=== Dynamic VPN fail-closed (LIVE negative guard) ===${NC}"
+
+    local _p="$SCRIPT_DIR/dynamic/vpn_failclosed_test.sh"
+
+    if [[ ! -f "$_p" ]]; then
+        test_result "Dynamic fail-closed: branded-503 LIVE negative" "SKIP" \
+            "harness absent §11.4.3"
+        return 0
+    fi
+
+    # §11.4.3 topology gate: the LIVE proof needs the conductor-owned dynamic
+    # stack. Without HELIX_DYNAMIC_STACK=1 declared, honest SKIP — never a fake
+    # PASS (the negative path is not exercised, so it is neither pass nor fail).
+    if [[ "${HELIX_DYNAMIC_STACK:-0}" != "1" ]]; then
+        test_result "Dynamic fail-closed: branded-503 LIVE negative" "SKIP" \
+            "dynamic stack not declared (set HELIX_DYNAMIC_STACK=1 after './start --dynamic') — topology_unsupported §11.4.3: run bash $_p"
+        return 0
+    fi
+
+    local _out _rc _pass _skip _fail
+    _rc=0; _out=$(GOMAXPROCS=2 nice -n 19 ionice -c 3 timeout -k 5 150 bash "$_p" 2>&1) || _rc=$?
+    _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:' || true)
+    _skip=$(printf '%s\n' "$_out" | grep -c '^SKIP:' || true)
+    _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:' || true)
+    if [[ $_rc -eq 0 && $_pass -ge 1 && $_fail -eq 0 ]]; then
+        test_result "Dynamic fail-closed: branded-503 LIVE negative" "PASS"
+    elif [[ $_rc -eq 0 && $_skip -ge 1 && $_pass -eq 0 && $_fail -eq 0 ]]; then
+        test_result "Dynamic fail-closed: branded-503 LIVE negative" "SKIP" \
+            "harness honest §11.4.3 SKIP (stack unreachable / branded path inactive / operator_attended egress half): run bash $_p"
+    else
+        test_result "Dynamic fail-closed: branded-503 LIVE negative" "FAIL" \
+            "expected rc0+>=1 PASS+0 FAIL, or rc0+SKIP-only (rc=$_rc pass=$_pass skip=$_skip fail=$_fail): run bash $_p"
+    fi
+}
+
 #######################################
 # Print summary
 #######################################
@@ -1251,6 +1319,7 @@ main() {
     test_vpn_lan_ingress
     test_vpn_lan_autonomous_battery
     test_vpn_lan_hermetic
+    test_dynamic_failclosed
     test_environment
     test_directories
     test_scripts
