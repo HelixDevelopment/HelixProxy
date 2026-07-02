@@ -76,3 +76,17 @@ RUN printf '# Helix Proxy fail-closed default include (baked; %s).\n# Contribute
 # Branded fail-closed error page: served by `deny_info 503:ERR_TUNNEL_DOWN` when
 # the tunnel is down (squid.dynamic.conf pins error_directory to this dir).
 COPY errors/ERR_TUNNEL_DOWN /usr/share/squid/errors/English/ERR_TUNNEL_DOWN
+
+# =============================================================================
+# D5 fix (§11.4.150): squid resolves cache_peer HOSTNAMES only at startup and
+# caches a NEGATIVE DNS result with no reliable retry. If squid starts before
+# gluetun's network-aliases (the D1 fix) are up, the `cache_peer gluetun-<profile>`
+# names cache NXDOMAIN → the peer stays DEAD even after gluetun is reachable, and
+# `squid -k reconfigure` does not clear it. This wrapper waits (bounded,
+# fail-open-safe — the baked config fails CLOSED anyway) for a gluetun-* peer to
+# resolve, then execs the ubuntu/squid base entrypoint (/usr/local/bin/entrypoint.sh)
+# UNCHANGED with the original CMD. See docs/design/mullvad_egress/DYNAMIC_ROUTING_FINDINGS.md.
+# =============================================================================
+COPY wait-for-gluetun.sh /usr/local/bin/wait-for-gluetun.sh
+RUN chmod +x /usr/local/bin/wait-for-gluetun.sh
+ENTRYPOINT ["/usr/local/bin/wait-for-gluetun.sh"]
