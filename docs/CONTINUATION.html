@@ -179,12 +179,60 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
-2026-07-02T05:25:00Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
+2026-07-02T05:52:00Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-14 wave (HEAD
-<code>3b98d02</code>, branch <code>main</code>, all FF to
+future work on <code>main</code>"</strong>). <strong>Rev-15 wave (HEAD
+<code>3b73f02</code>, branch <code>main</code>, all FF to
+origin):</strong> <strong>H2.email promoted + all hermetic promotions
+wired into the standing suite as regression guards.</strong>
+<code>71e0bac</code> added <code>test_vpn_lan_hermetic()</code> to
+<code>tests/run-tests.sh</code> — the 4 hermetic harnesses
+(<code>hermetic_wg_roundtrip.sh</code>,
+<code>hermetic_bridge_run.sh</code>/Cast-eureka,
+<code>hermetic_ftp_run.sh</code>, <code>hermetic_webdav_run.sh</code>)
+now run on every suite invocation as <strong>§11.4.135 standing
+regression guards</strong> under a SKIP-aware verdict map
+(<code>rc0+PASS≥1+FAIL0⇒PASS; rc0+SKIP≥1+PASS0+FAIL0⇒SKIP; else FAIL</code>),
+independent §11.4.142 review GO (7/7 adversarial HOLD; 4/4 real + 7/7
+synthetic mapping). <code>3b73f02</code> landed
+<strong>H2.email</strong>: <code>hermetic_email_run.sh</code> runs the
+<strong>UNMODIFIED</strong> <code>email_roundtrip.sh</code> autonomously
+over the tunnel via a pure-stdlib implicit-TLS mail peer (SMTPS 465 /
+IMAPS 993 / POP3S 995, shared in-memory mailbox) bound to the WG-only
+overlay <code>10.10.0.2</code> (reachability = tunnel-traversal proof
+§11.4.111). <strong>Independent §11.4.142 adversarial review = GO, no
+blocking findings (§11.4.134):</strong> NORMAL PASS all 4 scored legs
+(imaps_login_list, smtp_submission_send, pop3s_retrieve_roundtrip,
+open_relay_refused; email_reverse_leg SKIP N/A),
+<code>MAIL_MUT=openrelay</code>→real
+<code>FAIL: open_relay_refused</code> (only that leg),
+<code>MAIL_MUT=droptoken</code>→real
+<code>FAIL: pop3s_retrieve_roundtrip</code> (only that leg) —
+<strong>both teeth load-bearing + targeted</strong>; 3/3 deterministic
+(§11.4.50); §11.4.10 no cred/key leak (AUTH base64 = server RFC 4954
+challenges only); clean cleanup (§11.4.14); <code>wg0-mullvad</code>
+untouched (§11.4.174). The close_notify fix (<code>tls.unwrap()</code>
+before close) + IMAP bare-QUIT clean-close eliminate the
+silent-SKIP-masking class (§11.4.6) — all legs ran live; builder
+self-debug (§11.4.102) also fixed the PoC <code>shutdown()</code>
+self-recursion + an IMAP <code>-ign_eof</code> hang.
+<code>FINDINGS.md</code>→Rev 2 (<strong>§6 implicit-TLS mail
+deep-research</strong> §11.4.150: PEP 594 <code>smtpd</code> removal,
+RFC 8314/5321/4954/3501/1939, the close_notify FACT + sources) +
+companion <code>hermetic_email_run.md</code> Rev 1, all HTML+PDF synced
+0-fence-leak (§11.4.168). <strong>Honest gate verdict (§11.4.6): the
+clean zero-install protocol-promotion set is now COMPLETE (Cast-eureka +
+FTP + WebDAV + email).</strong> Remaining legs genuinely operator-gated
+(§11.4.122/§11.4.3): SFTP (no <code>sshd</code>), SMB/NFS (no
+samba/nfsd), <code>discovery_reflect.sh</code> scored leg (no
+<code>avahi-browse</code> client), ADB (device), container (podman).
+<strong>Follow-up (separate reviewed batch): explicit wrong-destination
+negative (underlay/wg-down MUST-fail) to make §11.4.111 self-evidencing
++ wg-preflight <code>/usr/sbin/wg</code> across sibling harnesses. Next:
+the loop continues (no tag — "keep hardening").</strong> <strong>Rev-14
+wave (HEAD <code>3b98d02</code>, branch <code>main</code>, all FF to
 origin):</strong> <strong>H2.x hermetic protocol promotions — three
 operator-gated protocol legs now run AUTONOMOUSLY over the hermetic
 kernel-WireGuard tunnel (§11.4.52).</strong> <code>18a21bd</code> landed
@@ -497,7 +545,7 @@ HelixQA vendoring (6 un-vendored siblings), release tag.</p>
 first)</h2>
 <p><strong><code>main</code> FF-tracks HEAD (§11.4.113 FF-only), so
 <code>main..HEAD</code> is empty — HEAD == <code>main</code> ==
-github/origin/upstream == <code>0e987f1</code>.</strong> The full
+github/origin/upstream == <code>3b73f02</code>.</strong> The full
 feature-branch history since the original branch point is below; the
 historical table (numbered 1–28) is retained for the earlier
 construction wave.</p>
@@ -1000,24 +1048,35 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>b76065c</code> (== <code>main</code> == origin; integrate any
+HEAD <code>3b73f02</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
-(§11.4.131) — read it first. <strong>Top non-operator-gated actionable:
-hermetic-harness H1/H2</strong> — H0 (veth) + H0-full (real
-kernel-WireGuard tunnel) are DONE + proven
-(<code>tests/vpn_lan/hermetic_netns_poc.sh</code> +
-<code>hermetic_wg_roundtrip.sh</code>, both deterministic + golden-bad
-teeth). NEXT: run real peer services unprivileged
-(smbd/vsftpd/webdav/eureka JSON/mDNS Go responder) inside the peer netns
-+ wire <code>HELIX_BRIDGE_MODE=hermetic</code> into
-<code>tests/lib/svord_bridge.sh</code> and invoke the protocol tests
-INSIDE the namespace (model A — the peer at 10.10.0.2 is only reachable
-from within <code>unshare</code>), promoting the 16 operator-gated SKIPs
-to AUTONOMOUS (§11.4.52). Design
+(§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE:</strong>
+the H0-full real kernel-WireGuard tunnel
+(<code>hermetic_wg_roundtrip.sh</code>) + the model-A protocol
+promotions over it are all landed + independently reviewed + wired into
+the standing suite as §11.4.135 guards
+(<code>test_vpn_lan_hermetic</code> in <code>tests/run-tests.sh</code>).
+<strong>The clean zero-install promotion set is COMPLETE (§11.4.6):
+Cast-eureka + FTP + WebDAV + email</strong> all run AUTONOMOUSLY over
+the tunnel (unmodified protocol tests, stdlib peers on
+<code>10.10.0.2</code>, golden-bad teeth, 3/3 deterministic). Remaining
+protocol legs are genuinely operator-gated (§11.4.122/§11.4.3): SFTP (no
+<code>sshd</code>), SMB/NFS (no samba/nfsd),
+<code>discovery_reflect.sh</code> scored leg (no
+<code>avahi-browse</code> client), ADB (device), container (podman) — do
+NOT manufacture bluff harnesses for these. <strong>Top
+non-operator-gated actionable = the hermetic-hardening follow-up
+batch</strong> (one separate, independently-reviewed change): (a) add an
+explicit wrong-destination negative (fetch to underlay
+<code>10.9.0.2</code> / wg-down MUST-fail) to each harness so the
+§11.4.111 reachability-as-proof claim is self-evidencing rather than
+structural-only; (b) make each sibling harness's wg-preflight accept
+<code>/usr/sbin/wg</code> (the email harness already does via
+<code>PATH+=:/usr/sbin</code>), so they PASS wherever wireguard-tools is
+installed, not only when <code>wg</code> is on <code>PATH</code>. Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
-2. Kernel-WG-in-userns confirmed (no build); host headroom healthy
-post-restart.</li>
+2.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
 (operator: "keep hardening, don't tag yet"). Base proxy UP
 <code>:53128</code> (204); ~43% host; 4 <code>helixproxy_*</code> Podman

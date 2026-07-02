@@ -179,8 +179,8 @@
 <h1
 id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
 — VPN-LAN Service Access Feature Status Summary</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-07-02T05:20:00Z <strong>Status:</strong> Companion two-audience
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-07-02T05:52:00Z <strong>Status:</strong> Companion two-audience
 summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
 Page 1 is plain-language for the operator and stakeholders; Page 2 is
 the engineer phase matrix with commit refs and §-anchors. <strong>Rev
@@ -189,14 +189,17 @@ Phase-12 bidirectional + the §11.4.135 autonomous suite battery are all
 GREEN; the data-plane is env-blocked on a host rootless-podman
 aardvark-dns failure (operator-actionable, not a code defect).
 <strong>NEW — §J hermetic autonomous promotions (§11.4.52):</strong> the
-Chromecast-eureka, FTP-passive and WebDAV-PROPFIND protocol legs now
-ALSO prove their client-side logic AUTONOMOUSLY over a real rootless
-kernel-WireGuard tunnel against a pure-stdlib peer (zero installs, no
-operator/VPN), each with golden-bad teeth + not-stale self-fetch + 3/3
-determinism + independent GO; the live Mullvad round-trip stays
-operator-gated (COMPLEMENT, never replace). <strong>Authority:</strong>
-Inherits <code>constitution/Constitution.md</code> per §11.4.35.
-§11.4.153 feature Status set for the VPN-LAN service-access workstream
+Chromecast-eureka, FTP-passive, WebDAV-PROPFIND and email
+(SMTPS/IMAPS/POP3S) protocol legs now ALSO prove their client-side logic
+AUTONOMOUSLY over a real rootless kernel-WireGuard tunnel against a
+pure-stdlib peer (zero installs, no operator/VPN), each with golden-bad
+teeth + not-stale self-fetch + 3/3 determinism + independent GO,
+<strong>all wired into the standing suite as §11.4.135 regression guards
+(<code>test_vpn_lan_hermetic</code>)</strong>; the live Mullvad
+round-trip stays operator-gated (COMPLEMENT, never replace).
+<strong>Authority:</strong> Inherits
+<code>constitution/Constitution.md</code> per §11.4.35. §11.4.153
+feature Status set for the VPN-LAN service-access workstream
 (<code>feature/vpn-aware-dynamic-routing</code>, §11.4.167).</p>
 <hr />
 <h2 id="page-1--for-the-operator-and-stakeholders-plain-language">Page 1
@@ -237,18 +240,20 @@ TV" alternative.</li>
 <strong>one-command Challenge runner</strong> lets you check the whole
 feature at once — today it produces an honest "all skipped" result
 because the VPN is not connected.</li>
-<li><strong>NEW — three service tests now prove themselves without any
+<li><strong>NEW — four service tests now prove themselves without any
 VPN at all.</strong> We build a tiny, real, private encrypted tunnel
 entirely on this machine (nothing installed, no admin rights, no
 internet) and run the <strong>file-transfer (FTP)</strong>,
-<strong>WebDAV</strong>, and <strong>Chromecast device-lookup</strong>
-tests across it against a small built-in stand-in server. This proves
-the actual protocol behaviour works end-to-end — and each test includes
-a deliberate "trap" variant that <strong>must fail</strong> to prove the
-check is real, and repeats identically three times. This is genuine
-proof of the software's protocol logic, delivered today with no waiting
-on you. (Connecting your real VPN still adds the final proof against
-your actual servers.)</li>
+<strong>WebDAV</strong>, <strong>Chromecast device-lookup</strong>, and
+<strong>email (secure send + retrieve)</strong> tests across it against
+a small built-in stand-in server. This proves the actual protocol
+behaviour works end-to-end — and each test includes a deliberate "trap"
+variant that <strong>must fail</strong> to prove the check is real
+(email has two), and repeats identically three times. All four now run
+automatically on every test-suite run. This is genuine proof of the
+software's protocol logic, delivered today with no waiting on you.
+(Connecting your real VPN still adds the final proof against your actual
+servers.)</li>
 </ul>
 <p><strong>What needs you (clearly flagged — we always ask before
 acting):</strong></p>
@@ -456,11 +461,16 @@ origin <code>10.10.0.2:8080</code> via stdlib forward proxy
 </tr>
 <tr>
 <td>J.4</td>
-<td>Email (SMTP-implicit-TLS + POP3S/IMAPS) hermetic promotion</td>
-<td><strong>IN-PROGRESS</strong> (de-risking PoC)</td>
-<td>pure-stdlib TLS-mail PoC precedes
-<code>hermetic_email_run.sh</code>; research
-<code>docs/research/hermetic_protocol_promotion_20260702/FINDINGS.md</code></td>
+<td>Email — UNMODIFIED <code>email_roundtrip.sh</code> promoted over the
+tunnel</td>
+<td><strong>PASS</strong> (autonomous protocol logic; live mail
+round-trip operator-gated)</td>
+<td><code>3b73f02</code> <code>hermetic_email_run.sh</code>; pure-stdlib
+implicit-TLS peer <code>10.10.0.2</code> (SMTPS 465/IMAPS 993/POP3S
+995); nonce round-trip oracle; <strong>two</strong> teeth
+<code>MAIL_MUT=openrelay</code> (→FAIL open_relay_refused) +
+<code>MAIL_MUT=droptoken</code> (→FAIL pop3s_retrieve_roundtrip);
+close_notify clean-close; §11.4.10 no-cred-leak; 3/3; §11.4.142 GO</td>
 </tr>
 </tbody>
 </table>
@@ -473,18 +483,21 @@ the operator guide, and the cited Miracast structural verdict.
 / eureka JSON / device serials) is operator-gated on the svord
 connection — no live capability is PASS without captured evidence on a
 genuinely-up bridge (§11.4.6 / §11.4.69 / §11.4.108). <strong>NEW §J
-autonomous value:</strong> the FTP/WebDAV/Cast-eureka client-side
+autonomous value:</strong> the Cast-eureka/FTP/WebDAV/email client-side
 protocol logic is now proven over a hermetic kernel-WG tunnel with a
 pure-stdlib peer (zero installs), each with a golden-bad mutation that
-FAILs the real assertion + a not-stale self-fetch + 3/3 determinism +
-independent §11.4.142 GO — the live Mullvad round-trip stays
+FAILs the real assertion (email has two) + a not-stale self-fetch + 3/3
+determinism + independent §11.4.142 GO, all wired into the standing
+suite as §11.4.135 guards — the live Mullvad round-trip stays
 operator-gated (§J COMPLEMENTS, never replaces). <strong>Tally:</strong>
-4 PASS-now foundation · 4 §J PASS-now hermetic autonomous protocol
-promotions (+ email in-progress) · 16 live round-trips operator-gated
-SKIP/OPERATOR-BLOCKED · 1 Won't-fix. Composes §11.4.3 / §11.4.6 /
-§11.4.10 / §11.4.28 / §11.4.44 / §11.4.45 / §11.4.52 / §11.4.56 /
-§11.4.68 / §11.4.69 / §11.4.107 / §11.4.108 / §11.4.111 / §11.4.112 /
-§11.4.115 / §11.4.122 / §11.4.133 / §11.4.142 / §11.4.147 / §11.4.153 /
-§11.4.167 / §11.4.169 / §11.4.174.</p>
+4 PASS-now foundation · 5 §J PASS-now hermetic rows (1 WG substrate</p>
+<ul>
+<li>4 autonomous protocol promotions: Cast-eureka/FTP/WebDAV/email) · 16
+live round-trips operator-gated SKIP/OPERATOR-BLOCKED · 1 Won't-fix.
+Composes §11.4.3 / §11.4.6 / §11.4.10 / §11.4.28 / §11.4.44 / §11.4.45 /
+§11.4.52 / §11.4.56 / §11.4.68 / §11.4.69 / §11.4.107 / §11.4.108 /
+§11.4.111 / §11.4.112 / §11.4.115 / §11.4.122 / §11.4.133 / §11.4.142 /
+§11.4.147 / §11.4.153 / §11.4.167 / §11.4.169 / §11.4.174.</li>
+</ul>
 </body>
 </html>
