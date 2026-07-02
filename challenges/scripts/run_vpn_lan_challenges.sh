@@ -77,18 +77,25 @@ if command -v ionice >/dev/null 2>&1; then CAPS="$CAPS ionice -c 3"; fi
 
 DOCTOR="$REPO_ROOT/scripts/svord_doctor.sh"
 
-# Protocol test scripts, in dependency order. Each entry is "LABEL|relpath".
+# VPN-LAN test scripts, in dependency order. Each entry is "LABEL|relpath".
 # smb_nfs covers SMB/CIFS/NMB + NFS; ftp_sftp_webdav covers FTP/FTPS + SFTP +
 # WebDAV; email covers IMAP(S)/SMTP-submission/POP3(S). chromecast_dial (Phase 6)
 # and adb_over_vpn (Phase 7) are listed but honestly SKIP when their script is
 # not yet authored — an unbuilt protocol test is SKIP, never a fake PASS and
-# never a FAIL (§11.4.3 / §11.4.6).
+# never a FAIL (§11.4.3 / §11.4.6). container_boot (Phase 10 containers
+# boot-readiness) and discovery_reflect (Phase 5 mDNS/SSDP reflector) are
+# helper-service readiness probes: each honestly SKIPs (exit 0, no ^PASS:) while
+# the svord bridge / container runtime / avahi-browse are absent, flipping to a
+# real PASS only when its capability is genuinely up (§11.4.3 / §11.4.6) —
+# closing the §11.4.135 orphan gap (they were runnable but wired into nothing).
 PROTOCOL_ITEMS="\
 SMB_NFS|tests/vpn_lan/smb_nfs_roundtrip.sh
 FTP_SFTP_WEBDAV|tests/vpn_lan/ftp_sftp_webdav.sh
 EMAIL|tests/vpn_lan/email_roundtrip.sh
 CHROMECAST_DIAL|tests/vpn_lan/chromecast_dial.sh
-ADB_OVER_VPN|tests/vpn_lan/adb_over_vpn.sh"
+ADB_OVER_VPN|tests/vpn_lan/adb_over_vpn.sh
+CONTAINER_BOOT|tests/vpn_lan/container_boot.sh
+DISCOVERY_REFLECT|tests/vpn_lan/discovery_reflect.sh"
 
 N_PASS=0; N_FAIL=0; N_SKIP=0
 RESULT_LINES=""
