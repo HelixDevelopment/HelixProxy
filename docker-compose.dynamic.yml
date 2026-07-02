@@ -155,7 +155,16 @@ services:
       # kill-switch (operator may narrow this at P10).
       - FIREWALL_OUTBOUND_SUBNETS=${GLUETUN_OUTBOUND_SUBNETS:-}
     networks:
-      - proxy-dynamic
+      proxy-dynamic:
+        # MVP: the single representative gluetun answers to ALL rendered profile
+        # cache_peer names (the compiler renders `gluetun-<profile>`; the full
+        # deployment runs one gluetun per profile). Without these aliases squid's
+        # `cache_peer gluetun-<profile>` cannot resolve and every routed target
+        # fail-closes 503 (§11.4.6/§11.4.68).
+        aliases:
+          - gluetun-eu-wg-primary
+          - gluetun-apac-ovpn
+          - gluetun-us-wg-failover
     restart: unless-stopped
     healthcheck:
       # gluetun ships its own healthcheck binary; this control-server probe is
