@@ -189,6 +189,24 @@ topology (that stays the §11.4.3 operator-gated confirmation), and the peer's m
 + responses are controlled fixtures — it exercises the test's client-side dialog and
 verdict logic, not a full RFC-complete mail server.
 
+### Underlay-sniff differential — N/A for this harness (§11.4.107 / FINDINGS §7.1)
+
+The sibling `hermetic_{bridge,ftp,webdav}_run.sh` harnesses carry an AF_PACKET
+**underlay-sniff non-leak differential** — during the round-trip they capture on the
+underlay `veth0` and assert the per-run plaintext marker is ABSENT there while WG
+ciphertext (`0x04` to `:51820`) flows, with a `SNIFF_MUT=plain` golden-bad that emits
+the marker in cleartext so the "plaintext-absent" assertion is proven load-bearing.
+
+This differential is **deliberately NOT added to the email harness** (§11.4.6 honest
+boundary): the mail peer is **implicit-TLS** — `openssl s_client` wraps the payload in
+TLS *before* WireGuard encapsulates it, so the round-trip token is never in cleartext on
+the underlay **even if WG were absent**. "Plaintext-absent on the underlay" is therefore
+tautologically true regardless of the tunnel, so a sniff here would be a §11.4-forbidden
+**vacuous/bluff test** (green for the TLS reason, not the WG reason) that a `SNIFF_MUT=
+plain` tooth could not rescue. Email's tunnel-gating is instead proven by the overlay-only
+bind + the **§11.4.111 wrong-destination negative** (a fetch to the underlay `10.9.0.2`
+MUST fail) + the `wg show` rx/tx handshake counters.
+
 ## Prerequisites / SKIP
 
 bash, unshare+nsenter, iproute2 `ip` (wireguard link type), `wg`, host `wireguard`

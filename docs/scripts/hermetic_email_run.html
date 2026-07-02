@@ -520,6 +520,30 @@ peer's mailbox</p>
 client-side dialog and verdict logic, not a full RFC-complete mail
 server.</li>
 </ul>
+<h3
+id="underlay-sniff-differential--na-for-this-harness-114107--findings-71">Underlay-sniff
+differential — N/A for this harness (§11.4.107 / FINDINGS §7.1)</h3>
+<p>The sibling <code>hermetic_{bridge,ftp,webdav}_run.sh</code>
+harnesses carry an AF_PACKET <strong>underlay-sniff non-leak
+differential</strong> — during the round-trip they capture on the
+underlay <code>veth0</code> and assert the per-run plaintext marker is
+ABSENT there while WG ciphertext (<code>0x04</code> to
+<code>:51820</code>) flows, with a <code>SNIFF_MUT=plain</code>
+golden-bad that emits the marker in cleartext so the "plaintext-absent"
+assertion is proven load-bearing.</p>
+<p>This differential is <strong>deliberately NOT added to the email
+harness</strong> (§11.4.6 honest boundary): the mail peer is
+<strong>implicit-TLS</strong> — <code>openssl s_client</code> wraps the
+payload in TLS <em>before</em> WireGuard encapsulates it, so the
+round-trip token is never in cleartext on the underlay <strong>even if
+WG were absent</strong>. "Plaintext-absent on the underlay" is therefore
+tautologically true regardless of the tunnel, so a sniff here would be a
+§11.4-forbidden <strong>vacuous/bluff test</strong> (green for the TLS
+reason, not the WG reason) that a <code>SNIFF_MUT= plain</code> tooth
+could not rescue. Email's tunnel-gating is instead proven by the
+overlay-only bind + the <strong>§11.4.111 wrong-destination
+negative</strong> (a fetch to the underlay <code>10.9.0.2</code> MUST
+fail) + the <code>wg show</code> rx/tx handshake counters.</p>
 <h2 id="prerequisites--skip">Prerequisites / SKIP</h2>
 <p>bash, unshare+nsenter, iproute2 <code>ip</code> (wireguard link
 type), <code>wg</code>, host <code>wireguard</code> kernel module,

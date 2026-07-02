@@ -31,6 +31,20 @@
 #   eof while reading" => openssl exit 1 => the leg would silently SKIP instead of
 #   PASS. This gotcha is unique to the email leg (FTP/WebDAV drive curl).
 #
+# Underlay-sniff differential — N/A for this harness (§11.4.107 / FINDINGS §7.1,
+#   §11.4.6 honest boundary). The bridge/ftp/webdav harnesses carry an AF_PACKET
+#   underlay-sniff non-leak differential (assert the per-run plaintext marker is
+#   ABSENT on the underlay veth0 while WG ciphertext flows). It is DELIBERATELY NOT
+#   added here: this peer is IMPLICIT-TLS (openssl s_client wraps the payload in TLS
+#   BEFORE WireGuard encapsulates it), so the round-trip token is never in cleartext
+#   on the underlay EVEN IF WG were absent — "plaintext-absent on the underlay" is
+#   tautologically true regardless of the tunnel, so a sniff here would be a
+#   §11.4-forbidden vacuous/bluff test (green for the TLS reason, not the WG reason)
+#   that a SNIFF_MUT=plain tooth could not rescue. Email's tunnel-gating is instead
+#   proven by the overlay-only bind + the §11.4.111 wrong-destination negative
+#   (a fetch to the underlay 10.9.0.2 MUST fail) + the `wg show` rx/tx handshake
+#   counters. See docs/scripts/hermetic_email_run.md.
+#
 # Usage:
 #   tests/vpn_lan/hermetic_email_run.sh                    # PASS / SKIP / FAIL
 #   MAIL_MUT=openrelay tests/vpn_lan/hermetic_email_run.sh # §1.1 golden-bad: the
