@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -174,17 +178,20 @@
 <body>
 <h1 id="lets-encrypt-https--integration-status">Let's Encrypt HTTPS —
 Integration Status</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-07-01T11:42:00Z <strong>Status:</strong> In progress — Phases 0–3 +
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-07-02T16:33:00Z <strong>Status:</strong> In progress — Phases 0–3 +
 5 PASS: a REAL hermetic DNS-01 certificate is issued by local Pebble AND
 auto-renewed/rotated (S1→S2, new serial, zero-downtime swap), both
 cert-analyzer-verified + re-runnable + guarded. All autonomous LE phases
-are DONE. Phase 4 (LE staging) + Phase 6 (production cutover) remain
-OPERATOR-BLOCKED (design §9 real-domain gate).
-<strong>Authority:</strong> Inherits
-<code>constitution/Constitution.md</code> per §11.4.35. §11.4.45
-integration-status doc for the Let's Encrypt HTTPS workstream (task
-#59). <strong>Companion:</strong> design <a
+are DONE. <strong>The live-HTTPS half — Phase 4 (LE staging issuance) +
+Phase 6 (production cutover) — is OPERATOR-BLOCKED, reason
+"operator-deferred DNS (2026-07-02)"</strong> (the operator deferred
+live DNS on 2026-07-02; unblock = operator-provided LE account + DNS
+credentials). The hermetic Phase-3/5 issuance/rotation guards remain
+GREEN — only the live-cert half is deferred. <strong>Authority:</strong>
+Inherits <code>constitution/Constitution.md</code> per §11.4.35.
+§11.4.45 integration-status doc for the Let's Encrypt HTTPS workstream
+(task #59). <strong>Companion:</strong> design <a
 href="../LETSENCRYPT_HTTPS.md"><code>../LETSENCRYPT_HTTPS.md</code></a>
 · plan <a
 href="../LETSENCRYPT_HTTPS_PLAN.md"><code>../LETSENCRYPT_HTTPS_PLAN.md</code></a>
@@ -204,21 +211,46 @@ items (read first — §11.4.45 O(1) surface)</h2>
 <tbody>
 <tr>
 <td>Phase 4 — LE <strong>staging</strong> end-to-end (real DNS-01)</td>
-<td>Needs a real DNS provider + an API token stored as a Podman secret
-(§11.4.10 — value never in git/<code>.env</code>). Operator chose
-<em>defer real domain</em> (Phase 0).</td>
-<td>Operator provides the DNS provider name + a scoped API token, and
-names a test hostname.</td>
+<td><strong>operator-deferred DNS (2026-07-02)</strong> — the operator
+deferred live DNS on 2026-07-02. Also needs a real DNS provider + an API
+token stored as a Podman secret (§11.4.10 — value never in
+git/<code>.env</code>); the operator chose <em>defer real domain</em> at
+Phase 0 and <em>defer live DNS</em> on 2026-07-02.</td>
+<td>Operator provides an LE account + DNS credentials (DNS provider name
++ a scoped API token) and names a test hostname.</td>
 </tr>
 <tr>
 <td>Phase 6 — <strong>production</strong> cutover</td>
-<td>Real public domain, real DNS-01 for that domain, single
+<td><strong>operator-deferred DNS (2026-07-02)</strong> — depends on
+Phase 4; real public domain, real DNS-01 for that domain, single
 operator-gated go-live (design §9).</td>
-<td>Operator authorises the go-live with the real domain + token + host
-firewall opening.</td>
+<td>Operator authorises the go-live with the real domain + LE account +
+DNS token + host firewall opening.</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Operator-Block-Details (§11.4.21):</strong></p>
+<ul>
+<li><strong>WHAT:</strong> land the live-HTTPS half — Phase 4 (real
+LE-staging DNS-01 issuance) then Phase 6 (production cutover). Blocked
+as <code>OPERATOR-BLOCKED</code>, reason <strong>"operator-deferred DNS
+(2026-07-02)"</strong>.</li>
+<li><strong>WHY (self-resolution exhausted §11.4.21):</strong> (a) the
+autonomous half is already DONE — hermetic Phase-3 issuance + Phase-5
+renewal/rotation are cert-analyzer-verified, re-runnable, and guarded
+(GREEN); (b) live issuance requires an LE account + real DNS-provider
+API credentials that only the operator holds and that MUST NOT be
+fabricated (§11.4.10 / §11.4.6); (c) the operator explicitly deferred
+live DNS on 2026-07-02, so this is an operator decision, not an agent
+gap; (d) no captured fallback / topology substitute exists for a real
+public-CA cert on a real domain.</li>
+<li><strong>UNBLOCK CONDITION:</strong> operator provides an LE account
++ DNS credentials (DNS provider + scoped API token) and names the
+test/production hostname; then Phase 4 (staging) → Phase 6 (production)
+can be captured.</li>
+<li><strong>WHO:</strong> operator (<a
+href="mailto:milos85vasic.3rd@gmail.com">milos85vasic.3rd@gmail.com</a>).</li>
+</ul>
 <h2 id="operator-decisions-captured-phase-0--11466">Operator decisions
 captured (Phase 0 — §11.4.66)</h2>
 <table>
@@ -322,8 +354,9 @@ negative-SAN-reject + <strong>chain-to-this-run's-Pebble-CA</strong>;
 <tr>
 <td>4 — LE <strong>staging</strong> end-to-end (real DNS-01)</td>
 <td>Real LE staging endpoint + real DNS-01</td>
-<td>OPERATOR-BLOCKED</td>
-<td>needs DNS provider + token (§11.4.10)</td>
+<td>OPERATOR-BLOCKED — reason "operator-deferred DNS (2026-07-02)"</td>
+<td>operator deferred live DNS 2026-07-02; unblock = operator-provided
+LE account + DNS credentials (§11.4.10 / §11.4.21)</td>
 </tr>
 <tr>
 <td>5 — Renewal + rotation simulation (zero-downtime)</td>
@@ -344,8 +377,9 @@ production Caddy renews on its own schedule, no trigger needed</td>
 <tr>
 <td>6 — Production cutover + rollback runbook</td>
 <td>Real domain go-live</td>
-<td>OPERATOR-BLOCKED</td>
-<td>operator go-live gate (design §9)</td>
+<td>OPERATOR-BLOCKED — reason "operator-deferred DNS (2026-07-02)"</td>
+<td>depends on Phase 4; operator go-live gate (design §9) +
+operator-provided LE account + DNS credentials</td>
 </tr>
 </tbody>
 </table>
@@ -369,10 +403,12 @@ because certmagic v0.21.3 (and even Caddy ≥2.11.0 — source-proven
 <code>docs/research/caddy_2110_ari_refetch_20260701/</code>) offers no
 on-demand ARI re-fetch; in PRODUCTION Caddy renews on its own
 maintenance schedule with no trigger + no restart. NOT exercised
-(honestly): the real-domain paths — Phase 4 (LE staging)</p>
-<ul>
-<li>Phase 6 (production cutover) — wait on the operator gate; never a
-metadata-only PASS (§11.4 / §11.4.1).</li>
-</ul>
+(honestly): the real-domain / live-HTTPS paths — Phase 4 (LE staging) +
+Phase 6 (production cutover) — are OPERATOR-BLOCKED with reason
+<strong>"operator-deferred DNS (2026-07-02)"</strong> (the operator
+deferred live DNS on 2026-07-02); they wait on an operator-provided LE
+account + DNS credentials, never a metadata-only PASS (§11.4 / §11.4.1).
+The hermetic Phase-3/5 guards stay GREEN — only the live-cert half is
+deferred.</p>
 </body>
 </html>

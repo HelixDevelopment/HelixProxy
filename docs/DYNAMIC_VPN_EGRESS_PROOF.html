@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>DYNAMIC_VPN_EGRESS_PROOF</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -240,12 +244,29 @@
 <h1
 id="dynamic-vpn-egress-proof--operator-runbook-workable-item-54">Dynamic
 VPN Egress Proof — Operator Runbook (workable item #54)</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-01T06:42:00Z <strong>Audience:</strong> operator with real VPN
-(gluetun/WireGuard) credentials <strong>Harness:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-02T16:33:00Z <strong>Audience:</strong> operator with real VPN
+(gluetun/WireGuard) credentials</p>
+<blockquote>
+<p><strong>Update 2026-07-02 — credential gate CLEARED + live Mullvad
+egress PROVEN.</strong> A persistent one-device Mullvad WireGuard
+identity (device "groovy rabbit", id
+<code>df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2</code>) was registered via
+the current Mullvad app API and stored in the gitignored
+<code>.env</code> (§11.4.10; §11.4.10.A pre-store leak audit CLEAN).
+gluetun in rootless podman brought up a kernelspace WireGuard tunnel
+(relay <code>cz-prg-wg-101</code>) and
+<code>am.i.mullvad.net/json</code> returned
+<code>mullvad_exit_ip=true</code> (exit IP <code>146.70.129.117</code>,
+Prague, CZ). Evidence:
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>.
+The functional half below (egress <strong>via the proxy
+data-plane</strong>) is the remaining capture this runbook drives.
+<strong>Harness:</strong>
 <code>tests/egress_proof/real_vpn_egress_proof.sh</code>
 <strong>Companion:</strong>
 <code>docs/scripts/real_vpn_egress_proof.md</code></p>
+</blockquote>
 <h2 id="what-this-proves-and-what-is-already-proven">What this proves
 (and what is already proven)</h2>
 <p>The dynamic VPN-aware proxy has two halves:</p>
@@ -273,7 +294,11 @@ assertion <code>:174-176</code></td>
 <td>With real creds, a packet routes <strong>out through the
 tunnel</strong>; egress IP via proxy <strong>== tunnel exit</strong> and
 <strong>!= host IP</strong></td>
-<td><strong>CREDS-GATED</strong> — this runbook</td>
+<td><strong>CREDS IN PLACE — gluetun-level Mullvad egress PROVEN
+2026-07-02</strong> (<code>mullvad_exit_ip=true</code>,
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>);
+egress <strong>via the proxy data-plane</strong> is the remaining
+capture this runbook drives</td>
 <td><code>tests/egress_proof/real_vpn_egress_proof.sh</code> →
 <code>tests/lib/evidence.sh:assert_egress_ip:213</code></td>
 </tr>
@@ -284,9 +309,10 @@ WireGuard config (empty egress) on purpose, so it can prove fail-closed
 <strong>without</strong> any real key. The functional half is the only
 thing that needs <strong>your real credentials</strong> — Claude cannot
 and must not fabricate them (§11.4.10).</p>
-<p>Until you run this proof with real creds, the honest project
-statement is: <strong>"security proven / functional-egress
-creds-gated."</strong></p>
+<p>As of 2026-07-02 the credential gate is CLEARED and gluetun-level
+Mullvad egress is PROVEN (above). The honest project statement is now:
+<strong>"security proven / Mullvad egress identity + live tunnel proven
+/ proxy-data-plane egress capture pending this runbook."</strong></p>
 <h2 id="step-1--provide-credentials-never-committed-11410">Step 1 —
 Provide credentials (never committed, §11.4.10)</h2>
 <p>Real WireGuard keys live <strong>only</strong> in the gitignored

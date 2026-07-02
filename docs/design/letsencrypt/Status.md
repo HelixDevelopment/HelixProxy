@@ -1,8 +1,8 @@
 # Let's Encrypt HTTPS — Integration Status
 
-**Revision:** 3
-**Last modified:** 2026-07-01T11:42:00Z
-**Status:** In progress — Phases 0–3 + 5 PASS: a REAL hermetic DNS-01 certificate is issued by local Pebble AND auto-renewed/rotated (S1→S2, new serial, zero-downtime swap), both cert-analyzer-verified + re-runnable + guarded. All autonomous LE phases are DONE. Phase 4 (LE staging) + Phase 6 (production cutover) remain OPERATOR-BLOCKED (design §9 real-domain gate).
+**Revision:** 4
+**Last modified:** 2026-07-02T16:33:00Z
+**Status:** In progress — Phases 0–3 + 5 PASS: a REAL hermetic DNS-01 certificate is issued by local Pebble AND auto-renewed/rotated (S1→S2, new serial, zero-downtime swap), both cert-analyzer-verified + re-runnable + guarded. All autonomous LE phases are DONE. **The live-HTTPS half — Phase 4 (LE staging issuance) + Phase 6 (production cutover) — is OPERATOR-BLOCKED, reason "operator-deferred DNS (2026-07-02)"** (the operator deferred live DNS on 2026-07-02; unblock = operator-provided LE account + DNS credentials). The hermetic Phase-3/5 issuance/rotation guards remain GREEN — only the live-cert half is deferred.
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.45 integration-status doc for the Let's Encrypt HTTPS workstream (task #59).
 **Companion:** design [`../LETSENCRYPT_HTTPS.md`](../LETSENCRYPT_HTTPS.md) · plan [`../LETSENCRYPT_HTTPS_PLAN.md`](../LETSENCRYPT_HTTPS_PLAN.md) · summary [`Status_Summary.md`](Status_Summary.md)
 
@@ -10,8 +10,14 @@
 
 | Item | Why blocked | Unblock condition |
 |---|---|---|
-| Phase 4 — LE **staging** end-to-end (real DNS-01) | Needs a real DNS provider + an API token stored as a Podman secret (§11.4.10 — value never in git/`.env`). Operator chose *defer real domain* (Phase 0). | Operator provides the DNS provider name + a scoped API token, and names a test hostname. |
-| Phase 6 — **production** cutover | Real public domain, real DNS-01 for that domain, single operator-gated go-live (design §9). | Operator authorises the go-live with the real domain + token + host firewall opening. |
+| Phase 4 — LE **staging** end-to-end (real DNS-01) | **operator-deferred DNS (2026-07-02)** — the operator deferred live DNS on 2026-07-02. Also needs a real DNS provider + an API token stored as a Podman secret (§11.4.10 — value never in git/`.env`); the operator chose *defer real domain* at Phase 0 and *defer live DNS* on 2026-07-02. | Operator provides an LE account + DNS credentials (DNS provider name + a scoped API token) and names a test hostname. |
+| Phase 6 — **production** cutover | **operator-deferred DNS (2026-07-02)** — depends on Phase 4; real public domain, real DNS-01 for that domain, single operator-gated go-live (design §9). | Operator authorises the go-live with the real domain + LE account + DNS token + host firewall opening. |
+
+**Operator-Block-Details (§11.4.21):**
+- **WHAT:** land the live-HTTPS half — Phase 4 (real LE-staging DNS-01 issuance) then Phase 6 (production cutover). Blocked as `OPERATOR-BLOCKED`, reason **"operator-deferred DNS (2026-07-02)"**.
+- **WHY (self-resolution exhausted §11.4.21):** (a) the autonomous half is already DONE — hermetic Phase-3 issuance + Phase-5 renewal/rotation are cert-analyzer-verified, re-runnable, and guarded (GREEN); (b) live issuance requires an LE account + real DNS-provider API credentials that only the operator holds and that MUST NOT be fabricated (§11.4.10 / §11.4.6); (c) the operator explicitly deferred live DNS on 2026-07-02, so this is an operator decision, not an agent gap; (d) no captured fallback / topology substitute exists for a real public-CA cert on a real domain.
+- **UNBLOCK CONDITION:** operator provides an LE account + DNS credentials (DNS provider + scoped API token) and names the test/production hostname; then Phase 4 (staging) → Phase 6 (production) can be captured.
+- **WHO:** operator (milos85vasic.3rd@gmail.com).
 
 ## Operator decisions captured (Phase 0 — §11.4.66)
 
@@ -30,9 +36,9 @@
 | 1 — Custom Caddy image w/ DNS-01 provider module | Build a rootless Caddy image bundling the local `dns.providers.challtestsrv` module (§11.4.161) | PASS | `build.sh` built `localhost/helix_proxy/caddy-challtestsrv:2.8.4`; post-build anti-bluff check `caddy list-modules \| grep dns.providers.challtestsrv` PASS (a build ≠ module linked, §11.4.6); `qa-results/letsencrypt/build/` |
 | 2 — Compose service + Podman secret + cert volume + CoreDNS SOA front | Wire Caddy + CoreDNS (zone-determination fix) + secret NAME/PATH (no value) + persistent cert volume | PASS | `compose.hermetic.yml` (4 services; `PEBBLE_VA_ALWAYS_VALID=0`; secrets commented for hermetic; caddy loopback-bound per security-audit M1); CoreDNS answers `hermetic.test` SOA, forwards `_acme-challenge` TXT to challtestsrv |
 | 3 — Hermetic local-ACME with Pebble (anti-bluff core) | Caddy issues a REAL cert against local Pebble via DNS-01, fully offline; cert-analyzer asserts the served leaf | PASS | re-runnable `phase3_hermetic_issue.sh` → 2 clean runs each issued a real cert (Pebble VA_ALWAYS_VALID=0 genuine validation); cert-analyzer PASS: not_expired + SAN `proxy.hermetic.test` + negative-SAN-reject + **chain-to-this-run's-Pebble-CA**; `qa-results/letsencrypt/phase3_issuance/20260701T100119Z/` + `…T100434Z/` |
-| 4 — LE **staging** end-to-end (real DNS-01) | Real LE staging endpoint + real DNS-01 | OPERATOR-BLOCKED | needs DNS provider + token (§11.4.10) |
+| 4 — LE **staging** end-to-end (real DNS-01) | Real LE staging endpoint + real DNS-01 | OPERATOR-BLOCKED — reason "operator-deferred DNS (2026-07-02)" | operator deferred live DNS 2026-07-02; unblock = operator-provided LE account + DNS credentials (§11.4.10 / §11.4.21) |
 | 5 — Renewal + rotation simulation (zero-downtime) | Force the ARI renewal window → Caddy renews via the ACME renewal path → analyzer confirms the new cert; 0 dropped across the swap | PASS | re-runnable `phase5_rotation.sh`: S1→S2 (new serial, later notBefore), caddy log `certificate needs renewal based on ARI window`→`renewed successfully`, swap `ok=6 fails=0`, cert-analyzer PASS (S2→per-run Pebble CA); guard `phase5_rotation_guard.sh` RED+GREEN proven (wired in run-tests.sh); `qa-results/letsencrypt/phase5_rotation/`. Trigger mechanism (storage-surgery on the cached ARI + restart) is source-justified in `docs/research/caddy_2110_ari_refetch_20260701/` — in production Caddy renews on its own schedule, no trigger needed |
-| 6 — Production cutover + rollback runbook | Real domain go-live | OPERATOR-BLOCKED | operator go-live gate (design §9) |
+| 6 — Production cutover + rollback runbook | Real domain go-live | OPERATOR-BLOCKED — reason "operator-deferred DNS (2026-07-02)" | depends on Phase 4; operator go-live gate (design §9) + operator-provided LE account + DNS credentials |
 
 ## Honest boundary (§11.4.6)
 
@@ -49,6 +55,8 @@ the cert-analyzer verifies the new leaf. Both are re-runnable (§11.4.98/§11.4.
 storage-surgery on the cached ARI window + a Caddy restart because certmagic v0.21.3 (and even
 Caddy ≥2.11.0 — source-proven `docs/research/caddy_2110_ari_refetch_20260701/`) offers no
 on-demand ARI re-fetch; in PRODUCTION Caddy renews on its own maintenance schedule with no
-trigger + no restart. NOT exercised (honestly): the real-domain paths — Phase 4 (LE staging)
-+ Phase 6 (production cutover) — wait on the operator gate; never a metadata-only PASS
-(§11.4 / §11.4.1).
+trigger + no restart. NOT exercised (honestly): the real-domain / live-HTTPS paths — Phase 4
+(LE staging) + Phase 6 (production cutover) — are OPERATOR-BLOCKED with reason
+**"operator-deferred DNS (2026-07-02)"** (the operator deferred live DNS on 2026-07-02); they
+wait on an operator-provided LE account + DNS credentials, never a metadata-only PASS
+(§11.4 / §11.4.1). The hermetic Phase-3/5 guards stay GREEN — only the live-cert half is deferred.

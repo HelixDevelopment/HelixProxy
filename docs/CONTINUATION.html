@@ -179,11 +179,41 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 24 <strong>Last modified:</strong>
-2026-07-02T13:29:30Z <strong>Status:</strong> Active — <strong>§11.4.126
-autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
-"3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-24 wave (HEAD
+<p><strong>Revision:</strong> 25 <strong>Last modified:</strong>
+2026-07-02T16:33:00Z <strong>Status:</strong> Active — <strong>Rev-25
+wave (2026-07-02): two operator directives DOCUMENTED.</strong>
+<strong>(Part 1) Mullvad WireGuard egress — COMPLETE:</strong> a
+persistent ONE-DEVICE Mullvad WireGuard identity was registered against
+the operator's Mullvad account via the current app API
+(<code>POST /auth/v1/token</code> →
+<code>POST /accounts/v1/devices</code>; the legacy <code>/wg</code>
+endpoint is deprecated), device "groovy rabbit" (id
+<code>df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2</code>), creds stored in the
+gitignored <code>.env</code> (<code>VPN_SERVICE_PROVIDER=mullvad</code>
++ WireGuard key + assigned address — §11.4.10; §11.4.10.A pre-store leak
+audit CLEAN, 0 tree/history leaks). <strong>LIVE EGRESS PROVEN:</strong>
+gluetun in rootless podman brought up a kernelspace WireGuard tunnel
+(relay <code>cz-prg-wg-101</code>) and
+<code>am.i.mullvad.net/json</code> returned
+<code>mullvad_exit_ip=true</code> (exit IP <code>146.70.129.117</code>,
+Prague, Czech Republic); "one same device" is guaranteed by reusing the
+persistent private key; host routing untouched (§11.4.174), verification
+container torn down (§11.4.14). Evidence:
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>.
+This RESOLVES the P10 real-VPN-egress §11.4.21 operator gate
+(<code>docs/design/hardening/Status.md</code> Rev 7); the full
+proxy-data-plane-through-gluetun e2e + up→drop tcpdump killswitch half
+remain the next step (§3 OWED-TO-P10). <strong>(Part 4) live DNS
+DEFERRED by the operator (2026-07-02):</strong> Let's Encrypt Phase 4/6
+(live HTTPS issuance/renewal/rotation) stays <strong>OPERATOR-BLOCKED,
+reason "operator-deferred DNS (2026-07-02)"</strong>, unblock =
+operator-provided LE account + DNS credentials
+(<code>docs/design/letsencrypt/Status.md</code> Rev 4); the hermetic
+Phase-3/5 issuance/rotation guards remain GREEN — only the live-cert
+half is deferred. <strong>(prior)</strong> <strong>§11.4.126 autonomous
+loop</strong> (operator: "keep hardening, don't tag yet" + "3-4 parallel
+subagents, rock-solid evidence, no bluff" + <strong>"all future work on
+<code>main</code>"</strong>). <strong>Rev-24 wave (HEAD
 <code>860d38e</code>, branch <code>main</code>, FF to origin):</strong>
 <strong>anti-bluff audit ledger CLOSED + core evidence library provably
 audited.</strong> <code>c44e90c</code> <strong>#74/#75</strong> (F-C
@@ -1247,12 +1277,25 @@ unchanged</strong>; deterministic ×3 + RED-polarity guard. Evidence
 the tunnel is down).</li>
 </ul>
 <h3
-id="owed-to-p10-real-vpn-egress-half--operator-gated-on-gluetun-wg-creds">OWED-TO-P10
-(real-VPN-egress half — operator-gated on gluetun WG creds)</h3>
-<p>Requires real gluetun WireGuard credentials (§11.4.21); still
-<strong>unproven live</strong>:</p>
+id="owed-to-p10-real-vpn-egress-half--credential-gate-cleared-2026-07-02-proxy-data-plane-e2e-still-owed">OWED-TO-P10
+(real-VPN-egress half — credential gate CLEARED 2026-07-02;
+proxy-data-plane e2e still owed)</h3>
+<p><strong>UPDATE 2026-07-02 (§11.4.7):</strong> the
+gluetun-WireGuard-credential gate that blocked this whole section is
+<strong>RESOLVED</strong> — a persistent one-device Mullvad WireGuard
+identity is registered + stored (§11.4.10, gitignored
+<code>.env</code>), and <strong>live Mullvad egress is PROVEN via
+gluetun</strong> (rootless podman kernelspace WG tunnel, relay
+<code>cz-prg-wg-101</code>, <code>am.i.mullvad.net/json</code> →
+<code>mullvad_exit_ip=true</code>, exit IP <code>146.70.129.117</code>
+Prague CZ; evidence
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>).
+What remains owed is the PROXY-data-plane half + the up→drop tcpdump
+killswitch:</p>
 <ul>
-<li><code>vpn_real_egress</code> — egress IP via proxy
+<li><code>vpn_real_egress</code> — <strong>gluetun-level PROVEN</strong>
+(<code>mullvad_exit_ip=true</code> above); still owed: egress IP
+<strong>via the proxy data-plane</strong>
 <code>== tunnel exit &amp;&amp; != host IP</code> <strong>+
 <code>wg transfer</code> Δ</strong> (200 OK is not routing).</li>
 <li><code>no_leak / killswitch</code> (up→drop case) — drop a
@@ -1311,7 +1354,11 @@ vendoring operator-gated (6 siblings)</td>
 <td><strong>live <code>dynamic</code>-mode boot + captured data-plane
 evidence = the usability proof</strong></td>
 <td>✅ <strong>fail-closed half GREEN</strong> (<code>567c9e1</code>);
-real-egress half operator-gated (gluetun WG creds §11.4.21)</td>
+real-egress §11.4.21 credential gate <strong>RESOLVED
+2026-07-02</strong> — persistent Mullvad WG identity stored (§11.4.10) +
+live gluetun egress PROVEN (<code>mullvad_exit_ip=true</code>,
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>);
+proxy-data-plane-through-gluetun e2e = next step</td>
 </tr>
 <tr>
 <td><strong>P11</strong></td>
@@ -1454,14 +1501,22 @@ and guarded (<code>tests/letsencrypt/phase3_issuance_guard.sh</code> +
 <code>deploy/letsencrypt/build.sh</code>; cert-analyzer self-test 37→55
 (<code>8833ccc</code>). Phase 4 (LE-staging token §11.4.10)
 <ul>
-<li>Phase 6 (prod domain) OPERATOR-BLOCKED. Docs
-<code>docs/design/letsencrypt/Status.md</code>.</li>
+<li>Phase 6 (prod domain) OPERATOR-BLOCKED, <strong>reason
+"operator-deferred DNS (2026-07-02)"</strong> — operator deferred live
+DNS 2026-07-02; unblock = operator-provided LE account + DNS credentials
+(§11.4.21 Operator-Block-Details in the Status doc). The hermetic
+Phase-3/5 guards stay GREEN. Docs
+<code>docs/design/letsencrypt/Status.md</code> (Rev 4).</li>
 </ul></li>
 <li><strong>Operator-gated queue (surface, don't autonomously
 break):</strong> 2 TRACKED security items (Squid
 <code>dns_nameservers</code> DNS-leak, Dante client-side open-relay —
-both connectivity-risk §11.4.101); LE Phase 4/6; P10 real-egress
-(gluetun creds); HelixQA vendoring (6 un-vendored siblings,
+both connectivity-risk §11.4.101); <strong>LE Phase 4/6 — reason
+"operator-deferred DNS (2026-07-02)"</strong> (unblock = operator LE
+account + DNS creds); <strong>P10 real-egress — §11.4.21 credential gate
+RESOLVED 2026-07-02</strong> (Mullvad WG identity stored + live gluetun
+egress PROVEN; proxy-data-plane e2e still owed, §3 OWED-TO-P10); HelixQA
+vendoring (6 un-vendored siblings,
 <code>docs/helixqa/UNBLOCK.md</code>); the release tag
 <code>helix_proxy-0.1.0-dev-0.0.2</code> (operator said don't tag
 yet).</li>

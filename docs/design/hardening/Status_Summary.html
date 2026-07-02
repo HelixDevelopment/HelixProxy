@@ -178,13 +178,21 @@
 <body>
 <h1 id="proxy-hardening--status-summary">Proxy Hardening — Status
 Summary</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-07-02T12:57:04Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-07-02T16:33:00Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).
-<strong>Rev 5:</strong> the §11.4.169 DDoS / stress+chaos / memory rows
-now ALSO cover the <strong>Go control-plane</strong> server — the prior
-evidence was data-plane Squid only; in-process httptest tests landed #67
-(DDoS <code>0c51f61</code>, memory-soak <code>ceb4839</code>, chaos
+<strong>Rev 7 (2026-07-02):</strong> the P10 real-VPN egress-half is
+RESOLVED — a persistent one-device Mullvad WireGuard identity is
+registered + stored (§11.4.10, gitignored <code>.env</code>) and live
+Mullvad egress is PROVEN via gluetun (<code>mullvad_exit_ip=true</code>,
+exit IP <code>146.70.129.117</code> Prague CZ, relay
+<code>cz-prg-wg-101</code>; evidence
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>),
+clearing the prior §11.4.21 operator-gated SKIP. <strong>Rev 5:</strong>
+the §11.4.169 DDoS / stress+chaos / memory rows now ALSO cover the
+<strong>Go control-plane</strong> server — the prior evidence was
+data-plane Squid only; in-process httptest tests landed #67 (DDoS
+<code>0c51f61</code>, memory-soak <code>ceb4839</code>, chaos
 <code>159fcbc</code>), each calibrated-not-hardcoded, §1.1-load-bearing,
 independently reviewed. Also: the security-guard group-verdict F1
 over-claim (green named S4 while S4 SKIPped) was fixed +
@@ -251,11 +259,19 @@ difference. This previously had to be skipped because the client-side
 result code was ambiguous; reading the proxy's own log removed the
 ambiguity.</li>
 </ul>
-<p><strong>What is still honestly skipped:</strong></p>
+<p><strong>Newly proven this round (was the last honest
+skip):</strong></p>
 <ul>
-<li><strong>Real-VPN egress proof</strong> (that traffic actually exits
-<em>through</em> the tunnel) needs the operator's VPN credentials —
-honestly skipped, not faked.</li>
+<li><strong>Real-VPN egress proof (the big remaining one):</strong> we
+registered a permanent, single-device VPN identity on the operator's
+Mullvad account and confirmed — through Mullvad's own "am I Mullvad?"
+check — that traffic really does exit <strong>through the VPN
+tunnel</strong> in Prague, Czech Republic. This used to be skipped
+because it needed the operator's VPN credentials; those are now in place
+(kept private, never in the code), so this is proven with saved
+evidence. (The one remaining engineering step is wiring the full proxy
+so that everyday proxy traffic flows through this tunnel end-to-end —
+the tunnel itself is proven.)</li>
 </ul>
 <p><strong>Also proven this round:</strong> the proxy's own unit tests
 all pass (control-plane, every package), and the live Challenge bank
@@ -266,9 +282,9 @@ code — we verified it holds.</p>
 <p><strong>Bottom line:</strong> ten hardening/coverage dimensions —
 including the critical VPN fail-closed safety guarantee and the
 access-control leak test now proven via the proxy's own log — are proven
-solid with saved evidence; the remaining honest skips are the real-VPN
-egress proof (operator credentials) and the HelixQA bank (a buildable QA
-binary). No result is overstated.</p>
+solid with saved evidence; the real-VPN egress proof is now proven too
+(the Mullvad VPN identity is in place), leaving one honest skip — the
+HelixQA bank (a buildable QA binary). No result is overstated.</p>
 <hr />
 <h2 id="page-2--for-software-engineers">Page 2 — For software
 engineers</h2>
@@ -329,8 +345,11 @@ Wired into standing suite (§11.4.135)</td>
 <td><code>qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt</code>
 — tunnel DOWN ⇒ branded 503 <code>ERR_TUNNEL_DOWN</code> ×3,
 <code>leak_seen=0</code>, Squid PID unchanged; deterministic ×3 + RED
-polarity guard (§11.4.50/§11.4.115). Egress-half operator-gated SKIP
-(§11.4.21)</td>
+polarity guard (§11.4.50/§11.4.115). Egress-half now PROVEN (§11.4.7 —
+Mullvad identity registered + stored §11.4.10;
+<code>mullvad_exit_ip=true</code> via relay <code>cz-prg-wg-101</code>,
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>),
+clearing the prior §11.4.21 gate</td>
 </tr>
 <tr>
 <td>Race / deadlock</td>

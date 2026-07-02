@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status_Summary</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -174,9 +178,15 @@
 <body>
 <h1 id="lets-encrypt-https--status-summary">Let's Encrypt HTTPS — Status
 Summary</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-07-01T11:42:00Z <strong>Status:</strong> Companion summary of <a
-href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-07-02T16:33:00Z <strong>Status:</strong> Companion summary of <a
+href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).
+<strong>Rev 4 (2026-07-02):</strong> the live-HTTPS half (Phase 4
+LE-staging + Phase 6 production) is OPERATOR-BLOCKED, reason
+<strong>"operator-deferred DNS (2026-07-02)"</strong> — the operator
+deferred live DNS; unblock = operator-provided LE account + DNS
+credentials. The hermetic Phase-3/5 issuance/rotation guards stay GREEN
+— only the live-cert half is deferred.</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
 For the operator / stakeholders (plain language)</h2>
@@ -211,14 +221,17 @@ certificate up to date on its own, with no downtime.</p></li>
 </ul>
 <p><strong>What's still pending / needs you:</strong></p>
 <ul>
-<li><strong>Going live on the real domain</strong> needs you to provide
-a DNS provider API token and give the go-ahead. Until then nothing
+<li><strong>Going live on the real domain is on hold at your request —
+you deferred live DNS on 2026-07-02.</strong> When you're ready, it
+needs you to provide a Let's Encrypt account plus a DNS provider API
+token (your DNS credentials) and give the go-ahead. Until then nothing
 touches production.</li>
 </ul>
 <p><strong>Bottom line:</strong> the foundation, the safety-checker,
 real end-to-end certificate issuance, AND automatic zero-downtime
 renewal are all done and proven on this machine; only the real-domain
-go-live waits on your go-ahead.</p>
+go-live remains — deferred at your request (live DNS) on 2026-07-02,
+waiting on your Let's Encrypt account + DNS credentials.</p>
 <hr />
 <h2 id="page-2--for-software-engineers">Page 2 — For software
 engineers</h2>
@@ -284,9 +297,12 @@ cert-analyzer verifies the new leaf (chain to per-run Pebble CA). Guard
 — even ≥v0.25.1/Caddy ≥2.11.0 — has no on-demand ARI re-fetch;
 production renews on its own schedule). Evidence
 <code>qa-results/letsencrypt/phase5_rotation/</code>.</li>
-<li><strong>OPERATOR-BLOCKED:</strong> Phase 4 LE-staging (real DNS-01
-token §11.4.10), Phase 6 prod cutover (real-domain go-live gate, design
-§9).</li>
+<li><strong>OPERATOR-BLOCKED — reason "operator-deferred DNS
+(2026-07-02)" (§11.4.21):</strong> Phase 4 LE-staging (real DNS-01 token
+§11.4.10) + Phase 6 prod cutover (real-domain go-live gate, design §9).
+Operator deferred live DNS on 2026-07-02; unblock = operator-provided LE
+account + DNS credentials. Full §11.4.21 Operator-Block-Details in
+<code>Status.md</code>.</li>
 <li><strong>Guard wiring:</strong>
 <code>cert_analyzer_selfvalidation_test.sh</code> registered; the
 Phase-3 issuance guard

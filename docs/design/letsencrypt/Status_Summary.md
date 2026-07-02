@@ -1,8 +1,8 @@
 # Let's Encrypt HTTPS — Status Summary
 
-**Revision:** 3
-**Last modified:** 2026-07-01T11:42:00Z
-**Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
+**Revision:** 4
+**Last modified:** 2026-07-02T16:33:00Z
+**Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience). **Rev 4 (2026-07-02):** the live-HTTPS half (Phase 4 LE-staging + Phase 6 production) is OPERATOR-BLOCKED, reason **"operator-deferred DNS (2026-07-02)"** — the operator deferred live DNS; unblock = operator-provided LE account + DNS credentials. The hermetic Phase-3/5 issuance/rotation guards stay GREEN — only the live-cert half is deferred.
 
 ---
 
@@ -34,12 +34,15 @@ to babysit) and the **DNS-01** method so it works even without opening ports on 
 
 **What's still pending / needs you:**
 
-- **Going live on the real domain** needs you to provide a DNS provider API token and give the
-  go-ahead. Until then nothing touches production.
+- **Going live on the real domain is on hold at your request — you deferred live DNS on
+  2026-07-02.** When you're ready, it needs you to provide a Let's Encrypt account plus a DNS
+  provider API token (your DNS credentials) and give the go-ahead. Until then nothing touches
+  production.
 
 **Bottom line:** the foundation, the safety-checker, real end-to-end certificate issuance, AND
 automatic zero-downtime renewal are all done and proven on this machine; only the real-domain
-go-live waits on your go-ahead.
+go-live remains — deferred at your request (live DNS) on 2026-07-02, waiting on your Let's
+Encrypt account + DNS credentials.
 
 ---
 
@@ -79,7 +82,7 @@ go-live waits on your go-ahead.
   trigger is source-justified (`docs/research/caddy_2110_ari_refetch_20260701/`: certmagic — even
   ≥v0.25.1/Caddy ≥2.11.0 — has no on-demand ARI re-fetch; production renews on its own schedule).
   Evidence `qa-results/letsencrypt/phase5_rotation/`.
-- **OPERATOR-BLOCKED:** Phase 4 LE-staging (real DNS-01 token §11.4.10), Phase 6 prod cutover (real-domain go-live gate, design §9).
+- **OPERATOR-BLOCKED — reason "operator-deferred DNS (2026-07-02)" (§11.4.21):** Phase 4 LE-staging (real DNS-01 token §11.4.10) + Phase 6 prod cutover (real-domain go-live gate, design §9). Operator deferred live DNS on 2026-07-02; unblock = operator-provided LE account + DNS credentials. Full §11.4.21 Operator-Block-Details in `Status.md`.
 - **Guard wiring:** `cert_analyzer_selfvalidation_test.sh` registered; the Phase-3 issuance guard
   (`tests/letsencrypt/phase3_issuance_guard.sh`) + LE Challenge land with this lane (§11.4.135).
 - **Anti-bluff:** every non-PASS row is honestly PENDING/OPERATOR-BLOCKED (§11.4.6) — no

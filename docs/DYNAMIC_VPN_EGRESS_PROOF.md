@@ -1,8 +1,17 @@
 # Dynamic VPN Egress Proof — Operator Runbook (workable item #54)
 
-**Revision:** 1
-**Last modified:** 2026-07-01T06:42:00Z
+**Revision:** 2
+**Last modified:** 2026-07-02T16:33:00Z
 **Audience:** operator with real VPN (gluetun/WireGuard) credentials
+
+> **Update 2026-07-02 — credential gate CLEARED + live Mullvad egress PROVEN.** A persistent
+> one-device Mullvad WireGuard identity (device "groovy rabbit", id
+> `df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2`) was registered via the current Mullvad app API and
+> stored in the gitignored `.env` (§11.4.10; §11.4.10.A pre-store leak audit CLEAN). gluetun in
+> rootless podman brought up a kernelspace WireGuard tunnel (relay `cz-prg-wg-101`) and
+> `am.i.mullvad.net/json` returned `mullvad_exit_ip=true` (exit IP `146.70.129.117`, Prague, CZ).
+> Evidence: `qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt`. The functional
+> half below (egress **via the proxy data-plane**) is the remaining capture this runbook drives.
 **Harness:** `tests/egress_proof/real_vpn_egress_proof.sh`
 **Companion:** `docs/scripts/real_vpn_egress_proof.md`
 
@@ -13,14 +22,15 @@ The dynamic VPN-aware proxy has two halves:
 | Half | Claim | Status | Evidence |
 |---|---|---|---|
 | **Security (fail-closed)** | Tunnel down → branded `503`, **no leak**; healthd writes `DOWN` | **PROVEN** (no creds needed) | `control-plane/cmd/healthd/healthd_integration_test.go:134` (`TestIntegration_HealthdWritesDownAgainstRealGluetun`), assertion `:174-176` |
-| **Functional (real egress)** | With real creds, a packet routes **out through the tunnel**; egress IP via proxy **== tunnel exit** and **!= host IP** | **CREDS-GATED** — this runbook | `tests/egress_proof/real_vpn_egress_proof.sh` → `tests/lib/evidence.sh:assert_egress_ip:213` |
+| **Functional (real egress)** | With real creds, a packet routes **out through the tunnel**; egress IP via proxy **== tunnel exit** and **!= host IP** | **CREDS IN PLACE — gluetun-level Mullvad egress PROVEN 2026-07-02** (`mullvad_exit_ip=true`, `qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt`); egress **via the proxy data-plane** is the remaining capture this runbook drives | `tests/egress_proof/real_vpn_egress_proof.sh` → `tests/lib/evidence.sh:assert_egress_ip:213` |
 
 The security half uses a **FAKE** length-shaped WireGuard config (empty egress) on purpose,
 so it can prove fail-closed **without** any real key. The functional half is the only thing
 that needs **your real credentials** — Claude cannot and must not fabricate them (§11.4.10).
 
-Until you run this proof with real creds, the honest project statement is:
-**"security proven / functional-egress creds-gated."**
+As of 2026-07-02 the credential gate is CLEARED and gluetun-level Mullvad egress is PROVEN
+(above). The honest project statement is now:
+**"security proven / Mullvad egress identity + live tunnel proven / proxy-data-plane egress capture pending this runbook."**
 
 ## Step 1 — Provide credentials (never committed, §11.4.10)
 

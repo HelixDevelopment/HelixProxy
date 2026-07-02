@@ -178,10 +178,18 @@
 <body>
 <h1 id="proxy-hardening--test-type-coverage-status">Proxy Hardening —
 Test-Type Coverage Status</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-07-02T12:57:04Z <strong>Status:</strong> In progress — 10 test
-types PASS with captured live evidence (unit [control-plane, all pkgs
-pass], stress+chaos, DDoS, concurrency/atomicity, memory-soak,
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-07-02T16:33:00Z <strong>Status:</strong> In progress — <strong>Rev
+7 (2026-07-02): the P10 real-VPN egress-half operator gate is RESOLVED —
+live Mullvad WireGuard egress is now PROVEN</strong> (persistent
+one-device Mullvad identity registered + stored §11.4.10; gluetun in
+rootless podman brought up a kernelspace WireGuard tunnel via relay
+<code>cz-prg-wg-101</code> and <code>am.i.mullvad.net/json</code>
+returned <code>mullvad_exit_ip=true</code>, exit IP
+<code>146.70.129.117</code>, Prague CZ; evidence
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>).
+10 test types PASS with captured live evidence (unit [control-plane, all
+pkgs pass], stress+chaos, DDoS, concurrency/atomicity, memory-soak,
 <strong>P10 VPN fail-closed full-automation GREEN</strong>,
 <strong>race/deadlock [0 DATA RACE]</strong>,
 <strong>benchmarking/performance [data-plane p50=86ms + control-plane Go
@@ -214,15 +222,41 @@ id="operator-blocked--pending-items-read-first--11445-o1-surface">Operator-block
 </thead>
 <tbody>
 <tr>
-<td>P10 real-VPN egress-half (SKIP)</td>
-<td>The egress half — proving traffic actually EXITS via the tunnel —
-needs operator gluetun WireGuard credentials (§11.4.21). The fail-closed
-half is now GREEN.</td>
-<td>Operator provides gluetun WireGuard creds; then the real-egress
-positive path can be captured.</td>
+<td><em>(none — the P10 real-VPN egress gate is RESOLVED, see
+below)</em></td>
+<td>—</td>
+<td>—</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Recently RESOLVED (§11.4.7 demotion-with-evidence):</strong>
+<strong>P10 real-VPN egress-half — PROVEN 2026-07-02.</strong> The
+operator gluetun-WireGuard-credential gate that previously blocked this
+row is cleared: a <strong>persistent one-device Mullvad WireGuard
+identity</strong> was registered against the operator's Mullvad account
+via the current app API (<code>POST /auth/v1/token</code> →
+<code>POST /accounts/v1/devices</code>; the legacy <code>/wg</code>
+endpoint is deprecated), device name <strong>"groovy rabbit"</strong>,
+id <code>df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2</code>, and the
+credentials (<code>VPN_SERVICE_PROVIDER=mullvad</code>, WireGuard key +
+assigned address) are stored in the <strong>gitignored
+<code>.env</code></strong> — never in git (§11.4.10; a §11.4.10.A
+pre-store leak audit ran CLEAN — 0 tree/history leaks — before storing).
+<strong>Live egress PROVEN:</strong> gluetun in rootless podman
+(§11.4.161) brought up a kernelspace WireGuard tunnel via relay
+<code>cz-prg-wg-101</code> and
+<code>https://am.i.mullvad.net/json</code> returned
+<code>mullvad_exit_ip=true</code> (exit IP <code>146.70.129.117</code>,
+Prague, Czech Republic). "One same device" is guaranteed by reusing the
+persistent private key. Host routing was never disturbed (§11.4.174) and
+the verification container was torn down (§11.4.14). Evidence:
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>.
+<strong>Honest boundary (§11.4.6):</strong> this proves the Mullvad
+egress identity + a live tunnel via gluetun (the §11.4.21 credentials
+gate); wiring the full dynamic proxy-stack data-plane THROUGH gluetun
+(proxy → tunnel → exit) end-to-end + the up→drop <code>tcpdump</code>
+no-leak/killswitch half remain the next data-plane step (still tracked
+in CONTINUATION §3 OWED-TO-P10).</p>
 <h2
 id="114169-test-type-coverage-matrix-captured-evidence-driven--114511469">§11.4.169
 test-type-coverage matrix (captured-evidence-driven —
@@ -299,8 +333,13 @@ booted dynamic stack: tunnel DOWN ⇒ branded 503
 <code>ERR_TUNNEL_DOWN</code> ×3 (3132-byte real page, 7 brand markers),
 <code>leak_seen=0</code>, <code>upstream_forward_lines=0</code>, Squid
 PID unchanged (36). Deterministic ×3 (§11.4.50), RED polarity guard
-FAILs a fabricated 200 leak (§11.4.115). Egress-half operator-gated SKIP
-(§11.4.21).</td>
+FAILs a fabricated 200 leak (§11.4.115). Egress-half — real Mullvad
+egress now PROVEN (§11.4.7,
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>,
+exit IP <code>146.70.129.117</code> <code>mullvad_exit_ip=true</code>
+via relay <code>cz-prg-wg-101</code>), clearing the prior §11.4.21
+operator-gated SKIP; full proxy-data-plane-through-gluetun e2e is the
+next step.</td>
 </tr>
 <tr>
 <td>Challenges</td>
@@ -491,7 +530,14 @@ PENDING — not claims the capability is broken; covered by the broader
 earlier this round are RESOLVED: the store-layer audit-atomicity TOCTOU
 was found already CLOSED (<code>store.WithTx</code>, verified
 RED→GREEN), and the control-plane Go-benchmark gap is closed (3 new
-<code>*_bench_test.go</code>). None of this substitutes for the §11.4.40
-full-suite retest before a release tag.</p>
+<code>*_bench_test.go</code>). <strong>Rev 7 (§11.4.7):</strong> the P10
+real-VPN egress-half is no longer an operator-gated SKIP — a persistent
+one-device Mullvad WireGuard identity is registered + stored (§11.4.10,
+<code>.env</code> only) and live Mullvad egress is PROVEN via gluetun
+(<code>mullvad_exit_ip=true</code>, evidence
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>);
+the remaining honest boundary is the full
+proxy-data-plane-through-gluetun end-to-end path. None of this
+substitutes for the §11.4.40 full-suite retest before a release tag.</p>
 </body>
 </html>

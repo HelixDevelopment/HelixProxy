@@ -1,8 +1,8 @@
 # Proxy Hardening — Status Summary
 
-**Revision:** 6
-**Last modified:** 2026-07-02T12:57:04Z
-**Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience). **Rev 5:** the §11.4.169 DDoS / stress+chaos / memory rows now ALSO cover the **Go control-plane** server — the prior evidence was data-plane Squid only; in-process httptest tests landed #67 (DDoS `0c51f61`, memory-soak `ceb4839`, chaos `159fcbc`), each calibrated-not-hardcoded, §1.1-load-bearing, independently reviewed. Also: the security-guard group-verdict F1 over-claim (green named S4 while S4 SKIPped) was fixed + §11.4.135-guarded (#71 `6e3e031` / #72 `adca02e`). **Rev 6 (#69):** the control-plane **Integration** row is now PASS — `go test -run Integration -v ./...` gives **14 real PASS** (real podman Postgres/redis/gluetun) / 1 honest §11.4.3 SKIP / 0 FAIL; a prior round had wrongly marked it PENDING assuming podman was unusable (§11.4.6 — the aardvark-dns break is compose-network-only, not ad-hoc `podman run`). **E2E** → honest §11.4.3 SKIP (no in-project e2e suite; end-to-end is covered by the P10 fail-closed proof + the integration path; a full compose-network-wired stack e2e is operator-gated). Also landed: the chaos C1 no-leak vacuous-PASS fix + §11.4.135 guard (#73 `3ec39d3` — a second demonstrated bluff found by the §11.4.118 audit, closed like F1).
+**Revision:** 7
+**Last modified:** 2026-07-02T16:33:00Z
+**Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience). **Rev 7 (2026-07-02):** the P10 real-VPN egress-half is RESOLVED — a persistent one-device Mullvad WireGuard identity is registered + stored (§11.4.10, gitignored `.env`) and live Mullvad egress is PROVEN via gluetun (`mullvad_exit_ip=true`, exit IP `146.70.129.117` Prague CZ, relay `cz-prg-wg-101`; evidence `qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt`), clearing the prior §11.4.21 operator-gated SKIP. **Rev 5:** the §11.4.169 DDoS / stress+chaos / memory rows now ALSO cover the **Go control-plane** server — the prior evidence was data-plane Squid only; in-process httptest tests landed #67 (DDoS `0c51f61`, memory-soak `ceb4839`, chaos `159fcbc`), each calibrated-not-hardcoded, §1.1-load-bearing, independently reviewed. Also: the security-guard group-verdict F1 over-claim (green named S4 while S4 SKIPped) was fixed + §11.4.135-guarded (#71 `6e3e031` / #72 `adca02e`). **Rev 6 (#69):** the control-plane **Integration** row is now PASS — `go test -run Integration -v ./...` gives **14 real PASS** (real podman Postgres/redis/gluetun) / 1 honest §11.4.3 SKIP / 0 FAIL; a prior round had wrongly marked it PENDING assuming podman was unusable (§11.4.6 — the aardvark-dns break is compose-network-only, not ad-hoc `podman run`). **E2E** → honest §11.4.3 SKIP (no in-project e2e suite; end-to-end is covered by the P10 fail-closed proof + the integration path; a full compose-network-wired stack e2e is operator-gated). Also landed: the chaos C1 no-leak vacuous-PASS fix + §11.4.135 guard (#73 `3ec39d3` — a second demonstrated bluff found by the §11.4.118 audit, closed like F1).
 
 ---
 
@@ -46,10 +46,15 @@ none of these results can be faked.
   the client-side result code was ambiguous; reading the proxy's own log removed the
   ambiguity.
 
-**What is still honestly skipped:**
+**Newly proven this round (was the last honest skip):**
 
-- **Real-VPN egress proof** (that traffic actually exits *through* the tunnel) needs the
-  operator's VPN credentials — honestly skipped, not faked.
+- **Real-VPN egress proof (the big remaining one):** we registered a permanent, single-device
+  VPN identity on the operator's Mullvad account and confirmed — through Mullvad's own
+  "am I Mullvad?" check — that traffic really does exit **through the VPN tunnel** in Prague,
+  Czech Republic. This used to be skipped because it needed the operator's VPN credentials;
+  those are now in place (kept private, never in the code), so this is proven with saved
+  evidence. (The one remaining engineering step is wiring the full proxy so that everyday
+  proxy traffic flows through this tunnel end-to-end — the tunnel itself is proven.)
 
 **Also proven this round:** the proxy's own unit tests all pass (control-plane, every
 package), and the live Challenge bank passed (web-forward + SOCKS5; the cache check was
@@ -58,8 +63,9 @@ during the review turned out to be **already fixed** in the code — we verified
 
 **Bottom line:** ten hardening/coverage dimensions — including the critical VPN fail-closed
 safety guarantee and the access-control leak test now proven via the proxy's own log — are
-proven solid with saved evidence; the remaining honest skips are the real-VPN egress proof
-(operator credentials) and the HelixQA bank (a buildable QA binary). No result is overstated.
+proven solid with saved evidence; the real-VPN egress proof is now proven too (the Mullvad
+VPN identity is in place), leaving one honest skip — the HelixQA bank (a buildable QA
+binary). No result is overstated.
 
 ---
 
@@ -75,7 +81,7 @@ proven solid with saved evidence; the remaining honest skips are the real-VPN eg
 | Concurrency / atomicity | PASS | `qa-results/concurrency/proxy_concurrency_20260701T122740Z/concurrency.evidence` — 40 mixed clients, `crosstalk=0`, `OVERALL=PASS` |
 | Memory | PASS | `qa-results/memory/proxy_soak_20260701T122643Z/soak.evidence` — `growth_ratio=1.0017`, `OVERALL=PASS` |
 | Security (ACL) | PASS | `qa-results/security/proxy_acl_20260701T152442Z/s1_acl_deny.evidence` — S1 deny via authoritative Squid access.log: `CONNECT example.com:80` ⇒ `TCP_DENIED/403 … HIER_NONE` (deny + no upstream leak, §11.4.68/§11.4.69); RED teeth: allowed `:443` ⇒ `TCP_TUNNEL/HIER_DIRECT` ⇒ no false deny-PASS (§11.4.115). Wired into standing suite (§11.4.135) |
-| Full-automation (P10 VPN fail-closed) | PASS | `qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt` — tunnel DOWN ⇒ branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged; deterministic ×3 + RED polarity guard (§11.4.50/§11.4.115). Egress-half operator-gated SKIP (§11.4.21) |
+| Full-automation (P10 VPN fail-closed) | PASS | `qa-results/dynamic/vpn_failclosed/20260701T130115Z/verdict.txt` — tunnel DOWN ⇒ branded 503 `ERR_TUNNEL_DOWN` ×3, `leak_seen=0`, Squid PID unchanged; deterministic ×3 + RED polarity guard (§11.4.50/§11.4.115). Egress-half now PROVEN (§11.4.7 — Mullvad identity registered + stored §11.4.10; `mullvad_exit_ip=true` via relay `cz-prg-wg-101`, `qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt`), clearing the prior §11.4.21 gate |
 | Race / deadlock | PASS | `qa-results/race/control-plane_race_20260701T125739Z.log` — `go test -race ./...` 11 pkgs, **0 DATA RACE**, EXIT=0 |
 | Benchmarking / performance | PASS | `qa-results/benchmark/proxy_forward_20260701T130414Z/latency.txt` — 200/200 204s, `p50=0.086 p95=0.088 p99=0.091`s, 10.841 req/s, `OVERALL=PASS` |
 | Unit | PASS | `qa-results/unit/control-plane_unit_20260701T131306Z.log` — `go test -cover ./...` all pkgs pass; aclhelper 100% / breaker 97.5% / routing 85.9% / … |
