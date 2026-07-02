@@ -1,7 +1,7 @@
 # Hermetic protocol-promotion research — pure-python peer servers over a kernel-WireGuard netns tunnel
 
-**Revision:** 5
-**Last modified:** 2026-07-02T07:49:30Z
+**Revision:** 6
+**Last modified:** 2026-07-02T10:11:13Z
 **Status:** Research findings (deep multi-angle web research per §11.4.150 / §11.4.99).
 No code changed by the research pass. Authority: inherits `constitution/Constitution.md` per §11.4.35.
 **Scope:** strengthen the hermetic WireGuard test harness so operator-gated VPN-LAN
@@ -285,7 +285,18 @@ in a userns has documented kernel-attack-surface history (Project Zero packet-so
 only *read* our own netns's veth, never the host's interfaces (§11.4.174). Scope it as ONE
 harness leg (start with `hermetic_wg_roundtrip.sh`, the substrate) before fanning out.
 
-## 7.1 Fan-out design (task #65) — which harnesses genuinely warrant the sniff (§11.4.150)
+## 7.1 Fan-out (task #65) — IMPLEMENTED on bridge/ftp/webdav; N/A for email (§11.4.150)
+
+**Status (§11.4.6): IMPLEMENTED** — landed `85d8b32` (independent §11.4.142 review `a1dca6fd`
+GO 7/7). The 3 plaintext-under-WG harnesses (bridge/ftp/webdav) now carry the sniff differential
+(NORMAL: `ciphertext(0x04 :51820)=present` + marker `absent`; `SNIFF_MUT=plain`: only the
+plaintext-absent assertion flips to FAIL while ciphertext stays present — load-bearing,
+§11.4.107(10)); the ethertype-guarded `_emit_an_py` analyzer self-test is GREEN on all 3. Email
+got the honest **N/A note** (harness header + `docs/scripts/hermetic_email_run.md`): implicit-TLS
+encrypts the token *below* WG, so a plaintext-absent underlay sniff is tautologically true
+regardless of the tunnel (a §11.4-forbidden vacuous test) — email's tunnel-gating stays proven
+by the overlay-only bind + §11.4.111 wrong-destination negative + `wg show` counters. The design
+blueprint below is what shipped.
 
 Design pass (subagent `a314c3e5`, read-only, file:line-cited against each harness). The substrate
 pattern (`hermetic_wg_roundtrip.sh:149-304`) clones onto a protocol harness by: capture on the

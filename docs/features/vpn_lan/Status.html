@@ -178,8 +178,8 @@
 <body>
 <h1 id="helix_proxy--vpn-lan-service-access-feature-status">helix_proxy
 — VPN-LAN Service Access Feature Status</h1>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-07-02T09:39:19Z <strong>Status:</strong> Feature COMPLETE (Phases
+<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
+2026-07-02T10:11:13Z <strong>Status:</strong> Feature COMPLETE (Phases
 0-12 on <code>main</code>). Anti-bluff bridge scaffold + preflight
 doctor + operator guide + Challenge runner + <strong>Phase-1 SSRF
 carve-out teeth</strong> + <strong>Phase-12 bidirectional
@@ -1137,20 +1137,24 @@ differential on the WG substrate</strong> (<code>91af9c6</code>,
 (cont.):</strong> the Ethernet-ethertype guard on the sniff frame
 analyzer LANDED (<code>cdb0ccd</code>, task #64, correct-by-construction
 + a load-bearing crafted-frame self-test proven by guard-removal;
-independent §11.4.142 GO 5/5). <strong>Next (tracked):</strong> fan the
-sniff differential out to the protocol harnesses (task #65) — the design
-pass (§11.4.150) found it is meaningful for <strong>3</strong> of them
-(bridge/ftp/webdav, all plaintext-under-WG) but <strong>N/A for
-email</strong> (implicit-TLS encrypts the token <em>below</em> WG, so
-"plaintext absent on the underlay" is tautologically true regardless of
-the tunnel — building it there would be a §11.4-forbidden vacuous test;
-honest documented N/A instead); the email leg is now wired into the
-standing suite (<code>b66b2fa</code>, task #66 done — the §11.4.6
-ledger-audit gap closed, independent review <code>a5bc6266</code> GO,
-all 5 rows PASS). Deep-research: <a
+independent §11.4.142 GO 5/5). <strong>Sniff fan-out LANDED (task #65,
+<code>85d8b32</code>, independent review <code>a1dca6fd</code> GO
+7/7):</strong> the underlay-sniff differential now runs on
+<strong>3</strong> harnesses (bridge/ftp/webdav, all plaintext-under-WG
+— NORMAL
+<code>ciphertext(0x04 :51820)=present</code>+marker-<code>absent</code>,
+<code>SNIFF_MUT=plain</code> load-bearing flips only plaintext-absent)
+via the shared ethertype-guarded <code>_emit_an_py</code> analyzer;
+<strong>email is honest N/A</strong> (implicit-TLS encrypts the token
+<em>below</em> WG → "plaintext absent on the underlay" is tautologically
+true regardless of the tunnel, a §11.4-forbidden vacuous test;
+documented N/A note in the harness header + companion doc instead). The
+email leg is also wired into the standing suite (<code>b66b2fa</code>,
+task #66 — §11.4.6 ledger-audit gap closed, review <code>a5bc6266</code>
+GO, all 5 rows PASS). Deep-research: <a
 href="../../research/hermetic_protocol_promotion_20260702/FINDINGS.md"><code>../../research/hermetic_protocol_promotion_20260702/FINDINGS.md</code></a>
-(Rev 5, §6 mail + §7 underlay-sniff IMPLEMENTED + §7.1 fan-out
-design).</p>
+(Rev 6, §6 mail + §7 underlay-sniff IMPLEMENTED + §7.1 fan-out
+IMPLEMENTED).</p>
 <hr />
 <h2 id="114169-test-type-coverage-note-honest-boundary">§11.4.169
 test-type coverage note (honest boundary)</h2>

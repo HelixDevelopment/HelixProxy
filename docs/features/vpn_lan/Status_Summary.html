@@ -179,8 +179,8 @@
 <h1
 id="helix_proxy--vpn-lan-service-access-feature-status-summary">helix_proxy
 — VPN-LAN Service Access Feature Status Summary</h1>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-07-02T09:39:19Z <strong>Status:</strong> Companion two-audience
+<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
+2026-07-02T10:11:13Z <strong>Status:</strong> Companion two-audience
 summary of <a href="Status.md"><code>Status.md</code></a> (§11.4.56).
 Page 1 is plain-language for the operator and stakeholders; Page 2 is
 the engineer phase matrix with commit refs and §-anchors. <strong>Rev
@@ -501,10 +501,10 @@ FAILs) + — on the WG substrate — an underlay-sniff AF_PACKET non-leak
 differential (ciphertext-<code>0x04</code>-present +
 plaintext-nonce-absent on <code>veth0</code>, <code>91af9c6</code> +
 ethertype guard <code>cdb0ccd</code> §11.4.107; load-bearing
-<code>SNIFF_MUT=plain</code>; fan-out tracked #65 — meaningful for 3
-harnesses [bridge/ftp/webdav, plaintext-under-WG] but N/A for email
-[implicit-TLS encrypts below WG, §11.4.6]) + a not-stale self-fetch +
-3/3 determinism + independent §11.4.142 GO. <strong>Standing-suite
+<code>SNIFF_MUT=plain</code>; fan-out LANDED <code>85d8b32</code> on 3
+harnesses [bridge/ftp/webdav; email N/A — implicit-TLS encrypts below
+WG, §11.4.6], review <code>a1dca6fd</code> GO) + a not-stale self-fetch
++ 3/3 determinism + independent §11.4.142 GO. <strong>Standing-suite
 wiring:</strong> all 5 wired as §11.4.135 guards — substrate +
 Cast/FTP/WebDAV (<code>71e0bac</code>) + email (<code>b66b2fa</code>,
 #66, closing the §11.4.6 ledger-audit gap). The live Mullvad round-trip

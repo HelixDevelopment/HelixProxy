@@ -130,6 +130,19 @@ conductor resumed the residue-clean partial per §11.4.147 (work not lost), veri
 empirically GREEN (normal + golden-bad + 3/3 determinism), and passed it through the
 independent §11.4.142 review before commit.
 
+## Underlay-sniff non-leak differential (§11.4.107 / FINDINGS §7.1)
+
+During the round-trip the harness captures on the underlay `veth0` (rootless AF_PACKET;
+`tcpdump` fallback; honest §11.4.3 SKIP if neither) and asserts BOTH (a) WG ciphertext
+present — a type-4 `0x04` datagram to the WG listen port `:51820` — AND (b) the per-run WebDAV
+marker (`$NONCE`, in the 207 body) is ABSENT in the raw underlay bytes. Only the proxy→origin
+`10.10.0.2:8080` hop rides `wg0`/`veth0` (client→proxy is loopback, irrelevant). Verbatim
+single-source clone of the substrate analyzer (`_emit_an_py`, ethertype-guarded). The
+load-bearing golden-bad **`SNIFF_MUT=plain`** emits `$NONCE` as cleartext UDP to the discard
+port `10.9.0.2:9` (distinct from the §11.4.111 HTTP negative-control port `:8080`, so NEG-OK
+stays valid) → ONLY the plaintext-absent assertion flips to FAIL while ciphertext stays present,
+proving the sniff is not a tautology (§11.4.107(10)). Landed `85d8b32`, independent review `a1dca6fd` GO.
+
 ## Related
 
 - [`hermetic_ftp_run.md`](hermetic_ftp_run.md) — the sibling H2.x FTP promotion.

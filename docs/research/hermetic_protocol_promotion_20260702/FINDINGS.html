@@ -180,8 +180,8 @@
 id="hermetic-protocol-promotion-research--pure-python-peer-servers-over-a-kernel-wireguard-netns-tunnel">Hermetic
 protocol-promotion research — pure-python peer servers over a
 kernel-WireGuard netns tunnel</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-07-02T07:49:30Z <strong>Status:</strong> Research findings (deep
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-07-02T10:11:13Z <strong>Status:</strong> Research findings (deep
 multi-angle web research per §11.4.150 / §11.4.99). No code changed by
 the research pass. Authority: inherits
 <code>constitution/Constitution.md</code> per §11.4.35.
@@ -606,9 +606,25 @@ own netns's veth, never the host's interfaces (§11.4.174). Scope it as
 ONE harness leg (start with <code>hermetic_wg_roundtrip.sh</code>, the
 substrate) before fanning out.</p>
 <h2
-id="71-fan-out-design-task-65--which-harnesses-genuinely-warrant-the-sniff-114150">7.1
-Fan-out design (task #65) — which harnesses genuinely warrant the sniff
+id="71-fan-out-task-65--implemented-on-bridgeftpwebdav-na-for-email-114150">7.1
+Fan-out (task #65) — IMPLEMENTED on bridge/ftp/webdav; N/A for email
 (§11.4.150)</h2>
+<p><strong>Status (§11.4.6): IMPLEMENTED</strong> — landed
+<code>85d8b32</code> (independent §11.4.142 review <code>a1dca6fd</code>
+GO 7/7). The 3 plaintext-under-WG harnesses (bridge/ftp/webdav) now
+carry the sniff differential (NORMAL:
+<code>ciphertext(0x04 :51820)=present</code> + marker
+<code>absent</code>; <code>SNIFF_MUT=plain</code>: only the
+plaintext-absent assertion flips to FAIL while ciphertext stays present
+— load-bearing, §11.4.107(10)); the ethertype-guarded
+<code>_emit_an_py</code> analyzer self-test is GREEN on all 3. Email got
+the honest <strong>N/A note</strong> (harness header +
+<code>docs/scripts/hermetic_email_run.md</code>): implicit-TLS encrypts
+the token <em>below</em> WG, so a plaintext-absent underlay sniff is
+tautologically true regardless of the tunnel (a §11.4-forbidden vacuous
+test) — email's tunnel-gating stays proven by the overlay-only bind +
+§11.4.111 wrong-destination negative + <code>wg show</code> counters.
+The design blueprint below is what shipped.</p>
 <p>Design pass (subagent <code>a314c3e5</code>, read-only,
 file:line-cited against each harness). The substrate pattern
 (<code>hermetic_wg_roundtrip.sh:149-304</code>) clones onto a protocol

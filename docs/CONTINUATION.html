@@ -179,14 +179,49 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
-2026-07-02T09:39:19Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 20 <strong>Last modified:</strong>
+2026-07-02T10:11:13Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-19 wave (HEAD
-<code>172eb5c</code>, branch <code>main</code>, FF to origin):</strong>
-<strong>session-limit reset → landed #66 + #70 (both independent
-§11.4.142 GO).</strong> <code>b66b2fa</code> <strong>#66</strong> wired
+future work on <code>main</code>"</strong>). <strong>Rev-20 wave (HEAD
+<code>85d8b32</code>, branch <code>main</code>, FF to origin):</strong>
+<strong>#65 sniff fan-out LANDED.</strong> <code>85d8b32</code>
+replicates the underlay-sniff AF_PACKET non-leak differential onto 3
+protocol harnesses (<code>hermetic_bridge_run.sh</code> marker
+<code>$DEV_NAME</code> / <code>_ftp_run.sh</code> <code>$NONCE</code> /
+<code>_webdav_run.sh</code> <code>$NONCE</code>) — a verbatim
+single-source clone of the ethertype-guarded substrate
+<code>_emit_an_py</code> analyzer; NORMAL
+<code>ciphertext(0x04 :51820)=present</code>+marker-<code>absent</code>,
+<code>SNIFF_MUT=plain</code> load-bearing (only plaintext-absent flips,
+ciphertext stays present); the <code>:9</code> discard port stays
+distinct from each §11.4.111 TCP negative-control port. <strong>Email is
+honest N/A</strong> (implicit-TLS encrypts the token <em>below</em> WG →
+a plaintext-absent underlay sniff is tautologically true regardless of
+the tunnel, a §11.4-forbidden vacuous test; N/A note in the harness
+header + <code>docs/scripts/hermetic_email_run.md</code>). Provenance
+(§11.4.147): the builder <code>a9cb5106</code> crashed on a transient
+server throttle at ~13 min, but its work was <strong>conductor-verified
+inline</strong> (preserve→resume — all 3 NORMAL PASS +
+<code>SNIFF_MUT=plain</code> load-bearing + original teeth
+regression-clean) then <strong>independently reviewed
+<code>a1dca6fd</code> GO 7/7</strong>. This doc-sync marks FINDINGS §7.1
+IMPLEMENTED + adds §11.4.18 sniff notes to the 3 harness companion docs
++ Status pair → Rev 9. <strong>⚠ Throttle note (§11.4.6):</strong> a
+server-side transient throttle ("Server is temporarily limiting requests
+— NOT your usage limit") crashed <strong>3 of 4</strong> concurrent
+subagents (#65 builder, bluff-audit, #67-design) → dropped to
+<strong>single-stream sequential</strong> dispatch (a single subagent
+survives; a 4-wide fan-out throttles). <strong>Pending (single-stream as
+the throttle allows):</strong> Go-coverage-healthd review
+(<code>a0f6ad3</code> GO'd —
+<code>control-plane/cmd/healthd/main_lifecycle_test.go</code> raises
+healthd 70.3→79.3%, untracked, awaiting review→commit); respawn the
+crashed shell-bluff-audit + #67-design; then #67/#68/#69. No tag ("keep
+hardening"). <strong>Rev-19 wave (HEAD <code>172eb5c</code>, branch
+<code>main</code>, FF to origin):</strong> <strong>session-limit reset →
+landed #66 + #70 (both independent §11.4.142 GO).</strong>
+<code>b66b2fa</code> <strong>#66</strong> wired
 <code>hermetic_email_run.sh</code> into the
 <code>test_vpn_lan_hermetic</code> standing guard — closing the
 §11.4.6/§11.4.135 doc-bluff the §11.4.169 ledger audit caught (email was
@@ -1187,7 +1222,7 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>172eb5c</code> (== <code>main</code> == origin; integrate any
+HEAD <code>85d8b32</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
@@ -1220,21 +1255,18 @@ the per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
 golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
 FAIL (not a tautology, §11.4.107(10)), honest exit-3 on empty capture,
 honest <code>SNIFF-SKIP</code> when unavailable, 3/3 deterministic.
-FINDINGS §7 → Rev 5. <strong>#63/#64/#66/#70 are LANDED</strong>
-(<code>91af9c6</code> underlay-sniff · <code>cdb0ccd</code> ethertype
-guard · <code>b66b2fa</code> email-wiring · <code>172eb5c</code>
-orphan-test adoption — all independent §11.4.142 GO). <strong>Top
-non-operator-gated actionables now (session limit RESET):</strong>
-<strong>(task #65, IN FLIGHT <code>a9cb5106</code>)</strong> replicate
-the sniff differential on <strong>3</strong> harnesses
-(<code>hermetic_bridge_run.sh</code>/
-<code>_ftp_run.sh</code>/<code>_webdav_run.sh</code>,
-plaintext-under-WG; per-protocol marker + own
-<code>SNIFF_MUT=plain</code>) + an honest email N/A note (implicit-TLS
-below WG → a plaintext-absent sniff is vacuous), per FINDINGS §7.1;
-<strong>(shell-bluff-audit respawn, IN FLIGHT
-<code>a67c0093</code>)</strong> §11.4.118 hunt over the non-hermetic
-suites. <strong>Then:</strong> Go-coverage respawn + ledger tasks
+FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED). <strong>#63/#64/#65/#66/#70 are
+LANDED</strong> (<code>91af9c6</code> underlay-sniff ·
+<code>cdb0ccd</code> ethertype guard · <code>85d8b32</code> sniff
+fan-out to bridge/ftp/webdav + email N/A · <code>b66b2fa</code>
+email-wiring · <code>172eb5c</code> orphan-test adoption — all
+independent §11.4.142 GO). <strong>Top non-operator-gated actionables
+now (⚠ server-side transient throttle → SINGLE-STREAM sequential
+dispatch, §11.4.6):</strong> (1) review+commit the Go-coverage-healthd
+test (<code>a0f6ad3</code> GO'd —
+<code>control-plane/cmd/healthd/ main_lifecycle_test.go</code> raises
+healthd 70.3→79.3%, untracked); (2) respawn the throttle-crashed
+shell-bluff-audit (§11.4.118) + #67-design; (3) ledger tasks
 <strong>#67</strong> (control-plane Go stress/chaos/DDoS/memory) /
 <strong>#68</strong> (orphaned
 <code>container_boot.sh</code>+<code>discovery_reflect.sh</code>) /

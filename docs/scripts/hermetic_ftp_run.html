@@ -418,6 +418,24 @@ host (§12).</p>
 namespace, used by path, removed on exit, never logged. FTP is
 <strong>anonymous</strong> — no credentials anywhere. The served file is
 a per-run nonce (fresh value, §11.4.107 not-stale).</p>
+<h2
+id="underlay-sniff-non-leak-differential-114107--findings-71">Underlay-sniff
+non-leak differential (§11.4.107 / FINDINGS §7.1)</h2>
+<p>During the round-trip the harness captures on the underlay
+<code>veth0</code> (rootless AF_PACKET; <code>tcpdump</code> fallback;
+honest §11.4.3 SKIP if neither) and asserts BOTH (a) WG ciphertext
+present — a type-4 <code>0x04</code> datagram to the WG listen port
+<code>:51820</code> — AND (b) the per-run FTP marker
+(<code>$NONCE</code>, the listing filename / RETR body) is ABSENT in the
+raw underlay bytes. Verbatim single-source clone of the substrate
+analyzer (<code>_emit_an_py</code>, ethertype-guarded). The load-bearing
+golden-bad <strong><code>SNIFF_MUT=plain</code></strong> emits
+<code>$NONCE</code> as cleartext UDP to the discard port
+<code>10.9.0.2:9</code> (distinct from the §11.4.111 negative-control
+port <code>:2121</code>, so NEG-OK stays valid) → ONLY the
+plaintext-absent assertion flips to FAIL while ciphertext stays present,
+proving the sniff is not a tautology (§11.4.107(10)). Landed
+<code>85d8b32</code>, independent review <code>a1dca6fd</code> GO.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li><a

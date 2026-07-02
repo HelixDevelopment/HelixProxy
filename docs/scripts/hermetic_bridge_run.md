@@ -109,6 +109,18 @@ WireGuard private keys: mode-0600 `mktemp` inside the namespace, used by path,
 removed on exit, never logged. The served eureka `name` is a per-run nonce
 (fresh value, §11.4.107 not-stale).
 
+## Underlay-sniff non-leak differential (§11.4.107 / FINDINGS §7.1)
+
+During the round-trip the harness captures on the underlay `veth0` (rootless AF_PACKET;
+`tcpdump` fallback; honest §11.4.3 SKIP if neither) and asserts BOTH (a) WG ciphertext
+present — a type-4 `0x04` datagram to the WG listen port `:51820` — AND (b) the per-run
+eureka `name` marker (`$DEV_NAME`) is ABSENT in the raw underlay bytes. Verbatim single-source
+clone of the substrate analyzer (`_emit_an_py`, ethertype-guarded). The load-bearing golden-bad
+**`SNIFF_MUT=plain`** emits `$DEV_NAME` as cleartext UDP to the discard port `10.9.0.2:9`
+(distinct from the §11.4.111 HTTP negative-control port `:8008`, so NEG-OK stays valid) → ONLY
+the plaintext-absent assertion flips to FAIL while ciphertext stays present, proving the sniff
+is not a tautology (§11.4.107(10)). Landed `85d8b32`, independent review `a1dca6fd` GO.
+
 ## Related
 
 - [`hermetic_wg_roundtrip.md`](hermetic_wg_roundtrip.md) — the H0-full tunnel this reuses.
