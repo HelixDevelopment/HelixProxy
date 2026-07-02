@@ -179,8 +179,8 @@
 <h1
 id="dynamic-routing-mvp-findings--proxy-through-gluetun-mullvad-e2e">Dynamic-routing
 MVP findings — proxy-through-gluetun (Mullvad) e2e</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-07-02T18:30:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-07-02T20:08:09Z</p>
 <p>Operator-authorized (2026-07-02): reset podman + prove the full
 proxy-through-gluetun Mullvad e2e. This document records the honest
 results (§11.4.6) — what is proven and the real MVP dynamic-routing
@@ -248,16 +248,28 @@ returns EMPTY; healthd's <code>wg show &lt;if&gt;</code> reads a WG
 interface in gluetun's netns (not healthd's) → every profile held
 falsely "down" → squid fail-closes even though the tunnel is genuinely
 UP.</td>
-<td><strong>OPEN</strong> (deepest — needs gluetun to expose the data OR
-healthd to read gluetun's wg stats).</td>
+<td><strong>FIXED</strong> <code>4a69225</code> (#79) + activated
+<code>2cd7f64</code>. Took a THIRD path (neither doc option): healthd
+does a FRESH per-poll through-tunnel liveness PROBE via gluetun's
+built-in <code>:8888</code> HTTP forward proxy — a real request egresses
+via the tunnel + returns THIS cycle (kill-switch blocks it when down ⇒
+fail-closed). Additive to DecideHealth (§11.4.68-preserved, wg path
+intact), default-OFF until <code>HEALTHD_TUNNEL_PROXY</code> set.
+<strong>LIVE-PROVEN</strong>: the fixed healthd publishes
+<code>state=up</code> for the live Mullvad tunnel
+(<code>qa-results/dynamic/d3_healthd_live_20260702T200259Z/</code> +
+<code>d3_liveprobe_…195836Z/</code>).</td>
 </tr>
 <tr>
 <td>D4</td>
 <td>gluetun compose <strong>healthcheck probes
 <code>/v1/openvpn/status</code></strong> for a WireGuard tunnel →
 gluetun labelled "unhealthy" though the WG tunnel is up.</td>
-<td><strong>OPEN</strong> (1-line compose fix to the WG status
-endpoint).</td>
+<td><strong>FIXED</strong> <code>57cc857</code>: healthcheck →
+VPN-agnostic <code>/v1/vpn/status</code> + a read-only gluetun
+control-auth config (gluetun v3.40 made control routes private/401) so
+healthd + the healthcheck stop 401ing. Live-validated (gluetun healthy;
+status 200; mutating routes 401) + §11.4.135 guard.</td>
 </tr>
 <tr>
 <td>D5</td>
@@ -271,10 +283,18 @@ DNS</strong> from its pre-alias startup; reconfigure did not clear it
 </table>
 <h2 id="honest-conclusion-1146">Honest conclusion (§11.4.6)</h2>
 <p>The proxy-through-gluetun <strong>egress capability</strong> is
-proven live (gluetun's proxy egresses via Mullvad). The <strong>full
-squid-integrated</strong> path is blocked by D3+D4+D5 (real integration
-bugs), so it is <strong>NOT a passing e2e</strong> — no PASS is claimed
-on it. D1 fixed; D2–D5 tracked here for a proper source-side fix
-pass.</p>
+proven live (gluetun's proxy egresses via Mullvad). <strong>Rev 2 update
+(2026-07-02):</strong> <strong>D3 and D4 are now FIXED</strong> (this
+session) — D3 (the deepest blocker, healthd false-down) resolved by the
+fresh through-tunnel liveness probe (#79, LIVE-PROVEN healthd publishes
+<code>state=up</code>) and D4 by the gluetun control-auth + VPN-agnostic
+healthcheck. The <strong>full squid-integrated</strong> path's LAST
+remaining blocker is <strong>D5</strong> (squid caches the
+<code>gluetun-*</code> peer negative-DNS from its pre-alias startup —
+peer stays dead until squid re-resolves after gluetun is up; a
+startup-ordering / DNS-lifecycle fix, tracked as a task). Until D5 is
+fixed, the full squid-integrated e2e is <strong>NOT yet a passing
+e2e</strong> — no PASS is claimed on it (§11.4.6). D1 fixed; D2
+documented; D3+D4 FIXED; D5 open.</p>
 </body>
 </html>
