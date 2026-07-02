@@ -1006,7 +1006,8 @@ test_vpn_lan_hermetic() {
         "H0 kernel-WireGuard round-trip (tunnel substrate)|vpn_lan/hermetic_wg_roundtrip.sh" \
         "Chromecast eureka_info promoted over the tunnel|vpn_lan/hermetic_bridge_run.sh" \
         "FTP passive promoted over the tunnel|vpn_lan/hermetic_ftp_run.sh" \
-        "WebDAV PROPFIND promoted over the tunnel|vpn_lan/hermetic_webdav_run.sh"; do
+        "WebDAV PROPFIND promoted over the tunnel|vpn_lan/hermetic_webdav_run.sh" \
+        "Email SMTPS/IMAPS/POP3S promoted over the tunnel|vpn_lan/hermetic_email_run.sh"; do
         _name=${_h%%|*}; _p="$SCRIPT_DIR/${_h#*|}"
         if [[ ! -f "$_p" ]]; then
             test_result "VPN-LAN hermetic: $_name" "SKIP" "harness absent §11.4.3"
