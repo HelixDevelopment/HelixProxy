@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="mullvad-wireguard-egress--status-summary">Mullvad WireGuard
+Egress — Status Summary</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-02T20:20:00Z <strong>Status:</strong> Companion summary of <a
+href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).
+<strong>2026-07-02:</strong> the persistent one-device Mullvad WireGuard
+egress feature is PROVEN — a persistent single-device Mullvad identity
+(device <strong>"groovy rabbit"</strong>, id
+<code>df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2</code>) is registered +
+stored (§11.4.10, gitignored <code>.env</code>), <strong>live
+egress</strong> is proven (<code>mullvad_exit_ip=true</code>,
+deterministic 3/3), and the <strong>kill-switch / fail-closed</strong>
+guarantee is proven (tunnel-DOWN ⇒ all egress BLOCKED, deterministic
+3/3, §11.4.68). Two items remain honest: the full
+proxy-data-plane-through-gluetun end-to-end path is PENDING, and live
+DNS is OPERATOR-BLOCKED (operator-deferred 2026-07-02).</p>
+<hr />
+<h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
+For the operator / stakeholders (plain language)</h2>
+<p>We proved that the proxy can send traffic out through a
+<strong>Mullvad VPN tunnel</strong> using a permanent, single-device VPN
+identity on the operator's account — and, just as importantly, that if
+the tunnel ever drops, <strong>nothing leaks to the open
+internet</strong>. Every "proven" below is backed by a saved proof file
+captured while the tunnel was actually running, so none of these results
+can be faked. The VPN credentials are kept private (in an ignored config
+file, never in the code).</p>
+<p><strong>What we proved this session:</strong></p>
+<ul>
+<li><strong>A permanent, single-device VPN identity.</strong> We
+registered one dedicated Mullvad device — named "groovy rabbit" — so the
+proxy always presents as the <em>same</em> device on the VPN. The
+private credentials are stored only in a private, git-ignored config
+file.</li>
+<li><strong>Traffic really exits through the VPN.</strong> Mullvad's own
+"am I Mullvad?" check confirmed <code>mullvad_exit_ip = true</code> —
+the traffic left through the VPN, not the open internet. We confirmed
+this <strong>three times in a row</strong>. The exit location moved
+between runs (Prague, then Dusseldorf, then San Jose) because the VPN
+rotates its relays, but every single time the traffic exited through
+Mullvad — the guarantee that matters held every run.</li>
+<li><strong>The "kill-switch" works (the safety-critical one).</strong>
+We deliberately forced the VPN tunnel <strong>down</strong> and
+confirmed that <em>all</em> internet access was immediately
+<strong>blocked</strong> — again, three times in a row. We also saw the
+VPN's own internal health-check get blocked by the same firewall while
+the tunnel was down, which independently confirms the block is real.
+This is the guarantee that the proxy never sends your traffic out
+unprotected if the VPN fails.</li>
+</ul>
+<p><strong>What is not done yet (stated honestly):</strong></p>
+<ul>
+<li><strong>Full end-to-end proxy-through-VPN wiring:</strong> the VPN
+tunnel and its kill-switch are proven, but the final engineering step —
+routing everyday proxy traffic all the way through this tunnel
+end-to-end — is still to be done and captured.</li>
+<li><strong>Live DNS</strong> is on hold at the operator's request
+(deferred on 2026-07-02, part of the Let's Encrypt certificate setup) —
+this is an operator decision, not a VPN problem.</li>
+</ul>
+<p><strong>Bottom line:</strong> the Mullvad VPN egress identity, its
+live traffic-exit proof, and its kill-switch safety are all proven with
+saved evidence. One engineering step (full proxy-through-VPN wiring) and
+one operator-deferred item (live DNS) remain, and both are stated
+openly. Nothing is overstated.</p>
+<hr />
+<h2 id="page-2--for-software-engineers">Page 2 — For software
+engineers</h2>
+<p>§11.4.45 captured-evidence reconciliation for the Mullvad WireGuard
+egress feature. Verdicts cite the literal invariants from each
+<code>qa-results/</code> artefact. Secrets never appear — only the
+device name/id + evidence paths (§11.4.10).</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Persistent one-device WireGuard identity</td>
+<td>PASS</td>
+<td><code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>
+— device "groovy rabbit", id
+<code>df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2</code>, registered via the
+Mullvad app API; config stored in gitignored <code>.env</code>
+(§11.4.10)</td>
+</tr>
+<tr>
+<td>Live Mullvad egress</td>
+<td>PASS</td>
+<td><code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>
+(+ <code>egress.json</code>, <code>egress_iter2.json</code>,
+<code>egress_iter3.json</code>) — <code>mullvad_exit_ip=true</code>
+DETERMINISTIC 3/3 (§11.4.50); exits Prague / Dusseldorf / San Jose
+(relay rotation), invariant <code>mullvad_exit_ip=true</code> holds
+every run; host routing untouched (§11.4.174), containers torn down
+(§11.4.14)</td>
+</tr>
+<tr>
+<td>Kill-switch / fail-closed</td>
+<td>PASS (§11.4.68)</td>
+<td><code>qa-results/mullvad_killswitch/20260702T165417Z/08_killswitch_loop.txt</code>
+(+ <code>SUMMARY.md</code>) — gluetun <code>FIREWALL=on</code>; atomic
+tun0-DOWN (confirmed before+after) ⇒ raw-IP egress <code>RC=4</code>
+(firewall DROP), DETERMINISTIC 3/3 (§11.4.50); the ~8s-post-drop success
+was the AUTO-RESTORED tunnel, not a leak
+(<code>07_drop_blocked.txt</code>)</td>
+</tr>
+<tr>
+<td>Kill-switch firewall mechanism</td>
+<td>PASS</td>
+<td><code>qa-results/mullvad_killswitch/20260702T165417Z/04_iptables_up.txt</code>
+— iptables <code>OUTPUT</code> policy <code>DROP</code> + only
+<code>-A OUTPUT -o tun0 -j ACCEPT</code> ⇒ fail-closed by
+construction</td>
+</tr>
+<tr>
+<td>gluetun healthcheck corroboration</td>
+<td>PASS</td>
+<td><code>qa-results/mullvad_killswitch/20260702T165417Z/09_gluetun_firewall_block_evidence.txt</code>
+— gluetun's own healthcheck ⇒
+<code>write: operation not permitted</code> while tun0 down (out-of-band
+firewall-block corroboration, §11.4.13-class)</td>
+</tr>
+<tr>
+<td>Full proxy-data-plane-through-gluetun e2e</td>
+<td>PENDING</td>
+<td>Not yet captured — the proven tunnel + kill-switch, wired through
+the full dynamic proxy stack data-plane, is the next step (§11.4.6 — no
+evidence cited)</td>
+</tr>
+<tr>
+<td>Live DNS (LE Phase 4/6)</td>
+<td>OPERATOR-BLOCKED</td>
+<td>Operator-deferred DNS 2026-07-02 (Let's Encrypt Phase 4 of 6) —
+downstream operator decision, not an egress-feature defect</td>
+</tr>
+</tbody>
+</table>
+<p>Composes §11.4.45 (integration-status doc), §11.4.56 (two-audience
+summary), §11.4.5/§11.4.69 (captured evidence), §11.4.68 (fail-closed /
+kill-switch positive evidence), §11.4.50 (deterministic 3/3), §11.4.10
+(no secrets), §11.4.6 (no-guessing — PENDING/OPERATOR-BLOCKED stated,
+not hidden), §11.4.14 (container teardown), §11.4.174 (host routing
+untouched).</p>
+</body>
+</html>
