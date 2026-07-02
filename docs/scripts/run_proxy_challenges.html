@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>run_proxy_challenges</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -258,8 +262,8 @@ conservatively counted as FAIL per §11.4.1.</p>
 <li>The three sibling challenge scripts present and executable.</li>
 <li><code>bash</code>; <code>nice</code> / <code>ionice</code> optional
 (caps degrade gracefully if absent).</li>
-<li>The live proxy stack UP (HTTP <code>53128</code>, SOCKS5
-<code>51080</code>).</li>
+<li>The live proxy stack UP (HTTP <code>34128</code>, SOCKS5
+<code>34080</code>).</li>
 </ul>
 <h2 id="usage">Usage</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/run_proxy_challenges.sh</span></code></pre></div>

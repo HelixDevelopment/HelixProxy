@@ -49,18 +49,18 @@ cp .env.example .env
 │          ▼                      │                                │
 │  ┌────────────────┐             │                                │
 │  │  HTTP PROXY    │◄────────────┤                                │
-│  │  (Squid:53128)  │             │                                │
+│  │  (Squid:34128)  │             │                                │
 │  │  + Cache       │             │                                │
 │  └───────┬────────┘             │                                │
 │          │                      │                                │
 │  ┌───────▼────────┐             │                                │
 │  │  SOCKS PROXY   │◄────────────┘                                │
-│  │  (Dante:51080)  │                                              │
+│  │  (Dante:34080)  │                                              │
 │  └────────────────┘                                              │
 │                                                                  │
 │  ┌────────────────┐     ┌────────────────┐                      │
 │  │ ADMIN PANEL    │     │ CACHE MGMT     │                      │
-│  │ (Caddy:58080)   │     │ (Automated)    │                      │
+│  │ (Caddy:34088)   │     │ (Automated)    │                      │
 │  └────────────────┘     └────────────────┘                      │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -123,9 +123,9 @@ Proxy/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CONTAINER_RUNTIME` | Runtime to use (podman/docker/auto) | auto |
-| `HTTP_PROXY_PORT` | HTTP/HTTPS proxy port | 53128 |
-| `SOCKS_PROXY_PORT` | SOCKS5 proxy port | 51080 |
-| `PROXY_ADMIN_PORT` | Admin panel port | 58080 |
+| `HTTP_PROXY_PORT` | HTTP/HTTPS proxy port | 34128 |
+| `SOCKS_PROXY_PORT` | SOCKS5 proxy port | 34080 |
+| `PROXY_ADMIN_PORT` | Admin panel port | 34088 |
 | `USE_VPN` | Enable VPN routing | false |
 | `VPN_USERNAME` | VPN provider username | - |
 | `VPN_PASSWORD` | VPN provider password | - |
@@ -211,9 +211,9 @@ See `.env.example` for complete configuration options.
 
 ```bash
 # Set environment variables
-export HTTP_PROXY="http://HOST_IP:53128"
-export HTTPS_PROXY="http://HOST_IP:53128"
-export ALL_PROXY="socks5://HOST_IP:51080"
+export HTTP_PROXY="http://HOST_IP:34128"
+export HTTPS_PROXY="http://HOST_IP:34128"
+export ALL_PROXY="socks5://HOST_IP:34080"
 export NO_PROXY="localhost,127.0.0.1"
 
 # Or add to ~/.bashrc or ~/.zshrc for persistence
@@ -223,8 +223,8 @@ export NO_PROXY="localhost,127.0.0.1"
 
 ```bash
 # Add to /etc/environment
-HTTP_PROXY="http://HOST_IP:53128"
-HTTPS_PROXY="http://HOST_IP:53128"
+HTTP_PROXY="http://HOST_IP:34128"
+HTTPS_PROXY="http://HOST_IP:34128"
 NO_PROXY="localhost,127.0.0.1"
 ```
 
@@ -232,12 +232,12 @@ NO_PROXY="localhost,127.0.0.1"
 
 ```powershell
 # PowerShell
-$env:HTTP_PROXY = "http://HOST_IP:53128"
-$env:HTTPS_PROXY = "http://HOST_IP:53128"
+$env:HTTP_PROXY = "http://HOST_IP:34128"
+$env:HTTPS_PROXY = "http://HOST_IP:34128"
 
 # Command Prompt
-set HTTP_PROXY=http://HOST_IP:53128
-set HTTPS_PROXY=http://HOST_IP:53128
+set HTTP_PROXY=http://HOST_IP:34128
+set HTTPS_PROXY=http://HOST_IP:34128
 ```
 
 ### Browser Configuration
@@ -245,8 +245,8 @@ set HTTPS_PROXY=http://HOST_IP:53128
 #### Firefox
 1. Settings → General → Network Settings
 2. Select "Manual proxy configuration"
-3. HTTP Proxy: `HOST_IP`, Port: `53128`
-4. SOCKS Host: `HOST_IP`, Port: `51080`, SOCKS v5
+3. HTTP Proxy: `HOST_IP`, Port: `34128`
+4. SOCKS Host: `HOST_IP`, Port: `34080`, SOCKS v5
 
 #### Chrome/Edge
 Use system proxy settings or extensions like SwitchyOmega.
@@ -312,8 +312,8 @@ Manual invalidation:
 
 ```bash
 # Allow from specific network only
-sudo ufw allow from 192.168.1.0/24 to any port 53128
-sudo ufw allow from 192.168.1.0/24 to any port 51080
+sudo ufw allow from 192.168.1.0/24 to any port 34128
+sudo ufw allow from 192.168.1.0/24 to any port 34080
 ```
 
 ## Troubleshooting
@@ -321,7 +321,7 @@ sudo ufw allow from 192.168.1.0/24 to any port 51080
 ### Service Won't Start
 
 1. Check logs: `./logs/proxy.log`
-2. Verify ports are not in use: `ss -tuln | grep -E '53128|51080'`
+2. Verify ports are not in use: `ss -tuln | grep -E '34128|34080'`
 3. Check container runtime: `./init --check`
 
 ### VPN Not Connecting

@@ -40,7 +40,7 @@ sibling guard scripts are present + parseable.
   and `./start --dry-run`.
 - **`SKIP_LE_ISSUANCE_GUARD`** (default `0`) — when `1`, skips the two expensive
   hermetic Let's Encrypt Phase-3 / Phase-5 issuance guards.
-- Port defaults when `.env` is absent: HTTP `53128`, SOCKS `51080`, admin `58080`.
+- Port defaults when `.env` is absent: HTTP `34128`, SOCKS `34080`, admin `34088`.
 
 ## Outputs
 

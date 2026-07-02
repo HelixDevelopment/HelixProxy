@@ -114,11 +114,11 @@ podman-compose -f docker-compose.yml \
 
 # 4) Prove the live /metrics scrape (GREEN guard; asserts real exposition content).
 HELIX_OBSERVABILITY_STACK=1 \
-HELIX_METRICS_URL=http://127.0.0.1:59090/metrics \
+HELIX_METRICS_URL=http://127.0.0.1:34090/metrics \
     bash tests/observability/metrics_scrape_test.sh
 ```
 
-Port `59090` is `METRICS_PORT` (`.env.example:217`), published to loopback by
+Port `34090` is `METRICS_PORT` (`.env.example:217`), published to loopback by
 `docker-compose.observability.yml:149`. `proxy-postgres` / `proxy-redis` live in
 the `dynamic` overlay; `proxy-api` is in the `dynamic` profile and `depends_on`
 both (`docker-compose.observability.yml:102-103,150-157`).

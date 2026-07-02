@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>memory_soak_suite</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -238,7 +242,7 @@
 </head>
 <body>
 <h1
-id="testsdynamicsuitesmemory_soak_suite.sh-operator-guide"><code>tests/dynamic/suites/memory_soak_suite.sh</code>
+id="testsdynamicsuitesmemory_soak_suitesh--operator-guide"><code>tests/dynamic/suites/memory_soak_suite.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored for P10.
@@ -267,7 +271,7 @@ committed <code>tests/lib/evidence.sh</code>.</li>
 <li>For a real run: <code>HELIX_DYNAMIC_STACK=1</code> +
 <code>HELIX_PROXY_URL</code>, plus <code>HELIX_MEM_RSS_CMD</code> — an
 operator-supplied command that prints the summed RSS (KB) of the
-process(es) under test (e.g. the acl-helper + healthd). Config injection
+process(es) under test (e.g. the acl-helper + healthd). Config injection
 §11.4.28 — no hardcoded process discovery in the suite.</li>
 </ul>
 <h2 id="usage-examples">Usage examples</h2>
@@ -276,7 +280,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/dynamic/suites/memory_soak_suite.sh</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># P10 live run:</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_DYNAMIC_STACK</span><span class="op">=</span>1 <span class="va">HELIX_PROXY_URL</span><span class="op">=</span>http://127.0.0.1:53128 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_DYNAMIC_STACK</span><span class="op">=</span>1 <span class="va">HELIX_PROXY_URL</span><span class="op">=</span>http://127.0.0.1:34128 <span class="dt">\</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">MEM_REQUESTS</span><span class="op">=</span>500 <span class="va">MEM_WARMUP</span><span class="op">=</span>50 <span class="va">MEM_GROWTH_PCT</span><span class="op">=</span>20 <span class="dt">\</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="va">HELIX_MEM_RSS_CMD</span><span class="op">=</span><span class="st">&#39;ps -o rss= -p &quot;$(pgrep -f external_acl)&quot;&#39;</span> <span class="dt">\</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bash</span> tests/dynamic/suites/memory_soak_suite.sh</span></code></pre></div>
@@ -295,13 +299,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 post-warmup samples) → <code>FAIL</code> citing
 <code>memory.evidence</code>.</li>
 </ul>
-<h2 id="red_mode-polarity">§11.4.115 RED_MODE polarity</h2>
+<h2 id="114115-red_mode-polarity">§11.4.115 RED_MODE polarity</h2>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th><code>RED_MODE</code></th>

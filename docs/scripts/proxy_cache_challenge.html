@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>proxy_cache_challenge</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -245,7 +249,7 @@
 fail-open)</p>
 <h2 id="overview">Overview</h2>
 <p>Anti-bluff Challenge that proves the <strong>live HTTP proxy</strong>
-(default <code>http://localhost:53128</code>) caches. A
+(default <code>http://localhost:34128</code>) caches. A
 <strong>reliably-cacheable</strong> plain-HTTP URL (default
 <code>http://ftp.debian.org/debian/README</code> — a Debian mirror
 README served with a cache-permitting <code>Cache-Control</code>) is
@@ -271,7 +275,7 @@ with the closed-set reason <code>topology_unsupported</code> (§11.4.3);
 it never fakes a PASS.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
-<li>The base proxy stack UP with the HTTP proxy on <code>53128</code>
+<li>The base proxy stack UP with the HTTP proxy on <code>34128</code>
 and the Squid container running (default name
 <code>proxy-squid</code>).</li>
 <li><code>curl</code>, <code>bash</code>, <code>awk</code>,
@@ -296,7 +300,7 @@ container.</li>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="va">CHALLENGE_EVIDENCE_DIR</span><span class="op">=</span>/path/to/evidence <span class="dt">\</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bash</span> challenges/scripts/proxy_cache_challenge.sh</span></code></pre></div>
 <p>Environment: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>CACHE_URL</code> (default
+<code>http://localhost:34128</code>), <code>CACHE_URL</code> (default
 <code>http://ftp.debian.org/debian/README</code>),
 <code>SQUID_CONTAINER</code> (default <code>proxy-squid</code> — the
 authoritative log is read here), <code>SQUID_CONTAINER_LOG</code>

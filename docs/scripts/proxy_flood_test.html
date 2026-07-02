@@ -2,9 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>proxy_flood_test.sh — operator guide</title>
+  <title>proxy_flood_test</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -172,16 +176,13 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">proxy_flood_test.sh — operator guide</h1>
-</header>
 <h1
-id="testsddosproxy_flood_test.sh-operator-guide"><code>tests/ddos/proxy_flood_test.sh</code>
+id="testsddosproxy_flood_testsh--operator-guide"><code>tests/ddos/proxy_flood_test.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
 Runs live against the running proxy (HTTP forward
-<code>localhost:53128</code>, SOCKS5 <code>localhost:51080</code>);
+<code>localhost:34128</code>, SOCKS5 <code>localhost:34080</code>);
 honest <code>SKIP</code> (§11.4.3) when the proxy is absent or the
 target is unreachable both ways.</p>
 <blockquote>
@@ -207,7 +208,7 @@ OR degrade, <strong>never</strong> crash).</p>
 and healthy</strong>; the decisive proof is the <strong>post-flood
 recovery request succeeding</strong> plus <strong>both listeners
 surviving</strong> (§11.4.108 runtime-signature, §11.4.69 captured
-evidence). A metadata-only / “no error” PASS is refused (§11.4.1); a
+evidence). A metadata-only / "no error" PASS is refused (§11.4.1); a
 crash / hung recovery / dropped listener is a <code>FAIL</code>; an
 absent proxy is an honest <code>SKIP</code> — never a fabricated
 PASS.</p>
@@ -239,8 +240,8 @@ non-<code>SKIP</code> run.</li>
 </ul>
 <h2 id="usage-examples">Usage examples</h2>
 <ul>
-<li>Default flood against <code>localhost:53128</code> /
-<code>localhost:51080</code>:
+<li>Default flood against <code>localhost:34128</code> /
+<code>localhost:34080</code>:
 <code>bash tests/ddos/proxy_flood_test.sh</code></li>
 <li>Conductor invocation under host-safety caps (§12.6 — the hard
 constraint):
@@ -250,10 +251,10 @@ constraint):
 <code>FLOOD_TOTAL=400 FLOOD_CONC=30 bash tests/ddos/proxy_flood_test.sh</code></li>
 </ul>
 <p>Env knobs: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
-(default <code>53128</code>), <code>SOCKS_PROXY_HOST</code> (default
+<code>http://localhost:34128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>34128</code>), <code>SOCKS_PROXY_HOST</code> (default
 <code>localhost</code>), <code>SOCKS_PROXY_PORT</code> (default
-<code>51080</code>), <code>FLOOD_TARGET</code> (default
+<code>34080</code>), <code>FLOOD_TARGET</code> (default
 <code>https://www.gstatic.com/generate_204</code>),
 <code>FLOOD_EXPECT</code> (default <code>204 200</code>),
 <code>FLOOD_TOTAL</code> (default <code>300</code>, hard-capped
@@ -262,7 +263,7 @@ hard-capped <code>30</code>), <code>FLOOD_MAX_TIME</code> (default
 <code>5</code> s, capped <code>30</code>),
 <code>FLOOD_EVIDENCE_DIR</code> (default
 <code>qa-results/ddos/proxy_flood_&lt;ts&gt;</code>).</p>
-<h2 id="host-safety-12.6-non-negotiable">Host safety (§12.6 —
+<h2 id="host-safety-126--non-negotiable">Host safety (§12.6 —
 non-negotiable)</h2>
 <p>The burst is <strong>hard-bounded regardless of env</strong>: total
 requests <code>&lt;= 500</code>, parallel workers <code>&lt;= 30</code>,
@@ -293,7 +294,7 @@ collapse / stuck-fail-closed (§11.4.68 no fail-open). Exit
 <li><strong>Proxy up + recovers but ZERO flood requests landed</strong>
 (all timeout/error) → <code>SKIP</code>
 (<code>network_unreachable_external</code>) — no real flood pressure was
-applied, so “survived” would be vacuous (§11.4.69 / §11.4.1). Exit
+applied, so "survived" would be vacuous (§11.4.69 / §11.4.1). Exit
 <code>3</code>.</li>
 <li><strong>Recovery + direct probe both fail, port still
 listening</strong> → <code>SKIP</code>
@@ -313,7 +314,7 @@ honest <code>SKIP</code>.</li>
 <li>Flood: <code>FLOOD_CONC</code> bounded parallel workers, each
 issuing <code>PER_WORKER</code> requests, appending
 <code>%{http_code} %{time_total}</code> per request to its
-<strong>own</strong> file (a verdict never rests on a background job’s
+<strong>own</strong> file (a verdict never rests on a background job's
 exit status).</li>
 <li><code>classify_outcome</code> (pure, no network) buckets each
 request into
@@ -325,7 +326,7 @@ census + distinct-code histogram → <code>census.txt</code>;
 through the HTTP proxy, a direct cross-check probe, and a single SOCKS5
 recovery probe → <code>flood.evidence</code>.</li>
 <li><code>trap ... EXIT INT TERM</code> reaps <strong>only</strong> this
-script’s worker PIDs (never <code>kill 0</code>) and removes the scratch
+script's worker PIDs (never <code>kill 0</code>) and removes the scratch
 dir (§11.4.14).</li>
 <li>Resources: shell + curl only, concurrency hard-capped, well under
 the §12.6 60 % host-memory ceiling.</li>

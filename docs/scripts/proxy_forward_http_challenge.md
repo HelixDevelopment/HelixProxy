@@ -7,7 +7,7 @@
 ## Overview
 
 Anti-bluff Challenge that proves the **live HTTP forward proxy** (default
-`http://localhost:53128`) actually forwards real end-user traffic. It drives two
+`http://localhost:34128`) actually forwards real end-user traffic. It drives two
 real sub-probes through the proxy — a plain-HTTP `GET` to a `204` endpoint and a
 CONNECT-tunnelled HTTPS `GET` — and asserts the through-proxy `%{http_code}`
 matches the expected code, cross-checked against a **direct** fetch of the same
@@ -16,7 +16,7 @@ file, so every PASS cites a real artefact.
 
 ## Prerequisites
 
-- The base proxy stack UP with the HTTP proxy listening on `53128`.
+- The base proxy stack UP with the HTTP proxy listening on `34128`.
 - `curl`, `bash`, `awk`, `grep`; `tests/lib/evidence.sh` present (sourced).
 - READ-ONLY: the script is a plain proxy client — it never starts, stops,
   restarts, or reconfigures any container.
@@ -26,13 +26,13 @@ file, so every PASS cites a real artefact.
 ```sh
 bash challenges/scripts/proxy_forward_http_challenge.sh
 # override target / evidence dir:
-HTTP_PROXY_URL=http://localhost:53128 \
+HTTP_PROXY_URL=http://localhost:34128 \
 CHALLENGE_EVIDENCE_DIR=/path/to/evidence \
   bash challenges/scripts/proxy_forward_http_challenge.sh
 ```
 
-Environment: `HTTP_PROXY_URL` (default `http://localhost:53128`),
-`HTTP_PROXY_PORT` (default `53128`), `CHALLENGE_EVIDENCE_DIR`
+Environment: `HTTP_PROXY_URL` (default `http://localhost:34128`),
+`HTTP_PROXY_PORT` (default `34128`), `CHALLENGE_EVIDENCE_DIR`
 (default `qa-results/challenges/<run-ts>`), `CURL_MAX_TIME` (default `20`).
 
 ## Exit codes

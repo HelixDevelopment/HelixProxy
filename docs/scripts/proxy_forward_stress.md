@@ -3,7 +3,7 @@
 **Revision:** 1
 **Last modified:** 2026-07-01T00:00:00Z
 **Status:** Authored + parse-clean. Runs live against the running Squid HTTP
-forward proxy (`localhost:53128`); honest `SKIP` (§11.4.3) when the proxy or the
+forward proxy (`localhost:34128`); honest `SKIP` (§11.4.3) when the proxy or the
 target endpoint is unreachable.
 
 > Companion (§11.4.18) to the in-source documentation block at the top of the
@@ -12,7 +12,7 @@ target endpoint is unreachable.
 ## Overview
 
 §11.4.85 / §11.4.169 **stress** suite for the LIVE HTTP forward proxy (Squid,
-`localhost:53128`). It drives **N ≥ 100 sequential** HTTPS-CONNECT requests
+`localhost:34128`). It drives **N ≥ 100 sequential** HTTPS-CONNECT requests
 through the proxy **plus a concurrent burst of ≥ 10 parallel** requests, captures
 each request's `%{http_code}` and `%{time_total}` to its **own file** (so a
 verdict never rests on a background job's exit status — the B3 bluff fix), and
@@ -34,15 +34,15 @@ evidence (§11.4.69); a metadata-only PASS is refused.
 
 ## Usage examples
 
-- Default run against `localhost:53128`:
+- Default run against `localhost:34128`:
   `bash tests/stress/proxy_forward_stress.sh`
 - Conductor invocation under host-safety caps (§12.6):
   `GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/stress/proxy_forward_stress.sh`
 - Custom load / target:
   `STRESS_SEQ=100 STRESS_CONC=10 STRESS_TARGET=https://www.gstatic.com/generate_204 bash tests/stress/proxy_forward_stress.sh`
 
-Env knobs: `HTTP_PROXY_URL` (default `http://localhost:53128`), `HTTP_PROXY_PORT`
-(default `53128`), `STRESS_TARGET` (default `https://www.gstatic.com/generate_204`),
+Env knobs: `HTTP_PROXY_URL` (default `http://localhost:34128`), `HTTP_PROXY_PORT`
+(default `34128`), `STRESS_TARGET` (default `https://www.gstatic.com/generate_204`),
 `STRESS_EXPECT` (default `204 200`), `STRESS_VIA_TARGET` (default
 `http://www.gstatic.com/generate_204`), `STRESS_SEQ` (default `100`),
 `STRESS_CONC` (default `10`), `CURL_MAX_TIME` (default `20`),

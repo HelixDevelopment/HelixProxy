@@ -110,8 +110,8 @@ graph TD
     Client["Client browser or device"]
 
     subgraph BytePath["Data plane - byte path, unchanged proxying and caching"]
-        Squid["Squid :53128<br/>HTTP and HTTPS cache"]
-        Dante["Dante :51080<br/>SOCKS5"]
+        Squid["Squid :34128<br/>HTTP and HTTPS cache"]
+        Dante["Dante :34080<br/>SOCKS5"]
         ACL["external_acl helper<br/>Go, out of byte path"]
     end
 
@@ -157,7 +157,7 @@ graph TD
 
 The intended path of a single HTTP/HTTPS request in `dynamic` mode:
 
-1. **Client → Squid.** The client points at Squid (`:53128`) exactly as today.
+1. **Client → Squid.** The client points at Squid (`:34128`) exactly as today.
 2. **Squid → external_acl helper.** Before choosing an upstream, Squid calls the
    Go helper through `external_acl_type`, passing the request's `Host`.
 3. **Helper → Redis.** The helper reads `route:<target>` and

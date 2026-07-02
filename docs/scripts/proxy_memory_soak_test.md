@@ -15,7 +15,7 @@ is expected; continuous growth past the calibrated bound is a leak → FAIL.
 ## Overview
 
 §11.4.169 **memory** test-type coverage. It proves the LIVE Squid forward proxy
-(`localhost:53128`, container `proxy-squid`) does **not leak memory under
+(`localhost:34128`, container `proxy-squid`) does **not leak memory under
 sustained load**. It reads the proxy container's RSS at **baseline** (before any
 load), drives a **sustained soak** of `N ≥ 200` proxied requests over `≥ 30 s`,
 samples RSS into a captured **time-series** along the way, re-reads RSS at the
@@ -130,8 +130,8 @@ corpus — only curated evidence is committed at release prep, §11.4.83):
 
 | Var | Default | Meaning |
 |---|---|---|
-| `HTTP_PROXY_URL` | `http://localhost:53128` | proxy the soak drives |
-| `HTTP_PROXY_PORT` | `53128` | port for the listening probe |
+| `HTTP_PROXY_URL` | `http://localhost:34128` | proxy the soak drives |
+| `HTTP_PROXY_PORT` | `34128` | port for the listening probe |
 | `MEM_SOAK_CONTAINER` | `proxy-squid` | container whose RSS is read |
 | `MEM_SOAK_TARGET` | `https://www.gstatic.com/generate_204` | soak target |
 | `MEM_SOAK_EXPECT` | `204 200` | accepted HTTP codes |

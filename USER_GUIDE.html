@@ -2,9 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Proxy Service - User Guide</title>
+  <title>USER_GUIDE</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -237,9 +241,6 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">Proxy Service - User Guide</h1>
-</header>
 <h1 id="proxy-service---user-guide">Proxy Service - User Guide</h1>
 <p>Complete guide for setting up, configuring, and using the Proxy
 Service.</p>
@@ -258,10 +259,10 @@ Service.</p>
 </ol>
 <h2 id="quick-reference">Quick Reference</h2>
 <ul>
-<li>HTTP Proxy: <code>http://&lt;HOST_IP&gt;:53128</code></li>
-<li>HTTPS Proxy: <code>http://&lt;HOST_IP&gt;:53128</code></li>
-<li>SOCKS5 Proxy: <code>socks5://&lt;HOST_IP&gt;:51080</code></li>
-<li>Admin Panel: <code>http://&lt;HOST_IP&gt;:58080</code></li>
+<li>HTTP Proxy: <code>http://&lt;HOST_IP&gt;:34128</code></li>
+<li>HTTPS Proxy: <code>http://&lt;HOST_IP&gt;:34128</code></li>
+<li>SOCKS5 Proxy: <code>socks5://&lt;HOST_IP&gt;:34080</code></li>
+<li>Admin Panel: <code>http://&lt;HOST_IP&gt;:34088</code></li>
 </ul>
 <hr />
 <h2 id="installation">Installation</h2>
@@ -299,9 +300,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 <p>Edit <code>.env</code> file:</p>
 <div class="sourceCode" id="cb5"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Network ports</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">HTTP_PROXY_PORT</span><span class="op">=</span>53128      <span class="co"># HTTP/HTTPS proxy</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="va">SOCKS_PROXY_PORT</span><span class="op">=</span>51080     <span class="co"># SOCKS5 proxy</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">PROXY_ADMIN_PORT</span><span class="op">=</span>58080     <span class="co"># Admin web interface</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">HTTP_PROXY_PORT</span><span class="op">=</span>34128      <span class="co"># HTTP/HTTPS proxy</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="va">SOCKS_PROXY_PORT</span><span class="op">=</span>34080     <span class="co"># SOCKS5 proxy</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">PROXY_ADMIN_PORT</span><span class="op">=</span>34088     <span class="co"># Admin web interface</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Cache settings</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="va">CACHE_DIR</span><span class="op">=</span>/path/to/cache</span>
@@ -385,62 +386,62 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href=
 <h3 id="linux-clients">Linux Clients</h3>
 <h4 id="temporary-current-shell">Temporary (Current Shell)</h4>
 <div class="sourceCode" id="cb13"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:53128&quot;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:53128&quot;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ALL_PROXY</span><span class="op">=</span><span class="st">&quot;socks5://192.168.1.100:51080&quot;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:34128&quot;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:34128&quot;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ALL_PROXY</span><span class="op">=</span><span class="st">&quot;socks5://192.168.1.100:34080&quot;</span></span></code></pre></div>
 <h4 id="permanent-all-users">Permanent (All Users)</h4>
 <p>Add to <code>/etc/environment</code>:</p>
-<pre><code>HTTP_PROXY=&quot;http://192.168.1.100:53128&quot;
-HTTPS_PROXY=&quot;http://192.168.1.100:53128&quot;
+<pre><code>HTTP_PROXY=&quot;http://192.168.1.100:34128&quot;
+HTTPS_PROXY=&quot;http://192.168.1.100:34128&quot;
 NO_PROXY=&quot;localhost,127.0.0.1,.local&quot;</code></pre>
 <h4 id="apt-debianubuntu">APT (Debian/Ubuntu)</h4>
 <p>Create <code>/etc/apt/apt.conf.d/proxy.conf</code>:</p>
-<pre><code>Acquire::http::Proxy &quot;http://192.168.1.100:53128&quot;;
-Acquire::https::Proxy &quot;http://192.168.1.100:53128&quot;;</code></pre>
+<pre><code>Acquire::http::Proxy &quot;http://192.168.1.100:34128&quot;;
+Acquire::https::Proxy &quot;http://192.168.1.100:34128&quot;;</code></pre>
 <h4 id="yumdnf-rhelcentosfedora">YUM/DNF (RHEL/CentOS/Fedora)</h4>
 <p>Add to <code>/etc/dnf/dnf.conf</code> or
 <code>/etc/yum.conf</code>:</p>
-<pre><code>proxy=http://192.168.1.100:53128</code></pre>
+<pre><code>proxy=http://192.168.1.100:34128</code></pre>
 <h3 id="macos-clients">macOS Clients</h3>
 <h4 id="system-wide">System-wide</h4>
 <ol type="1">
 <li>System Preferences → Network</li>
 <li>Select network → Advanced → Proxies</li>
 <li>Enable HTTP/HTTPS proxy</li>
-<li>Web Proxy Server: <code>192.168.1.100:53128</code></li>
+<li>Web Proxy Server: <code>192.168.1.100:34128</code></li>
 </ol>
 <h4 id="terminal-zsh">Terminal (zsh)</h4>
 <p>Add to <code>~/.zshrc</code>:</p>
 <div class="sourceCode" id="cb17"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:53128&quot;</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:53128&quot;</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:34128&quot;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://192.168.1.100:34128&quot;</span></span></code></pre></div>
 <h3 id="windows-clients">Windows Clients</h3>
 <h4 id="system-wide-1">System-wide</h4>
 <ol type="1">
 <li>Settings → Network &amp; Internet → Proxy</li>
 <li>Enable "Use a proxy server"</li>
-<li>Address: <code>192.168.1.100</code>, Port: <code>53128</code></li>
+<li>Address: <code>192.168.1.100</code>, Port: <code>34128</code></li>
 </ol>
 <h4 id="powershell">PowerShell</h4>
 <div class="sourceCode" id="cb18"><pre
-class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTP_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://192.168.1.100:53128&quot;</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTPS_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://192.168.1.100:53128&quot;</span></span></code></pre></div>
+class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTP_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://192.168.1.100:34128&quot;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTPS_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://192.168.1.100:34128&quot;</span></span></code></pre></div>
 <h4 id="command-prompt">Command Prompt</h4>
 <div class="sourceCode" id="cb19"><pre
-class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">HTTP_PROXY</span>=http://192.168.1.100:53128</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">HTTPS_PROXY</span>=http://192.168.1.100:53128</span></code></pre></div>
+class="sourceCode cmd"><code class="sourceCode dosbat"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">HTTP_PROXY</span>=http://192.168.1.100:34128</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="va">HTTPS_PROXY</span>=http://192.168.1.100:34128</span></code></pre></div>
 <h3 id="mobile-devices">Mobile Devices</h3>
 <h4 id="ios">iOS</h4>
 <ol type="1">
 <li>Settings → Wi-Fi → (network) → Configure Proxy</li>
 <li>Select "Manual"</li>
-<li>Server: <code>192.168.1.100</code>, Port: <code>53128</code></li>
+<li>Server: <code>192.168.1.100</code>, Port: <code>34128</code></li>
 </ol>
 <h4 id="android">Android</h4>
 <ol type="1">
 <li>Settings → Wi-Fi → (network) → Modify</li>
 <li>Advanced options → Proxy → Manual</li>
-<li>Hostname: <code>192.168.1.100</code>, Port: <code>53128</code></li>
+<li>Hostname: <code>192.168.1.100</code>, Port: <code>34128</code></li>
 </ol>
 <h3 id="browser-configuration">Browser Configuration</h3>
 <p>See <a href="docs/BROWSERS.md">docs/BROWSERS.md</a> for detailed
@@ -451,8 +452,8 @@ browser setup.</p>
 <li>Settings → General → Network Settings → Settings</li>
 <li>Select "Manual proxy configuration"</li>
 <li>HTTP Proxy: <code>192.168.1.100</code>, Port:
-<code>53128</code></li>
-<li>SOCKS Host: <code>192.168.1.100</code>, Port: <code>51080</code>,
+<code>34128</code></li>
+<li>SOCKS Host: <code>192.168.1.100</code>, Port: <code>34080</code>,
 Type: SOCKS v5</li>
 <li>Check "Proxy DNS when using SOCKS v5"</li>
 </ol>
@@ -461,8 +462,8 @@ Type: SOCKS v5</li>
 <ol type="1">
 <li>Install SwitchyOmega from Chrome Web Store</li>
 <li>Create new profile → Proxy Profile</li>
-<li>HTTP: <code>192.168.1.100:53128</code></li>
-<li>SOCKS5: <code>192.168.1.100:51080</code></li>
+<li>HTTP: <code>192.168.1.100:34128</code></li>
+<li>SOCKS5: <code>192.168.1.100:34080</code></li>
 </ol>
 <hr />
 <h2 id="android-tv">Android TV</h2>
@@ -477,7 +478,7 @@ Guide</a></strong></p>
 <li><strong>Advanced options</strong> → Proxy:
 <strong>Manual</strong></li>
 <li>Proxy hostname: <code>&lt;HOST_IP&gt;</code></li>
-<li>Proxy port: <code>53128</code></li>
+<li>Proxy port: <code>34128</code></li>
 <li><strong>Save</strong></li>
 </ol>
 <blockquote>
@@ -517,7 +518,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href=
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./status</span> <span class="at">-v</span></span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify IP is masked</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> http://localhost:53128 https://ifconfig.me</span></code></pre></div>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> http://localhost:34128 https://ifconfig.me</span></code></pre></div>
 <h3 id="vpn-troubleshooting">VPN Troubleshooting</h3>
 <h4 id="connection-fails">Connection Fails</h4>
 <ol type="1">
@@ -589,7 +590,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a href=
 <span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Continuous monitoring</span></span>
 <span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="ex">./status</span> <span class="at">--watch</span></span></code></pre></div>
 <h3 id="admin-panel">Admin Panel</h3>
-<p>Access at: <code>http://HOST_IP:58080</code></p>
+<p>Access at: <code>http://HOST_IP:34088</code></p>
 <p>Features:</p>
 <ul>
 <li>Real-time service status</li>
@@ -613,13 +614,13 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a href=
 <h3 id="health-checks">Health Checks</h3>
 <div class="sourceCode" id="cb32"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># HTTP proxy health</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> http://localhost:53128 http://connectivitycheck.gstatic.com/generate_204</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> http://localhost:34128 http://connectivitycheck.gstatic.com/generate_204</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co"># SOCKS proxy health</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> socks5://localhost:51080 http://connectivitycheck.gstatic.com/generate_204</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> socks5://localhost:34080 http://connectivitycheck.gstatic.com/generate_204</span>
 <span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Admin health</span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> http://localhost:58080/health</span></code></pre></div>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> http://localhost:34088/health</span></code></pre></div>
 <hr />
 <h2 id="advanced-configuration">Advanced Configuration</h2>
 <h3 id="custom-dns">Custom DNS</h3>
@@ -657,12 +658,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href=
 <h3 id="q-can-i-use-both-http-and-socks-proxies">Q: Can I use both HTTP
 and SOCKS proxies?</h3>
 <p><strong>A:</strong> Yes, both run simultaneously on different ports.
-HTTP proxy on 53128, SOCKS on 51080.</p>
+HTTP proxy on 34128, SOCKS on 34080.</p>
 <h3 id="q-how-do-i-know-if-vpn-is-working">Q: How do I know if VPN is
 working?</h3>
 <p><strong>A:</strong> Check your external IP:</p>
 <div class="sourceCode" id="cb37"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> http://localhost:53128 https://ifconfig.me</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--proxy</span> http://localhost:34128 https://ifconfig.me</span></code></pre></div>
 <h3 id="q-why-is-caching-not-working-for-https">Q: Why is caching not
 working for HTTPS?</h3>
 <p><strong>A:</strong> HTTPS content is encrypted. Enable HTTPS

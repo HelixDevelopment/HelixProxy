@@ -294,18 +294,18 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 │          ▼                      │                                │
 │  ┌────────────────┐             │                                │
 │  │  HTTP PROXY    │◄────────────┤                                │
-│  │  (Squid:53128)  │             │                                │
+│  │  (Squid:34128)  │             │                                │
 │  │  + Cache       │             │                                │
 │  └───────┬────────┘             │                                │
 │          │                      │                                │
 │  ┌───────▼────────┐             │                                │
 │  │  SOCKS PROXY   │◄────────────┘                                │
-│  │  (Dante:51080)  │                                              │
+│  │  (Dante:34080)  │                                              │
 │  └────────────────┘                                              │
 │                                                                  │
 │  ┌────────────────┐     ┌────────────────┐                      │
 │  │ ADMIN PANEL    │     │ CACHE MGMT     │                      │
-│  │ (Caddy:58080)   │     │ (Automated)    │                      │
+│  │ (Caddy:34088)   │     │ (Automated)    │                      │
 │  └────────────────┘     └────────────────┘                      │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
@@ -374,17 +374,17 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <tr>
 <td><code>HTTP_PROXY_PORT</code></td>
 <td>HTTP/HTTPS proxy port</td>
-<td>53128</td>
+<td>34128</td>
 </tr>
 <tr>
 <td><code>SOCKS_PROXY_PORT</code></td>
 <td>SOCKS5 proxy port</td>
-<td>51080</td>
+<td>34080</td>
 </tr>
 <tr>
 <td><code>PROXY_ADMIN_PORT</code></td>
 <td>Admin panel port</td>
-<td>58080</td>
+<td>34088</td>
 </tr>
 <tr>
 <td><code>USE_VPN</code></td>
@@ -484,34 +484,34 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="
 <h3 id="linuxmacos">Linux/macOS</h3>
 <div class="sourceCode" id="cb8"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set environment variables</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:53128&quot;</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:53128&quot;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ALL_PROXY</span><span class="op">=</span><span class="st">&quot;socks5://HOST_IP:51080&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:34128&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:34128&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ALL_PROXY</span><span class="op">=</span><span class="st">&quot;socks5://HOST_IP:34080&quot;</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">NO_PROXY</span><span class="op">=</span><span class="st">&quot;localhost,127.0.0.1&quot;</span></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or add to ~/.bashrc or ~/.zshrc for persistence</span></span></code></pre></div>
 <h3 id="system-wide-linux">System-wide (Linux)</h3>
 <div class="sourceCode" id="cb9"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add to /etc/environment</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:53128&quot;</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:53128&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">HTTP_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:34128&quot;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">HTTPS_PROXY</span><span class="op">=</span><span class="st">&quot;http://HOST_IP:34128&quot;</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">NO_PROXY</span><span class="op">=</span><span class="st">&quot;localhost,127.0.0.1&quot;</span></span></code></pre></div>
 <h3 id="windows">Windows</h3>
 <div class="sourceCode" id="cb10"><pre
 class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># PowerShell</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTP_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://HOST_IP:53128&quot;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTPS_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://HOST_IP:53128&quot;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTP_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://HOST_IP:34128&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">HTTPS_PROXY</span> <span class="op">=</span> <span class="st">&quot;http://HOST_IP:34128&quot;</span></span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Command Prompt</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set</span> HTTP_PROXY<span class="op">=</span>http<span class="op">://</span>HOST_IP<span class="op">:</span><span class="dv">53128</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="dt">set</span> HTTPS_PROXY<span class="op">=</span>http<span class="op">://</span>HOST_IP<span class="op">:</span><span class="dv">53128</span></span></code></pre></div>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set</span> HTTP_PROXY<span class="op">=</span>http<span class="op">://</span>HOST_IP<span class="op">:</span><span class="dv">34128</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="dt">set</span> HTTPS_PROXY<span class="op">=</span>http<span class="op">://</span>HOST_IP<span class="op">:</span><span class="dv">34128</span></span></code></pre></div>
 <h3 id="browser-configuration">Browser Configuration</h3>
 <h4 id="firefox">Firefox</h4>
 <ol type="1">
 <li>Settings → General → Network Settings</li>
 <li>Select "Manual proxy configuration"</li>
-<li>HTTP Proxy: <code>HOST_IP</code>, Port: <code>53128</code></li>
-<li>SOCKS Host: <code>HOST_IP</code>, Port: <code>51080</code>, SOCKS
+<li>HTTP Proxy: <code>HOST_IP</code>, Port: <code>34128</code></li>
+<li>SOCKS Host: <code>HOST_IP</code>, Port: <code>34080</code>, SOCKS
 v5</li>
 </ol>
 <h4 id="chromeedge">Chrome/Edge</h4>
@@ -581,14 +581,14 @@ bypass</li>
 <h3 id="firewall-configuration">Firewall Configuration</h3>
 <div class="sourceCode" id="cb13"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Allow from specific network only</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow from 192.168.1.0/24 to any port 53128</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow from 192.168.1.0/24 to any port 51080</span></code></pre></div>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow from 192.168.1.0/24 to any port 34128</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow from 192.168.1.0/24 to any port 34080</span></code></pre></div>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="service-wont-start">Service Won't Start</h3>
 <ol type="1">
 <li>Check logs: <code>./logs/proxy.log</code></li>
 <li>Verify ports are not in use:
-<code>ss -tuln | grep -E '53128|51080'</code></li>
+<code>ss -tuln | grep -E '34128|34080'</code></li>
 <li>Check container runtime: <code>./init --check</code></li>
 </ol>
 <h3 id="vpn-not-connecting">VPN Not Connecting</h3>

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>run_proxy_bank</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -257,8 +261,8 @@ Squid's own <code>access.log</code> (<code>TCP_*HIT</code>, §11.4.69
 sink-side), never from forgeable client headers.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
-<li>The proxy stack is up: HTTP forward on <code>:53128</code>, SOCKS5
-on <code>:51080</code> (<code>./start</code>, rootless Podman —
+<li>The proxy stack is up: HTTP forward on <code>:34128</code>, SOCKS5
+on <code>:34080</code> (<code>./start</code>, rootless Podman —
 §11.4.161).</li>
 <li>To <strong>execute</strong> the bank, the <code>helixqa</code>
 binary must be buildable from <code>submodules/helix_qa</code>. That

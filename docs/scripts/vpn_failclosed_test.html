@@ -2,9 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>vpn_failclosed_test.sh</title>
+  <title>vpn_failclosed_test</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -237,10 +241,7 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">vpn_failclosed_test.sh</h1>
-</header>
-<h1 id="vpn_failclosed_test.sh">vpn_failclosed_test.sh</h1>
+<h1 id="vpn_failclosed_testsh">vpn_failclosed_test.sh</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z</p>
 <p>Standing §11.4.68/§11.4.69/§11.4.108/§11.4.115 fail-closed
@@ -251,10 +252,6 @@ fail-closed response (<code>503</code> + <code>ERR_TUNNEL_DOWN</code>)
 and MUST NOT leak the request to the open internet.</strong></p>
 <h2 id="overview">Overview</h2>
 <table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr>
 <th>Field</th>
@@ -337,7 +334,7 @@ tunnel is DOWN
 </ul>
 <p><code>healthd</code> also publishes the same profile-set DOWN on its
 own loop when gluetun has no real egress, so nothing can race the status
-back to “up”.</p>
+back to "up".</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>The <strong>conductor</strong> has booted the dynamic stack and
@@ -348,7 +345,7 @@ boots/starts/stops/builds anything).</li>
 <code>docker</code>) to <code>exec</code> <code>redis-cli</code> into
 <code>proxy-redis</code> and read the Squid PID —
 <strong><code>exec</code>, not a start/stop workflow</strong> (mirrors
-<code>lib/container-runtime.sh</code>’s own <code>podman exec</code> /
+<code>lib/container-runtime.sh</code>'s own <code>podman exec</code> /
 <code>podman ps</code> use). Fully overridable via
 <code>HELIX_FAILCLOSED_REDIS_CLI</code> (§11.4.28 config
 injection).</li>
@@ -369,7 +366,7 @@ fail-closed half is autonomous.</li>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_DYNAMIC_STACK</span><span class="op">=</span>1 <span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    bash tests/dynamic/vpn_failclosed_test.sh</span></code></pre></div>
 <p>Exact conductor boot + run sequence:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./start</span> <span class="at">--dynamic</span>                                    <span class="co"># boots the dynamic profile, binds :53128</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./start</span> <span class="at">--dynamic</span>                                    <span class="co"># boots the dynamic profile, binds :34128</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_DYNAMIC_STACK</span><span class="op">=</span>1 <span class="fu">bash</span> tests/dynamic/vpn_failclosed_test.sh</span></code></pre></div>
 <h2 id="what-it-asserts-green">What it asserts (GREEN)</h2>
 <ol type="1">
@@ -388,8 +385,8 @@ and confirm <code>"state":"down"</code> took (captured in
 <code>HELIX_FAILCLOSED_ITER</code> (default 3, §11.4.50) proxied
 requests to the target; every one must be HTTP <code>503</code>
 <strong>with <code>ERR_TUNNEL_DOWN</code> in the body</strong> (positive
-branded evidence, not the origin’s content).</li>
-<li><strong>No leak</strong> — Squid’s own <code>access.log</code> must
+branded evidence, not the origin's content).</li>
+<li><strong>No leak</strong> — Squid's own <code>access.log</code> must
 show <code>TCP_DENIED/503</code> for the host and <strong>no</strong>
 upstream-forward line (<code>HIER_DIRECT</code> /
 <code>*_PARENT</code>); any <code>2xx</code>/<code>3xx</code> through
@@ -407,10 +404,6 @@ here.</li>
 </ol>
 <p>Verdict matrix (first match wins):</p>
 <table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr>
 <th>Observation</th>
@@ -438,10 +431,10 @@ upstream-forward log line</td>
 </tr>
 </tbody>
 </table>
-<h2 id="red-self-validation-11.4.115-11.4.10710">RED self-validation
+<h2 id="red-self-validation-114115--11410710">RED self-validation
 (§11.4.115 / §11.4.107(10))</h2>
 <p><code>RED_MODE=1</code> feeds a <strong>golden-BAD</strong> fixture —
-a fabricated <code>200</code> “leak” body carrying the origin’s content
+a fabricated <code>200</code> "leak" body carrying the origin's content
 and <strong>no</strong> <code>ERR_TUNNEL_DOWN</code> — into the
 <em>same</em> canonical <code>assert_graceful_503</code> path (via the
 documented <code>EVIDENCE_503_*</code> unit seams) and asserts it
@@ -464,7 +457,7 @@ pending) → the request still fails closed (no leak) but the
 (§11.4.68) and never a false leak-FAIL.</li>
 <li><strong>Origin genuinely offline</strong> → the
 branded-<strong>body</strong> assertion still discriminates a real
-fail-closed 503 (branded) from an upstream-connect failure (Squid’s own
+fail-closed 503 (branded) from an upstream-connect failure (Squid's own
 error page, no <code>ERR_TUNNEL_DOWN</code>).</li>
 </ul>
 <h2 id="internal-behaviour">Internal behaviour</h2>
@@ -477,18 +470,18 @@ exit.</li>
 <li><code>RED_MODE=0</code> → availability gate → inject down-state → N
 proxied requests → access.log no-leak parse → canonical
 <code>assert_graceful_503</code> → aggregate verdict.</li>
-<li><code>trap ... EXIT</code> deletes <strong>only</strong> the test’s
+<li><code>trap ... EXIT</code> deletes <strong>only</strong> the test's
 own <code>route:&lt;host&gt;</code> +
 <code>vpn:status:&lt;profile&gt;</code> keys (§11.4.14 — leaves the
 stack quiescent).</li>
 <li>All artefacts under the gitignored
 <code>qa-results/dynamic/vpn_failclosed/&lt;run-id&gt;/</code>.</li>
 </ol>
-<h2 id="paired-mutation-proof">§1.1 paired-mutation proof</h2>
+<h2 id="11-paired-mutation-proof">§1.1 paired-mutation proof</h2>
 <p>The RED mode <strong>is</strong> the paired mutation: it drives the
 GREEN assertion against a known leak and requires it to FAIL. Mutating
 <code>assert_graceful_503</code> in <code>tests/lib/evidence.sh</code>
-to accept a non-503 (e.g. remove the <code>code != 503</code> arm) flips
+to accept a non-503 (e.g. remove the <code>code != 503</code> arm) flips
 <code>RED_MODE=1</code> to a <code>FAIL</code> here (the assertion no
 longer catches the leak), proving this guard is not a bluff gate.</p>
 <h2 id="related-scripts">Related scripts</h2>
@@ -512,6 +505,6 @@ no-stack run emits the honest <code>topology_unsupported</code> SKIP;
 <code>RED_MODE=1</code> PASS with captured evidence
 (<code>assert_graceful_503 rc=1</code>,
 <code>HTTP code 200 != 503</code>). The GREEN live run is owed to the
-conductor’s <code>./start --dynamic</code> boot (§11.4.119).</p>
+conductor's <code>./start --dynamic</code> boot (§11.4.119).</p>
 </body>
 </html>

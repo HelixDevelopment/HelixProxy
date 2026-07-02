@@ -7,7 +7,7 @@
 
 `tests/benchmark/proxy_forward_benchmark.sh` is the §11.4.169
 **benchmarking / performance** test-type for the live HTTP forward proxy
-(Squid on `127.0.0.1:53128`). It measures forward-proxy request **latency**
+(Squid on `127.0.0.1:34128`). It measures forward-proxy request **latency**
 (nearest-rank `p50` / `p95` / `p99` + `min` / `max` / `mean`) and sequential
 **throughput** (successful requests per wall-second) by driving `N` (default
 200) plain-HTTP requests through the proxy to a 204-returning endpoint and
@@ -21,7 +21,7 @@ verdict contract from `tests/lib/evidence.sh`.
 
 ## Prerequisites
 
-- The base proxy stack UP (`./start`), Squid listening on `:53128`.
+- The base proxy stack UP (`./start`), Squid listening on `:34128`.
 - `bash`, `curl`, `awk`, `sort`, `grep` on `PATH`.
 - Network reachability to `BENCH_TARGET` (default `www.gstatic.com`) — an
   external outage is classified as an honest SKIP, never a false FAIL.
@@ -33,12 +33,12 @@ verdict contract from `tests/lib/evidence.sh`.
 GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/benchmark/proxy_forward_benchmark.sh
 
 # smaller/larger sample, custom proxy/target
-BENCH_N=50 PROXY_ADDR=127.0.0.1:53128 \
+BENCH_N=50 PROXY_ADDR=127.0.0.1:34128 \
   BENCH_TARGET=http://www.gstatic.com/generate_204 \
   bash tests/benchmark/proxy_forward_benchmark.sh
 ```
 
-Env overrides: `PROXY_ADDR` (default `127.0.0.1:53128`), `BENCH_TARGET`,
+Env overrides: `PROXY_ADDR` (default `127.0.0.1:34128`), `BENCH_TARGET`,
 `BENCH_EXPECT` (default `204`), `BENCH_N` (default `200`), `CURL_MAX_TIME`
 (default `20`), `BENCH_EVIDENCE_DIR`.
 

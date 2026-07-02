@@ -47,7 +47,7 @@ even with no tables — but initdb makes `vpnUpCollector` clean and surfaces the
 step is needed.
 
 Host ports (all loopback-pinned; chosen to avoid the in-use set
-5432/6379/53128/51080/58080/59090):
+5432/6379/34128/34080/34088/34090):
 
 | Service      | Host                | Container | Purpose                          |
 |--------------|---------------------|-----------|----------------------------------|
@@ -55,8 +55,8 @@ Host ports (all loopback-pinned; chosen to avoid the in-use set
 | `obs-postgres` | `127.0.0.1:55432` | `5432`    | conductor `psql` verify (optional) |
 | `obs-redis`  | `127.0.0.1:56379`   | `6379`    | conductor `redis-cli` verify (optional) |
 
-The api's mTLS control port `:58080` is **internal** to the `obs-metrics`
-network — never published (the host's `58080` is the base `proxy-admin` whoami).
+The api's mTLS control port `:34088` is **internal** to the `obs-metrics`
+network — never published (the host's `34088` is the base `proxy-admin` whoami).
 
 ## 2. Prerequisites
 
@@ -117,7 +117,7 @@ podman healthcheck run obs-api           # or: podman ps --filter name=obs-api
 
 Optional sanity: `podman logs obs-api` should end with
 `api …: serving PLAINTEXT /metrics on 0.0.0.0:59091` and
-`serving mTLS control-API on :58080`.
+`serving mTLS control-API on :34088`.
 
 ### Step 4 — run the anti-bluff `/metrics` scrape guard against the isolated URL
 
@@ -129,12 +129,12 @@ GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 ```
 
 - `HELIX_OBSERVABILITY_STACK=1` declares the stack up (else the guard SKIPs).
-- `HELIX_METRICS_URL` overrides the default `:59090` to the isolated `:59091`.
+- `HELIX_METRICS_URL` overrides the default `:34090` to the isolated `:59091`.
 - The guard asserts real exposition CONTENT (`# HELP`/`# TYPE` +
   `helix_proxy_acl_decisions_total` + `helix_proxy_tunnel_down_responses_total`),
   never merely HTTP 200 (§11.4.107).
 - The counter-increment sub-proof drives a request through
-  `HELIX_PROXY_URL` (default `http://127.0.0.1:53128`). This isolated stack has
+  `HELIX_PROXY_URL` (default `http://127.0.0.1:34128`). This isolated stack has
   **no squid proxy**, so that request is unreachable → the sub-proof records an
   honest `feature_disabled_by_config` SKIP while the exposition-content proof
   PASSes. That is correct and anti-bluff — the increment path is P5/P10-pending

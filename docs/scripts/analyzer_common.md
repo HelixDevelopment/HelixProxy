@@ -55,7 +55,7 @@ Environment knobs read by the library:
 
 - `HELIX_DYNAMIC_STACK` — `1` declares the live `dynamic` stack is up (P10).
 - `HELIX_PROXY_URL` — proxy URL the suites drive (default
-  `http://127.0.0.1:53128`).
+  `http://127.0.0.1:34128`).
 - `HELIX_PROBE_TIMEOUT` — reachability-probe timeout in seconds (default `5`).
 - `RED_MODE` — `1` selects the §11.4.115 RED-baseline polarity.
 

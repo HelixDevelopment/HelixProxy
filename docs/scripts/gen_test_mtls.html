@@ -2,9 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>gen_test_mtls.sh</title>
+  <title>gen_test_mtls</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -237,9 +241,6 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">gen_test_mtls.sh</h1>
-</header>
 <h1
 id="gen_test_mtlssh--hermetic-mtls-test-cert--pg-password-generator">gen_test_mtls.sh
 — hermetic mTLS test-cert + pg-password generator</h1>
@@ -431,9 +432,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># 4) Prove the live /metrics scrape (GREEN guard; asserts real exposition content).</span></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_OBSERVABILITY_STACK</span><span class="op">=</span>1 <span class="dt">\</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_METRICS_URL</span><span class="op">=</span>http://127.0.0.1:59090/metrics <span class="dt">\</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_METRICS_URL</span><span class="op">=</span>http://127.0.0.1:34090/metrics <span class="dt">\</span></span>
 <span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> tests/observability/metrics_scrape_test.sh</span></code></pre></div>
-<p>Port <code>59090</code> is <code>METRICS_PORT</code>
+<p>Port <code>34090</code> is <code>METRICS_PORT</code>
 (<code>.env.example:217</code>), published to loopback by
 <code>docker-compose.observability.yml:149</code>.
 <code>proxy-postgres</code> / <code>proxy-redis</code> live in the

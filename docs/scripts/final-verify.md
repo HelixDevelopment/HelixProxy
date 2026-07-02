@@ -27,7 +27,7 @@ No CLI flags or arguments.
 ## Inputs
 
 - **`.env`** (optional, gitignored) — sourced if present for `HTTP_PROXY_PORT`
-  (default `53128`), `SOCKS_PROXY_PORT` (default `51080`), and `VPN_EXIT_IP`.
+  (default `34128`), `SOCKS_PROXY_PORT` (default `34080`), and `VPN_EXIT_IP`.
 - **`VPN_EXIT_IP`** (optional) — the expected VPN tunnel exit IP. Unset → the
   VPN-routing check SKIPs (`operator_attended`, live RED/GREEN deferred to P10);
   it never fabricates a VPN PASS from an `egress == host` equality.

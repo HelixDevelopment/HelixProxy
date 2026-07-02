@@ -18,7 +18,7 @@ is conservatively counted as FAIL per §11.4.1.
 
 - The three sibling challenge scripts present and executable.
 - `bash`; `nice` / `ionice` optional (caps degrade gracefully if absent).
-- The live proxy stack UP (HTTP `53128`, SOCKS5 `51080`).
+- The live proxy stack UP (HTTP `34128`, SOCKS5 `34080`).
 
 ## Usage
 

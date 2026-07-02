@@ -32,7 +32,7 @@ benchmarking clause).
 bash tests/dynamic/suites/benchmark_suite.sh
 
 # P10 live run:
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
   BENCH_N=200 BENCH_P95_BUDGET_MS=800 BENCH_REGRESS_PCT=25 \
   bash tests/dynamic/suites/benchmark_suite.sh
 ```

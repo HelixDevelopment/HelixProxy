@@ -46,7 +46,7 @@ Every verdict is an analyzer citing a captured artefact (§11.4.69).
 bash tests/dynamic/suites/chaos_suite.sh
 
 # P10 live run (hooks supplied via env):
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
   HELIX_CHAOS_KILL_CMD=... HELIX_CHAOS_RESTART_CMD=... \
   HELIX_CHAOS_CAPTURE_CMD=... HELIX_SQUID_PID_CMD=... \
   bash tests/dynamic/suites/chaos_suite.sh

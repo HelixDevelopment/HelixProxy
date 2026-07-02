@@ -81,7 +81,7 @@ cert, key, and **client-CA** from FILE PATHS — never embedded key material
 |---|---|---|
 | Secret **name** (`.env.example`, this script) | `CONTROL_API_TLS_CERT_SECRET` / `CONTROL_API_TLS_KEY_SECRET` / `CONTROL_API_CLIENT_CA_SECRET` | `helixproxy_api_cert` / `helixproxy_api_key` / `helixproxy_api_client_ca` |
 | Mounted **path** (`.env.example`, read by the code) | `CONTROL_API_TLS_CERT` / `CONTROL_API_TLS_KEY` / `CONTROL_API_TLS_CLIENT_CA` | `/run/secrets/helixproxy_api_cert` / `…_api_key` / `…_api_client_ca` |
-| Listen address | `CONTROL_API_ADDR` | `:58080` (code default) |
+| Listen address | `CONTROL_API_ADDR` | `:34088` (code default) |
 
 **The name → path bridge:** this script creates a Podman secret named
 `<name>`; the compose api service mounts it read-only at `/run/secrets/<name>`;

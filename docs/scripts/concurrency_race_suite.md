@@ -35,7 +35,7 @@ fix — never a job exit status).
 bash tests/dynamic/suites/concurrency_race_suite.sh
 
 # P10 live run with the direct-helper hammer:
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
   RACE_CONC=20 HELIX_ACL_HELPER_CMD='./bin/external_acl' \
   bash tests/dynamic/suites/concurrency_race_suite.sh
 ```

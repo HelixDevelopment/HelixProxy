@@ -3,7 +3,7 @@
 **Revision:** 1
 **Last modified:** 2026-07-01T00:00:00Z
 **Status:** Authored + parse-clean. Runs live against the running proxy
-(HTTP forward `localhost:53128`, SOCKS5 `localhost:51080`); honest `SKIP`
+(HTTP forward `localhost:34128`, SOCKS5 `localhost:34080`); honest `SKIP`
 (§11.4.3) when the proxy is absent or the target is unreachable both ways.
 
 > Companion (§11.4.18) to the in-source documentation block at the top of the
@@ -48,16 +48,16 @@ flood.
 
 ## Usage examples
 
-- Default flood against `localhost:53128` / `localhost:51080`:
+- Default flood against `localhost:34128` / `localhost:34080`:
   `bash tests/ddos/proxy_flood_test.sh`
 - Conductor invocation under host-safety caps (§12.6 — the hard constraint):
   `GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/ddos/proxy_flood_test.sh`
 - Heavier bounded burst (still hard-capped `total<=500`, `conc<=30`):
   `FLOOD_TOTAL=400 FLOOD_CONC=30 bash tests/ddos/proxy_flood_test.sh`
 
-Env knobs: `HTTP_PROXY_URL` (default `http://localhost:53128`), `HTTP_PROXY_PORT`
-(default `53128`), `SOCKS_PROXY_HOST` (default `localhost`), `SOCKS_PROXY_PORT`
-(default `51080`), `FLOOD_TARGET` (default `https://www.gstatic.com/generate_204`),
+Env knobs: `HTTP_PROXY_URL` (default `http://localhost:34128`), `HTTP_PROXY_PORT`
+(default `34128`), `SOCKS_PROXY_HOST` (default `localhost`), `SOCKS_PROXY_PORT`
+(default `34080`), `FLOOD_TARGET` (default `https://www.gstatic.com/generate_204`),
 `FLOOD_EXPECT` (default `204 200`), `FLOOD_TOTAL` (default `300`, hard-capped
 `500`), `FLOOD_CONC` (default `20`, hard-capped `30`), `FLOOD_MAX_TIME` (default
 `5` s, capped `30`), `FLOOD_EVIDENCE_DIR` (default

@@ -32,7 +32,7 @@ cites a captured-evidence artefact — no metadata-only PASS (§11.4.69).
 bash tests/dynamic/suites/stress_suite.sh
 
 # P10 live run with overrides:
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
     STRESS_SEQ=100 STRESS_CONC=10 bash tests/dynamic/suites/stress_suite.sh
 ```
 

@@ -34,7 +34,7 @@ bounded parallel-curl flood.
 bash tests/dynamic/suites/ddos_flood_suite.sh
 
 # P10 live run (bounded on a shared host):
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
   FLOOD_RATE=200 FLOOD_SECS=15 FLOOD_CONC=25 HELIX_SQUID_PID_CMD=... \
   bash tests/dynamic/suites/ddos_flood_suite.sh
 ```

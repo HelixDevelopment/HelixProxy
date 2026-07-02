@@ -33,7 +33,7 @@ outcomes and never fakes a pass.
 | Rootless `podman` on `PATH` (§11.4.161) | Runs the tunnel-UP probe (`podman exec proxy-gluetun ...`). |
 | `curl`, `awk`, `grep`, `ss`/`netstat` | Egress capture + the §11.4.174 port guard. |
 | The sanctioned `./start` / `./stop` orchestrators | Boot/teardown — **never** raw `podman run`. |
-| A free `:53128` (`HTTP_PROXY_PORT`) + no running `proxy-squid`/`proxy-gluetun` | Guarded; the harness refuses (exit 3) rather than disturb a foreign owner. |
+| A free `:34128` (`HTTP_PROXY_PORT`) + no running `proxy-squid`/`proxy-gluetun` | Guarded; the harness refuses (exit 3) rather than disturb a foreign owner. |
 
 The five operator cred vars (the **exact** names the `dynamic` overlay reads —
 `docker-compose.dynamic.yml:149-153`, `.env.example:177-182`):
@@ -51,7 +51,7 @@ tests/egress_proof/real_vpn_egress_proof.sh
 
 # Optional overrides:
 EXPECTED_EXIT_IP=185.65.135.70 \
-PROXY_PORT=53128 \
+PROXY_PORT=34128 \
 IP_ECHO_URL=https://icanhazip.com \
 BOOT_TIMEOUT=180 \
   tests/egress_proof/real_vpn_egress_proof.sh

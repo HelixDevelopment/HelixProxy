@@ -2,9 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>proxy_concurrency_test.sh — operator guide</title>
+  <title>proxy_concurrency_test</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -172,17 +176,14 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">proxy_concurrency_test.sh — operator guide</h1>
-</header>
 <h1
 id="testsconcurrencyproxy_concurrency_testsh--operator-guide"><code>tests/concurrency/proxy_concurrency_test.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean
 (<code>sh -n</code> + <code>bash -n</code>). Runs live against the
-running HTTP forward proxy (<code>localhost:53128</code>) AND the SOCKS5
-proxy (<code>localhost:51080</code>); honest <code>SKIP</code> (§11.4.3)
+running HTTP forward proxy (<code>localhost:34128</code>) AND the SOCKS5
+proxy (<code>localhost:34080</code>); honest <code>SKIP</code> (§11.4.3)
 when no proxy is listening or the echo oracle is unreachable
 directly.</p>
 <blockquote>
@@ -199,8 +200,8 @@ truncation, no corruption.</p>
 <p>The suite launches a HIGH number of clients (default
 <strong>40</strong>) that all park on a start <strong>barrier</strong>
 and are released <strong>at once</strong>, MIXING the HTTP forward proxy
-(<code>http://localhost:53128</code>) AND the SOCKS5 proxy
-(<code>socks5h://localhost:51080</code>) round-robin. Every client
+(<code>http://localhost:34128</code>) AND the SOCKS5 proxy
+(<code>socks5h://localhost:34080</code>) round-robin. Every client
 fetches a <strong>distinct identifiable resource</strong>: a per-client
 unique token — <code>HPCXT_&lt;run-nonce&gt;_C&lt;i&gt;_END</code> —
 echoed back in the response body by the echo endpoint. Cross-talk is
@@ -237,8 +238,8 @@ under heavy concurrent load — see Edge cases).</li>
 </ul>
 <h2 id="usage-examples">Usage examples</h2>
 <ul>
-<li>Default run against <code>localhost:53128</code> (HTTP) +
-<code>localhost:51080</code> (SOCKS5):
+<li>Default run against <code>localhost:34128</code> (HTTP) +
+<code>localhost:34080</code> (SOCKS5):
 <code>bash tests/concurrency/proxy_concurrency_test.sh</code></li>
 <li>Conductor invocation under host-safety caps (§12.6):
 <code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/concurrency/proxy_concurrency_test.sh</code></li>
@@ -247,10 +248,10 @@ under load):
 <code>CONC_CLIENTS=60 CONC_ECHO_URL_TEMPLATE=http://127.0.0.1:8080/echo?t=__TOKEN__ bash tests/concurrency/proxy_concurrency_test.sh</code></li>
 </ul>
 <p>Env knobs: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
-(default <code>53128</code>), <code>SOCKS_PROXY_URL</code> (default
-<code>socks5h://localhost:51080</code>), <code>SOCKS_PROXY_PORT</code>
-(default <code>51080</code>), <code>CONC_CLIENTS</code> (default
+<code>http://localhost:34128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>34128</code>), <code>SOCKS_PROXY_URL</code> (default
+<code>socks5h://localhost:34080</code>), <code>SOCKS_PROXY_PORT</code>
+(default <code>34080</code>), <code>CONC_CLIENTS</code> (default
 <code>40</code>, clamped <code>2..80</code>),
 <code>CONC_ECHO_URL_TEMPLATE</code> (default
 <code>https://postman-echo.com/get?htok=__TOKEN__</code> — MUST contain
@@ -326,7 +327,7 @@ worker PIDs (never <code>kill 0</code>) and removes the scratch dir
 <li>Resources: shell + curl only, simultaneous clients clamped
 <code>≤ 80</code>, well under the §12.6 60% host-memory ceiling. It
 NEVER touches operator resources (<code>wg0-mullvad</code>,
-<code>lava-*</code>, <code>whoami:58080</code>) and never stops/starts
+<code>lava-*</code>, <code>whoami:34088</code>) and never stops/starts
 any container.</li>
 </ul>
 <h2 id="related">Related</h2>

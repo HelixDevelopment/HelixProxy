@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>proxy_forward_http_challenge</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -246,7 +250,7 @@ id="proxy_forward_http_challengesh">proxy_forward_http_challenge.sh</h1>
 evidence)</p>
 <h2 id="overview">Overview</h2>
 <p>Anti-bluff Challenge that proves the <strong>live HTTP forward
-proxy</strong> (default <code>http://localhost:53128</code>) actually
+proxy</strong> (default <code>http://localhost:34128</code>) actually
 forwards real end-user traffic. It drives two real sub-probes through
 the proxy — a plain-HTTP <code>GET</code> to a <code>204</code> endpoint
 and a CONNECT-tunnelled HTTPS <code>GET</code> — and asserts the
@@ -257,7 +261,7 @@ to an evidence file, so every PASS cites a real artefact.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>The base proxy stack UP with the HTTP proxy listening on
-<code>53128</code>.</li>
+<code>34128</code>.</li>
 <li><code>curl</code>, <code>bash</code>, <code>awk</code>,
 <code>grep</code>; <code>tests/lib/evidence.sh</code> present
 (sourced).</li>
@@ -267,12 +271,12 @@ stops, restarts, or reconfigures any container.</li>
 <h2 id="usage">Usage</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/proxy_forward_http_challenge.sh</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># override target / evidence dir:</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">HTTP_PROXY_URL</span><span class="op">=</span>http://localhost:53128 <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">HTTP_PROXY_URL</span><span class="op">=</span>http://localhost:34128 <span class="dt">\</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">CHALLENGE_EVIDENCE_DIR</span><span class="op">=</span>/path/to/evidence <span class="dt">\</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bash</span> challenges/scripts/proxy_forward_http_challenge.sh</span></code></pre></div>
 <p>Environment: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
-(default <code>53128</code>), <code>CHALLENGE_EVIDENCE_DIR</code>
+<code>http://localhost:34128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>34128</code>), <code>CHALLENGE_EVIDENCE_DIR</code>
 (default <code>qa-results/challenges/&lt;run-ts&gt;</code>),
 <code>CURL_MAX_TIME</code> (default <code>20</code>).</p>
 <h2 id="exit-codes">Exit codes</h2>

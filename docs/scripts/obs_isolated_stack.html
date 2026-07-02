@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>obs_isolated_stack</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -237,7 +241,8 @@
   </style>
 </head>
 <body>
-<h1 id="isolated-observability-metrics-stack-conductor-runbook">Isolated
+<h1
+id="isolated-observability-metrics-stack--conductor-runbook">Isolated
 observability metrics stack — conductor runbook</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Authority:</strong> task #56 enablement —
@@ -248,14 +253,14 @@ hermetic control-plane <code>/metrics</code> scrape proof
 <code>tests/observability/metrics_scrape_test.sh</code>
 <strong>Maintainer:</strong> helix_proxy control-plane stream</p>
 <hr />
-<h2 id="overview">1. Overview</h2>
+<h2 id="1-overview">1. Overview</h2>
 <p>This runbook boots a <strong>fully-isolated</strong> three-service
 stack — <code>obs-postgres</code> + <code>obs-redis</code> +
 <code>obs-api</code> — whose only purpose is to prove the
-control-plane’s plaintext Prometheus <code>/metrics</code> listener
+control-plane's plaintext Prometheus <code>/metrics</code> listener
 serves real exposition, <strong>without</strong> depending on the base
-stack’s unknown Postgres password and <strong>without</strong> the
-<code>dynamic</code> profile’s gluetun/WireGuard operator
+stack's unknown Postgres password and <strong>without</strong> the
+<code>dynamic</code> profile's gluetun/WireGuard operator
 credentials.</p>
 <p>Why a separate stack (FACT, §11.4.6):</p>
 <ul>
@@ -265,8 +270,8 @@ credentials.</p>
 <strong>fail-fast aborts</strong> if Postgres is unreachable or
 authentication fails.</li>
 <li>The committed <code>docker-compose.observability.yml</code> points
-the api’s DSN at the base <code>proxy-postgres</code>, whose password
-initialises from the operator’s <code>helixproxy_pg_password</code>
+the api's DSN at the base <code>proxy-postgres</code>, whose password
+initialises from the operator's <code>helixproxy_pg_password</code>
 secret on first init of the <code>proxy-pgdata</code> volume — a value
 we do not know, and an already-initialised data dir will not re-read a
 new secret. That Postgres also lives in the <code>dynamic</code> profile
@@ -297,14 +302,8 @@ exposition is served even with no tables — but initdb makes
 <code>helix_proxy_vpn_up{profile}</code> series for seeded profiles. No
 manual migration step is needed.</p>
 <p>Host ports (all loopback-pinned; chosen to avoid the in-use set
-5432/6379/53128/51080/58080/59090):</p>
+5432/6379/34128/34080/34088/34090):</p>
 <table>
-<colgroup>
-<col style="width: 17%" />
-<col style="width: 26%" />
-<col style="width: 13%" />
-<col style="width: 42%" />
-</colgroup>
 <thead>
 <tr>
 <th>Service</th>
@@ -334,11 +333,11 @@ manual migration step is needed.</p>
 </tr>
 </tbody>
 </table>
-<p>The api’s mTLS control port <code>:58080</code> is
+<p>The api's mTLS control port <code>:34088</code> is
 <strong>internal</strong> to the <code>obs-metrics</code> network —
-never published (the host’s <code>58080</code> is the base
+never published (the host's <code>34088</code> is the base
 <code>proxy-admin</code> whoami).</p>
-<h2 id="prerequisites">2. Prerequisites</h2>
+<h2 id="2-prerequisites">2. Prerequisites</h2>
 <ul>
 <li>Rootless <code>podman</code> + <code>podman-compose</code>
 (§11.4.161).</li>
@@ -352,13 +351,13 @@ never published (the host’s <code>58080</code> is the base
 <code>ss -ltn | grep -E ':(55432|56379|59091)'</code> — no output =
 free).</li>
 </ul>
-<h2 id="conductor-sequence-boot-scrape">3. Conductor sequence (boot +
+<h2 id="3-conductor-sequence-boot--scrape">3. Conductor sequence (boot +
 scrape)</h2>
 <p>Run every heavy step under the §12.6 resource cap
 (<code>GOMAXPROCS=2 nice -n 19 ionice -c 3 ...</code>). All commands run
 from the <strong>repo root</strong>.</p>
 <h3
-id="step-1-generate-the-disposable-test-mtls-material-test-pg-password">Step
+id="step-1--generate-the-disposable-test-mtls-material--test-pg-password">Step
 1 — generate the disposable test mTLS material + test pg password</h3>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="dt">\</span></span>
@@ -371,7 +370,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <code>podman secret create</code> commands (Step 2) — it never prints
 secret bytes.</p>
 <h3
-id="step-2-create-the-4-podman-secrets-names-fixed-by-the-compose">Step
+id="step-2--create-the-4-podman-secrets-names-fixed-by-the-compose">Step
 2 — create the 4 podman secrets (NAMES fixed by the compose)</h3>
 <div class="sourceCode" id="cb2"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> secret create helixproxy_api_cert      tests/observability/.mtls/server.crt</span>
@@ -386,7 +385,7 @@ the SAME 4 secret names the committed
 <code>docker-compose.observability.yml</code> uses, so the material is
 shared with that overlay when both are booted.)</p>
 <h3
-id="step-3-boot-the-isolated-trio-this-stack-owns-its-own-pgredis">Step
+id="step-3--boot-the-isolated-trio-this-stack-owns-its-own-pgredis">Step
 3 — boot the isolated trio (this stack owns its own pg/redis)</h3>
 <div class="sourceCode" id="cb3"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman-compose</span> <span class="at">-f</span> deploy/observability/compose.metrics.yml up <span class="at">-d</span></span></code></pre></div>
@@ -400,9 +399,9 @@ for the api healthcheck to go healthy:</p>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> healthcheck run obs-api           <span class="co"># or: podman ps --filter name=obs-api</span></span></code></pre></div>
 <p>Optional sanity: <code>podman logs obs-api</code> should end with
 <code>api …: serving PLAINTEXT /metrics on 0.0.0.0:59091</code> and
-<code>serving mTLS control-API on :58080</code>.</p>
+<code>serving mTLS control-API on :34088</code>.</p>
 <h3
-id="step-4-run-the-anti-bluff-metrics-scrape-guard-against-the-isolated-url">Step
+id="step-4--run-the-anti-bluff-metrics-scrape-guard-against-the-isolated-url">Step
 4 — run the anti-bluff <code>/metrics</code> scrape guard against the
 isolated URL</h3>
 <div class="sourceCode" id="cb5"><pre
@@ -414,7 +413,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="
 <li><code>HELIX_OBSERVABILITY_STACK=1</code> declares the stack up (else
 the guard SKIPs).</li>
 <li><code>HELIX_METRICS_URL</code> overrides the default
-<code>:59090</code> to the isolated <code>:59091</code>.</li>
+<code>:34090</code> to the isolated <code>:59091</code>.</li>
 <li>The guard asserts real exposition CONTENT
 (<code># HELP</code>/<code># TYPE</code> +
 <code>helix_proxy_acl_decisions_total</code> +
@@ -422,7 +421,7 @@ the guard SKIPs).</li>
 200 (§11.4.107).</li>
 <li>The counter-increment sub-proof drives a request through
 <code>HELIX_PROXY_URL</code> (default
-<code>http://127.0.0.1:53128</code>). This isolated stack has <strong>no
+<code>http://127.0.0.1:34128</code>). This isolated stack has <strong>no
 squid proxy</strong>, so that request is unreachable → the sub-proof
 records an honest <code>feature_disabled_by_config</code> SKIP while the
 exposition-content proof PASSes. That is correct and anti-bluff — the
@@ -432,13 +431,14 @@ increment path is P5/P10-pending
 <p>Evidence lands under
 <code>qa-results/observability/metrics_scrape/&lt;run-id&gt;/</code>
 (gitignored).</p>
-<h2 id="teardown">4. Teardown</h2>
+<h2 id="4-teardown">4. Teardown</h2>
 <div class="sourceCode" id="cb6"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman-compose</span> <span class="at">-f</span> deploy/observability/compose.metrics.yml down <span class="at">-v</span>   <span class="co"># -v drops obs-pgdata</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: remove the shared test secrets (only if no other obs stack needs them):</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   podman secret rm helixproxy_api_cert helixproxy_api_key \</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#                     helixproxy_api_client_ca helixproxy_pg_password</span></span></code></pre></div>
-<h2 id="edge-cases-troubleshooting">5. Edge cases / troubleshooting</h2>
+<h2 id="5-edge-cases--troubleshooting">5. Edge cases /
+troubleshooting</h2>
 <ul>
 <li><strong><code>obs-api</code> restart-loops</strong> —
 <code>obs-postgres</code> still in initdb, or the
@@ -449,7 +449,7 @@ was rotated between Steps 2 and 3. Fix: <code>down -v</code> (drop the
 volume), re-create the secret, <code>up -d</code> again.</li>
 <li><strong>Scrape SKIPs instead of PASS</strong> —
 <code>HELIX_OBSERVABILITY_STACK=1</code> not exported.</li>
-<li><strong>Scrape FAILs “no valid exposition”</strong> — api not yet
+<li><strong>Scrape FAILs "no valid exposition"</strong> — api not yet
 healthy; wait for the healthcheck, then re-run. Confirm
 <code>curl -s http://127.0.0.1:59091/metrics | head</code>.</li>
 <li><strong>Port bind error</strong> — another process took
@@ -457,7 +457,7 @@ healthy; wait for the healthcheck, then re-run. Confirm
 <code>OBS_PG_PORT</code> / <code>OBS_REDIS_PORT</code> /
 <code>OBS_METRICS_PORT</code> env before <code>up -d</code>.</li>
 </ul>
-<h2 id="related">6. Related</h2>
+<h2 id="6-related">6. Related</h2>
 <ul>
 <li><code>deploy/observability/compose.metrics.yml</code> — this
 stack.</li>

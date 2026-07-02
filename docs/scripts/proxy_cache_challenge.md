@@ -7,7 +7,7 @@
 ## Overview
 
 Anti-bluff Challenge that proves the **live HTTP proxy** (default
-`http://localhost:53128`) caches. A **reliably-cacheable** plain-HTTP URL
+`http://localhost:34128`) caches. A **reliably-cacheable** plain-HTTP URL
 (default `http://ftp.debian.org/debian/README` — a Debian mirror README served
 with a cache-permitting `Cache-Control`) is fetched **twice** through the proxy;
 the **authoritative** proof is a Squid `TCP_*HIT` result code for that URL in the
@@ -26,7 +26,7 @@ a PASS.
 
 ## Prerequisites
 
-- The base proxy stack UP with the HTTP proxy on `53128` and the Squid container
+- The base proxy stack UP with the HTTP proxy on `34128` and the Squid container
   running (default name `proxy-squid`).
 - `curl`, `bash`, `awk`, `grep`; `tests/lib/evidence.sh` present (sourced).
 - `podman` on `PATH` for the authoritative container-log read. If `podman` is
@@ -48,7 +48,7 @@ CHALLENGE_EVIDENCE_DIR=/path/to/evidence \
   bash challenges/scripts/proxy_cache_challenge.sh
 ```
 
-Environment: `HTTP_PROXY_URL` (default `http://localhost:53128`), `CACHE_URL`
+Environment: `HTTP_PROXY_URL` (default `http://localhost:34128`), `CACHE_URL`
 (default `http://ftp.debian.org/debian/README`), `SQUID_CONTAINER` (default
 `proxy-squid` — the authoritative log is read here), `SQUID_CONTAINER_LOG`
 (default `/var/log/squid/access.log`), `SQUID_ACCESS_LOG` (override the resolved

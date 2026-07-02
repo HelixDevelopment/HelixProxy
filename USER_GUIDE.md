@@ -17,10 +17,10 @@ Complete guide for setting up, configuring, and using the Proxy Service.
 
 ## Quick Reference
 
-- HTTP Proxy: `http://<HOST_IP>:53128`
-- HTTPS Proxy: `http://<HOST_IP>:53128`
-- SOCKS5 Proxy: `socks5://<HOST_IP>:51080`
-- Admin Panel: `http://<HOST_IP>:58080`
+- HTTP Proxy: `http://<HOST_IP>:34128`
+- HTTPS Proxy: `http://<HOST_IP>:34128`
+- SOCKS5 Proxy: `socks5://<HOST_IP>:34080`
+- Admin Panel: `http://<HOST_IP>:34088`
 
 ---
 
@@ -73,9 +73,9 @@ Edit `.env` file:
 
 ```bash
 # Network ports
-HTTP_PROXY_PORT=53128      # HTTP/HTTPS proxy
-SOCKS_PROXY_PORT=51080     # SOCKS5 proxy
-PROXY_ADMIN_PORT=58080     # Admin web interface
+HTTP_PROXY_PORT=34128      # HTTP/HTTPS proxy
+SOCKS_PROXY_PORT=34080     # SOCKS5 proxy
+PROXY_ADMIN_PORT=34088     # Admin web interface
 
 # Cache settings
 CACHE_DIR=/path/to/cache
@@ -188,9 +188,9 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 #### Temporary (Current Shell)
 
 ```bash
-export HTTP_PROXY="http://192.168.1.100:53128"
-export HTTPS_PROXY="http://192.168.1.100:53128"
-export ALL_PROXY="socks5://192.168.1.100:51080"
+export HTTP_PROXY="http://192.168.1.100:34128"
+export HTTPS_PROXY="http://192.168.1.100:34128"
+export ALL_PROXY="socks5://192.168.1.100:34080"
 ```
 
 #### Permanent (All Users)
@@ -198,8 +198,8 @@ export ALL_PROXY="socks5://192.168.1.100:51080"
 Add to `/etc/environment`:
 
 ```
-HTTP_PROXY="http://192.168.1.100:53128"
-HTTPS_PROXY="http://192.168.1.100:53128"
+HTTP_PROXY="http://192.168.1.100:34128"
+HTTPS_PROXY="http://192.168.1.100:34128"
 NO_PROXY="localhost,127.0.0.1,.local"
 ```
 
@@ -208,8 +208,8 @@ NO_PROXY="localhost,127.0.0.1,.local"
 Create `/etc/apt/apt.conf.d/proxy.conf`:
 
 ```
-Acquire::http::Proxy "http://192.168.1.100:53128";
-Acquire::https::Proxy "http://192.168.1.100:53128";
+Acquire::http::Proxy "http://192.168.1.100:34128";
+Acquire::https::Proxy "http://192.168.1.100:34128";
 ```
 
 #### YUM/DNF (RHEL/CentOS/Fedora)
@@ -217,7 +217,7 @@ Acquire::https::Proxy "http://192.168.1.100:53128";
 Add to `/etc/dnf/dnf.conf` or `/etc/yum.conf`:
 
 ```
-proxy=http://192.168.1.100:53128
+proxy=http://192.168.1.100:34128
 ```
 
 ### macOS Clients
@@ -227,15 +227,15 @@ proxy=http://192.168.1.100:53128
 1. System Preferences → Network
 2. Select network → Advanced → Proxies
 3. Enable HTTP/HTTPS proxy
-4. Web Proxy Server: `192.168.1.100:53128`
+4. Web Proxy Server: `192.168.1.100:34128`
 
 #### Terminal (zsh)
 
 Add to `~/.zshrc`:
 
 ```bash
-export HTTP_PROXY="http://192.168.1.100:53128"
-export HTTPS_PROXY="http://192.168.1.100:53128"
+export HTTP_PROXY="http://192.168.1.100:34128"
+export HTTPS_PROXY="http://192.168.1.100:34128"
 ```
 
 ### Windows Clients
@@ -244,20 +244,20 @@ export HTTPS_PROXY="http://192.168.1.100:53128"
 
 1. Settings → Network & Internet → Proxy
 2. Enable "Use a proxy server"
-3. Address: `192.168.1.100`, Port: `53128`
+3. Address: `192.168.1.100`, Port: `34128`
 
 #### PowerShell
 
 ```powershell
-$env:HTTP_PROXY = "http://192.168.1.100:53128"
-$env:HTTPS_PROXY = "http://192.168.1.100:53128"
+$env:HTTP_PROXY = "http://192.168.1.100:34128"
+$env:HTTPS_PROXY = "http://192.168.1.100:34128"
 ```
 
 #### Command Prompt
 
 ```cmd
-set HTTP_PROXY=http://192.168.1.100:53128
-set HTTPS_PROXY=http://192.168.1.100:53128
+set HTTP_PROXY=http://192.168.1.100:34128
+set HTTPS_PROXY=http://192.168.1.100:34128
 ```
 
 ### Mobile Devices
@@ -266,13 +266,13 @@ set HTTPS_PROXY=http://192.168.1.100:53128
 
 1. Settings → Wi-Fi → (network) → Configure Proxy
 2. Select "Manual"
-3. Server: `192.168.1.100`, Port: `53128`
+3. Server: `192.168.1.100`, Port: `34128`
 
 #### Android
 
 1. Settings → Wi-Fi → (network) → Modify
 2. Advanced options → Proxy → Manual
-3. Hostname: `192.168.1.100`, Port: `53128`
+3. Hostname: `192.168.1.100`, Port: `34128`
 
 ### Browser Configuration
 
@@ -284,8 +284,8 @@ Quick configuration:
 
 1. Settings → General → Network Settings → Settings
 2. Select "Manual proxy configuration"
-3. HTTP Proxy: `192.168.1.100`, Port: `53128`
-4. SOCKS Host: `192.168.1.100`, Port: `51080`, Type: SOCKS v5
+3. HTTP Proxy: `192.168.1.100`, Port: `34128`
+4. SOCKS Host: `192.168.1.100`, Port: `34080`, Type: SOCKS v5
 5. Check "Proxy DNS when using SOCKS v5"
 
 #### Chrome/Edge/Brave
@@ -294,8 +294,8 @@ Use system proxy settings or install SwitchyOmega extension:
 
 1. Install SwitchyOmega from Chrome Web Store
 2. Create new profile → Proxy Profile
-3. HTTP: `192.168.1.100:53128`
-4. SOCKS5: `192.168.1.100:51080`
+3. HTTP: `192.168.1.100:34128`
+4. SOCKS5: `192.168.1.100:34080`
 
 ---
 
@@ -311,7 +311,7 @@ Quick setup:
 2. Select your network → **Modify network**
 3. **Advanced options** → Proxy: **Manual**
 4. Proxy hostname: `<HOST_IP>`
-5. Proxy port: `53128`
+5. Proxy port: `34128`
 6. **Save**
 
 > If you see "Connected, no internet", the Squid proxy must be in standard forward proxy mode (not reverse/accel mode). Run `./init && ./restart` to regenerate the correct configuration.
@@ -355,7 +355,7 @@ VPN_OVPN_PATH=/absolute/path/to/vpn-config.ovpn
 ./status -v
 
 # Verify IP is masked
-curl --proxy http://localhost:53128 https://ifconfig.me
+curl --proxy http://localhost:34128 https://ifconfig.me
 ```
 
 ### VPN Troubleshooting
@@ -459,7 +459,7 @@ STREAMING_CACHE_MAX_SIZE_GB=20
 
 ### Admin Panel
 
-Access at: `http://HOST_IP:58080`
+Access at: `http://HOST_IP:34088`
 
 Features:
 - Real-time service status
@@ -487,13 +487,13 @@ podman logs -f proxy-vpn
 
 ```bash
 # HTTP proxy health
-curl --proxy http://localhost:53128 http://connectivitycheck.gstatic.com/generate_204
+curl --proxy http://localhost:34128 http://connectivitycheck.gstatic.com/generate_204
 
 # SOCKS proxy health
-curl --proxy socks5://localhost:51080 http://connectivitycheck.gstatic.com/generate_204
+curl --proxy socks5://localhost:34080 http://connectivitycheck.gstatic.com/generate_204
 
 # Admin health
-curl http://localhost:58080/health
+curl http://localhost:34088/health
 ```
 
 ---
@@ -549,13 +549,13 @@ http_access allow mynetwork
 
 ### Q: Can I use both HTTP and SOCKS proxies?
 
-**A:** Yes, both run simultaneously on different ports. HTTP proxy on 53128, SOCKS on 51080.
+**A:** Yes, both run simultaneously on different ports. HTTP proxy on 34128, SOCKS on 34080.
 
 ### Q: How do I know if VPN is working?
 
 **A:** Check your external IP:
 ```bash
-curl --proxy http://localhost:53128 https://ifconfig.me
+curl --proxy http://localhost:34128 https://ifconfig.me
 ```
 
 ### Q: Why is caching not working for HTTPS?

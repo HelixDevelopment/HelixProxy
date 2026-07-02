@@ -16,7 +16,7 @@ Constitution §11.4.6 (no-guessing) nothing here claims metrics are flowing.
 
 | File | Purpose |
 |---|---|
-| `prometheus.yml` | Scrape config: `prometheus` self-scrape, `helix-control-plane` (`/metrics` on `METRICS_PORT` 59090), `squid-exporter` (`boynux/squid-exporter` on :9301). |
+| `prometheus.yml` | Scrape config: `prometheus` self-scrape, `helix-control-plane` (`/metrics` on `METRICS_PORT` 34090), `squid-exporter` (`boynux/squid-exporter` on :9301). |
 | `squid-exporter.md` | Which exporter image, what it scrapes (Squid `mgr:` cache-manager), and its port. |
 
 ## What is built when (honest phasing — §11.4.6)

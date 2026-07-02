@@ -8,7 +8,7 @@ This directory holds the **template** the future control-plane `config-compiler`
 (Stream B) renders to add `dynamic`-mode per-tunnel SOCKS egress to Dante. It is
 **additive**: the rendered route blocks are **appended after** the shipped
 `config/dante/sockd.conf` content (preserved verbatim) to build the deployed
-config — the base config (`internal: :51080`, `external: proxy-dante`,
+config — the base config (`internal: :34080`, `external: proxy-dante`,
 `socksmethod: none`, and its `client pass` / `socks pass` rules) is never
 modified or removed (**§11.4.122**).
 

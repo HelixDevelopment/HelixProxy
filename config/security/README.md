@@ -116,7 +116,7 @@ These are the captured-evidence probes that will PROVE the above LIVE in P10.
 Stated now as design; **none is claimed proven yet** (§11.4.6).
 
 - **Unauthenticated → 407 (auth enforced).** With `PROXY_AUTH_ENABLED=true`:
-  `curl -x http://proxy:53128 http://example.com` with NO credentials → capture
+  `curl -x http://proxy:34128 http://example.com` with NO credentials → capture
   HTTP **407 Proxy Authentication Required** + the `Proxy-Authenticate: Basic
   realm=...` header; THEN with valid `-U user:pass` → 200 + real body. PASS
   requires BOTH the negative (407) and positive (200) captures — a 200 alone

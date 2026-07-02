@@ -33,7 +33,7 @@ as SKIP. Exit `0` iff there is **no FAIL** (all PASS or honest SKIP).
 bash tests/dynamic/suites/run_all_suites.sh
 
 # P10 live run (GREEN guards):
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
     bash tests/dynamic/suites/run_all_suites.sh
 
 # P10 RED-baseline polarity (reproduce defects on the pre-fix stack):

@@ -13,7 +13,7 @@ the injection command.
 ## Overview
 
 §11.4.85 / §11.4.169 **chaos** suite proving the LIVE HTTP forward proxy (Squid,
-`localhost:53128`) **recovers after a mid-flight container restart** — the
+`localhost:34128`) **recovers after a mid-flight container restart** — the
 process-death / §11.4.144 detect → wait → re-attach contract:
 
 1. capture a **working** proxied request (baseline `204`/`200`),
@@ -52,8 +52,8 @@ injected autonomously, so the suite `SKIP`s-with-reason
 - Under host-safety caps:
   `GOMAXPROCS=2 nice -n 19 ionice -c 3 PROXY_CHAOS_RESTART_CMD='…' bash tests/chaos/proxy_restart_recovery.sh`
 
-Env knobs: `HTTP_PROXY_URL` (default `http://localhost:53128`), `HTTP_PROXY_PORT`
-(default `53128`), `CHAOS_SQUID_CONTAINER` (default `proxy-squid`), `CHAOS_TARGET`
+Env knobs: `HTTP_PROXY_URL` (default `http://localhost:34128`), `HTTP_PROXY_PORT`
+(default `34128`), `CHAOS_SQUID_CONTAINER` (default `proxy-squid`), `CHAOS_TARGET`
 (default `https://www.gstatic.com/generate_204`), `CHAOS_EXPECT` (default
 `204 200`), `CHAOS_RECOVERY_TIMEOUT` (default `60` s — the reused reconnect
 budget), `CHAOS_RECOVERY_POLL` (default `2` s), `CURL_MAX_TIME` (default `15`),

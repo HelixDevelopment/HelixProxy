@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>README</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -172,10 +176,7 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">README</h1>
-</header>
-<h1 id="helix-proxy-security-zero-trust-model-design">Helix Proxy —
+<h1 id="helix-proxy--security--zero-trust-model-design">Helix Proxy —
 Security &amp; Zero-Trust Model (DESIGN)</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> DESIGN / config-plan — NOT
@@ -189,14 +190,14 @@ falsifiable by the P10 captured-evidence probes named at the end.</p>
 dynamic-routing extension. It owns DESIGN only — no live wiring, no
 credentials, no operator resources touched (§11.4.174).</p>
 <hr />
-<h2 id="secrets-the-podman-secrets-reference-model-11.4.10">1. Secrets:
+<h2 id="1-secrets-the-podman-secrets-reference-model-11410">1. Secrets:
 the Podman-secrets reference model (§11.4.10)</h2>
 <p><strong>Rule: secret NAMES live in git; secret VALUES never
 do.</strong></p>
 <ul>
 <li><code>.env.example</code> declares only <code>*_SECRET</code>
-variables whose VALUES are Podman <strong>secret names</strong>
-(e.g. <code>PG_PASSWORD_SECRET=helixproxy_pg_password</code>,
+variables whose VALUES are Podman <strong>secret names</strong> (e.g.
+<code>PG_PASSWORD_SECRET=helixproxy_pg_password</code>,
 <code>CONTROL_API_TLS_CERT_SECRET=helixproxy_api_cert</code>,
 <code>CONTROL_API_TLS_KEY_SECRET=helixproxy_api_key</code>) — never a
 password, key, or token.</li>
@@ -207,7 +208,7 @@ out-of-band.</li>
 <li><code>scripts/load_podman_secrets.sh</code> (the companion loader —
 see §2) reads those gitignored sources and creates the named
 <strong>rootless</strong> Podman secrets (§11.4.161). Containers
-reference secrets by name; the value is mounted into the container’s
+reference secrets by name; the value is mounted into the container's
 tmpfs at runtime and is never serialised into an image layer, a compose
 file, or git.</li>
 <li>Source files SHOULD be <code>chmod 600</code> under a
@@ -217,12 +218,6 @@ fail) on looser perms and never prints a value.</li>
 <code>--replace</code>, and follow §11.4.10 rotation.</li>
 </ul>
 <table>
-<colgroup>
-<col style="width: 27%" />
-<col style="width: 22%" />
-<col style="width: 22%" />
-<col style="width: 27%" />
-</colgroup>
 <thead>
 <tr>
 <th>Secret name (env)</th>
@@ -265,14 +260,14 @@ fail) on looser perms and never prints a value.</li>
 </tbody>
 </table>
 <hr />
-<h2 id="companion-loader-scriptsload_podman_secrets.sh">2. Companion
+<h2 id="2-companion-loader--scriptsload_podman_secretssh">2. Companion
 loader — <code>scripts/load_podman_secrets.sh</code></h2>
 <p>Idempotent, rootless, operator-run. Maps each secret name above to
 its gitignored source path and creates the secret if absent (re-run is
 safe; <code>--replace</code> recreates, <code>--dry-run</code>
 previews). It contains NO secret values — only the name→path mapping. It
 refuses to run as root (§11.4.161) and touches ONLY
-<code>helixproxy_*</code> secrets — never the operator’s containers, the
+<code>helixproxy_*</code> secrets — never the operator's containers, the
 <code>wg0-mullvad</code> / <code>lava-*</code> interfaces, or unrelated
 secrets (§11.4.174).</p>
 <pre><code># operator workflow (out-of-band, real values never in git):
@@ -282,7 +277,7 @@ htpasswd -B -c config/htpasswd &lt;user&gt;                 # bcrypt hashes only
 scripts/load_podman_secrets.sh            # create the named rootless secrets
 scripts/load_podman_secrets.sh --dry-run  # idempotent preview on re-run</code></pre>
 <hr />
-<h2 id="per-user-proxy-auth-audit-log">3. Per-user proxy auth + audit
+<h2 id="3-per-user-proxy-auth--audit-log">3. Per-user proxy auth + audit
 log</h2>
 <ul>
 <li><strong>Auth template:</strong>
@@ -294,8 +289,8 @@ per-user auth as an <strong>additive include</strong>
 <code>PROXY_AUTH_ENABLED</code> (§11.4.122 — the base
 <code>squid.conf</code> is never modified).</li>
 <li><strong>Composition:</strong> with the dynamic-routing include also
-active, the effective policy is “<strong>authenticated user AND tunnel
-up</strong>” — each include contributes its own fail-closed
+active, the effective policy is "<strong>authenticated user AND tunnel
+up</strong>" — each include contributes its own fail-closed
 <code>deny</code> guard above the base allow rules.</li>
 <li><strong>Audit log:</strong> the control-plane already owns an
 <code>audit_log</code> table (Stream A schema). Per-user requests are
@@ -303,14 +298,14 @@ attributable by the authenticated username (Squid <code>%un</code>
 access-log token feeding the control-plane), so each routed / denied
 request maps to a user + a chosen <code>vpn_profile</code> for the audit
 trail. (Live wiring of the access-log → <code>audit_log</code> pipe is a
-control-plane stream; out of this config-plan’s scope.)</li>
+control-plane stream; out of this config-plan's scope.)</li>
 </ul>
 <hr />
 <h2
-id="kill-switch-gluetuns-built-in-firewall-11.4.74-configure-dont-reimplement">4.
-Kill-switch: gluetun’s BUILT-IN firewall (§11.4.74 — configure, don’t
+id="4-kill-switch-gluetuns-built-in-firewall-11474--configure-dont-reimplement">4.
+Kill-switch: gluetun's BUILT-IN firewall (§11.4.74 — configure, don't
 reimplement)</h2>
-<p>The egress kill-switch is <strong>gluetun’s own</strong> firewall —
+<p>The egress kill-switch is <strong>gluetun's own</strong> firewall —
 we CONFIGURE it, we do not build our own. Set <code>FIREWALL=on</code>
 (gluetun default) on every tunnel container: gluetun installs
 nftables/iptables rules inside its own network namespace that permit
@@ -321,10 +316,10 @@ parent and is fail-closed at the application layer too
 (<code>never_direct allow all</code> +
 <code>http_access deny !tun_up</code> → branded 503 in
 <code>dynamic-routing.conf.tmpl</code>). The two layers are independent:
-gluetun’s firewall is the network-layer guarantee; Squid’s fail-closed
+gluetun's firewall is the network-layer guarantee; Squid's fail-closed
 routing is the application-layer guarantee.</p>
 <hr />
-<h2 id="mtls-on-the-control-api">5. mTLS on the control-API</h2>
+<h2 id="5-mtls-on-the-control-api">5. mTLS on the control-API</h2>
 <p>The control-API is served with mTLS using the
 <code>helixproxy_api_cert</code> / <code>helixproxy_api_key</code>
 Podman secrets (cert + key by name, never in git). Clients (admin UI,
@@ -333,7 +328,7 @@ here — the API server lives in <code>control-plane/</code> (other
 streams).</p>
 <hr />
 <h2
-id="p10-no-leak-auth-enforced-test-design-anti-bluff-11.4-11.4.69-11.4.107-11.4.123">6.
+id="6-p10-no-leak--auth-enforced-test-design-anti-bluff--114--11469--114107--114123">6.
 P10 no-leak / auth-enforced test DESIGN (anti-bluff — §11.4 / §11.4.69 /
 §11.4.107 / §11.4.123)</h2>
 <p>These are the captured-evidence probes that will PROVE the above LIVE
@@ -342,7 +337,7 @@ yet</strong> (§11.4.6).</p>
 <ul>
 <li><strong>Unauthenticated → 407 (auth enforced).</strong> With
 <code>PROXY_AUTH_ENABLED=true</code>:
-<code>curl -x http://proxy:53128 http://example.com</code> with NO
+<code>curl -x http://proxy:34128 http://example.com</code> with NO
 credentials → capture HTTP <strong>407 Proxy Authentication
 Required</strong> + the <code>Proxy-Authenticate: Basic realm=...</code>
 header; THEN with valid <code>-U user:pass</code> → 200 + real body.
@@ -365,14 +360,9 @@ is a bluff gate.</li>
 <code>docs/qa/&lt;run-id&gt;/</code> at P10 (§11.4.83).</li>
 </ul>
 <hr />
-<h2 id="what-is-proven-now-vs-owed-to-p10-11.4.6">7. What is proven NOW
+<h2 id="7-what-is-proven-now-vs-owed-to-p10-1146">7. What is proven NOW
 vs owed to P10 (§11.4.6)</h2>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th>Claim</th>

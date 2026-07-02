@@ -3,7 +3,7 @@
 **Revision:** 1
 **Last modified:** 2026-07-01T00:00:00Z
 **Status:** Authored + parse-clean. Runs live against the running Squid HTTP
-forward proxy (`localhost:53128`); honest `SKIP` (§11.4.3) when the proxy or the
+forward proxy (`localhost:34128`); honest `SKIP` (§11.4.3) when the proxy or the
 header-echo endpoint is unreachable.
 
 > Companion (§11.4.18) to the in-source documentation block at the top of the
@@ -50,15 +50,15 @@ asserting it is stripped never logs a real secret (§11.4.10).
 
 ## Usage examples
 
-- Default run against `localhost:53128`:
+- Default run against `localhost:34128`:
   `bash tests/security/proxy_acl_security.sh`
 - Under host-safety caps (§12.6):
   `GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/security/proxy_acl_security.sh`
 - Custom deny target / echo endpoint:
   `SEC_DENY_TARGET=https://example.com:81/ SEC_HEADER_ECHO_URL=http://httpbin.org/headers bash tests/security/proxy_acl_security.sh`
 
-Env knobs: `HTTP_PROXY_URL` (default `http://localhost:53128`), `HTTP_PROXY_PORT`
-(default `53128`), `SEC_DENY_TARGET` (default `https://example.com:81/`),
+Env knobs: `HTTP_PROXY_URL` (default `http://localhost:34128`), `HTTP_PROXY_PORT`
+(default `34128`), `SEC_DENY_TARGET` (default `https://example.com:81/`),
 `SEC_DENY_EXPECT` (default `403 407`), `SEC_HEADER_ECHO_URL` (default
 `http://httpbin.org/headers`), `CURL_MAX_TIME` (default `15`),
 `SEC_EVIDENCE_DIR` (default `qa-results/security/proxy_acl_<ts>`).

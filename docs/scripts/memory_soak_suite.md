@@ -35,7 +35,7 @@ citing the sample series.
 bash tests/dynamic/suites/memory_soak_suite.sh
 
 # P10 live run:
-HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_DYNAMIC_STACK=1 HELIX_PROXY_URL=http://127.0.0.1:34128 \
   MEM_REQUESTS=500 MEM_WARMUP=50 MEM_GROWTH_PCT=20 \
   HELIX_MEM_RSS_CMD='ps -o rss= -p "$(pgrep -f external_acl)"' \
   bash tests/dynamic/suites/memory_soak_suite.sh

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>proxy_forward_stress</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -173,12 +177,12 @@
 </head>
 <body>
 <h1
-id="testsstressproxy_forward_stress.sh-operator-guide"><code>tests/stress/proxy_forward_stress.sh</code>
+id="testsstressproxy_forward_stresssh--operator-guide"><code>tests/stress/proxy_forward_stress.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
 Runs live against the running Squid HTTP forward proxy
-(<code>localhost:53128</code>); honest <code>SKIP</code> (§11.4.3) when
+(<code>localhost:34128</code>); honest <code>SKIP</code> (§11.4.3) when
 the proxy or the target endpoint is unreachable.</p>
 <blockquote>
 <p>Companion (§11.4.18) to the in-source documentation block at the top
@@ -186,12 +190,12 @@ of the script.</p>
 </blockquote>
 <h2 id="overview">Overview</h2>
 <p>§11.4.85 / §11.4.169 <strong>stress</strong> suite for the LIVE HTTP
-forward proxy (Squid, <code>localhost:53128</code>). It drives <strong>N
+forward proxy (Squid, <code>localhost:34128</code>). It drives <strong>N
 ≥ 100 sequential</strong> HTTPS-CONNECT requests through the proxy
 <strong>plus a concurrent burst of ≥ 10 parallel</strong> requests,
-captures each request’s <code>%{http_code}</code> and
+captures each request's <code>%{http_code}</code> and
 <code>%{time_total}</code> to its <strong>own file</strong> (so a
-verdict never rests on a background job’s exit status — the B3 bluff
+verdict never rests on a background job's exit status — the B3 bluff
 fix), and records a <code>p50/p95/p99</code> latency distribution to a
 captured <code>latency.txt</code>. It PASSes only when
 <strong>every</strong> proxied request succeeded
@@ -215,7 +219,7 @@ non-SKIP run.</li>
 </ul>
 <h2 id="usage-examples">Usage examples</h2>
 <ul>
-<li>Default run against <code>localhost:53128</code>:
+<li>Default run against <code>localhost:34128</code>:
 <code>bash tests/stress/proxy_forward_stress.sh</code></li>
 <li>Conductor invocation under host-safety caps (§12.6):
 <code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/stress/proxy_forward_stress.sh</code></li>
@@ -223,8 +227,8 @@ non-SKIP run.</li>
 <code>STRESS_SEQ=100 STRESS_CONC=10 STRESS_TARGET=https://www.gstatic.com/generate_204 bash tests/stress/proxy_forward_stress.sh</code></li>
 </ul>
 <p>Env knobs: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
-(default <code>53128</code>), <code>STRESS_TARGET</code> (default
+<code>http://localhost:34128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>34128</code>), <code>STRESS_TARGET</code> (default
 <code>https://www.gstatic.com/generate_204</code>),
 <code>STRESS_EXPECT</code> (default <code>204 200</code>),
 <code>STRESS_VIA_TARGET</code> (default

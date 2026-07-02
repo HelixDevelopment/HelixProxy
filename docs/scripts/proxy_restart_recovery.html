@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>proxy_restart_recovery</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -173,7 +177,7 @@
 </head>
 <body>
 <h1
-id="testschaosproxy_restart_recovery.sh-operator-guide"><code>tests/chaos/proxy_restart_recovery.sh</code>
+id="testschaosproxy_restart_recoverysh--operator-guide"><code>tests/chaos/proxy_restart_recovery.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
@@ -187,7 +191,7 @@ of the script.</p>
 </blockquote>
 <h2 id="overview">Overview</h2>
 <p>§11.4.85 / §11.4.169 <strong>chaos</strong> suite proving the LIVE
-HTTP forward proxy (Squid, <code>localhost:53128</code>)
+HTTP forward proxy (Squid, <code>localhost:34128</code>)
 <strong>recovers after a mid-flight container restart</strong> — the
 process-death / §11.4.144 detect → wait → re-attach contract:</p>
 <ol type="1">
@@ -204,7 +208,7 @@ window</strong> and assert it recovers to
 <code>probe … state=DOWN</code> / <code>recovered … state=UP</code>)
 with per-event UTC timestamps. Every PASS cites the captured
 <code>recovery_trace.log</code> (§11.4.69).</p>
-<h2 id="fault-injection-delegated-never-hardcoded">Fault injection
+<h2 id="fault-injection-delegated--never-hardcoded">Fault injection
 (delegated — never hardcoded)</h2>
 <p>The script <strong>never</strong> hardcodes
 <code>podman</code>/<code>docker restart</code> — the containers
@@ -237,8 +241,8 @@ containers-submodule restart command.</li>
 <code>GOMAXPROCS=2 nice -n 19 ionice -c 3 PROXY_CHAOS_RESTART_CMD='…' bash tests/chaos/proxy_restart_recovery.sh</code></li>
 </ul>
 <p>Env knobs: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
-(default <code>53128</code>), <code>CHAOS_SQUID_CONTAINER</code>
+<code>http://localhost:34128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>34128</code>), <code>CHAOS_SQUID_CONTAINER</code>
 (default <code>proxy-squid</code>), <code>CHAOS_TARGET</code> (default
 <code>https://www.gstatic.com/generate_204</code>),
 <code>CHAOS_EXPECT</code> (default <code>204 200</code>),

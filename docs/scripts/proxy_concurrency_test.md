@@ -3,8 +3,8 @@
 **Revision:** 1
 **Last modified:** 2026-07-01T00:00:00Z
 **Status:** Authored + parse-clean (`sh -n` + `bash -n`). Runs live against the
-running HTTP forward proxy (`localhost:53128`) AND the SOCKS5 proxy
-(`localhost:51080`); honest `SKIP` (§11.4.3) when no proxy is listening or the
+running HTTP forward proxy (`localhost:34128`) AND the SOCKS5 proxy
+(`localhost:34080`); honest `SKIP` (§11.4.3) when no proxy is listening or the
 echo oracle is unreachable directly.
 
 > Companion (§11.4.18) to the in-source documentation block at the top of the
@@ -19,7 +19,7 @@ to the wrong client, no truncation, no corruption.
 
 The suite launches a HIGH number of clients (default **40**) that all park on a
 start **barrier** and are released **at once**, MIXING the HTTP forward proxy
-(`http://localhost:53128`) AND the SOCKS5 proxy (`socks5h://localhost:51080`)
+(`http://localhost:34128`) AND the SOCKS5 proxy (`socks5h://localhost:34080`)
 round-robin. Every client fetches a **distinct identifiable resource**: a
 per-client unique token — `HPCXT_<run-nonce>_C<i>_END` — echoed back in the
 response body by the echo endpoint. Cross-talk is then **mechanically
@@ -49,16 +49,16 @@ codes — it does not test simultaneity across transports nor cross-talk.
 
 ## Usage examples
 
-- Default run against `localhost:53128` (HTTP) + `localhost:51080` (SOCKS5):
+- Default run against `localhost:34128` (HTTP) + `localhost:34080` (SOCKS5):
   `bash tests/concurrency/proxy_concurrency_test.sh`
 - Conductor invocation under host-safety caps (§12.6):
   `GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/concurrency/proxy_concurrency_test.sh`
 - Higher simultaneity against a self-hosted echo (clean PASS/FAIL under load):
   `CONC_CLIENTS=60 CONC_ECHO_URL_TEMPLATE=http://127.0.0.1:8080/echo?t=__TOKEN__ bash tests/concurrency/proxy_concurrency_test.sh`
 
-Env knobs: `HTTP_PROXY_URL` (default `http://localhost:53128`), `HTTP_PROXY_PORT`
-(default `53128`), `SOCKS_PROXY_URL` (default `socks5h://localhost:51080`),
-`SOCKS_PROXY_PORT` (default `51080`), `CONC_CLIENTS` (default `40`, clamped
+Env knobs: `HTTP_PROXY_URL` (default `http://localhost:34128`), `HTTP_PROXY_PORT`
+(default `34128`), `SOCKS_PROXY_URL` (default `socks5h://localhost:34080`),
+`SOCKS_PROXY_PORT` (default `34080`), `CONC_CLIENTS` (default `40`, clamped
 `2..80`), `CONC_ECHO_URL_TEMPLATE` (default
 `https://postman-echo.com/get?htok=__TOKEN__` — MUST contain the `__TOKEN__`
 placeholder and reflect it in the body), `CONC_EXPECT` (default `200`),
@@ -112,7 +112,7 @@ placeholder and reflect it in the body), `CONC_EXPECT` (default `200`),
   `kill 0`) and removes the scratch dir (§11.4.14); evidence files are preserved.
 - Resources: shell + curl only, simultaneous clients clamped `≤ 80`, well under
   the §12.6 60% host-memory ceiling. It NEVER touches operator resources
-  (`wg0-mullvad`, `lava-*`, `whoami:58080`) and never stops/starts any container.
+  (`wg0-mullvad`, `lava-*`, `whoami:34088`) and never stops/starts any container.
 
 ## Related
 

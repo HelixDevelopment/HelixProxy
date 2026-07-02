@@ -18,7 +18,7 @@ sink-side), never from forgeable client headers.
 
 ## Prerequisites
 
-- The proxy stack is up: HTTP forward on `:53128`, SOCKS5 on `:51080`
+- The proxy stack is up: HTTP forward on `:34128`, SOCKS5 on `:34080`
   (`./start`, rootless Podman — §11.4.161).
 - To **execute** the bank, the `helixqa` binary must be buildable from
   `submodules/helix_qa`. That currently requires six own-org sibling modules

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>proxy_acl_security</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -173,12 +177,12 @@
 </head>
 <body>
 <h1
-id="testssecurityproxy_acl_security.sh-operator-guide"><code>tests/security/proxy_acl_security.sh</code>
+id="testssecurityproxy_acl_securitysh--operator-guide"><code>tests/security/proxy_acl_security.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored + parse-clean.
 Runs live against the running Squid HTTP forward proxy
-(<code>localhost:53128</code>); honest <code>SKIP</code> (§11.4.3) when
+(<code>localhost:34128</code>); honest <code>SKIP</code> (§11.4.3) when
 the proxy or the header-echo endpoint is unreachable.</p>
 <blockquote>
 <p>Companion (§11.4.18) to the in-source documentation block at the top
@@ -186,7 +190,7 @@ of the script.</p>
 </blockquote>
 <h2 id="overview">Overview</h2>
 <p>§11.4.169 / §11.4.85 <strong>security</strong> suite asserting the
-LIVE HTTP forward proxy’s ACL + header-hygiene posture with captured
+LIVE HTTP forward proxy's ACL + header-hygiene posture with captured
 evidence (§11.4.69). Two hard-gated anti-bluff checks:</p>
 <ul>
 <li><strong>S1 — ACL deny does not leak.</strong> A request the proxy
@@ -206,14 +210,14 @@ the proxy) WHILE <code>Proxy-Authorization</code> is ABSENT (stripped —
 no credential leak). A <code>Proxy-Authorization</code> echoed at the
 origin is a credential LEAK → <code>FAIL</code>.</li>
 </ul>
-<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<h2 id="honest-boundary-1146">Honest boundary (§11.4.6)</h2>
 <p>End-to-end <code>Authorization</code> / <code>Cookie</code> headers
 are addressed to the origin the client chose and ARE forwarded by design
 — that is <strong>not</strong> a leak. This suite gates on the
 hop-by-hop <code>Proxy-Authorization</code> (which must never reach the
 origin) and captures <code>X-Forwarded-For</code> presence as
 <strong>informational</strong> evidence only (default Squid
-<code>forwarded_for on</code>), never a hard gate. The “credential” sent
+<code>forwarded_for on</code>), never a hard gate. The "credential" sent
 in S2 is a throwaway base64 of <code>sentinel:leak</code> — deliberately
 worthless, so asserting it is stripped never logs a real secret
 (§11.4.10).</p>
@@ -232,7 +236,7 @@ non-SKIP run.</li>
 </ul>
 <h2 id="usage-examples">Usage examples</h2>
 <ul>
-<li>Default run against <code>localhost:53128</code>:
+<li>Default run against <code>localhost:34128</code>:
 <code>bash tests/security/proxy_acl_security.sh</code></li>
 <li>Under host-safety caps (§12.6):
 <code>GOMAXPROCS=2 nice -n 19 ionice -c 3 bash tests/security/proxy_acl_security.sh</code></li>
@@ -240,8 +244,8 @@ non-SKIP run.</li>
 <code>SEC_DENY_TARGET=https://example.com:81/ SEC_HEADER_ECHO_URL=http://httpbin.org/headers bash tests/security/proxy_acl_security.sh</code></li>
 </ul>
 <p>Env knobs: <code>HTTP_PROXY_URL</code> (default
-<code>http://localhost:53128</code>), <code>HTTP_PROXY_PORT</code>
-(default <code>53128</code>), <code>SEC_DENY_TARGET</code> (default
+<code>http://localhost:34128</code>), <code>HTTP_PROXY_PORT</code>
+(default <code>34128</code>), <code>SEC_DENY_TARGET</code> (default
 <code>https://example.com:81/</code>), <code>SEC_DENY_EXPECT</code>
 (default <code>403 407</code>), <code>SEC_HEADER_ECHO_URL</code>
 (default <code>http://httpbin.org/headers</code>),

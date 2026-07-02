@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="dante-sockd-dynamic-routing-templates">Dante (sockd)
+dynamic-routing templates</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T00:00:00Z <strong>Status:</strong> DESIGN / templates only —
+NOT yet wired into a running stack.</p>
+<p>This directory holds the <strong>template</strong> the future
+control-plane <code>config-compiler</code> (Stream B) renders to add
+<code>dynamic</code>-mode per-tunnel SOCKS egress to Dante. It is
+<strong>additive</strong>: the rendered route blocks are
+<strong>appended after</strong> the shipped
+<code>config/dante/sockd.conf</code> content (preserved verbatim) to
+build the deployed config — the base config
+(<code>internal: :34080</code>, <code>external: proxy-dante</code>,
+<code>socksmethod: none</code>, and its <code>client pass</code> /
+<code>socks pass</code> rules) is never modified or removed
+(<strong>§11.4.122</strong>).</p>
+<blockquote>
+<p><strong>Why concatenation, not a native
+<code>include</code>:</strong> Dante v1.4.4 has <strong>no
+<code>include</code> directive</strong> (CONFIRMED —
+<code>sockd -V</code> rejects both <code>include: "..."</code> and
+<code>include "..."</code> with a syntax error:
+<code>qa-results/p4_templates/dante_parse.txt</code>, TEST 1 &amp; 3).
+Squid supports <code>include</code> (so the Squid template <em>is</em>
+included); Dante does not, so the compiler concatenates instead. The end
+result is the same additive guarantee: base content untouched, route
+blocks added.</p>
+</blockquote>
+<h2 id="files">Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dynamic-routing.sockd.conf.tmpl</code></td>
+<td>Per-tunnel <code>route { ... }</code> blocks directing matching
+destinations out through that tunnel's gluetun egress.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="placeholders-the-compiler-fills-these">Placeholders (the
+compiler fills these)</h2>
+<table>
+<thead>
+<tr>
+<th>Placeholder</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{{TUNNEL_NAME}}</code></td>
+<td>Per-tunnel label (comment only), e.g.
+<code>tun_&lt;profile&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>{{TARGET_CIDR}}</code></td>
+<td>Destination(s) routed through this tunnel (CIDR or host).</td>
+</tr>
+<tr>
+<td><code>{{PEER_HOST}}</code></td>
+<td>gluetun container host exposing this tunnel's egress proxy.</td>
+</tr>
+<tr>
+<td><code>{{PEER_PORT}}</code></td>
+<td>That gluetun proxy port (SOCKS upstream for chaining).</td>
+</tr>
+</tbody>
+</table>
+<p>The compiler renders <strong>one <code>route</code> block per
+tunnel/target</strong>.</p>
+<h2 id="how-the-compiler-fills--wires-them">How the compiler fills +
+wires them</h2>
+<ol type="1">
+<li>Read VPN profiles + target routes from PostgreSQL.</li>
+<li>Substitute the placeholders, one <code>route</code> block per
+tunnel/target.</li>
+<li><strong>Concatenate</strong>: write the shipped
+<code>config/dante/sockd.conf</code> content verbatim, then append the
+rendered route blocks, into the deployed config (Dante has no
+<code>include</code> directive — see note above). The base lines stay
+byte-for-byte.</li>
+<li>Apply via <strong><code>SIGHUP</code></strong> to the sockd mother
+process — only on a <strong>structural</strong> route change
+(new/removed tunnel or target).</li>
+</ol>
+<h2 id="proxyprotocol--egress-topology"><code>proxyprotocol</code> /
+egress topology</h2>
+<p>The template chains matching destinations through the tunnel's
+gluetun proxy so bytes leave via that VPN netns. Set
+<code>proxyprotocol</code> to match what gluetun exposes:</p>
+<ul>
+<li><code>proxyprotocol: socks_v5</code> — if a SOCKS upstream is
+exposed (template default).</li>
+<li><code>proxyprotocol: http_connect</code> — for gluetun's HTTP proxy
+(<code>:8888</code>).</li>
+</ul>
+<p><strong>Alternative interface-bind topology</strong> (one container =
+one netns, §3.2): instead of chaining, bind egress to the tunnel
+interface —</p>
+<pre><code>route {
+    from: 0.0.0.0/0  to: {{TARGET_CIDR}}
+    via: {{TUNNEL_IFACE}}
+}</code></pre>
+<p>The compiler selects the form per deployment; the shipped template
+ships the proxy-chaining form as the portable default.</p>
+<h2 id="confirmed-facts--honest-gaps-1146">Confirmed facts &amp; honest
+gaps (§11.4.6)</h2>
+<ul>
+<li><strong>FACT (<code>F_spikes_G1-G4.md</code> §G3):</strong>
+<code>SIGHUP</code> reloads sockd config and does <strong>not</strong>
+drop an active ESTABLISHED SOCKS session (20/20 chunks across a
+mid-stream reload, curl exit 0). Adding/removing a route is live-session
+safe.</li>
+<li><strong><code>UNCONFIRMED:</code></strong> whether an in-flight
+session whose <strong>route changed</strong> keeps its OLD path or is
+re-evaluated — owed to <strong>P9</strong> (concurrent / repeated /
+route-change live captured-evidence test).</li>
+<li><strong>FACT (<code>qa-results/p4_templates/dante_parse.txt</code>,
+TEST 2):</strong> the rendered <code>route { ... }</code> block
+<strong>verifies clean</strong> — <code>sockd -V -f &lt;conf&gt;</code>
+exit <strong>0</strong> (Dante v1.4.4,
+<code>vimagick/dante:latest</code>, via rootless
+<code>podman run --rm</code>). Only an unrelated "uid 0 not recommended"
+warning (running -V as root), not a route syntax issue.</li>
+<li><strong>FACT (TEST 1 &amp; 3):</strong> <code>sockd -V</code>
+REJECTS an <code>include</code> line (both <code>include:</code> and
+bare <code>include</code>) with a syntax error — hence the concatenation
+model above.</li>
+<li><strong><code>UNCONFIRMED:</code></strong> full live SOCKS egress
+through a real per-tunnel upstream + the route-change-mid-session
+behaviour — owed to <strong>P9</strong> against the real stack
+(<code>sockd -V</code> validates syntax + interface, not live proxy
+chaining). Recorded honestly, not faked.</li>
+</ul>
+<h2 id="validation">Validation</h2>
+<p>See <code>qa-results/p4_templates/</code> (gitignored) for the
+rendered example and any captured Dante parse attempt + its honest
+result.</p>
+</body>
+</html>

@@ -7,7 +7,7 @@
 ## Overview
 
 Anti-bluff Challenge that proves the **live SOCKS5 proxy** (default
-`socks5://localhost:51080`) actually forwards a real end-user journey. It drives
+`socks5://localhost:34080`) actually forwards a real end-user journey. It drives
 two real sub-probes through `curl --proxy socks5://...` — a plain-HTTP `GET` to a
 `204` endpoint and an HTTPS `GET` — and asserts the through-proxy `%{http_code}`
 matches the expected code, cross-checked against a **direct** fetch of the same
@@ -15,7 +15,7 @@ URL. Response headers and per-probe verdicts are captured to an evidence file.
 
 ## Prerequisites
 
-- The base proxy stack UP with SOCKS5 listening on `51080`.
+- The base proxy stack UP with SOCKS5 listening on `34080`.
 - `curl` built with SOCKS5 support, `bash`, `awk`, `grep`;
   `tests/lib/evidence.sh` present (sourced).
 - READ-ONLY: plain proxy client only — never touches any container.
@@ -25,13 +25,13 @@ URL. Response headers and per-probe verdicts are captured to an evidence file.
 ```sh
 bash challenges/scripts/proxy_socks5_challenge.sh
 # override target / evidence dir:
-SOCKS5_PROXY=socks5://localhost:51080 \
+SOCKS5_PROXY=socks5://localhost:34080 \
 CHALLENGE_EVIDENCE_DIR=/path/to/evidence \
   bash challenges/scripts/proxy_socks5_challenge.sh
 ```
 
-Environment: `SOCKS5_PROXY` (default `socks5://localhost:51080`), `SOCKS5_PORT`
-(default `51080`), `CHALLENGE_EVIDENCE_DIR` (default
+Environment: `SOCKS5_PROXY` (default `socks5://localhost:34080`), `SOCKS5_PORT`
+(default `34080`), `CHALLENGE_EVIDENCE_DIR` (default
 `qa-results/challenges/<run-ts>`), `CURL_MAX_TIME` (default `20`).
 
 ## Exit codes

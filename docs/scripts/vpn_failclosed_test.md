@@ -79,7 +79,7 @@ HELIX_DYNAMIC_STACK=1 GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 Exact conductor boot + run sequence:
 
 ```sh
-./start --dynamic                                    # boots the dynamic profile, binds :53128
+./start --dynamic                                    # boots the dynamic profile, binds :34128
 HELIX_DYNAMIC_STACK=1 bash tests/dynamic/vpn_failclosed_test.sh
 ```
 

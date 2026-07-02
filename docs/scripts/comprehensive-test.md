@@ -39,7 +39,7 @@ then `docker`).
 - **`VPN_EXIT_IP`** (optional) — the expected VPN tunnel exit IP. When unset the
   VPN-routing test SKIPs (`operator_attended`); it never fakes a VPN PASS from an
   `egress == host` equality (that would prove NO VPN diversion).
-- Port defaults when `.env` is absent: HTTP `53128`, SOCKS `51080`, admin `58080`.
+- Port defaults when `.env` is absent: HTTP `34128`, SOCKS `34080`, admin `34088`.
 - Live external endpoints reached during the run (through the proxy and, for the
   anti-bluff cross-check, directly): `connectivitycheck.gstatic.com`,
   `www.google.com`, `httpbin.org`, `api.ipify.org`, `ifconfig.me`, `dns.google`,

@@ -154,7 +154,7 @@ Evidence: `qa-results/vpn_lan/phase3/<UTC-ts>/{ftp,sftp,webdav}/`.
 | `HELIX_VPN_SFTP_DIR` | remote dir (default `.`) |
 | `HELIX_VPN_SFTP_KEY` | identity file (key-based, `BatchMode` — no interactive password) |
 | `HELIX_VPN_WEBDAV_URL` | WebDAV collection URL, e.g. `http://10.6.100.221/dav/` |
-| `HELIX_SQUID_PROXY` | proxy endpoint (default `http://127.0.0.1:53128`) |
+| `HELIX_SQUID_PROXY` | proxy endpoint (default `http://127.0.0.1:34128`) |
 
 **Tutorial — SFTP round-trip (the recommended path):**
 

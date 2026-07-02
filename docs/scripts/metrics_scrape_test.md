@@ -78,8 +78,8 @@ GREEN guard, live (conductor, after boot):
 
 ```sh
 HELIX_OBSERVABILITY_STACK=1 \
-HELIX_METRICS_URL=http://127.0.0.1:59090/metrics \
-HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_METRICS_URL=http://127.0.0.1:34090/metrics \
+HELIX_PROXY_URL=http://127.0.0.1:34128 \
 GOMAXPROCS=2 nice -n 19 ionice -c 3 \
     bash tests/observability/metrics_scrape_test.sh
 ```
@@ -89,9 +89,9 @@ GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 | Variable | Default | Meaning |
 |----------|---------|---------|
 | `RED_MODE` | `0` | `1` = RED reproduction, `0` = GREEN guard |
-| `HELIX_METRICS_URL` | `http://127.0.0.1:59090/metrics` | scrape URL (METRICS_PORT=59090) |
+| `HELIX_METRICS_URL` | `http://127.0.0.1:34090/metrics` | scrape URL (METRICS_PORT=34090) |
 | `HELIX_OBSERVABILITY_STACK` | unset | set `1` (conductor, post-boot) to declare `proxy-api` up |
-| `HELIX_PROXY_URL` | `http://127.0.0.1:53128` | HTTP proxy for the proxied-request step |
+| `HELIX_PROXY_URL` | `http://127.0.0.1:34128` | HTTP proxy for the proxied-request step |
 | `HELIX_METRICS_PROBE_TARGET` | `http://target-a.internal/` | URL fetched through the proxy |
 | `HELIX_METRICS_BYTEPATH_WIRED` | `0` | set `1` once the byte-path to api counter increment lands |
 | `HELIX_METRICS_EVIDENCE_DIR` | `qa-results/observability/metrics_scrape/<run-id>` | evidence dir |
@@ -147,7 +147,7 @@ GOMAXPROCS=2 nice -n 19 ionice -c 3 \
 - `tests/dynamic/suites/ddos_flood_suite.sh` — the RED/GREEN + honest-SKIP pattern
   this guard follows.
 - `config/prometheus/prometheus.yml` — the committed scrape config (job
-  `helix-control-plane`, target `proxy-control-plane:59090`).
+  `helix-control-plane`, target `proxy-control-plane:34090`).
 
 ## Conductor live-proof command sequence
 
@@ -165,8 +165,8 @@ $COMPOSE up -d proxy-postgres proxy-redis
 $COMPOSE up -d proxy-api
 
 HELIX_OBSERVABILITY_STACK=1 \
-HELIX_METRICS_URL=http://127.0.0.1:59090/metrics \
-HELIX_PROXY_URL=http://127.0.0.1:53128 \
+HELIX_METRICS_URL=http://127.0.0.1:34090/metrics \
+HELIX_PROXY_URL=http://127.0.0.1:34128 \
 GOMAXPROCS=2 nice -n 19 ionice -c 3 \
     bash tests/observability/metrics_scrape_test.sh
 ```

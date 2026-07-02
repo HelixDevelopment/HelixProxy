@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>chaos_suite</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -238,7 +242,7 @@
 </head>
 <body>
 <h1
-id="testsdynamicsuiteschaos_suite.sh-operator-guide"><code>tests/dynamic/suites/chaos_suite.sh</code>
+id="testsdynamicsuiteschaos_suitesh--operator-guide"><code>tests/dynamic/suites/chaos_suite.sh</code>
 — operator guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-07-01T00:00:00Z <strong>Status:</strong> Authored for P10.
@@ -253,7 +257,7 @@ of the script.</p>
 <h2 id="overview">Overview</h2>
 <p>§11.4.85 / §11.4.169 <strong>chaos / failure-injection</strong>
 suite. It injects real faults into the live <code>dynamic</code> stack
-and asserts the design’s fail-closed contract (design §10) holds:</p>
+and asserts the design's fail-closed contract (design §10) holds:</p>
 <ul>
 <li><strong>C1</strong> kill gluetun mid-request → branded <strong>503 +
 Squid PID unchanged</strong> (<code>graceful_503</code> analyzer) AND
@@ -279,7 +283,7 @@ committed <code>tests/lib/evidence.sh</code>; the
 <strong>injection hook</strong> commands (config injection §11.4.28;
 containers submodule §11.4.76 — never hardcoded podman/docker here):
 <ul>
-<li><code>HELIX_CHAOS_KILL_CMD</code> — bring a profile’s tunnel
+<li><code>HELIX_CHAOS_KILL_CMD</code> — bring a profile's tunnel
 DOWN</li>
 <li><code>HELIX_CHAOS_RESTART_CMD</code> — bring it back UP</li>
 <li><code>HELIX_CHAOS_REDIS_CORRUPT_CMD</code> — corrupt/delete
@@ -296,7 +300,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/dynamic/suites/chaos_suite.sh</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># P10 live run (hooks supplied via env):</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_DYNAMIC_STACK</span><span class="op">=</span>1 <span class="va">HELIX_PROXY_URL</span><span class="op">=</span>http://127.0.0.1:53128 <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">HELIX_DYNAMIC_STACK</span><span class="op">=</span>1 <span class="va">HELIX_PROXY_URL</span><span class="op">=</span>http://127.0.0.1:34128 <span class="dt">\</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="va">HELIX_CHAOS_KILL_CMD</span><span class="op">=</span>... <span class="va">HELIX_CHAOS_RESTART_CMD</span><span class="op">=</span>... <span class="dt">\</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="va">HELIX_CHAOS_CAPTURE_CMD</span><span class="op">=</span>... <span class="va">HELIX_SQUID_PID_CMD</span><span class="op">=</span>... <span class="dt">\</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bash</span> tests/dynamic/suites/chaos_suite.sh</span></code></pre></div>
@@ -319,13 +323,8 @@ every exit path (§11.4.14).</li>
 PID-unchanged check is the §11.4.108 runtime-signature that
 distinguishes graceful from crash.</li>
 </ul>
-<h2 id="red_mode-polarity">§11.4.115 RED_MODE polarity</h2>
+<h2 id="114115-red_mode-polarity">§11.4.115 RED_MODE polarity</h2>
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
 <th><code>RED_MODE</code></th>
