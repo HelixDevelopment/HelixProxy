@@ -720,6 +720,32 @@ test_regression_guards() {
             "RED could not reproduce the defect — §11.4.7"
     fi
 
+    # MULLVAD-EGRESS-CONFIG (§11.4.135) — GREEN guard: the operator-proven gluetun
+    # mullvad-native WireGuard egress config in .env must never silently regress to
+    # the placeholder shape (provider=custom / empty key / empty addrs). PURE-CONFIG,
+    # deterministic, §11.4.10-safe (validates SHAPE, never prints secret values). It
+    # uses the 3-way exit (0=PASS / 2=§11.4.3 SKIP when .env is absent on a fresh
+    # checkout / else FAIL) — collapsing the .env-absent SKIP into FAIL would be a
+    # §11.4.1 false-FAIL, and a fake PASS would be a §11.4 bluff.
+    _menv_rc=0; bash "$SCRIPT_DIR/regression/mullvad_egress_config_test.sh" >/dev/null 2>&1 || _menv_rc=$?
+    case "$_menv_rc" in
+        0) test_result "MULLVAD-EGRESS valid gluetun mullvad-native WG config (GREEN)" "PASS" ;;
+        2) test_result "MULLVAD-EGRESS mullvad-native WG config (GREEN)" "SKIP" ".env absent — fresh-checkout topology §11.4.3" ;;
+        *) test_result "MULLVAD-EGRESS valid gluetun mullvad-native WG config (GREEN)" "FAIL" \
+               "run: bash tests/regression/mullvad_egress_config_test.sh" ;;
+    esac
+
+    # MULLVAD-EGRESS — RED self-check: the SAME shape validator run against a
+    # synthesized broken config (provider=custom / empty key / empty addrs) MUST
+    # reject it, proving the shape check has teeth (not a tautology). RED never
+    # depends on .env. A RED that cannot reproduce is a §11.4.7 finding.
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/mullvad_egress_config_test.sh" >/dev/null 2>&1; then
+        test_result "MULLVAD-EGRESS broken-config RED reproduces" "PASS"
+    else
+        test_result "MULLVAD-EGRESS broken-config RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
     # LE Phase-3 hermetic DNS-01 issuance guard (§11.4.135). Unlike the pure-logic
     # guards above, this BOOTS the hermetic Pebble+CoreDNS+Caddy stack, so it uses
     # a 3-way exit (0=PASS, 2=topology SKIP when the built image is absent §11.4.3,
