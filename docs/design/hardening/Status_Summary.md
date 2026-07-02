@@ -1,8 +1,8 @@
 # Proxy Hardening — Status Summary
 
-**Revision:** 4
-**Last modified:** 2026-07-01T15:40:00Z
-**Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience).
+**Revision:** 5
+**Last modified:** 2026-07-02T12:01:04Z
+**Status:** Companion summary of [`Status.md`](Status.md) (§11.4.56 two-audience). **Rev 5:** the §11.4.169 DDoS / stress+chaos / memory rows now ALSO cover the **Go control-plane** server — the prior evidence was data-plane Squid only; in-process httptest tests landed #67 (DDoS `0c51f61`, memory-soak `ceb4839`, chaos `159fcbc`), each calibrated-not-hardcoded, §1.1-load-bearing, independently reviewed. Also: the security-guard group-verdict F1 over-claim (green named S4 while S4 SKIPped) was fixed + §11.4.135-guarded (#71 `6e3e031` / #72 `adca02e`).
 
 ---
 

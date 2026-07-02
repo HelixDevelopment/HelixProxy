@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status_Summary</title>
   <style>
@@ -91,6 +91,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,10 +155,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -174,9 +178,18 @@
 <body>
 <h1 id="proxy-hardening--status-summary">Proxy Hardening — Status
 Summary</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-07-01T15:40:00Z <strong>Status:</strong> Companion summary of <a
-href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).</p>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-07-02T12:01:04Z <strong>Status:</strong> Companion summary of <a
+href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).
+<strong>Rev 5:</strong> the §11.4.169 DDoS / stress+chaos / memory rows
+now ALSO cover the <strong>Go control-plane</strong> server — the prior
+evidence was data-plane Squid only; in-process httptest tests landed #67
+(DDoS <code>0c51f61</code>, memory-soak <code>ceb4839</code>, chaos
+<code>159fcbc</code>), each calibrated-not-hardcoded, §1.1-load-bearing,
+independently reviewed. Also: the security-guard group-verdict F1
+over-claim (green named S4 while S4 SKIPped) was fixed +
+§11.4.135-guarded (#71 <code>6e3e031</code> / #72
+<code>adca02e</code>).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
 For the operator / stakeholders (plain language)</h2>
