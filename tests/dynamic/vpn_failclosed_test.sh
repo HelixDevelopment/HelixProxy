@@ -96,7 +96,9 @@
 # =============================================================================
 
 # --- resource cap: self-re-exec under nice/ionice when available (§12.6) ------
-if [ "${HELIX_FAILCLOSED_NICED:-0}" != "1" ]; then
+# Skipped when sourced FUNCTIONS-ONLY by the §11.4.135 regression guard
+# (FAILCLOSED_SOURCE_ONLY=1) so `exec` never hijacks the guard's process.
+if [ "${HELIX_FAILCLOSED_NICED:-0}" != "1" ] && [ "${FAILCLOSED_SOURCE_ONLY:-0}" != "1" ]; then
     HELIX_FAILCLOSED_NICED=1
     export HELIX_FAILCLOSED_NICED
     GOMAXPROCS=2
@@ -110,6 +112,38 @@ if [ "${HELIX_FAILCLOSED_NICED:-0}" != "1" ]; then
         exec $_fc_nice $_fc_ionice "$0" "$@"
     fi
 fi
+
+# ---------------------------------------------------------------------------
+# Pure verdict-classifier for the NO-LEAK-but-not-branded-PASS branches
+# (single-source, §11.4.107(10)/§11.4.6). Exercised BOTH by the STEP-5 body
+# below AND by the §11.4.135 regression guard
+# tests/regression/vpn_failclosed_reason_test.sh, which sources this file with
+# FAILCLOSED_SOURCE_ONLY=1 (defines the function, runs NO live probes / NO
+# side effects) — no divergent copy of the classification logic.
+#
+# fc_no_leak_skip_reason <iter> <timeout_count> <nonbrand> <graceful_503_rc>
+#   Emits "<closed-set-reason>|<honest reason text>".
+#   §11.4.6: when EVERY proxied iteration timed out (000), a 000 is
+#   absence-of-response — NOT positive evidence that the fail-closed 503 served.
+#   The start-of-test reachability probe confirmed the proxy answered at test
+#   START, not during the timed-out window. Such a run is INCONCLUSIVE (the
+#   fail-closed contract was NOT positively observed), never "fail-closed held —
+#   no leak". Only a run that received real (non-000) fail-closed responses may
+#   claim the branded path is merely inactive (fail-closed held, no leak).
+fc_no_leak_skip_reason() {
+    _fc_iter=$1; _fc_to=$2; _fc_nb=$3; _fc_g=$4
+    if [ "$_fc_iter" -gt 0 ] 2>/dev/null && [ "$_fc_to" -ge "$_fc_iter" ] 2>/dev/null; then
+        printf 'network_unreachable_external|vpn_failclosed (all %s proxied iterations timed out (000); fail-closed NOT positively observed this run — §11.4.3/§11.4.6 inconclusive, not proof of no-leak)' \
+            "$_fc_iter"
+        return 0
+    fi
+    printf 'feature_disabled_by_config|vpn_failclosed (fail-closed held — no leak — but branded ERR_TUNNEL_DOWN path inactive: nonbrand=%s graceful_503_rc=%s; dynamic-routing.squid/external_acl likely not rendered — compiler lane pending)' \
+        "${_fc_nb:-none}" "$_fc_g"
+}
+
+# Sourced for its function only (regression guard) — stop before any side effect
+# (no evidence.sh $0-based path resolution, no live probe).
+if [ "${FAILCLOSED_SOURCE_ONLY:-0}" = "1" ]; then return 0 2>/dev/null || exit 0; fi
 
 set -u
 
@@ -284,12 +318,14 @@ PID_BEFORE=$(squid_pid)
 ALL_BRANDED=1
 LEAK_SEEN=0
 NONBRAND_CODE=""
+TIMEOUT_COUNT=0
 i=1
 while [ "$i" -le "$ITER" ]; do
     BODY="$QA/req_${i}.body"
     CODE=$(curl -s --max-time "$PROBE_TIMEOUT" -o "$BODY" -w '%{http_code}' \
         -x "$PROXY_URL" "$TARGET" 2>/dev/null)
     [ -n "$CODE" ] || CODE=000
+    [ "$CODE" = "000" ] && TIMEOUT_COUNT=$((TIMEOUT_COUNT + 1))
     HAS_BRAND=no
     grep -q "$BRAND_REF" "$BODY" 2>/dev/null && HAS_BRAND=yes
     printf 'iter=%s http_code=%s err_tunnel_down_in_body=%s bytes=%s\n' \
@@ -324,6 +360,7 @@ PID_AFTER=$(squid_pid)
 LEAK_LOG="$QA/access_log_slice.txt"
 DENIED_LINES=0
 FORWARD_LINES=0
+ACCESS_NOTE=""
 if [ -f "$ACCESS_LOG" ]; then
     grep -F "$TARGET_HOST" "$ACCESS_LOG" 2>/dev/null | tail -n 50 > "$LEAK_LOG" || true
     DENIED_LINES=$(grep -c 'TCP_DENIED/503' "$LEAK_LOG" 2>/dev/null || printf 0)
@@ -331,6 +368,9 @@ if [ -f "$ACCESS_LOG" ]; then
     FORWARD_LINES=$(grep -E 'HIER_DIRECT|FIRSTUP_PARENT|ROUNDROBIN_PARENT|[A-Z_]*_PARENT/' "$LEAK_LOG" 2>/dev/null | grep -Evc 'HIER_NONE' || printf 0)
 else
     printf '# access.log not found at %s (log mount absent?)\n' "$ACCESS_LOG" > "$LEAK_LOG"
+    # §11.4.6: with no access.log the TCP_DENIED=0 count is absence-of-data, not
+    # corroboration — the branded-503 body remains the primary NO-LEAK proof.
+    ACCESS_NOTE=" (access.log absent — corroboration only; branded-503 body is the primary proof)"
 fi
 [ -n "$DENIED_LINES" ] || DENIED_LINES=0
 [ -n "$FORWARD_LINES" ] || FORWARD_LINES=0
@@ -370,7 +410,7 @@ fi
 # canonical graceful_503 (branded body + PID unchanged) corroborated.
 if [ "$ALL_BRANDED" = "1" ] && [ "$G503_RC" -eq 0 ]; then
     ab_pass_with_evidence \
-        "vpn_failclosed: tunnel DOWN ⇒ branded 503 ERR_TUNNEL_DOWN x$ITER + NO leak (access.log TCP_DENIED=$DENIED_LINES, no upstream forward, Squid PID unchanged)" \
+        "vpn_failclosed: tunnel DOWN ⇒ branded 503 ERR_TUNNEL_DOWN x$ITER + NO leak (access.log TCP_DENIED=$DENIED_LINES, no upstream forward, Squid PID unchanged)$ACCESS_NOTE" \
         "$QA/verdict.txt" || exit $?
     # Half (B): real-VPN EGRESS proof is operator-gated on gluetun creds (§11.4.21).
     ab_skip_with_reason \
@@ -379,15 +419,18 @@ if [ "$ALL_BRANDED" = "1" ] && [ "$G503_RC" -eq 0 ]; then
     exit $?
 fi
 
-# No leak, but the branded ERR_TUNNEL_DOWN path is not active (e.g. the compiler
-# has not rendered dynamic-routing.squid so the external_acl / deny_info is absent
-# and the request fell through to a bare deny — still fail-closed, but NOT the
-# branded-503 feature under test). Honest §11.4.3 SKIP (feature disabled), never a
-# fail-open PASS (§11.4.68) and never a false leak-FAIL (the request did NOT leak).
+# No leak observed, but NOT the branded ERR_TUNNEL_DOWN PASS. Two honest, distinct
+# §11.4.3 SKIPs (never a fail-open PASS §11.4.68, never a false leak-FAIL — the
+# request did NOT leak), classified by the single-source fc_no_leak_skip_reason:
+#   (a) EVERY iteration timed out (000) — absence-of-response, INCONCLUSIVE
+#       (§11.4.6): the fail-closed 503 was NOT positively observed this run.
+#   (b) real (non-000) fail-closed responses but the branded path is inactive
+#       (compiler has not rendered dynamic-routing.squid) — fail-closed held.
 if [ "$G503_RC" -ne 0 ] || [ "$ALL_BRANDED" != "1" ]; then
-    ab_skip_with_reason \
-        "vpn_failclosed (fail-closed held — no leak — but branded ERR_TUNNEL_DOWN path inactive: nonbrand=${NONBRAND_CODE:-none} graceful_503_rc=$G503_RC; dynamic-routing.squid/external_acl likely not rendered — compiler lane pending; see $QA/verdict.txt)" \
-        "feature_disabled_by_config"
+    FC_CLS=$(fc_no_leak_skip_reason "$ITER" "$TIMEOUT_COUNT" "$NONBRAND_CODE" "$G503_RC")
+    FC_REASON=${FC_CLS%%|*}
+    FC_TEXT=${FC_CLS#*|}
+    ab_skip_with_reason "$FC_TEXT (see $QA/verdict.txt)" "$FC_REASON"
     exit $?
 fi
 

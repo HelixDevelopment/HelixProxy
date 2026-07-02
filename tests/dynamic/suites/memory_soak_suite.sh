@@ -25,7 +25,43 @@
 # =============================================================================
 DIR=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=/dev/null
-. "$DIR/../lib/analyzer_common.sh"
+# Idempotent: on normal execution $0 resolves DIR and this sources the lib; when
+# the §11.4.135 guard has ALREADY sourced analyzer_common.sh (its $0-based DIR
+# would be wrong here), skip the re-source so a failed `.` never aborts the guard.
+command -v dyn_red_mode >/dev/null 2>&1 || . "$DIR/../lib/analyzer_common.sh"
+
+# ---------------------------------------------------------------------------
+# Pure growth-verdict classifier (single-source, §11.4.107(10)/§11.4.6/§11.4.69).
+# Exercised BOTH by the GREEN body below AND by the §11.4.135 regression guard
+# tests/regression/memory_soak_degenerate_sample_test.sh, which sources this file
+# with MEMSOAK_SOURCE_ONLY=1 (defines the function, runs NO soak / NO side
+# effects) — no divergent copy of the classification logic.
+#
+# mem_soak_classify <baseline> <last> <growth_pct> <max_growth_pct>
+#   Emits one of: "PASS|<detail>" | "SKIP|<detail>" | "FAIL|<detail>".
+#   §11.4.6/§11.4.69 no-absence-as-evidence: a DEGENERATE final sample (last<=0)
+#   with a valid baseline means HELIX_MEM_RSS_CMD died mid-soak — growth then
+#   computes to (0-base)*100/base = -100% which would spuriously satisfy
+#   "growth <= max" and score a sampler-death as "bounded". Such a run is
+#   MISSING EVIDENCE (honest SKIP), NEVER a bounded PASS.
+mem_soak_classify() {
+    _ms_b=$1; _ms_l=$2; _ms_g=$3; _ms_gp=$4
+    if [ "$_ms_b" -gt 0 ] 2>/dev/null && [ "$_ms_l" -le 0 ] 2>/dev/null; then
+        printf 'SKIP|degenerate final RSS sample (baseline=%s last=%s growth=%s%%) — HELIX_MEM_RSS_CMD failed mid-soak; not evidence of a bounded working set' \
+            "$_ms_b" "$_ms_l" "$_ms_g"
+        return 0
+    fi
+    if [ "$_ms_b" -gt 0 ] 2>/dev/null && [ "$_ms_g" -le "$_ms_gp" ] 2>/dev/null; then
+        printf 'PASS|bounded working set (growth=%s%% <= %s%%)' "$_ms_g" "$_ms_gp"
+        return 0
+    fi
+    printf 'FAIL|baseline=%s last=%s growth=%s%% > %s%% (or no samples)' \
+        "$_ms_b" "$_ms_l" "$_ms_g" "$_ms_gp"
+    return 0
+}
+
+# Sourced for its function only (regression guard) — stop before any side effect.
+if [ "${MEMSOAK_SOURCE_ONLY:-0}" = "1" ]; then return 0 2>/dev/null || exit 0; fi
 
 SUITE="memory_soak"
 RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
@@ -95,9 +131,23 @@ if dyn_red_mode; then
     exit 1
 fi
 
-if [ "$base" -gt 0 ] && [ "$grow" -le "$GROWTH_PCT" ]; then
-    ab_pass_with_evidence "$SUITE bounded working set (growth=${grow}% <= ${GROWTH_PCT}%)" "$QA/memory.evidence"
-    exit $?
-fi
-ac_fail "$SUITE" "[reason: baseline=$base last=$last growth=${grow}% > ${GROWTH_PCT}% (or no samples) — see $QA/memory.evidence]"
-exit 1
+# §11.4.6/§11.4.69: classify via the single-source verdict function so a
+# degenerate final sample (last<=0, growth=-100%) is an honest SKIP (sampler
+# failed mid-soak) — NEVER a spurious "bounded" PASS.
+MS_CLS=$(mem_soak_classify "$base" "$last" "$grow" "$GROWTH_PCT")
+MS_KIND=${MS_CLS%%|*}
+MS_DETAIL=${MS_CLS#*|}
+case "$MS_KIND" in
+    PASS)
+        ab_pass_with_evidence "$SUITE $MS_DETAIL" "$QA/memory.evidence"
+        exit $?
+        ;;
+    SKIP)
+        ab_skip_with_reason "$SUITE $MS_DETAIL (see $QA/memory.evidence)" "feature_disabled_by_config"
+        exit $?
+        ;;
+    *)
+        ac_fail "$SUITE" "[reason: $MS_DETAIL — see $QA/memory.evidence]"
+        exit 1
+        ;;
+esac

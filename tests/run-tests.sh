@@ -792,6 +792,43 @@ test_regression_guards() {
         test_result "task#73 chaos no-leak vacuous-PASS RED reproduces" "FAIL" \
             "RED could not reproduce the defect — §11.4.7"
     fi
+
+    # task #74 (dynamic-audit ac3f1c89) — GREEN guard: vpn_failclosed's
+    # no-leak-but-not-branded SKIP reason NEVER asserts "fail-closed held — no
+    # leak" as fact for an all-timeout (000) run (absence-of-response is
+    # inconclusive, §11.4.6/§11.4.3). Drives the REAL fc_no_leak_skip_reason
+    # (§11.4.107(10), no divergent copy) — the legitimate branded-path-inactive
+    # branch is preserved (§11.4.120). Pure logic, no live stack.
+    if bash "$SCRIPT_DIR/regression/vpn_failclosed_reason_test.sh" >/dev/null 2>&1; then
+        test_result "task#74 vpn_failclosed all-timeout inconclusive reason (GREEN)" "PASS"
+    else
+        test_result "task#74 vpn_failclosed all-timeout inconclusive reason (GREEN)" "FAIL" \
+            "run: bash tests/regression/vpn_failclosed_reason_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/vpn_failclosed_reason_test.sh" >/dev/null 2>&1; then
+        test_result "task#74 vpn_failclosed 'fail-closed held' over-claim RED reproduces" "PASS"
+    else
+        test_result "task#74 vpn_failclosed 'fail-closed held' over-claim RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
+
+    # task #75 (dynamic-audit ac3f1c89) — GREEN guard: memory_soak's bounded
+    # verdict NEVER scores a sampler that DIED mid-soak (degenerate final
+    # sample -> growth=-100%) as a "bounded" PASS. Drives the REAL
+    # mem_soak_classify (§11.4.107(10), no divergent copy): degenerate -> SKIP,
+    # valid -> PASS, unbounded -> FAIL (§11.4.6/§11.4.69/§11.4.120). Pure logic.
+    if bash "$SCRIPT_DIR/regression/memory_soak_degenerate_sample_test.sh" >/dev/null 2>&1; then
+        test_result "task#75 memory_soak degenerate-final-sample SKIP (GREEN)" "PASS"
+    else
+        test_result "task#75 memory_soak degenerate-final-sample SKIP (GREEN)" "FAIL" \
+            "run: bash tests/regression/memory_soak_degenerate_sample_test.sh"
+    fi
+    if RED_MODE=1 bash "$SCRIPT_DIR/regression/memory_soak_degenerate_sample_test.sh" >/dev/null 2>&1; then
+        test_result "task#75 memory_soak degenerate-scored-bounded RED reproduces" "PASS"
+    else
+        test_result "task#75 memory_soak degenerate-scored-bounded RED reproduces" "FAIL" \
+            "RED could not reproduce the defect — §11.4.7"
+    fi
 }
 
 #######################################
