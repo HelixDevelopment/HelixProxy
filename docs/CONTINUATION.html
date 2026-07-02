@@ -179,10 +179,11 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 26 <strong>Last modified:</strong>
-2026-07-02T17:23:22Z <strong>Status:</strong> Active — <strong>Rev-26
-wave (2026-07-02, HEAD <code>22c9c30</code>): ALL FOUR operator
-directives COMPLETE (committed + pushed to origin/main, FF
+<p><strong>Revision:</strong> 27 <strong>Last modified:</strong>
+2026-07-02T17:39:28Z <strong>Status:</strong> Active — <strong>Rev-27
+(2026-07-02, HEAD <code>ee2ef0a</code>): directives COMPLETE +
+re-validated clean. Rev-26 (HEAD <code>22c9c30</code>): ALL FOUR
+operator directives COMPLETE (committed + pushed to origin/main, FF
 §11.4.113).</strong> <strong>(P1 Mullvad WG egress)</strong> persistent
 ONE-DEVICE "groovy rabbit" (id <code>df4184d4-…</code>) + gitignored
 <code>.env</code> mullvad-native config; <strong>live egress
@@ -256,8 +257,15 @@ proven, so this is artifact-staleness only, not a source defect.
 Subagent-driven §11.4.70/§11.4.103 (throttle recovered mid-session → 3
 parallel subagents sustained; 1 crash respawned §11.4.147); every claim
 carries captured physical evidence (§11.4/§11.4.6, no bluff).
-<strong>Owed next (operator-gated / not-yet):</strong> full
-proxy-data-plane-THROUGH-gluetun e2e (needs dynamic stack up); host
+<strong>Post-directive (Rev-27):</strong> Mullvad egress-config
+§11.4.135 guard committed <code>ee2ef0a</code>; FULL session
+RE-VALIDATION CLEAN — run-tests <strong>89 pass / 7 skip / 0
+FAIL</strong>, control-plane <code>go test -race -short</code> 12 ok / 0
+race, hermetic 4/4 real-WG-tunnel PASS, 5 Rev-24 guards GREEN+RED +
+analyzers 6/6 + evidence-lib 48/48 → <strong>NO REGRESSION,
+release-quality</strong>; dynamic-squid image rebuild is build-gated
+(§11.4.108 owed). <strong>Owed next (operator-gated / not-yet):</strong>
+full proxy-data-plane-THROUGH-gluetun e2e (needs dynamic stack up); host
 podman/aardvark-dns reset (shared host); real-device flash; release tag.
 <strong>Rev-25 wave (2026-07-02): two operator directives
 DOCUMENTED.</strong> <strong>(Part 1) Mullvad WireGuard egress —
