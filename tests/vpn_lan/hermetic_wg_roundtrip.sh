@@ -74,7 +74,7 @@ if [ "${1:-}" = "--inner" ]; then
     unshare -n bash -c "touch '$MARK'; exec sleep 60" &
     HOLDER=$!
     KDIR=$(mktemp -d)
-    cleanup(){ kill "$HOLDER" 2>/dev/null; [ -n "${SRV:-}" ] && kill "$SRV" 2>/dev/null; rm -rf "$KDIR" "$MARK" 2>/dev/null; true; }
+    cleanup(){ kill "$HOLDER" 2>/dev/null; [ -n "${SRV:-}" ] && kill "$SRV" 2>/dev/null; [ -n "${SNIFF_PID:-}" ] && kill "$SNIFF_PID" 2>/dev/null; rm -rf "$KDIR" "$MARK" "${SNIFFDIR:-}" 2>/dev/null; true; }
     trap cleanup EXIT INT TERM
     for _ in $(seq 1 50); do [ -e "$MARK" ] && break; sleep 0.1; done
     [ -e "$MARK" ] || fail "holder netns not ready"
@@ -146,6 +146,140 @@ if [ "${1:-}" = "--inner" ]; then
         fail "no connect over 10.10.0.2:8080 (WG handshake incomplete)"
     fi
 
+    # === §11.4.107 underlay-sniff differential — start a BOUNDED capture on the
+    # CLIENT underlay veth (veth0, 10.9.0.x — carries the ENCRYPTED WG UDP), NOT
+    # wg0. AF_PACKET SOCK_RAW needs CAP_NET_RAW, held by this `unshare -Urnm`
+    # root-in-userns for its OWN netns's veth only (§11.4.174 — never a host iface).
+    # After the positive fetch we assert on the captured underlay bytes: (a) a
+    # WireGuard type-4 data message (0x04 00 00 00) to the WG listen port is present
+    # (the tunnel really carried traffic on the wire) AND (b) the per-run plaintext
+    # NONCE is ABSENT (the payload was encrypted, not leaked). Bounded window +
+    # byte cap (§12.6); reaped in the trap. Honest SKIP if AF_PACKET+tcpdump both
+    # unavailable (§11.4.3) — never a fake pass; the rest of the harness still runs.
+    SNIFF_IFACE=veth0
+    SNIFFDIR=$(mktemp -d)
+    SNIFF_CAP="$SNIFFDIR/underlay.pcap"; SNIFF_READY="$SNIFFDIR/ready"
+    SNIFF_WINDOW=3.5; SNIFF_CAPB=4194304
+    SNIFF_ACTIVE=0; SNIFF_MODE=none; SNIFF_PID=""
+    LPORT=$("$WG" show wg0 listen-port 2>/dev/null); LPORT=${LPORT:-51820}
+    cat > "$SNIFFDIR/cap.py" <<'PY'
+import socket, sys, time, struct
+ifn, outp, readyp, window, capb = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]), int(sys.argv[5])
+try:
+    s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(0x0003))  # ETH_P_ALL
+    s.bind((ifn, 0))
+except Exception as e:
+    try:
+        open(readyp + ".err", "w").write(repr(e))
+    except Exception:
+        pass
+    sys.exit(1)
+f = open(outp, "wb")
+f.write(struct.pack("<IHHiIII", 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1))  # pcap global hdr, LINKTYPE_ETHERNET
+f.flush()
+open(readyp, "w").close()  # signal ready only AFTER the header is on disk
+s.settimeout(0.5)
+deadline = time.time() + window
+total = 0
+while time.time() < deadline and total < capb:
+    try:
+        data = s.recv(65535)
+    except socket.timeout:
+        continue
+    except OSError:
+        break
+    n = len(data); t = time.time()
+    f.write(struct.pack("<IIII", int(t), int((t - int(t)) * 1000000), n, n))
+    f.write(data)
+    total += n + 16
+f.flush(); f.close()
+try:
+    s.close()
+except Exception:
+    pass
+PY
+    cat > "$SNIFFDIR/an.py" <<'PY'
+import sys, struct
+capp, nonce, lport = sys.argv[1], sys.argv[2].encode(), int(sys.argv[3])
+try:
+    raw = open(capp, "rb").read()
+except Exception as e:
+    sys.stderr.write("SNIFF-ERR read %r\n" % e); sys.exit(4)
+if len(raw) < 24:
+    sys.stderr.write("SNIFF-ERR short %d\n" % len(raw)); sys.exit(4)
+m = raw[:4]
+if m == b"\xd4\xc3\xb2\xa1":
+    e = "<"
+elif m == b"\xa1\xb2\xc3\xd4":
+    e = ">"
+else:
+    sys.stderr.write("SNIFF-ERR magic %r\n" % m); sys.exit(4)
+network = struct.unpack(e + "I", raw[20:24])[0]
+off = 24; ct = False; pt = False; pkts = 0; blob = bytearray()
+while off + 16 <= len(raw):
+    _, _, incl, _ = struct.unpack(e + "IIII", raw[off:off+16]); off += 16
+    if off + incl > len(raw):
+        break
+    fr = raw[off:off+incl]; off += incl; pkts += 1; blob += fr
+    p = 14 if network == 1 else 0        # skip Ethernet header for LINKTYPE_ETHERNET
+    if len(fr) < p + 20:
+        continue
+    vihl = fr[p]
+    if (vihl >> 4) != 4:                 # IPv4 only
+        continue
+    ihl = (vihl & 0x0f) * 4
+    if ihl < 20 or fr[p + 9] != 17:      # UDP only
+        continue
+    u = p + ihl
+    if len(fr) < u + 8:
+        continue
+    sport = struct.unpack(">H", fr[u:u+2])[0]
+    dport = struct.unpack(">H", fr[u+2:u+4])[0]
+    pl = fr[u+8:]
+    if (dport == lport or sport == lport) and pl[:4] == b"\x04\x00\x00\x00":
+        ct = True                        # WireGuard type-4 transport-data message
+if nonce in bytes(blob):
+    pt = True
+sys.stderr.write("SNIFF: packets=%d ciphertext(0x04 :%d)=%s plaintext_nonce=%s\n" % (
+    pkts, lport, "present" if ct else "absent", "present" if pt else "absent"))
+if pt:
+    sys.exit(2)   # plaintext leaked -> the "plaintext absent" assertion FAILS
+if not ct:
+    sys.exit(3)   # no WG data on the underlay
+sys.exit(0)
+PY
+    timeout -k 1 8 python3 "$SNIFFDIR/cap.py" "$SNIFF_IFACE" "$SNIFF_CAP" "$SNIFF_READY" "$SNIFF_WINDOW" "$SNIFF_CAPB" >/dev/null 2>>"$EV" &
+    SNIFF_PID=$!
+    for _ in $(seq 1 30); do
+        [ -e "$SNIFF_READY" ] && { SNIFF_ACTIVE=1; SNIFF_MODE=afpacket; break; }
+        [ -e "$SNIFF_READY.err" ] && break
+        sleep 0.1
+    done
+    if [ "$SNIFF_ACTIVE" != 1 ]; then
+        # AF_PACKET unavailable — reap it, then honest fallback / SKIP (§11.4.3).
+        wait "$SNIFF_PID" 2>/dev/null; SNIFF_PID=""
+        _aperr=$(head -c 200 "$SNIFF_READY.err" 2>/dev/null); _aperr=${_aperr:-unknown}
+        if command -v tcpdump >/dev/null 2>&1; then
+            timeout -k 1 8 tcpdump -i "$SNIFF_IFACE" -nn -s 0 -w "$SNIFF_CAP" udp >/dev/null 2>>"$EV" &
+            SNIFF_PID=$!; sleep 1.2
+            if kill -0 "$SNIFF_PID" 2>/dev/null || [ -s "$SNIFF_CAP" ]; then SNIFF_ACTIVE=1; SNIFF_MODE=tcpdump; fi
+        fi
+        if [ "$SNIFF_ACTIVE" != 1 ]; then
+            [ -n "$SNIFF_PID" ] && kill "$SNIFF_PID" 2>/dev/null; SNIFF_PID=""
+            _td=$(command -v tcpdump >/dev/null 2>&1 && echo present-but-failed || echo absent)
+            log "SNIFF-SKIP: underlay capture unavailable (AF_PACKET: $_aperr; tcpdump: $_td) — sniff leg skipped (§11.4.3), rest of harness unaffected"
+        fi
+    fi
+    # §11.4.107(10) golden-bad: SNIFF_MUT=plain transmits the SAME run NONCE in
+    # CLEARTEXT on the underlay veth so the "plaintext absent" assertion MUST fail
+    # (proving the assertion is load-bearing, not a tautology). NEVER runs in normal
+    # mode; sent only when the capture is actually active. Port 9 (discard), a
+    # distinct port from the §11.4.111 negative control's TCP :8080, so NEG-OK stays valid.
+    if [ "$SNIFF_ACTIVE" = 1 ] && [ "${SNIFF_MUT:-0}" = plain ]; then
+        python3 -c 'import socket,sys; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); [s.sendto(sys.argv[1].encode(),("10.9.0.2",9)) for _ in range(6)]' "$NONCE" 2>>"$EV" || true
+        log "SNIFF_MUT=plain: emitted the run nonce in CLEARTEXT on $SNIFF_IFACE (underlay) — plaintext-absent assertion MUST now FAIL"
+    fi
+
     BODY=$(python3 -c 'import urllib.request; print(urllib.request.urlopen("http://10.10.0.2:8080/payload.txt", timeout=8).read().decode().rstrip("\n"))' 2>>"$EV") || fail "fetch over tunnel"
     SHA_GOT=$(printf '%s\n' "$BODY" | sha256sum | cut -d' ' -f1)
     log "peer-served nonce (over WG): $NONCE"
@@ -153,6 +287,21 @@ if [ "${1:-}" = "--inner" ]; then
     log "sha256 source / fetched     : $SHA_SRC / $SHA_GOT"
     { [ "$SHA_SRC" = "$SHA_GOT" ] && [ "$BODY" = "$NONCE" ]; } || fail "sha256/body mismatch"
     { [ "$HS" != 0 ] && [ "$RX" -gt 0 ] 2>/dev/null && [ "$TX" -gt 0 ] 2>/dev/null; } || fail "WG handshake/transfer not confirmed (hs=$HS rx=$RX tx=$TX)"
+
+    # --- §11.4.107 underlay-sniff differential: stop the capture (started before the
+    # fetch) and run the two assertions on the captured underlay bytes ---
+    if [ "$SNIFF_ACTIVE" = 1 ]; then
+        [ "$SNIFF_MODE" = tcpdump ] && { sleep 0.4; kill -INT "$SNIFF_PID" 2>/dev/null || true; }
+        wait "$SNIFF_PID" 2>/dev/null; SNIFF_PID=""
+        _src=0
+        python3 "$SNIFFDIR/an.py" "$SNIFF_CAP" "$NONCE" "$LPORT" 2>>"$EV" || _src=$?
+        case "$_src" in
+            0) log "SNIFF-OK: underlay $SNIFF_IFACE ($SNIFF_MODE): WG data (0x04) to :$LPORT present, plaintext nonce absent (§11.4.107 non-leak). Boundary: proves non-leak on the LOCAL simulated underlay veth, NOT the live Mullvad WAN (§11.4.3/§11.4.6)." ;;
+            2) fail "SNIFF: plaintext nonce '$NONCE' appeared on the underlay $SNIFF_IFACE — payload leaked in cleartext (§11.4.107)" ;;
+            3) fail "SNIFF: no WireGuard type-4 data (0x04) datagram to :$LPORT captured on the underlay $SNIFF_IFACE — tunnel did not carry traffic on the wire" ;;
+            *) fail "SNIFF: underlay-capture analyzer error (rc=$_src)" ;;
+        esac
+    fi
 
     # §11.4.111 negative control (self-evidencing tunnel-gating): the payload server
     # binds the WG-only overlay 10.10.0.2 ONLY, so the SAME fetch aimed from netns A
@@ -171,7 +320,7 @@ if [ "${1:-}" = "--inner" ]; then
     # underlay-reachable ⇒ HTTP 200 ⇒ _neg=0 ⇒ fail; overlay-only ⇒ refused ⇒ _neg≠0 ⇒ NEG-OK.
     rm -rf "$SRVDIR" 2>/dev/null || true
 
-    log "WG_PASS: real HTTP payload round-tripped over an encrypted kernel-WireGuard tunnel between 2 unprivileged netns, sha256 + handshake + transfer verified"
+    log "WG_PASS: real HTTP payload round-tripped over an encrypted kernel-WireGuard tunnel between 2 unprivileged netns, sha256 + handshake + transfer verified; underlay-sniff differential (§11.4.107) confirmed WG-ciphertext-present + plaintext-nonce-absent on the underlay (or honest SKIP)"
     exit 0
 fi
 
@@ -181,6 +330,7 @@ fi
 SCRIPT_LABEL='hermetic_wg_roundtrip'
 _sd=$(cd "$(dirname "$0")" && pwd); _root=$(cd "$_sd/../.." && pwd)
 WG_MUT="${WG_MUT:-0}"
+SNIFF_MUT="${SNIFF_MUT:-0}"
 _skip(){ printf 'SKIP: %s [%s]\n' "$SCRIPT_LABEL" "$1"; exit 0; }
 
 for _t in unshare nsenter ip python3 sha256sum timeout wg; do command -v "$_t" >/dev/null 2>&1 || _skip "tool absent: $_t"; done
@@ -195,13 +345,13 @@ if [ "${_softu}" != unlimited ] && [ "${_softu:-0}" -gt 0 ] 2>/dev/null && [ "$(
 fi
 
 TS=$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%Y%m%dT%H%M%SZ)
-if [ "$WG_MUT" = badkey ]; then _mode=mut; else _mode=pass; fi
+if [ "$WG_MUT" = badkey ] || [ "$SNIFF_MUT" = plain ]; then _mode=mut; else _mode=pass; fi
 export WG_EV_DIR="$_root/qa-results/vpn_lan/hermetic_wg/${TS}_${_mode}_$$"
 _rc=0
 # outer bound sits a few seconds below the 60s holder-sleep / server self-timeout
 # so the outer reaper fires FIRST in the pathological case, leaving the inner
 # `timeout -k 2 60` self-bound as the belt-and-suspenders orphan guard (review nit).
-WG_MUT="$WG_MUT" timeout 55 env WG_EV_DIR="$WG_EV_DIR" WG_MUT="$WG_MUT" \
+WG_MUT="$WG_MUT" timeout 55 env WG_EV_DIR="$WG_EV_DIR" WG_MUT="$WG_MUT" SNIFF_MUT="$SNIFF_MUT" \
     unshare -Urnm bash "$0" --inner >/dev/null 2>&1 || _rc=$?
 _ev="$WG_EV_DIR/roundtrip.evidence"
 
