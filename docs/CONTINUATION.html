@@ -179,13 +179,91 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 25 <strong>Last modified:</strong>
-2026-07-02T16:33:00Z <strong>Status:</strong> Active — <strong>Rev-25
-wave (2026-07-02): two operator directives DOCUMENTED.</strong>
-<strong>(Part 1) Mullvad WireGuard egress — COMPLETE:</strong> a
-persistent ONE-DEVICE Mullvad WireGuard identity was registered against
-the operator's Mullvad account via the current app API
-(<code>POST /auth/v1/token</code> →
+<p><strong>Revision:</strong> 26 <strong>Last modified:</strong>
+2026-07-02T17:23:22Z <strong>Status:</strong> Active — <strong>Rev-26
+wave (2026-07-02, HEAD <code>22c9c30</code>): ALL FOUR operator
+directives COMPLETE (committed + pushed to origin/main, FF
+§11.4.113).</strong> <strong>(P1 Mullvad WG egress)</strong> persistent
+ONE-DEVICE "groovy rabbit" (id <code>df4184d4-…</code>) + gitignored
+<code>.env</code> mullvad-native config; <strong>live egress
+<code>mullvad_exit_ip=true</code> deterministic 3/3</strong>
+(Prague/Düsseldorf/San Jose — invariant holds every run) +
+<strong>kill-switch fail-closed 3/3</strong> (§11.4.68
+tunnel-down⇒egress-BLOCKED wget-RC=4, gluetun-healthcheck "operation not
+permitted" corroborated); feature Status
+<code>docs/design/mullvad_egress/</code> (<code>22c9c30</code>);
+evidence
+<code>qa-results/verification/mullvad_egress_20260702T161312Z/PROOF.txt</code>
++ <code>qa-results/mullvad_killswitch/20260702T165417Z/</code>. §11.4.10
+secret-safe (0 account/key/addr in any tracked file/PDF); §11.4.10.A
+pre-store audit CLEAN; host routing untouched (§11.4.174). <strong>(P2
+ports→34XXX)</strong> HTTP-Squid <code>34128</code> / SOCKS-Dante
+<code>34080</code> / Admin+Control-API <code>34088</code>
+(<code>34081</code> avoided — a foreign java holds host
+<code>:34081</code>, §11.4.174) / Metrics <code>34090</code>:
+<code>80cbcd2</code> (62 behavior files + §11.4.135 guard
+<code>port_prefix_34xxx_test.sh</code> GREEN+RED) + gap-fix
+<code>754bd2a</code> (4 missed challenge/runner scripts still on old
+ports — §11.4.118-discovered by the doc-sync agent, guard scan-scope
+extended to challenges/+runner) + doc-sync <code>ca0b6a4</code> (111
+current-behavior doc files; HISTORICAL narrative PRESERVED, §11.4.6).
+Verified: guard GREEN+RED, <code>podman-compose config</code> rc=0
+rendering 34XXX, control-plane <code>go test -short</code> 0 FAIL,
+run-tests 84/10/0. <strong>(P3 HelixQA vendored + built,
+decoupled)</strong> 6 own-org siblings at flat layout
+<code>90ca75f</code>
+(doc_processor/llm_orchestrator/llm_provider/vision_engine @master,
+llms_verifier/security @main); <strong><code>helixqa</code> binary
+BUILDS + RUNS in-tree</strong> (<code>go build ./cmd/helixqa</code> exit
+0, <code>helixqa v0.2.0</code>, 548 test cases parsed); its DECOUPLED
+build fix (go.mod
+<code>llmsverifier =&gt; ../llms_verifier/llm-verifier</code> subdir +
+<code>helix-deps.yaml</code> master refs — F1/F2 found by the build
+subagent) committed <code>a6c8c2e</code> + <strong>pushed to all 3
+HelixQA mirrors</strong> (github×2 + gitlab, integrated onto latest
+upstream <code>64eb44b</code> §11.4.113); <code>install_upstreams</code>
+wired multi-mirror push on all 6; evidence
+<code>qa-results/helixqa_vendor_20260702T170441Z/</code> +
+<code>qa-results/helixqa_build/20260702T162857Z/</code>. <strong>(P4
+DNS)</strong> deferred by operator — LE Phase 4/6 Operator-blocked
+(reason "operator-deferred DNS 2026-07-02"), documented
+<code>3170e50</code>. <strong>Session commits (all FF-pushed):</strong>
+<code>80cbcd2</code>·<code>3170e50</code>·<code>754bd2a</code>·<code>ca0b6a4</code>·<code>90ca75f</code>·<code>22c9c30</code>
+(+ helix_qa <code>a6c8c2e</code> upstream). <strong>Live e2e DONE
+(§11.4.108, evidence
+<code>qa-results/proxy_helixqa_e2e_34xxx/20260702T171101Z/</code>):</strong>
+ad-hoc rootless-podman proxy on the new ports — <strong>HTTP
+<code>:34128</code> 200×3</strong> (real body + squid access.log
+<code>TCP_MISS/200</code>, cache <code>TCP_MEM_HIT/200</code>) +
+<strong>SOCKS <code>:34080</code> 200×3</strong>; <strong>HelixQA proxy
+bank 4/5 PASS</strong>
+(http_forward/https_through/socks5_http/socks5_https PASS via the built
+<code>helixqa</code> binary; cache FAIL = gnu.org ORIGIN 403 bot-block,
+NOT a proxy defect — same URL 200 via curl). <strong>FINDING (§11.4.108
+artifact-staleness, owed):</strong> the <code>dynamic</code>-profile
+squid IMAGE (<code>localhost/helixproxy-squid-dynamic:dev</code>) was
+built PRE-migration → serves <code>http_port :53128</code> internally
+while compose publishes <code>34128</code>; SOURCE is clean
+(<code>squid.dynamic.conf</code> = <code>34128</code>, guard-verified),
+so the fix is a squid-dynamic IMAGE REBUILD via the project's
+MULTI-STAGE build (needs the <code>controlplane</code> stage +
+<code>config/squid</code> build context) — an ad-hoc
+<code>podman build</code> this session failed (rc=125: wrong
+context/missing stage), confirming the rebuild belongs to the
+podman-gated dynamic-stack build; the dynamic image self-corrects to
+<code>34128</code> at the next stack rebuild. Source clean + statically
+proven, so this is artifact-staleness only, not a source defect.
+Subagent-driven §11.4.70/§11.4.103 (throttle recovered mid-session → 3
+parallel subagents sustained; 1 crash respawned §11.4.147); every claim
+carries captured physical evidence (§11.4/§11.4.6, no bluff).
+<strong>Owed next (operator-gated / not-yet):</strong> full
+proxy-data-plane-THROUGH-gluetun e2e (needs dynamic stack up); host
+podman/aardvark-dns reset (shared host); real-device flash; release tag.
+<strong>Rev-25 wave (2026-07-02): two operator directives
+DOCUMENTED.</strong> <strong>(Part 1) Mullvad WireGuard egress —
+COMPLETE:</strong> a persistent ONE-DEVICE Mullvad WireGuard identity
+was registered against the operator's Mullvad account via the current
+app API (<code>POST /auth/v1/token</code> →
 <code>POST /accounts/v1/devices</code>; the legacy <code>/wg</code>
 endpoint is deprecated), device "groovy rabbit" (id
 <code>df4184d4-b6e9-4c2e-b7f7-16e15d4e55a2</code>), creds stored in the
