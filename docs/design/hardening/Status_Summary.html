@@ -178,8 +178,8 @@
 <body>
 <h1 id="proxy-hardening--status-summary">Proxy Hardening — Status
 Summary</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-07-02T12:01:04Z <strong>Status:</strong> Companion summary of <a
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-07-02T12:57:04Z <strong>Status:</strong> Companion summary of <a
 href="Status.md"><code>Status.md</code></a> (§11.4.56 two-audience).
 <strong>Rev 5:</strong> the §11.4.169 DDoS / stress+chaos / memory rows
 now ALSO cover the <strong>Go control-plane</strong> server — the prior
@@ -188,8 +188,20 @@ evidence was data-plane Squid only; in-process httptest tests landed #67
 <code>159fcbc</code>), each calibrated-not-hardcoded, §1.1-load-bearing,
 independently reviewed. Also: the security-guard group-verdict F1
 over-claim (green named S4 while S4 SKIPped) was fixed +
-§11.4.135-guarded (#71 <code>6e3e031</code> / #72
-<code>adca02e</code>).</p>
+§11.4.135-guarded (#71 <code>6e3e031</code> / #72 <code>adca02e</code>).
+<strong>Rev 6 (#69):</strong> the control-plane
+<strong>Integration</strong> row is now PASS —
+<code>go test -run Integration -v ./...</code> gives <strong>14 real
+PASS</strong> (real podman Postgres/redis/gluetun) / 1 honest §11.4.3
+SKIP / 0 FAIL; a prior round had wrongly marked it PENDING assuming
+podman was unusable (§11.4.6 — the aardvark-dns break is
+compose-network-only, not ad-hoc <code>podman run</code>).
+<strong>E2E</strong> → honest §11.4.3 SKIP (no in-project e2e suite;
+end-to-end is covered by the P10 fail-closed proof + the integration
+path; a full compose-network-wired stack e2e is operator-gated). Also
+landed: the chaos C1 no-leak vacuous-PASS fix + §11.4.135 guard (#73
+<code>3ec39d3</code> — a second demonstrated bluff found by the
+§11.4.118 audit, closed like F1).</p>
 <hr />
 <h2 id="page-1--for-the-operator--stakeholders-plain-language">Page 1 —
 For the operator / stakeholders (plain language)</h2>

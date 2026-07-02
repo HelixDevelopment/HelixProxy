@@ -178,8 +178,8 @@
 <body>
 <h1 id="proxy-hardening--test-type-coverage-status">Proxy Hardening —
 Test-Type Coverage Status</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-07-02T12:01:04Z <strong>Status:</strong> In progress — 10 test
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-07-02T12:57:04Z <strong>Status:</strong> In progress — 10 test
 types PASS with captured live evidence (unit [control-plane, all pkgs
 pass], stress+chaos, DDoS, concurrency/atomicity, memory-soak,
 <strong>P10 VPN fail-closed full-automation GREEN</strong>,
@@ -252,17 +252,42 @@ shims / otel = integration-only).</td>
 </tr>
 <tr>
 <td>Integration</td>
-<td>PENDING</td>
-<td>—</td>
-<td>Not re-proven in this hardening round; no captured hardening-round
-evidence this session (§11.4.6).</td>
+<td>PASS</td>
+<td><code>qa-results/integration/control-plane_verbose_20260702T125403Z/integration_verbose.log</code></td>
+<td><code>go test -run Integration -v -count=1 ./...</code> on
+control-plane against REAL podman infra (#69): <strong>14 PASS / 1
+honest §11.4.3 SKIP / 0 FAIL</strong>. Real-Postgres:
+<code>TestIntegration_API_CRUD_RealPostgres</code> (7.5s) + 6×
+<code>internal/store</code>
+(<code>ProfilesCRUD</code>/<code>TargetsTiersRules</code>/<code>UsersAndAudit</code>/<code>WithTxAtomicAuditAndMutation</code>/<code>NoSQLInjection</code>,
+32.9s). Real-Redis: 4× <code>internal/redis</code>
+(<code>StatusRoundTrip</code>/<code>TTLExpiryIsFailClosed</code>/<code>RouteRoundTrip</code>/<code>PubSub</code>)
++ compiler <code>RunSeedsRedisAndWritesArtifacts</code> (8.4s).
+Real-gluetun: healthd <code>HealthdWritesDownAgainstRealGluetun</code>
+(6.0s). routing <code>CompileAndSquidParse</code> (6.6s); api
+metrics-listener graceful-cancel. Real-infra (§11.4.27 — tests named
+<code>*RealPostgres</code>/<code>*RealRedis</code>, unique throwaway
+podman containers; the aardvark-dns break is compose-network-only, NOT
+ad-hoc <code>podman run</code>). The 1 SKIP = acl-helper
+<code>RealHelperRealRedis</code> (needs EXTERNAL
+<code>REDIS_ADDR</code>, honest §11.4.3). §11.4.6 correction: a prior
+round had marked this PENDING assuming podman was unusable — the
+captured <code>-v</code> verdicts prove it runs.</td>
 </tr>
 <tr>
 <td>E2E</td>
-<td>PENDING</td>
+<td>SKIP (§11.4.3)</td>
 <td>—</td>
-<td>Not re-proven in this hardening round; no captured hardening-round
-evidence this session (§11.4.6).</td>
+<td>No dedicated control-plane e2e suite exists in-project (only
+submodule e2e under docs_chain/containers/constitution). End-to-end
+behaviour is covered by the <strong>Full-automation (P10 VPN
+fail-closed)</strong> row below (PASS — data-plane
+tunnel-DOWN→branded-503) + the <strong>Integration</strong> row above
+(real API→Postgres→redis→squid-config path, 14 PASS). A full
+compose-network-wired data-plane stack e2e is operator-gated — the
+aardvark-dns podman compose network (binds :53) is broken → honest SKIP,
+NOT a fake PASS. A dedicated control-plane e2e harness is tracked NEW
+work, not a hardening-round regression (#69).</td>
 </tr>
 <tr>
 <td>Full-automation (P10 VPN fail-closed)</td>

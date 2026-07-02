@@ -423,11 +423,11 @@ rather than fabricated.
 <!-- doc-link-section:begin -->
 | Document | Last modified | Revision | Markdown | HTML | PDF |
 |----------|---------------|----------|----------|------|-----|
-| Continuation | 2026-07-02T12:01:04Z | 22 | [md](docs/CONTINUATION.md) | [html](docs/CONTINUATION.html) | [pdf](docs/CONTINUATION.pdf) |
+| Continuation | 2026-07-02T12:57:04Z | 23 | [md](docs/CONTINUATION.md) | [html](docs/CONTINUATION.html) | [pdf](docs/CONTINUATION.pdf) |
 | Feature Status | 2026-07-01T15:30:00Z | 3 | [md](docs/features/Status.md) | [html](docs/features/Status.html) | [pdf](docs/features/Status.pdf) |
 | Feature Status Summary | 2026-07-01T15:30:00Z | 3 | [md](docs/features/Status_Summary.md) | [html](docs/features/Status_Summary.html) | [pdf](docs/features/Status_Summary.pdf) |
-| Hardening Status | 2026-07-02T12:01:04Z | 5 | [md](docs/design/hardening/Status.md) | [html](docs/design/hardening/Status.html) | [pdf](docs/design/hardening/Status.pdf) |
-| Hardening Status Summary | 2026-07-02T12:01:04Z | 5 | [md](docs/design/hardening/Status_Summary.md) | [html](docs/design/hardening/Status_Summary.html) | [pdf](docs/design/hardening/Status_Summary.pdf) |
+| Hardening Status | 2026-07-02T12:57:04Z | 6 | [md](docs/design/hardening/Status.md) | [html](docs/design/hardening/Status.html) | [pdf](docs/design/hardening/Status.pdf) |
+| Hardening Status Summary | 2026-07-02T12:57:04Z | 6 | [md](docs/design/hardening/Status_Summary.md) | [html](docs/design/hardening/Status_Summary.html) | [pdf](docs/design/hardening/Status_Summary.pdf) |
 | Security Status | 2026-07-01T14:48:00Z | 3 | [md](docs/design/security/Status.md) | [html](docs/design/security/Status.html) | [pdf](docs/design/security/Status.pdf) |
 | Security Status Summary | 2026-07-01T14:48:00Z | 3 | [md](docs/design/security/Status_Summary.md) | [html](docs/design/security/Status_Summary.html) | [pdf](docs/design/security/Status_Summary.pdf) |
 | Let's Encrypt Status | 2026-07-01T11:42:00Z | 3 | [md](docs/design/letsencrypt/Status.md) | [html](docs/design/letsencrypt/Status.html) | [pdf](docs/design/letsencrypt/Status.pdf) |

@@ -179,25 +179,59 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 22 <strong>Last modified:</strong>
-2026-07-02T12:01:04Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 23 <strong>Last modified:</strong>
+2026-07-02T12:57:04Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-22 wave (HEAD
-<code>159fcbc</code>, branch <code>main</code>, FF to origin):</strong>
-<strong>#67 COMPLETE — Go control-plane §11.4.169 resilience gap
-closed</strong> in 3 independently-reviewed slices: DDoS
-<code>0c51f61</code> (loadflood + decide-flood; calibrated-per-run p99 +
-goroutine/fd leak census + Type-4 torn-read fold), memory-soak
-<code>ceb4839</code> (growth-ratio N-invariant 1.11-1.13; caught+fixed a
-fake-audit-accumulation false-fail via <code>drainFakeAudit</code>),
-chaos <code>159fcbc</code> (store-drop-mid-<code>WithTx</code> rollback
-/ SSE-disconnect reap / ctx-cancel honest-SKIP / redis-unavailable →
-zero <code>(true,*)</code> leaks across the outage). All in-process
-httptest — no Postgres/redis/podman/netns; each §1.1-load-bearing
-(reviews a02f558f / a74e23fd / a139f9ec GO). Concurrency was already
-covered (concurrency_test.go + atomicity_test.go + <code>-race</code>) —
-the #67-design correctly avoided a duplicate suite (§11.4.6/§11.4.27).
+future work on <code>main</code>"</strong>). <strong>Rev-23 wave (HEAD
+<code>3ec39d3</code>+doc, branch <code>main</code>, FF to
+origin):</strong> <strong>#73 (second demonstrated bluff) CLOSED + #69
+RESOLVED.</strong> (a) Solo dynamic-audit <code>ac3f1c89</code> found
+<strong>F-A</strong>: <code>chaos_suite.sh</code> C1 no-leak proof was
+VACUOUS — the call site passed a full URL to
+<code>no_leak_analyzer</code> which greps tcpdump
+<code> IP .*&lt;t&gt;</code> (IPs, never scheme-prefixed URLs) → leak
+count always 0 → no-leak PASS regardless of a REAL leak (same
+§11.4.107(10) class as F1); + <strong>F-B</strong> empty-capture
+silently skipped the analyzer. Fixed RED-first <code>3ec39d3</code>
+(<code>chaos_target_leak_key</code> resolves URL→host→IP;
+<code>chaos_leak_signal</code> rc 2 UNEVALUATED→honest SKIP; §11.4.135
+guard <code>chaos_no_leak_argshape_test.sh</code>, RED_MODE polarity,
+single-source via <code>CHAOS_SOURCE_ONLY</code>). Reviewed INLINE by
+the conductor (the review subagent crashed on the throttle; conductor ≠
+builder-subagent author → valid §11.4.70/§11.4.142); guard load-bearing
+under sh+bash; no_leak_analyzer.sh unchanged. F-C/F-D tasked LOW
+(#74/#75). (b) <strong>#69 RESOLVED (§11.4.6 correction):</strong> ran
+<code>go test -run Integration -v ./...</code> on control-plane →
+<strong>14 real PASS / 1 honest §11.4.3 SKIP / 0 FAIL</strong> against
+REAL podman Postgres/redis/gluetun (evidence
+<code>qa-results/integration/control-plane_verbose_20260702T125403Z/</code>).
+A prior round had wrongly marked Integration PENDING assuming podman was
+unusable — FACT: the aardvark-dns break is compose-network-only, NOT
+ad-hoc <code>podman run</code>. Hardening matrix (Status Rev 6):
+<strong>Integration PENDING→PASS</strong>; <strong>E2E PENDING→honest
+§11.4.3 SKIP</strong> (no in-project e2e suite; end-to-end covered by
+the P10 fail-closed proof + the integration path; a full
+compose-network-wired stack e2e is operator-gated). <strong>⚠ THROTTLE
+now saturates even SOLO dispatches</strong> (~16 subagents this session
+→ rolling rate window full); shifted to conductor-INLINE work
+(throttle-immune) — which independently reviewed #73 AND captured #69.
+<strong>Next:</strong> #74/#75 (LOW) when the rate cools. No tag ("keep
+hardening"). <strong>Rev-22 wave (HEAD <code>159fcbc</code>, branch
+<code>main</code>, FF to origin):</strong> <strong>#67 COMPLETE — Go
+control-plane §11.4.169 resilience gap closed</strong> in 3
+independently-reviewed slices: DDoS <code>0c51f61</code> (loadflood +
+decide-flood; calibrated-per-run p99 + goroutine/fd leak census + Type-4
+torn-read fold), memory-soak <code>ceb4839</code> (growth-ratio
+N-invariant 1.11-1.13; caught+fixed a fake-audit-accumulation false-fail
+via <code>drainFakeAudit</code>), chaos <code>159fcbc</code>
+(store-drop-mid-<code>WithTx</code> rollback / SSE-disconnect reap /
+ctx-cancel honest-SKIP / redis-unavailable → zero <code>(true,*)</code>
+leaks across the outage). All in-process httptest — no
+Postgres/redis/podman/netns; each §1.1-load-bearing (reviews a02f558f /
+a74e23fd / a139f9ec GO). Concurrency was already covered
+(concurrency_test.go + atomicity_test.go + <code>-race</code>) — the
+#67-design correctly avoided a duplicate suite (§11.4.6/§11.4.27).
 <strong>§11.4.6 honesty update:</strong> the hardening §11.4.169
 matrix's green DDoS/chaos/memory rows had cited DATA-PLANE Squid
 evidence ONLY — the Go server had no such coverage; matrix now updated
@@ -1282,8 +1316,8 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>159fcbc</code> (== <code>main</code> == origin; integrate any
-newer foreign commit per §11.4.71, no force §11.4.113). The single
+HEAD <code>3ec39d3</code>+doc (== <code>main</code> == origin; integrate
+any newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
 HARDENED:</strong> the H0-full real kernel-WireGuard tunnel
@@ -1315,28 +1349,40 @@ the per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
 golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
 FAIL (not a tautology, §11.4.107(10)), honest exit-3 on empty capture,
 honest <code>SNIFF-SKIP</code> when unavailable, 3/3 deterministic.
-FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED). <strong>#63-#68 + #70/#71/#72
-are LANDED</strong> (<code>91af9c6</code> underlay-sniff ·
+FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED). <strong>#63-#73 + #70/#71/#72
+LANDED; #69 RESOLVED</strong> (<code>91af9c6</code> underlay-sniff ·
 <code>cdb0ccd</code> ethertype guard · <code>85d8b32</code> sniff
 fan-out · <code>b66b2fa</code> email-wiring · <code>172eb5c</code>
 orphan-test · <code>c32dcad</code> healthd coverage ·
 <code>6e3e031</code>+<code>adca02e</code> <strong>F1 fix + §11.4.135
 guard</strong> · <code>5771a46</code> <strong>#68 orphan wiring</strong>
 · <strong>#67 COMPLETE</strong> = DDoS <code>0c51f61</code> +
-memory-soak <code>ceb4839</code> + chaos <code>159fcbc</code> (Go
-control-plane §11.4.169 resilience, in-process/no-infra) — all
-independent §11.4.142 GO). <strong>Top non-operator-gated actionables
-now (⚠ throttle STRICTLY single-stream, confirmed 3× incl. the minimal
-1+1 case, §11.4.6 — done retesting; effective parallelism = 1 subagent +
-conductor-inline):</strong> (1) <strong>#69</strong> — re-capture
-control-plane integration/e2e evidence (§11.4.40 pre-tag); likely
-operator/podman-gated → honest §11.4.3 SKIP, a read-only feasibility
-subagent can enumerate which subset is autonomously capturable; (2)
-respawn the throttle-crashed <strong>dynamic-suite bluff-audit</strong>
-(§11.4.118 over tests/dynamic P10 fail-closed proofs). The F1 fix+guard
-is now recorded in the hardening Security row (Status.md Rev 5) — no
-longer owed. Both: builder → independent §11.4.142 review iterate-to-GO
-§11.4.134 → FF push; run ONE netns owner at a time (§11.4.119). Design
+memory-soak <code>ceb4839</code> + chaos <code>159fcbc</code> ·
+<code>3ec39d3</code> <strong>#73 chaos no-leak vacuity fix +
+guard</strong> (2nd demonstrated bluff, §11.4.107(10)) — all independent
+§11.4.142 GO; <strong>#69 Integration PASS</strong>
+(<code>go test -run Integration -v</code> → 14 real podman
+Postgres/redis/gluetun PASS / 1 honest §11.4.3 SKIP / 0 FAIL,
+THIS-session captured, §11.4.6 correction of a prior PENDING) +
+<strong>E2E honest §11.4.3 SKIP</strong> (no in-project e2e suite;
+covered by P10 fail-closed + integration; compose-wired stack e2e
+operator-gated) — hardening Status Rev 6). <strong>Top
+non-operator-gated actionables now (⚠ throttle now saturates even SOLO
+dispatches — ~16 subagents this session, rolling rate window full;
+conductor-INLINE work is throttle-immune AND a valid §11.4.70/§11.4.142
+reviewer for subagent-authored fixes — it reviewed #73 + captured #69
+this window):</strong> (1) <strong>#74</strong> (LOW) —
+<code>vpn_failclosed</code> all-timeout SKIP reason over-claims
+"fail-closed held"; reword to honest inconclusive (§11.4.6). (2)
+<strong>#75</strong> (LOW) — <code>memory_soak_suite</code> scores a
+mid-run sampler death as "bounded" (-100% growth → PASS); reject a
+degenerate final RSS sample → honest SKIP. Both need a fix + an
+INDEPENDENT reviewer (author-vs-reviewer separation): either wait for
+the subagent rate to cool, or fresh-subagent-authors +
+conductor-reviews-inline. All OTHER remaining work is operator-gated
+(live svord bridge, LE #59, podman compose network / aardvark-dns,
+real-device flash, HelixQA 6-sibling vendoring). No release tag ("keep
+hardening"). Run ONE netns owner at a time (§11.4.119). Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
 2.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
