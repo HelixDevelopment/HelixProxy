@@ -280,6 +280,16 @@ services:
       - HEALTHD_PROFILES=${HEALTHD_PROFILES:-demo}
       - HEALTHD_GLUETUN_BASE=http://proxy-gluetun:${GLUETUN_CONTROL_PORT:-8000}
       - HEALTHD_POLL_INTERVAL=${HEALTHD_POLL_INTERVAL:-5s}
+      # D3 fix (§11.4.68 #79 `4a69225`): activate healthd's FRESH per-poll through-tunnel liveness
+      # probe via gluetun's built-in :8888 HTTP forward proxy (inside the tunnel netns, kill-switch
+      # FIREWALL=on). In this userspace-WG deployment the wg handshake/tx counters are structurally
+      # unobtainable (no `wg` binary, no transfer route), so DecideHealth's wg path can never fire —
+      # this probe is the up-signal healthd CAN obtain (a real request egresses via the tunnel + returns
+      # THIS cycle; kill-switch blocks it when down ⇒ fail-closed). LIVE-PROVEN: the fixed healthd
+      # publishes state=up for the live mullvad tunnel via this probe (evidence
+      # qa-results/dynamic/d3_healthd_live_20260702T200259Z/). Default-OFF in code; this env engages it.
+      # :8888 has NO auth here (HTTPPROXY_PASSWORD empty §11.4.10) so no credentials are needed.
+      - HEALTHD_TUNNEL_PROXY=${HEALTHD_TUNNEL_PROXY:-http://proxy-gluetun:8888}
     # §11.4.108 defect-1 fix: the control-plane image ENTRYPOINT is `compiler`, so a
     # bare `command: ["healthd"]` would run `compiler healthd` (compiler dies:
     # `--dsn required`) and healthd would NEVER run — no vpn:status:<profile> key,
