@@ -179,16 +179,48 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 20 <strong>Last modified:</strong>
-2026-07-02T10:11:13Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 21 <strong>Last modified:</strong>
+2026-07-02T11:06:10Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-20 wave (HEAD
-<code>85d8b32</code>, branch <code>main</code>, FF to origin):</strong>
-<strong>#65 sniff fan-out LANDED.</strong> <code>85d8b32</code>
-replicates the underlay-sniff AF_PACKET non-leak differential onto 3
-protocol harnesses (<code>hermetic_bridge_run.sh</code> marker
-<code>$DEV_NAME</code> / <code>_ftp_run.sh</code> <code>$NONCE</code> /
+future work on <code>main</code>"</strong>). <strong>Rev-21 wave (HEAD
+<code>5771a46</code>, branch <code>main</code>, FF to origin):</strong>
+four more single-stream landings + an anti-bluff win.
+<code>c32dcad</code> healthd coverage 70.3→79.3% (run() fail-closed +
+<code>-version</code> tests, review <code>a07d4ca4</code> GO,
+load-bearing). <strong>F1 arc (§11.4.118→§11.4.6→§11.4.135):</strong> a
+tight-scoped bluff-audit (<code>a1bf492d</code>) found
+<code>proxy_acl_security.sh</code> aggregated
+<code>≥1 PASS &amp;&amp; 0 FAIL ⇒ group PASS</code> — so a non-critical
+S3-only pass reported the group GREEN <em>naming S4 "GREEN live"</em>
+while the security-critical S1/S4 SKIPped (plausibly LIVE on the
+broken-podman host); <code>6e3e031</code> <strong>FIX</strong> (group
+PASS now requires S1&amp;&amp;S4 to actually pass, else SKIP naming the
+absent one; run-tests headline honest; review <code>aefcdb5d</code> GO,
+adversarial-revert-proven) → <code>adca02e</code> <strong>§11.4.135
+standing guard</strong> (single-source
+<code>tests/lib/acl_group_verdict.sh</code> + RED_MODE regression test
+wired into the suite; review <code>a5ff11ac</code> GO — reverting the
+lib gate flips the guard to FAIL). <code>5771a46</code>
+<strong>#68</strong> wired the 2 orphaned harnesses
+(<code>container_boot.sh</code> + <code>discovery_reflect.sh</code>)
+into the Challenge bank (both honest-SKIP, runner RESULT OK
+total=8/SKIP=8, review <code>ab1783f4</code> GO) — §11.4.135 orphan gap
+closed. <strong>⚠ Throttle STILL caps concurrency (§11.4.6, empirically
+RE-tested):</strong> dispatching 2 new subagents concurrent with 1
+running → BOTH new crashed on the transient throttle at ~25s while the
+pre-existing single stream survived + GO'd. So <strong>single-stream
+sequential</strong> remains the sustainable pace; 3-4 parallel is
+environment-blocked right now, not a choice. <strong>Pending
+(single-stream):</strong> respawn #67-design (control-plane resilience
+blueprint) + the dynamic-suite bluff-audit (both throttle-crashed); then
+#67 build; #69 (integration evidence, likely operator/podman-gated). No
+tag ("keep hardening"). <strong>Rev-20 wave (HEAD <code>85d8b32</code>,
+branch <code>main</code>, FF to origin):</strong> <strong>#65 sniff
+fan-out LANDED.</strong> <code>85d8b32</code> replicates the
+underlay-sniff AF_PACKET non-leak differential onto 3 protocol harnesses
+(<code>hermetic_bridge_run.sh</code> marker <code>$DEV_NAME</code> /
+<code>_ftp_run.sh</code> <code>$NONCE</code> /
 <code>_webdav_run.sh</code> <code>$NONCE</code>) — a verbatim
 single-source clone of the ethertype-guarded substrate
 <code>_emit_an_py</code> analyzer; NORMAL
@@ -1222,7 +1254,7 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>85d8b32</code> (== <code>main</code> == origin; integrate any
+HEAD <code>5771a46</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
@@ -1255,24 +1287,27 @@ the per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
 golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
 FAIL (not a tautology, §11.4.107(10)), honest exit-3 on empty capture,
 honest <code>SNIFF-SKIP</code> when unavailable, 3/3 deterministic.
-FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED). <strong>#63/#64/#65/#66/#70 are
-LANDED</strong> (<code>91af9c6</code> underlay-sniff ·
-<code>cdb0ccd</code> ethertype guard · <code>85d8b32</code> sniff
-fan-out to bridge/ftp/webdav + email N/A · <code>b66b2fa</code>
-email-wiring · <code>172eb5c</code> orphan-test adoption — all
-independent §11.4.142 GO). <strong>Top non-operator-gated actionables
-now (⚠ server-side transient throttle → SINGLE-STREAM sequential
-dispatch, §11.4.6):</strong> (1) review+commit the Go-coverage-healthd
-test (<code>a0f6ad3</code> GO'd —
-<code>control-plane/cmd/healthd/ main_lifecycle_test.go</code> raises
-healthd 70.3→79.3%, untracked); (2) respawn the throttle-crashed
-shell-bluff-audit (§11.4.118) + #67-design; (3) ledger tasks
-<strong>#67</strong> (control-plane Go stress/chaos/DDoS/memory) /
-<strong>#68</strong> (orphaned
-<code>container_boot.sh</code>+<code>discovery_reflect.sh</code>) /
-<strong>#69</strong> (re-capture integration/e2e evidence). Both:
-builder → independent §11.4.142 review iterate-to-GO §11.4.134 → FF
-push; run ONE netns owner at a time (§11.4.119). Design
+FINDINGS §7/§7.1 → Rev 6 (IMPLEMENTED).
+<strong>#63/#64/#65/#66/#68/#70/#71/#72 are LANDED</strong>
+(<code>91af9c6</code> underlay-sniff · <code>cdb0ccd</code> ethertype
+guard · <code>85d8b32</code> sniff fan-out · <code>b66b2fa</code>
+email-wiring · <code>172eb5c</code> orphan-test · <code>c32dcad</code>
+healthd coverage · <code>6e3e031</code> <strong>#71 F1 security-guard
+over-claim FIX</strong> · <code>adca02e</code> <strong>#72 F1 §11.4.135
+standing guard</strong> · <code>5771a46</code> <strong>#68
+orphan-harness wiring</strong> — all independent §11.4.142 GO).
+<strong>Top non-operator-gated actionables now (⚠ throttle STILL caps
+concurrency, empirically retested → SINGLE-STREAM, §11.4.6):</strong>
+(1) respawn (single-stream) the throttle-crashed
+<strong>#67-design</strong> (control-plane resilience blueprint) + the
+<strong>dynamic-suite bluff-audit</strong> (§11.4.118); (2) build
+<strong>#67</strong> (control-plane Go stress/chaos/DDoS/memory
+§11.4.169 gap, driven by the #67-design blueprint); (3)
+<strong>#69</strong> (re-capture integration/e2e evidence, §11.4.40,
+likely operator/podman-gated). Owed doc-sweep: reflect the F1 fix+guard
+in the security Status doc (§11.4.45). Both: builder → independent
+§11.4.142 review iterate-to-GO §11.4.134 → FF push; run ONE netns owner
+at a time (§11.4.119). Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
 2.</li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
