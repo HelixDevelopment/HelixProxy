@@ -981,6 +981,53 @@ test_vpn_lan_autonomous_battery() {
     done
 }
 
+# VPN-LAN hermetic-tunnel autonomous protocol promotions (§11.4.52 / §11.4.135).
+# Each harness stands up a REAL rootless kernel-WireGuard tunnel between two
+# unprivileged netns and drives an UNMODIFIED protocol test (or the substrate
+# round-trip) over it against a pure-stdlib peer — zero installs, no svord bridge,
+# no podman, no live VPN. These are the STANDING regression guards for the three
+# §11.4.52 protocol promotions (Cast-eureka / FTP / WebDAV) + the H0 tunnel
+# substrate; each ships its own §1.1 golden-bad mutation self-check (proven at
+# commit time), so the suite guard asserts the normal-mode verdict.
+#   Verdict convention: exactly one '^PASS:' / '^SKIP:' / '^FAIL:' line; rc 0 on
+#   PASS/SKIP, 1 on FAIL. Each harness does its OWN env-preflight and honestly
+#   SKIPs (§11.4.3) when the host lacks the 'wireguard' kernel module or
+#   unprivileged user+net namespaces — so the suite stays GREEN everywhere,
+#   promotion-proven where supported and honest-SKIP where not.
+#   SKIP-AWARE mapping (DISTINCT from the always-PASS battery above, which has no
+#   env-skip path): rc0 + PASS>=1 + FAIL0 => PASS; rc0 + SKIP>=1 + PASS0 + FAIL0
+#   => honest SKIP; anything else => FAIL. Invoked via 'bash' (harnesses are
+#   bash, not POSIX-sh — §11.4.67), sequential (single netns owner §11.4.119),
+#   resource-capped + timeout-bounded (§12 / §12.6) above each harness's own
+#   inner timeout. set-e-safe capture ('rc=0; cmd || rc=$?', 'grep -c ... || true').
+test_vpn_lan_hermetic() {
+    local _h _p _out _rc _pass _skip _fail _name
+    for _h in \
+        "H0 kernel-WireGuard round-trip (tunnel substrate)|vpn_lan/hermetic_wg_roundtrip.sh" \
+        "Chromecast eureka_info promoted over the tunnel|vpn_lan/hermetic_bridge_run.sh" \
+        "FTP passive promoted over the tunnel|vpn_lan/hermetic_ftp_run.sh" \
+        "WebDAV PROPFIND promoted over the tunnel|vpn_lan/hermetic_webdav_run.sh"; do
+        _name=${_h%%|*}; _p="$SCRIPT_DIR/${_h#*|}"
+        if [[ ! -f "$_p" ]]; then
+            test_result "VPN-LAN hermetic: $_name" "SKIP" "harness absent §11.4.3"
+            continue
+        fi
+        _rc=0; _out=$(GOMAXPROCS=2 nice -n 19 ionice -c 3 timeout -k 5 150 bash "$_p" 2>&1) || _rc=$?
+        _pass=$(printf '%s\n' "$_out" | grep -c '^PASS:' || true)
+        _skip=$(printf '%s\n' "$_out" | grep -c '^SKIP:' || true)
+        _fail=$(printf '%s\n' "$_out" | grep -c '^FAIL:' || true)
+        if [[ $_rc -eq 0 && $_pass -ge 1 && $_fail -eq 0 ]]; then
+            test_result "VPN-LAN hermetic: $_name" "PASS"
+        elif [[ $_rc -eq 0 && $_skip -ge 1 && $_pass -eq 0 && $_fail -eq 0 ]]; then
+            test_result "VPN-LAN hermetic: $_name" "SKIP" \
+                "honest §11.4.3 env-skip (host lacks 'wireguard' module / unprivileged userns): run bash $_p"
+        else
+            test_result "VPN-LAN hermetic: $_name" "FAIL" \
+                "expected rc0+>=1 PASS+0 FAIL, or rc0+SKIP-only (rc=$_rc pass=$_pass skip=$_skip fail=$_fail): run bash $_p"
+        fi
+    done
+}
+
 #######################################
 # Print summary
 #######################################
@@ -1025,6 +1072,7 @@ main() {
     test_vpn_lan_ssrf
     test_vpn_lan_ingress
     test_vpn_lan_autonomous_battery
+    test_vpn_lan_hermetic
     test_environment
     test_directories
     test_scripts
