@@ -179,14 +179,41 @@
 <h1
 id="continuation--helix-proxy-vpn-aware-dynamic-routing-extension">CONTINUATION
 — Helix Proxy: VPN-Aware Dynamic Routing Extension</h1>
-<p><strong>Revision:</strong> 18 <strong>Last modified:</strong>
-2026-07-02T07:49:30Z <strong>Status:</strong> Active — <strong>§11.4.126
+<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
+2026-07-02T09:39:19Z <strong>Status:</strong> Active — <strong>§11.4.126
 autonomous loop</strong> (operator: "keep hardening, don't tag yet" +
 "3-4 parallel subagents, rock-solid evidence, no bluff" + <strong>"all
-future work on <code>main</code>"</strong>). <strong>Rev-18 wave (HEAD
-<code>cdb0ccd</code>, branch <code>main</code>, FF to origin):</strong>
-<strong>#64 ethertype guard LANDED + 4-parallel-stream fan-out + a
-§11.4.169 ledger audit that caught a real doc-bluff
+future work on <code>main</code>"</strong>). <strong>Rev-19 wave (HEAD
+<code>172eb5c</code>, branch <code>main</code>, FF to origin):</strong>
+<strong>session-limit reset → landed #66 + #70 (both independent
+§11.4.142 GO).</strong> <code>b66b2fa</code> <strong>#66</strong> wired
+<code>hermetic_email_run.sh</code> into the
+<code>test_vpn_lan_hermetic</code> standing guard — closing the
+§11.4.6/§11.4.135 doc-bluff the §11.4.169 ledger audit caught (email was
+<code>refs=0</code> in run-tests.sh while the docs claimed all four
+wired); independent review <code>a5bc6266</code> GO 6/6, the REAL loop
+(temp copy inside tests/ for correct readonly SCRIPT_DIR) shows ALL 5
+rows PASS incl <code>VPN-LAN hermetic: Email … PASS</code>, verdict-map
+adversarially confirmed to send a harness FAIL→loop-FAIL (never
+silent-SKIP), honest-SKIP intact; docs re-corrected to "4 wired".
+<code>172eb5c</code> <strong>#70</strong> adopted the found orphan test
+<code>control-plane/cmd/acl-helper/main_run_test.go</code> (§11.4.124 —
+a prior session's uncommitted coverage PWU, never debris; covers
+<code>run()</code> fail-closed Redis-connect + <code>main()</code>
+<code>-version</code>); independent review <code>aae14631</code> GO —
+race-clean, 80.8% pkg coverage, LOAD-BEARING (both fail-open mutations
+of <code>run()</code>'s guard kill the test). Session-limit reset was
+awaited via a backgrounded <code>until</code> clock-wait (autonomous, no
+operator round-trip). <strong>In flight (parallel):</strong> #65 sniff
+fan-out builder (<code>a9cb5106</code>, netns owner — 3 harnesses
+bridge/ftp/webdav + honest email N/A note per FINDINGS §7.1) +
+shell-bluff-audit respawn (<code>a67c0093</code>, read-only §11.4.118).
+<strong>Next:</strong> review+land #65 (→ FINDINGS §7.1 implemented +
+Status sniff rows); triage bluff-audit findings; then Go-coverage
+respawn + #67/#68/#69. No tag ("keep hardening"). <strong>Rev-18 wave
+(HEAD <code>cdb0ccd</code>, branch <code>main</code>, FF to
+origin):</strong> <strong>#64 ethertype guard LANDED + 4-parallel-stream
+fan-out + a §11.4.169 ledger audit that caught a real doc-bluff
 (corrected).</strong> <code>cdb0ccd</code>: a one-line
 Ethernet-ethertype guard on the underlay-sniff frame analyzer (skip
 non-<code>0x0800</code> frames — VLAN offset shift, structurally
@@ -1160,7 +1187,7 @@ actionable)</h2>
 <ol type="1">
 <li><code>git fetch --all --prune</code> on
 <strong><code>main</code></strong> (operator: all work on main); confirm
-HEAD <code>cdb0ccd</code> (== <code>main</code> == origin; integrate any
+HEAD <code>172eb5c</code> (== <code>main</code> == origin; integrate any
 newer foreign commit per §11.4.71, no force §11.4.113). The single
 canonical moment-valid resume file is <code>.remember/remember.md</code>
 (§11.4.131) — read it first. <strong>Hermetic H0→H2 is DONE +
@@ -1169,11 +1196,10 @@ HARDENED:</strong> the H0-full real kernel-WireGuard tunnel
 promotions over it are all landed + independently reviewed + wired into
 the standing suite as §11.4.135 guards
 (<code>test_vpn_lan_hermetic</code> in <code>tests/run-tests.sh</code>)
-— <strong>substrate + Cast/FTP/WebDAV are wired; the email leg is
-reviewed-GO (<code>3b73f02</code>) + runnable on direct invocation but
-is NOT YET in that loop — wiring tracked #66</strong> (§11.4.6
-correction of a prior "all four wired" over-claim caught by the
-§11.4.169 ledger audit). All 5 harnesses carry the §11.4.111
+— <strong>all four protocol legs + the H0 substrate are wired; email
+wired <code>b66b2fa</code> (task #66), closing the §11.4.6 gap the
+§11.4.169 ledger audit caught (independent review confirmed all 5 rows
+PASS in the real loop)</strong>. All 5 harnesses carry the §11.4.111
 wrong-destination negative control (proven load-bearing —
 bind-<code>0.0.0.0</code> ⇒ harness FAILs). <strong>The clean
 zero-install promotion set is COMPLETE (§11.4.6): Cast-eureka + FTP +
@@ -1194,31 +1220,29 @@ the per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
 golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
 FAIL (not a tautology, §11.4.107(10)), honest exit-3 on empty capture,
 honest <code>SNIFF-SKIP</code> when unavailable, 3/3 deterministic.
-FINDINGS §7 → Rev 5. <strong>#63 + #64 are LANDED</strong>
-(<code>91af9c6</code> underlay-sniff + <code>cdb0ccd</code>
-Ethernet-ethertype guard, both independent §11.4.142 GO). <strong>Top
-non-operator-gated actionables now (session-limit-gated until ~09:30Z —
-see §2 Rev-18 wave):</strong> <strong>(task #65)</strong> replicate the
-sniff differential on the protocol harnesses — the §11.4.150 design pass
-(FINDINGS §7.1) found it meaningful for <strong>3</strong>
+FINDINGS §7 → Rev 5. <strong>#63/#64/#66/#70 are LANDED</strong>
+(<code>91af9c6</code> underlay-sniff · <code>cdb0ccd</code> ethertype
+guard · <code>b66b2fa</code> email-wiring · <code>172eb5c</code>
+orphan-test adoption — all independent §11.4.142 GO). <strong>Top
+non-operator-gated actionables now (session limit RESET):</strong>
+<strong>(task #65, IN FLIGHT <code>a9cb5106</code>)</strong> replicate
+the sniff differential on <strong>3</strong> harnesses
 (<code>hermetic_bridge_run.sh</code>/
 <code>_ftp_run.sh</code>/<code>_webdav_run.sh</code>,
 plaintext-under-WG; per-protocol marker + own
-<code>SNIFF_MUT=plain</code>) but <strong>N/A for email</strong>
-(implicit-TLS encrypts below WG → a plaintext-absent sniff is vacuous;
-honest documented N/A instead); <strong>(task #66)</strong> wire
-<code>hermetic_email_run.sh</code> into the
-<code>test_vpn_lan_hermetic</code> loop + verify under the suite (the
-§11.4.6 doc-bluff correction); plus <strong>respawn</strong> the
-session-limit-crashed Go-coverage
-<ul>
-<li>shell-bluff-audit streams (§11.4.147, no work lost) and ledger tasks
-<strong>#67/#68/#69</strong>. Both: builder → independent §11.4.142
-review iterate-to-GO §11.4.134 → FF push; run ONE netns owner at a time
-(§11.4.119). Design
+<code>SNIFF_MUT=plain</code>) + an honest email N/A note (implicit-TLS
+below WG → a plaintext-absent sniff is vacuous), per FINDINGS §7.1;
+<strong>(shell-bluff-audit respawn, IN FLIGHT
+<code>a67c0093</code>)</strong> §11.4.118 hunt over the non-hermetic
+suites. <strong>Then:</strong> Go-coverage respawn + ledger tasks
+<strong>#67</strong> (control-plane Go stress/chaos/DDoS/memory) /
+<strong>#68</strong> (orphaned
+<code>container_boot.sh</code>+<code>discovery_reflect.sh</code>) /
+<strong>#69</strong> (re-capture integration/e2e evidence). Both:
+builder → independent §11.4.142 review iterate-to-GO §11.4.134 → FF
+push; run ONE netns owner at a time (§11.4.119). Design
 <code>docs/design/vpn_lan_access/hermetic_wg_test_harness.md</code> Rev
 2.</li>
-</ul></li>
 <li><strong>Continue the §11.4.126 autonomous hardening loop</strong>
 (operator: "keep hardening, don't tag yet"). Base proxy UP
 <code>:53128</code> (204); ~43% host; 4 <code>helixproxy_*</code> Podman
