@@ -1,8 +1,8 @@
 # helix_proxy — VPN-LAN Service Access Feature Status Summary
 
-**Revision:** 6
-**Last modified:** 2026-07-02T07:05:29Z
-**Status:** Companion two-audience summary of [`Status.md`](Status.md) (§11.4.56). Page 1 is plain-language for the operator and stakeholders; Page 2 is the engineer phase matrix with commit refs and §-anchors. **Rev 3:** feature COMPLETE (Phases 0-12 on `main`) — Phase-12 bidirectional + the §11.4.135 autonomous suite battery are all GREEN; the data-plane is env-blocked on a host rootless-podman aardvark-dns failure (operator-actionable, not a code defect). **NEW — §J hermetic autonomous promotions (§11.4.52):** the Chromecast-eureka, FTP-passive, WebDAV-PROPFIND and email (SMTPS/IMAPS/POP3S) protocol legs now ALSO prove their client-side logic AUTONOMOUSLY over a real rootless kernel-WireGuard tunnel against a pure-stdlib peer (zero installs, no operator/VPN), each with golden-bad teeth + not-stale self-fetch + 3/3 determinism + independent GO, **all wired into the standing suite as §11.4.135 regression guards (`test_vpn_lan_hermetic`)**; the live Mullvad round-trip stays operator-gated (COMPLEMENT, never replace).
+**Revision:** 7
+**Last modified:** 2026-07-02T07:49:30Z
+**Status:** Companion two-audience summary of [`Status.md`](Status.md) (§11.4.56). Page 1 is plain-language for the operator and stakeholders; Page 2 is the engineer phase matrix with commit refs and §-anchors. **Rev 3:** feature COMPLETE (Phases 0-12 on `main`) — Phase-12 bidirectional + the §11.4.135 autonomous suite battery are all GREEN; the data-plane is env-blocked on a host rootless-podman aardvark-dns failure (operator-actionable, not a code defect). **NEW — §J hermetic autonomous promotions (§11.4.52):** the Chromecast-eureka, FTP-passive, WebDAV-PROPFIND and email (SMTPS/IMAPS/POP3S) protocol legs now ALSO prove their client-side logic AUTONOMOUSLY over a real rootless kernel-WireGuard tunnel against a pure-stdlib peer (zero installs, no operator/VPN), each with golden-bad teeth + not-stale self-fetch + 3/3 determinism + independent GO. **Standing-suite wiring (§11.4.135 guards via `test_vpn_lan_hermetic`): the substrate + Cast/FTP/WebDAV ARE wired; the email leg is reviewed-GO (`3b73f02`) + runnable on direct invocation but is NOT YET wired into that loop — tracked #66** (§11.4.6 correction of a prior "all wired" over-claim caught by the §11.4.169 ledger audit). The live Mullvad round-trip stays operator-gated (COMPLEMENT, never replace).
 **Authority:** Inherits `constitution/Constitution.md` per §11.4.35. §11.4.153 feature Status set for the VPN-LAN service-access workstream (`feature/vpn-aware-dynamic-routing`, §11.4.167).
 
 ---
@@ -96,7 +96,7 @@ wrong-answer ⇒ FAIL (not SKIP) teeth per protocol.
 | 10 | Containerize reflector + adb-server (§11.4.76) | PENDING | on-demand boot via `submodules/containers` (rootless §11.4.161); depends on Phase 5/6/7 |
 | 11a | VPN-LAN Challenge runner | **PASS** (runnable harness; live tally operator-gated) | `89f73b7` `challenges/scripts/run_vpn_lan_challenges.sh`; exit-code→verdict mapping (doctor 0/2/3; tests 0/1); host caps §12.6; `sh -n`/`bash -n` clean §11.4.67 |
 | 11b | HelixQA `vpn_lan.yaml` bank | **SKIP** (authored-but-run-blocked §11.4.3) | `89f73b7` `tools/helixqa/banks/vpn_lan.yaml`; `ActionTypeShell` dispatch to real tests; `helixqa` binary blocked by 6 un-vendored own-org siblings |
-| J.0 | Hermetic kernel-WG substrate (rootless two-netns, veth `10.9.0.x` + `wg0` `10.10.0.x`) | **PASS** (autonomous, zero installs) | `18a21bd` `hermetic_netns_poc.sh` + `hermetic_wg_roundtrip.sh`; sha256 round-trip; bad-WG-key golden-bad; **underlay-sniff non-leak differential** (`91af9c6`: ciphertext-`0x04`-present + plaintext-nonce-absent, `SNIFF_MUT=plain` teeth, §11.4.107, §11.4.142 GO 11/11); 3/3 deterministic; §12 self-bounded |
+| J.0 | Hermetic kernel-WG substrate (rootless two-netns, veth `10.9.0.x` + `wg0` `10.10.0.x`) | **PASS** (autonomous, zero installs) | `18a21bd` `hermetic_netns_poc.sh` + `hermetic_wg_roundtrip.sh`; sha256 round-trip; bad-WG-key golden-bad; **underlay-sniff non-leak differential** (`91af9c6`: ciphertext-`0x04`-present + plaintext-nonce-absent, `SNIFF_MUT=plain` teeth, §11.4.107, §11.4.142 GO 11/11) + **ethertype guard** (`cdb0ccd`, correct-by-construction, §11.4.142 GO 5/5); 3/3 deterministic; §12 self-bounded |
 | J.1 | Chromecast eureka — UNMODIFIED `chromecast_dial.sh` promoted over the tunnel | **PASS** (autonomous protocol logic; live §6 SKIP) | `18a21bd` `hermetic_bridge_run.sh`; stdlib eureka peer `10.10.0.2:8008`; `H2_MUT=badeureka` teeth; self-fetch name-nonce; §11.4.142 GO |
 | J.2 | FTP passive — UNMODIFIED `ftp_sftp_webdav.sh` FTP leg promoted over the tunnel | **PASS** (autonomous protocol logic; live §3 SKIP) | `3b98d02` `hermetic_ftp_run.sh`; ~85-line stdlib FTP peer `10.10.0.2:2121` (PASV/EPSV traverse `wg0`); content-verified self-RETR (§11.4.107(9)); `FT_MUT=empty` teeth; 3/3 |
 | J.3 | WebDAV PROPFIND — UNMODIFIED `ftp_sftp_webdav.sh` WebDAV leg promoted over the tunnel | **PASS** (autonomous protocol logic; live §3 SKIP) | `3b98d02` `hermetic_webdav_run.sh`; stdlib 207 origin `10.10.0.2:8080` via stdlib forward proxy `127.0.0.1:3128` (RFC 7230 §5.3.2→§5.3.1); `WEBDAV_MUT=bad207` teeth = the exact PASS gate; 3/3 |
@@ -114,10 +114,9 @@ installs), each with a golden-bad mutation that FAILs the real assertion (email 
 wrong-destination negative control (a fetch to the underlay 10.9.0.2 MUST fail — §11.4.111
 reachability-as-proof, proven load-bearing: bind-0.0.0.0 ⇒ harness FAILs) + — on the WG
 substrate — an underlay-sniff AF_PACKET non-leak differential (ciphertext-`0x04`-present +
-plaintext-nonce-absent on `veth0`, `91af9c6` §11.4.107, load-bearing `SNIFF_MUT=plain`; fan-out
-to the 4 protocol harnesses tracked #65) + a
-not-stale self-fetch + 3/3 determinism + independent §11.4.142 GO, all wired into the standing
-suite as §11.4.135 guards — the live Mullvad round-trip stays operator-gated (§J COMPLEMENTS,
+plaintext-nonce-absent on `veth0`, `91af9c6` + ethertype guard `cdb0ccd` §11.4.107; load-bearing `SNIFF_MUT=plain`; fan-out
+tracked #65 — meaningful for 3 harnesses [bridge/ftp/webdav, plaintext-under-WG] but N/A for email [implicit-TLS encrypts below WG, §11.4.6]) + a
+not-stale self-fetch + 3/3 determinism + independent §11.4.142 GO. **Standing-suite wiring:** substrate + Cast/FTP/WebDAV wired as §11.4.135 guards; email reviewed-GO but NOT YET wired (#66, §11.4.6). The live Mullvad round-trip stays operator-gated (§J COMPLEMENTS,
 never replaces). **Tally:** 4 PASS-now foundation · 5 §J PASS-now hermetic rows (1 WG substrate
 + 4 autonomous protocol promotions: Cast-eureka/FTP/WebDAV/email) · 16 live round-trips
 operator-gated SKIP/OPERATOR-BLOCKED · 1 Won't-fix. Composes §11.4.3 / §11.4.6 / §11.4.10 /

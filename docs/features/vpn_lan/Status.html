@@ -178,8 +178,8 @@
 <body>
 <h1 id="helix_proxy--vpn-lan-service-access-feature-status">helix_proxy
 — VPN-LAN Service Access Feature Status</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-07-02T07:05:29Z <strong>Status:</strong> Feature COMPLETE (Phases
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-07-02T07:49:30Z <strong>Status:</strong> Feature COMPLETE (Phases
 0-12 on <code>main</code>). Anti-bluff bridge scaffold + preflight
 doctor + operator guide + Challenge runner + <strong>Phase-1 SSRF
 carve-out teeth</strong> + <strong>Phase-12 bidirectional
@@ -193,22 +193,29 @@ run <strong>AUTONOMOUSLY</strong> — their client-side protocol logic
 proven over a real rootless kernel-WireGuard tunnel between two
 unprivileged netns against a pure-stdlib peer (zero installs, no
 operator/podman/VPN), each with golden-bad teeth + a not-stale
-self-fetch + 3/3 determinism + independent GO; <strong>all four are
-wired into the standing suite as §11.4.135 regression guards
-(<code>test_vpn_lan_hermetic</code> in <code>tests/run-tests.sh</code>,
-SKIP-aware)</strong>; the <strong>live</strong> Mullvad round-trip stays
-operator-gated (these COMPLEMENT, never replace, §11.4.6). Every live
-protocol round-trip (SMB/NFS/FTP/SFTP/WebDAV/email/Cast/DIAL/ADB) is
-AUTHORED with real byte-integrity / sink-side evidence gating
-<strong>plus a Phase-12 both-way reverse-leg assertion</strong> (NFS
-NLM/NSM callback, FTP active, Cast callback, adb reverse, email N/A
-§11.4.6) and honestly SKIPs while the svord bridge is down (§11.4.3) —
-never a fake PASS; Miracast is Won't-fix structurally-impossible
-(§11.4.112). Operator-gated: the svord bridge (secrets + Mullvad +
-root/sudo) → unlocks all live round-trips BOTH directions; the
-multicast-reflector remote deployment; any real-device flash. <strong>⚠️
-Data-plane env-block (operator-actionable, NOT a code defect):</strong>
-host rootless-podman <code>aardvark-dns</code> cannot bind netavark
+self-fetch + 3/3 determinism + independent GO; <strong>three of the four
+protocol legs — Chromecast-eureka, FTP-passive, WebDAV-PROPFIND — plus
+the H0 WG substrate are wired into the standing suite as §11.4.135
+regression guards (<code>test_vpn_lan_hermetic</code> in
+<code>tests/run-tests.sh</code>, SKIP-aware); the email leg is authored
++ independently reviewed-GO (<code>3b73f02</code>) but is NOT YET wired
+into that loop — wiring tracked as task #66</strong> (§11.4.6
+correction: a prior "all four wired" claim was inaccurate, caught by the
+§11.4.169 ledger audit; email runs correctly on direct invocation, it is
+simply absent from the standing-suite loop today); the
+<strong>live</strong> Mullvad round-trip stays operator-gated (these
+COMPLEMENT, never replace, §11.4.6). Every live protocol round-trip
+(SMB/NFS/FTP/SFTP/WebDAV/email/Cast/DIAL/ADB) is AUTHORED with real
+byte-integrity / sink-side evidence gating <strong>plus a Phase-12
+both-way reverse-leg assertion</strong> (NFS NLM/NSM callback, FTP
+active, Cast callback, adb reverse, email N/A §11.4.6) and honestly
+SKIPs while the svord bridge is down (§11.4.3) — never a fake PASS;
+Miracast is Won't-fix structurally-impossible (§11.4.112).
+Operator-gated: the svord bridge (secrets + Mullvad + root/sudo) →
+unlocks all live round-trips BOTH directions; the multicast-reflector
+remote deployment; any real-device flash. <strong>⚠️ Data-plane
+env-block (operator-actionable, NOT a code defect):</strong> host
+rootless-podman <code>aardvark-dns</code> cannot bind netavark
 <code>:53</code> → <code>:53128</code>/<code>:51080</code> don't serve +
 <code>./start</code> fails; the standing suite honestly reports this (3
 env FAILs) rather than hanging. <strong>Authority:</strong> Inherits
@@ -933,44 +940,46 @@ Hermetic-tunnel autonomous protocol promotions (§11.4.52) — PROVEN NOW
 (autonomous, no live VPN, no operator)</h3>
 <p><strong>What these add.</strong> Four protocol legs that were
 previously <em>only</em> operator-gated SKIP now ALSO have an
-<strong>autonomous PASS path</strong> (all four wired into the standing
-suite as §11.4.135 regression guards via
-<code>test_vpn_lan_hermetic</code>, <code>71e0bac</code>): their
-client-side protocol logic is proven over a <strong>real
-kernel-WireGuard tunnel</strong> between two unprivileged network
-namespaces (<code>unshare -Urnm</code>, veth underlay
-<code>10.9.0.x</code> + <code>wg0</code> overlay
-<code>10.10.0.x</code>), with a <strong>pure-python-stdlib peer</strong>
-serving the protocol — <strong>zero host installs</strong>, no podman,
-no live Mullvad, no operator. Each harness drives the
-<strong>UNMODIFIED</strong> protocol test inside netns A (its
-<code>bridge_require</code> gate flips SKIP→UP), carries a
-<strong>golden-bad mutation</strong> that MUST make the real assertion
-FAIL (§11.4.107(10)/§11.4.68 teeth), a <strong>self-fetch not-stale
-cross-check</strong> (§11.4.107), and a <strong>wrong-destination
-negative control</strong> (<code>4dd5fc6</code>: a fetch to the UNDERLAY
-<code>10.9.0.2</code> MUST fail — proven load-bearing,
-bind-<code>0.0.0.0</code>⇒harness FAILs; makes §11.4.111
-reachability-as-proof self-evidencing, not structural-only), and — on
-the WG substrate <code>hermetic_wg_roundtrip.sh</code>
-(<code>91af9c6</code>, §11.4.107) — an <strong>underlay-sniff AF_PACKET
-non-leak differential</strong> (during the round-trip, capture on the
-underlay <code>veth0</code> and assert BOTH WG ciphertext present,
-type-4 <code>0x04</code> datagram to <code>:51820</code>, AND the
-per-run plaintext nonce ABSENT in raw underlay bytes; load-bearing
-golden-bad <code>SNIFF_MUT=plain</code> flips ONLY "plaintext absent" to
-FAIL 3/3, honest exit-3 on empty capture, honest <code>SNIFF-SKIP</code>
-when unavailable; independent §11.4.142 review GO 11/11 — fan-out to the
-other 4 harnesses tracked as a follow-up) — all <strong>3/3
-deterministic</strong> (§11.4.50) and <strong>independently reviewed to
-GO</strong> (§11.4.142; the WG negative control was caught as a
-tautology in review round 1 and fixed before landing — §11.4.107(10)).
-<strong>Honest boundary (§11.4.6):</strong> these prove the
-<em>client-side protocol logic</em> over an encrypted tunnel against a
-<em>controlled</em> peer — they do NOT prove the real live server on the
-Mullvad topology (that stays the operator-gated live round-trip above),
-and the peer bodies are controlled fixtures. They COMPLEMENT, never
-replace, the live rows.</p>
+<strong>autonomous PASS path</strong> (three — Chromecast-eureka,
+FTP-passive, WebDAV-PROPFIND — plus the H0 substrate are wired into the
+standing suite as §11.4.135 regression guards via
+<code>test_vpn_lan_hermetic</code>, <code>71e0bac</code>; the email leg
+is reviewed-GO <code>3b73f02</code> and runs on direct invocation but is
+NOT YET in that loop — wiring tracked #66, §11.4.6): their client-side
+protocol logic is proven over a <strong>real kernel-WireGuard
+tunnel</strong> between two unprivileged network namespaces
+(<code>unshare -Urnm</code>, veth underlay <code>10.9.0.x</code> +
+<code>wg0</code> overlay <code>10.10.0.x</code>), with a
+<strong>pure-python-stdlib peer</strong> serving the protocol —
+<strong>zero host installs</strong>, no podman, no live Mullvad, no
+operator. Each harness drives the <strong>UNMODIFIED</strong> protocol
+test inside netns A (its <code>bridge_require</code> gate flips
+SKIP→UP), carries a <strong>golden-bad mutation</strong> that MUST make
+the real assertion FAIL (§11.4.107(10)/§11.4.68 teeth), a
+<strong>self-fetch not-stale cross-check</strong> (§11.4.107), and a
+<strong>wrong-destination negative control</strong>
+(<code>4dd5fc6</code>: a fetch to the UNDERLAY <code>10.9.0.2</code>
+MUST fail — proven load-bearing, bind-<code>0.0.0.0</code>⇒harness
+FAILs; makes §11.4.111 reachability-as-proof self-evidencing, not
+structural-only), and — on the WG substrate
+<code>hermetic_wg_roundtrip.sh</code> (<code>91af9c6</code>, §11.4.107)
+— an <strong>underlay-sniff AF_PACKET non-leak differential</strong>
+(during the round-trip, capture on the underlay <code>veth0</code> and
+assert BOTH WG ciphertext present, type-4 <code>0x04</code> datagram to
+<code>:51820</code>, AND the per-run plaintext nonce ABSENT in raw
+underlay bytes; load-bearing golden-bad <code>SNIFF_MUT=plain</code>
+flips ONLY "plaintext absent" to FAIL 3/3, honest exit-3 on empty
+capture, honest <code>SNIFF-SKIP</code> when unavailable; independent
+§11.4.142 review GO 11/11 — fan-out to the other 4 harnesses tracked as
+a follow-up) — all <strong>3/3 deterministic</strong> (§11.4.50) and
+<strong>independently reviewed to GO</strong> (§11.4.142; the WG
+negative control was caught as a tautology in review round 1 and fixed
+before landing — §11.4.107(10)). <strong>Honest boundary
+(§11.4.6):</strong> these prove the <em>client-side protocol logic</em>
+over an encrypted tunnel against a <em>controlled</em> peer — they do
+NOT prove the real live server on the Mullvad topology (that stays the
+operator-gated live round-trip above), and the peer bodies are
+controlled fixtures. They COMPLEMENT, never replace, the live rows.</p>
 <table>
 <thead>
 <tr>
@@ -1126,15 +1135,22 @@ wrong-destination negative control across all 5 harnesses
 <code>/usr/sbin/wg</code> preflight (already satisfied in all 5,
 verified §11.4.6) + the <strong>underlay-sniff AF_PACKET non-leak
 differential on the WG substrate</strong> (<code>91af9c6</code>,
-§11.4.107, independent §11.4.142 GO 11/11). <strong>Next
-(tracked):</strong> a one-line Ethernet-ethertype guard on the sniff
-frame analyzer (task #64, correct-by-construction — VLAN offset shift is
-structurally impossible on the harness's own fresh veth) + fanning the
-sniff differential out to the other 4 protocol harnesses (task #65,
-per-protocol plaintext marker + its own <code>SNIFF_MUT=plain</code>).
-Deep-research: <a
+§11.4.107, independent §11.4.142 GO 11/11). <strong>Hardening landed
+(cont.):</strong> the Ethernet-ethertype guard on the sniff frame
+analyzer LANDED (<code>cdb0ccd</code>, task #64, correct-by-construction
++ a load-bearing crafted-frame self-test proven by guard-removal;
+independent §11.4.142 GO 5/5). <strong>Next (tracked):</strong> fan the
+sniff differential out to the protocol harnesses (task #65) — the design
+pass (§11.4.150) found it is meaningful for <strong>3</strong> of them
+(bridge/ftp/webdav, all plaintext-under-WG) but <strong>N/A for
+email</strong> (implicit-TLS encrypts the token <em>below</em> WG, so
+"plaintext absent on the underlay" is tautologically true regardless of
+the tunnel — building it there would be a §11.4-forbidden vacuous test;
+honest documented N/A instead); wire the email leg into the standing
+suite (task #66, the §11.4.6 correction above). Deep-research: <a
 href="../../research/hermetic_protocol_promotion_20260702/FINDINGS.md"><code>../../research/hermetic_protocol_promotion_20260702/FINDINGS.md</code></a>
-(Rev 4, §6 mail + §7 underlay-sniff IMPLEMENTED).</p>
+(Rev 5, §6 mail + §7 underlay-sniff IMPLEMENTED + §7.1 fan-out
+design).</p>
 <hr />
 <h2 id="114169-test-type-coverage-note-honest-boundary">§11.4.169
 test-type coverage note (honest boundary)</h2>
@@ -1176,15 +1192,19 @@ independent review (§11.4.142). This ledger does not substitute for the
 §11.4.40 full-suite retest before any release tag.</p>
 <p><strong>Feature tally:</strong> 4 rows PASS-now foundation (bridge
 contract · svord-doctor preflight · operator guide · Challenge runner) ·
-<strong>4 rows PASS-now §J hermetic autonomous protocol
+<strong>5 rows PASS-now §J hermetic autonomous protocol
 promotions</strong> (H0 WG substrate · Chromecast-eureka · FTP-passive ·
-WebDAV-PROPFIND — client-side protocol logic proven over a hermetic
-tunnel, zero installs, golden-bad teeth, 3/3 deterministic, independent
-GO) · 16 rows operator-gated SKIP/OPERATOR-BLOCKED for their
-<strong>live Mullvad</strong> round-trip (all live protocol round-trips
-+ reflector deploy + ADB flash + HelixQA run; note the
-FTP/WebDAV/Cast-eureka <em>protocol logic</em> is additionally PASS via
-§J) · 1 row Won't-fix (Miracast, structurally-impossible §11.4.112).
-Email hermetic promotion is under active de-risking (§J footer).</p>
+WebDAV-PROPFIND · Email — client-side protocol logic proven over a
+hermetic tunnel, zero installs, golden-bad teeth, 3/3 deterministic,
+independent GO each). <strong>Standing-suite wiring (§11.4.135 guards
+via <code>test_vpn_lan_hermetic</code>):</strong> the substrate +
+Cast/FTP/WebDAV ARE wired; the <strong>email leg is reviewed-GO
+(<code>3b73f02</code>) + runnable on direct invocation but is NOT YET
+wired into that loop — tracked #66</strong> (§11.4.6 correction of a
+prior "all four wired" over-claim caught by the §11.4.169 ledger audit).
+· 16 rows operator-gated SKIP/OPERATOR-BLOCKED for their <strong>live
+Mullvad</strong> round-trip (all live protocol round-trips + reflector
+deploy + ADB flash + HelixQA run) · 1 row Won't-fix (Miracast,
+structurally-impossible §11.4.112).</p>
 </body>
 </html>

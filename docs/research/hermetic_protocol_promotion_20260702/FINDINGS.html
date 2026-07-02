@@ -180,8 +180,8 @@
 id="hermetic-protocol-promotion-research--pure-python-peer-servers-over-a-kernel-wireguard-netns-tunnel">Hermetic
 protocol-promotion research — pure-python peer servers over a
 kernel-WireGuard netns tunnel</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-07-02T07:05:29Z <strong>Status:</strong> Research findings (deep
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-07-02T07:49:30Z <strong>Status:</strong> Research findings (deep
 multi-angle web research per §11.4.150 / §11.4.99). No code changed by
 the research pass. Authority: inherits
 <code>constitution/Constitution.md</code> per §11.4.35.
@@ -531,14 +531,20 @@ no-tcpdump → honest <code>SNIFF-SKIP</code>; <code>WG_MUT=badkey</code>
 undisturbed (sniff sits past the <code>UP!=1</code> gate); veth0-only
 capture, 3.5 s / 4 MB / <code>timeout</code>-bounded,
 <code>SNIFF_PID</code> reaped, <code>wg0-mullvad</code> untouched
-(§11.4.174); <code>sh -n</code> + <code>bash -n</code> clean. Two
-tracked follow-ups: <strong>(#64)</strong> a one-line Ethernet ethertype
-guard on the frame analyzer (reviewer nit — VLAN-tag offset shift,
+(§11.4.174); <code>sh -n</code> + <code>bash -n</code> clean.
+Follow-ups: <strong>(#64) LANDED</strong> (<code>cdb0ccd</code>,
+independent §11.4.142 review <code>af9f67ad</code> GO 5/5) — a one-line
+Ethernet ethertype guard on the frame analyzer (VLAN-tag offset shift,
 structurally impossible on the harness's own fresh veth,
-correct-by-construction hardening); <strong>(#65)</strong> fan the
-differential out to the 4 protocol harnesses (bridge/ftp/webdav/email),
-each with a per-protocol plaintext marker + its own load-bearing
-<code>SNIFF_MUT=plain</code>.</p>
+correct-by-construction; proven load-bearing by a guard-removal
+self-test — WITH guard <code>vlan_ct=absent</code> PASS, WITHOUT
+<code>vlan_ct=present</code> FAIL); <strong>(#65)</strong> fan the
+differential out to the protocol harnesses — the design pass (§7.1
+below) found it meaningful for <strong>3</strong> of them
+(bridge/ftp/webdav, all plaintext-under-WG) but <strong>N/A for
+email</strong> (implicit-TLS encrypts the token <em>below</em> WG, so
+"plaintext absent on the underlay" is tautologically true regardless of
+the tunnel).</p>
 <p>It was the strongest hardening left for the hermetic stream (FINDINGS
 §5 point 5), and the natural successor to the wrong-destination negative
 control (task #62): that control proves the peer service is
@@ -599,6 +605,81 @@ history (Project Zero packet-socket CVEs) — we only <em>read</em> our
 own netns's veth, never the host's interfaces (§11.4.174). Scope it as
 ONE harness leg (start with <code>hermetic_wg_roundtrip.sh</code>, the
 substrate) before fanning out.</p>
+<h2
+id="71-fan-out-design-task-65--which-harnesses-genuinely-warrant-the-sniff-114150">7.1
+Fan-out design (task #65) — which harnesses genuinely warrant the sniff
+(§11.4.150)</h2>
+<p>Design pass (subagent <code>a314c3e5</code>, read-only,
+file:line-cited against each harness). The substrate pattern
+(<code>hermetic_wg_roundtrip.sh:149-304</code>) clones onto a protocol
+harness by: capture on the client underlay <code>veth0</code>
+<strong>before</strong> the harness's existing not-stale self-fetch,
+assert (a) a WG type-4 (<code>0x04</code>) datagram to
+<code>:51820</code> present and (b) the per-run plaintext marker absent
+from the raw underlay bytes; <code>SNIFF_MUT=plain</code> emits that
+marker as cleartext UDP to discard <code>:9</code> (distinct from every
+harness's TCP negative-control port) so ONLY assertion (b) flips.</p>
+<table>
+<thead>
+<tr>
+<th>Harness</th>
+<th>Plaintext marker</th>
+<th>Rides plaintext-under-WG?</th>
+<th>Sniff meaningful?</th>
+<th>Injection</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hermetic_bridge_run.sh</code></td>
+<td><code>$DEV_NAME</code> in eureka JSON <code>name</code></td>
+<td>YES (plain HTTP)</td>
+<td><strong>YES — build</strong></td>
+<td><code>$DEV_NAME</code> → <code>10.9.0.2:9</code></td>
+</tr>
+<tr>
+<td><code>hermetic_ftp_run.sh</code></td>
+<td><code>$NONCE</code> (LIST filename + RETR body)</td>
+<td>YES (FTP cleartext)</td>
+<td><strong>YES — build</strong></td>
+<td><code>$NONCE</code> → <code>10.9.0.2:9</code></td>
+</tr>
+<tr>
+<td><code>hermetic_webdav_run.sh</code></td>
+<td><code>$NONCE</code> in 207 etag (proxy→origin
+<code>10.10.0.2:8080</code> hop rides <code>wg0</code>; client→proxy is
+loopback, irrelevant)</td>
+<td>YES (plain HTTP 207)</td>
+<td><strong>YES — build</strong></td>
+<td><code>$NONCE</code> → <code>10.9.0.2:9</code></td>
+</tr>
+<tr>
+<td><code>hermetic_email_run.sh</code></td>
+<td>round-trip token in SMTP DATA → POP3S RETR</td>
+<td><strong>NO</strong> — implicit-TLS wraps the payload
+(<code>:170/:356</code>, client <code>openssl s_client :413</code>)
+<strong>before</strong> WG</td>
+<td><strong>NO — do NOT build (vacuous)</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest verdict (§11.4.6).</strong> Build the sniff on
+<strong>bridge/ftp/webdav</strong> — each app payload is cleartext, so
+the marker rides <em>plaintext-under-WG</em> and the differential
+genuinely exercises WG's protection (the <code>SNIFF_MUT=plain</code>
+golden-bad is load-bearing). Do <strong>NOT</strong> build it on
+<strong>email</strong>: the token is TLS-encrypted below WG, so
+"plaintext token absent on the underlay" is trivially true <em>even if
+WG were absent</em> — a green sniff there would be green for the TLS
+reason, not the WG reason (a §11.4-forbidden vacuous test that a
+<code>SNIFF_MUT=plain</code> tooth cannot rescue). Email's tunnel-gating
+is already proven by the overlay-only bind + §11.4.111 wrong-destination
+negative + <code>wg show</code> rx/tx counters; the correct action is an
+honest documented N/A note, not a fourth sniff. The email TLS-under-WG
+vacuity verdict is <strong>original analysis</strong> derived directly
+from the harness source (no external precedent needed); the sniff
+pattern itself is the GO-reviewed substrate (§7).</p>
 <h2 id="sources-verified">Sources verified</h2>
 <p>All URLs accessed <strong>2026-07-02</strong>.</p>
 <ul>

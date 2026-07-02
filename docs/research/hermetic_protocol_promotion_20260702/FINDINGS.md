@@ -1,7 +1,7 @@
 # Hermetic protocol-promotion research — pure-python peer servers over a kernel-WireGuard netns tunnel
 
-**Revision:** 4
-**Last modified:** 2026-07-02T07:05:29Z
+**Revision:** 5
+**Last modified:** 2026-07-02T07:49:30Z
 **Status:** Research findings (deep multi-angle web research per §11.4.150 / §11.4.99).
 No code changed by the research pass. Authority: inherits `constitution/Constitution.md` per §11.4.35.
 **Scope:** strengthen the hermetic WireGuard test harness so operator-gated VPN-LAN
@@ -231,11 +231,15 @@ flips ONLY assertion (b) "plaintext absent" to FAIL 3/3 while ciphertext stays p
 plaintext_nonce=absent` 3/3; header-only pcap → analyzer exit 3 (honest FAIL); forced-iface +
 no-tcpdump → honest `SNIFF-SKIP`; `WG_MUT=badkey` undisturbed (sniff sits past the `UP!=1` gate);
 veth0-only capture, 3.5 s / 4 MB / `timeout`-bounded, `SNIFF_PID` reaped, `wg0-mullvad` untouched
-(§11.4.174); `sh -n` + `bash -n` clean. Two tracked follow-ups: **(#64)** a one-line Ethernet
-ethertype guard on the frame analyzer (reviewer nit — VLAN-tag offset shift, structurally
-impossible on the harness's own fresh veth, correct-by-construction hardening); **(#65)** fan the
-differential out to the 4 protocol harnesses (bridge/ftp/webdav/email), each with a per-protocol
-plaintext marker + its own load-bearing `SNIFF_MUT=plain`.
+(§11.4.174); `sh -n` + `bash -n` clean. Follow-ups: **(#64) LANDED** (`cdb0ccd`,
+independent §11.4.142 review `af9f67ad` GO 5/5) — a one-line Ethernet ethertype guard on the
+frame analyzer (VLAN-tag offset shift, structurally impossible on the harness's own fresh veth,
+correct-by-construction; proven load-bearing by a guard-removal self-test — WITH guard
+`vlan_ct=absent` PASS, WITHOUT `vlan_ct=present` FAIL); **(#65)** fan the differential out to the
+protocol harnesses — the design pass (§7.1 below) found it meaningful for **3** of them
+(bridge/ftp/webdav, all plaintext-under-WG) but **N/A for email** (implicit-TLS encrypts the
+token *below* WG, so "plaintext absent on the underlay" is tautologically true regardless of the
+tunnel).
 
 It was the strongest hardening left for the hermetic stream (FINDINGS §5 point 5), and the
 natural successor to the wrong-destination negative control (task #62): that control proves
@@ -280,6 +284,33 @@ on the real Mullvad WAN path (that stays the §11.4.3 operator-gated confirmatio
 in a userns has documented kernel-attack-surface history (Project Zero packet-socket CVEs) — we
 only *read* our own netns's veth, never the host's interfaces (§11.4.174). Scope it as ONE
 harness leg (start with `hermetic_wg_roundtrip.sh`, the substrate) before fanning out.
+
+## 7.1 Fan-out design (task #65) — which harnesses genuinely warrant the sniff (§11.4.150)
+
+Design pass (subagent `a314c3e5`, read-only, file:line-cited against each harness). The substrate
+pattern (`hermetic_wg_roundtrip.sh:149-304`) clones onto a protocol harness by: capture on the
+client underlay `veth0` **before** the harness's existing not-stale self-fetch, assert (a) a WG
+type-4 (`0x04`) datagram to `:51820` present and (b) the per-run plaintext marker absent from the
+raw underlay bytes; `SNIFF_MUT=plain` emits that marker as cleartext UDP to discard `:9` (distinct
+from every harness's TCP negative-control port) so ONLY assertion (b) flips.
+
+| Harness | Plaintext marker | Rides plaintext-under-WG? | Sniff meaningful? | Injection |
+|---|---|---|---|---|
+| `hermetic_bridge_run.sh` | `$DEV_NAME` in eureka JSON `name` | YES (plain HTTP) | **YES — build** | `$DEV_NAME` → `10.9.0.2:9` |
+| `hermetic_ftp_run.sh` | `$NONCE` (LIST filename + RETR body) | YES (FTP cleartext) | **YES — build** | `$NONCE` → `10.9.0.2:9` |
+| `hermetic_webdav_run.sh` | `$NONCE` in 207 etag (proxy→origin `10.10.0.2:8080` hop rides `wg0`; client→proxy is loopback, irrelevant) | YES (plain HTTP 207) | **YES — build** | `$NONCE` → `10.9.0.2:9` |
+| `hermetic_email_run.sh` | round-trip token in SMTP DATA → POP3S RETR | **NO** — implicit-TLS wraps the payload (`:170/:356`, client `openssl s_client :413`) **before** WG | **NO — do NOT build (vacuous)** | — |
+
+**Honest verdict (§11.4.6).** Build the sniff on **bridge/ftp/webdav** — each app payload is
+cleartext, so the marker rides *plaintext-under-WG* and the differential genuinely exercises WG's
+protection (the `SNIFF_MUT=plain` golden-bad is load-bearing). Do **NOT** build it on **email**:
+the token is TLS-encrypted below WG, so "plaintext token absent on the underlay" is trivially true
+*even if WG were absent* — a green sniff there would be green for the TLS reason, not the WG reason
+(a §11.4-forbidden vacuous test that a `SNIFF_MUT=plain` tooth cannot rescue). Email's tunnel-gating
+is already proven by the overlay-only bind + §11.4.111 wrong-destination negative + `wg show` rx/tx
+counters; the correct action is an honest documented N/A note, not a fourth sniff. The email
+TLS-under-WG vacuity verdict is **original analysis** derived directly from the harness source
+(no external precedent needed); the sniff pattern itself is the GO-reviewed substrate (§7).
 
 ## Sources verified
 
