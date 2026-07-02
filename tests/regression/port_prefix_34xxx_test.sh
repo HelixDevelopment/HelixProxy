@@ -15,20 +15,25 @@
 #   probe the OLD port — the service would come up on a port nothing routes to
 #   (a §11.4.108 SOURCE/ARTIFACT mismatch that a grep-of-one-file misses).
 #
-# What it actually does (NOT a single-file grep — scans the whole behavior
-# scope AND asserts the positive presence of each new port on its owning
-# canonical file, i.e. proves the re-prefix is BOTH complete AND landed):
-#   GREEN — (a) ZERO occurrence of any old 5XXXX proxy port across the tracked
-#           behavior scope (config non-doc, compose, runtime scripts, admin UI,
-#           control-plane, tests, helixqa banks); AND (b) each new port is
-#           present on its canonical anchor (squid.conf:34128, sockd.conf:34080,
-#           .env.example:{34128,34080,34088,34090}, docker-compose admin :34088,
-#           prometheus.yml:34090, control-plane DefaultProxy:34128).
-#   RED   — synthesizes a faithful PRE-FIX fixture (a squid http_port line on
-#           :53128) and runs the SAME old-port scanner over it, asserting the
-#           scanner DETECTS the 5XXXX leak (defect reproduced). A RED that
-#           cannot reproduce is itself a §11.4.7 finding — it would prove the
-#           GREEN zero-leak assertion is a tautology.
+# What it actually does (NOT a fixed-pathspec grep — §11.4.120-hardened to a
+# TREE-WIDE old-port scan that excludes only the historical-doc surface, AND
+# asserts the positive presence of each new port on its owning canonical file,
+# i.e. proves the re-prefix is BOTH complete AND landed):
+#   GREEN — (a) ZERO occurrence of any old 5XXXX proxy port across the ENTIRE
+#           tracked tree MINUS the doc surface (docs/**, *.md, *.pdf,
+#           *README.html) — so a leak re-introduced in ANY new/unlisted
+#           behavior path is caught, not just an enumerated dir set; AND (b)
+#           each new port is present on its canonical anchor (squid.conf:34128,
+#           sockd.conf:34080, .env.example:{34128,34080,34088,34090},
+#           docker-compose admin :34088, prometheus.yml:34090, control-plane
+#           DefaultProxy:34128).
+#   RED   — synthesizes a faithful PRE-FIX fixture that plants a :53128 leak in
+#           a NEW behavior path (services/other/leak.html) the OLD fixed pathspec
+#           never scanned, plus a docs/ SQL-comment ref that MUST stay excluded,
+#           then runs the SAME scanner: asserts it DETECTS the new-path leak
+#           (gap closed) WITHOUT flagging the doc ref (no false-FAIL). A RED that
+#           cannot reproduce, or that flags the doc ref, is itself a §11.4.7 /
+#           §11.4.120 finding.
 #
 #   Self-contained + deterministic: uses `git grep` over the tracked tree +
 #   a throwaway temp fixture; never touches the data plane or any container.
@@ -66,23 +71,43 @@ EVID_FILE="$EVID_DIR/port_prefix_34xxx.$$.txt"
 # Old 5XXXX proxy ports that MUST NOT reappear in the behavior scope.
 OLD_PORTS_RE='\b(53128|51080|58080|59090)\b'
 
-# The tracked behavior scope (docs .md/.html/.pdf excluded — another agent owns
-# docs; services/admin/index.html IS behavior UI and stays in scope).
+# The tracked behavior scope = the WHOLE tree MINUS the historical-doc surface.
 scan_old_ports() {
-    # Args: $1 = root to scan (git-tracked). Prints matching lines; exits 0
-    # regardless (caller inspects the captured output, not the rc).
+    # Args: $1 = git-tracked root to scan. Prints matching path:line:content;
+    # exits 0 regardless (caller inspects the captured output, not the rc).
+    #
+    # §11.4.120 HARDENING (was a FIXED pathspec allowlist): the old allowlist
+    # scanned only an enumerated dir set + services/admin/index.html, so a leak
+    # re-introduced in ANY unlisted/NEW path (e.g. services/other/leak.html, a
+    # new top-level behavior dir, a behavior *.conf/*.yml/*.sql/*.mermaid OUTSIDE
+    # docs/) was git-visible but UNSCANNED — the GREEN zero-leak assertion would
+    # silently miss it. This is now a TREE-WIDE scan that excludes ONLY the
+    # historical-doc surface (another agent owns docs; docs/ legitimately carries
+    # pre-migration 5XXXX port references — the audit confirmed the only
+    # tree-wide hits are docs/**  [incl. docs/design/vpn_lan_access/schema.sql
+    # SQL-comment + docs/diagrams/*.mermaid] and top-level/config *.md).
+    #
+    # Exclusions are PATH-based git pathspec magic, NOT a content-regex filter:
+    #   docs            — whole doc subtree (its .md/.html/.pdf/.sql/.mermaid)
+    #   *.md            — markdown is always doc, never behavior (CHANGELOG.md,
+    #                     config/**/DNS_LEAK_TEST.md, squid-exporter.md, README.md)
+    #   *.pdf           — rendered doc siblings
+    #   *README.html    — rendered README doc at any depth (e.g. the
+    #                     config/security/README.html the old filter named)
+    #   this guard file — it embeds the 5XXXX regex + mapping in its own source.
+    # Path-based (not a `grep -vE '\.md:'` on the joined line) so a ".md:" that
+    # happens to appear inside a BEHAVIOR file's CONTENT can never drop a real
+    # leak. NOTE: services/admin/index.html + any non-README behavior *.html +
+    # any *.sql/*.mermaid OUTSIDE docs/ STAY in scope (leak vectors per the
+    # finding); only the doc surface above is removed.
     git -C "$1" grep -nE "$OLD_PORTS_RE" -- \
-        '.env.example' 'config' \
-        'docker-compose.yml' 'docker-compose.dynamic.yml' \
-        'docker-compose.observability.yml' \
-        'deploy/observability/compose.metrics.yml' \
-        'start' 'stop' 'init' 'status' 'restart' 'lib/container-runtime.sh' \
-        'services/admin/index.html' 'control-plane' 'tests' 'tools/helixqa/banks' \
-        'challenges/scripts' 'tools/helixqa/runner' \
+        '.' \
+        ':(exclude)docs' \
+        ':(exclude)*.md' \
+        ':(exclude)*.pdf' \
+        ':(exclude)*README.html' \
+        ':(exclude)tests/regression/port_prefix_34xxx_test.sh' \
         2>/dev/null \
-        | grep -vE '\.(md|pdf):' \
-        | grep -vE '/README\.md:|/README\.html:|DNS_LEAK_TEST\.md:|squid-exporter\.md:|config/security/README\.html:' \
-        | grep -v 'tests/regression/port_prefix_34xxx_test\.sh:' \
         || true
 }
 
@@ -90,21 +115,30 @@ verdict=FAIL
 exit_code=1
 
 if [ "$RED_MODE" = "1" ]; then
-    # Faithful PRE-FIX replica: a throwaway git tree whose squid config still
-    # binds :53128. The SAME scanner MUST flag it, proving the detector is not
-    # a tautology.
+    # Faithful PRE-FIX replica that ALSO exercises the §11.4.120 hardening: the
+    # throwaway tree plants a 5XXXX leak in services/other/leak.html — a NEW
+    # behavior path the OLD fixed-pathspec allowlist NEVER scanned (proving the
+    # gap the tree-wide scan closes) — AND a docs/ SQL-comment 5XXXX ref that
+    # MUST stay excluded (proving the doc-exclusion does not false-FAIL).
     FIX_DIR="$(mktemp -d)"
     trap 'rm -rf "$FIX_DIR"' EXIT INT TERM
-    mkdir -p "$FIX_DIR/config/squid"
-    printf 'http_port 0.0.0.0:53128\n' > "$FIX_DIR/config/squid/squid.conf"
+    mkdir -p "$FIX_DIR/services/other" "$FIX_DIR/config/squid" \
+             "$FIX_DIR/docs/design/vpn_lan_access"
+    printf 'http_port 0.0.0.0:34128\n' > "$FIX_DIR/config/squid/squid.conf"   # clean anchor
+    printf '<html>admin panel :53128</html>\n' > "$FIX_DIR/services/other/leak.html"  # NEW-path leak
+    printf -- '-- legacy: squid bound :53128 pre-migration\n' \
+        > "$FIX_DIR/docs/design/vpn_lan_access/schema.sql"                    # doc — must NOT flag
     ( cd "$FIX_DIR" && git init -q && git add -A && git -c user.email=g@g -c user.name=g commit -qm x ) >/dev/null 2>&1
     red_hits="$(scan_old_ports "$FIX_DIR")"
     red_n="$(printf '%s' "$red_hits" | grep -c . || true)"
-    if [ "$red_n" -gt 0 ]; then
+    red_doc_leak="$(printf '%s' "$red_hits" | grep -c 'schema\.sql' || true)"
+    if [ "$red_n" -gt 0 ] && [ "$red_doc_leak" -eq 0 ]; then
         verdict=PASS; exit_code=0
-        msg="RED reproduced: old-port scanner DETECTS a re-introduced 5XXXX (:53128) leak ($red_n hit) — detector is genuine, not a tautology"
+        msg="RED reproduced: tree-wide scanner DETECTS a 5XXXX leak in a NEW behavior path (services/other/leak.html, $red_n hit) that the old fixed pathspec MISSED, AND leaves the docs/ SQL-comment ref excluded — genuine detector + no doc false-FAIL"
+    elif [ "$red_doc_leak" -ne 0 ]; then
+        msg="RED doc-exclusion BROKEN: scanner flagged the docs/ schema.sql ref — the guard would false-FAIL on legitimate history (§11.4.120 weakening/false-FAIL)"
     else
-        msg="RED could-not-reproduce: scanner missed a planted :53128 leak — finding per §11.4.7 (GREEN zero-leak would be a bluff)"
+        msg="RED could-not-reproduce: scanner missed a planted NEW-path :53128 leak — finding per §11.4.7 (GREEN zero-leak would be a bluff)"
     fi
     scan_report="$red_hits"
 else
