@@ -38,6 +38,16 @@ type HealthSnapshot struct {
 	Tx            uint64    `json:"tx"` // cumulative bytes transmitted on the tunnel iface
 	EgressIP      string    `json:"egress_ip"`
 	CheckedAt     time.Time `json:"checked_at"`
+	// LiveProbeAt is the instant a FRESH through-tunnel liveness probe last
+	// SUCCEEDED THIS poll cycle — a real request egressed via the tunnel's
+	// forward proxy and returned (see LivenessProber). It is the per-poll
+	// data-plane proof that survives where the WireGuard handshake/tx counters
+	// are STRUCTURALLY UNOBTAINABLE: a userspace-WireGuard gluetun tunnel exposes
+	// no `wg` binary and its control API returns no transfer/handshake counters,
+	// while /v1/publicip/ip is a CACHED value (refreshed only on gluetun's
+	// 30-min-healthy / 60s-failure interval), not a fresh liveness signal. Zero
+	// when no fresh probe succeeded this cycle ⇒ the liveness proof fails closed.
+	LiveProbeAt time.Time `json:"live_probe_at"`
 }
 
 // Prober gathers raw data-plane signals for a single profile. Every method
@@ -51,6 +61,18 @@ type Prober interface {
 	// EgressIP returns the public egress IP observed through the tunnel
 	// (e.g. via the gluetun `/v1/publicip/ip` control-API endpoint).
 	EgressIP(ctx context.Context, profile string) (string, error)
+}
+
+// LivenessProber confirms a FRESH data-plane egress by issuing a real request
+// THROUGH the tunnel each poll (e.g. gluetun's built-in :8888 HTTP forward proxy,
+// which runs inside the tunnel netns behind the kill-switch). A successful Probe
+// proves bytes actually left via tun0 and a response returned THIS cycle — unlike
+// the CACHED /v1/publicip/ip value it is not stale-able. A kill-switch-blocked,
+// timed-out, or non-2xx request returns an error ⇒ the caller leaves LiveProbeAt
+// zero ⇒ DecideHealth fails closed (§11.4.68 / §11.4.107). Probe MUST NOT
+// fabricate success and MUST honour ctx cancellation/timeout.
+type LivenessProber interface {
+	Probe(ctx context.Context) error
 }
 
 // HealthEvaluator turns successive probe snapshots into an up/down verdict. The

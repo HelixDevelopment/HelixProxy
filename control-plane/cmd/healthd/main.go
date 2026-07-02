@@ -53,6 +53,12 @@ type liveSampler struct {
 	ctrl   *vpn.ControlClient
 	wg     vpn.WGReader
 	ifName string
+	// live is the OPTIONAL fresh per-poll through-tunnel liveness prober (gluetun
+	// :8888). When nil (the default), no probe is issued and LiveProbeAt stays zero
+	// — behaviour is identical to the wg-only path. When set (env-enabled for the
+	// gluetun deployment, where wg counters are structurally unobtainable), a
+	// successful probe stamps LiveProbeAt so DecideHealth's liveness path can fire.
+	live vpn.LivenessProber
 }
 
 func (s liveSampler) sample(ctx context.Context, profile string) (vpn.HealthSnapshot, error) {
@@ -76,6 +82,19 @@ func (s liveSampler) sample(ctx context.Context, profile string) (vpn.HealthSnap
 		snap.Rx, snap.Tx, snap.LastHandshake = rx, tx, latest
 	} else {
 		fmt.Fprintf(os.Stderr, "healthd[%s]: wg sample (%s): %v\n", profile, s.ifName, werr)
+	}
+
+	// FRESH per-poll through-tunnel liveness (§11.4.68 / §11.4.107): a real request
+	// egresses via the tunnel's forward proxy. Unlike the CACHED egress IP above, a
+	// success proves bytes left through tun0 and returned THIS cycle. A probe error
+	// (kill-switch block / timeout / non-2xx) leaves LiveProbeAt zero ⇒ DecideHealth
+	// fails closed. It NEVER masks the egress reading and never fabricates counters.
+	if s.live != nil {
+		if perr := s.live.Probe(ctx); perr == nil {
+			snap.LiveProbeAt = snap.CheckedAt
+		} else {
+			fmt.Fprintf(os.Stderr, "healthd[%s]: liveness probe: %v\n", profile, perr)
+		}
 	}
 	return snap, nil
 }
@@ -146,6 +165,16 @@ type config struct {
 	ttlSeconds  int
 	hostIP      string
 	maxAge      time.Duration
+	// tunnelProxy returns the through-tunnel HTTP-proxy URL for the fresh-liveness
+	// probe (gluetun :8888), or "" to DISABLE the probe for that profile (the
+	// default — behaviour then matches the wg-only path). The URL MAY embed
+	// user:pass (gluetun HTTPPROXY auth) sourced from env/secret; §11.4.10 forbids
+	// hardcoding or logging it.
+	tunnelProxy func(profile string) string
+	// probeTarget is the external IP-echo GETd through the tunnel proxy.
+	probeTarget string
+	// probeTimeout bounds each liveness probe (a tunnel-down probe must not hang).
+	probeTimeout time.Duration
 }
 
 func loadConfig() config {
@@ -189,6 +218,19 @@ func loadConfig() config {
 		}
 	}
 	c.maxAge = parseDuration(getenv("HEALTHD_REDIS_MAXAGE", "60s"), 60*time.Second)
+
+	// Fresh through-tunnel liveness probe (§11.4.68). DISABLED unless a proxy URL is
+	// provided (per-profile HEALTHD_TUNNEL_PROXY_<PROFILE> wins over the global
+	// HEALTHD_TUNNEL_PROXY). The URL points at gluetun's :8888 forward proxy and MAY
+	// carry credentials (§11.4.10 — env/secret only, never hardcoded, never logged).
+	c.probeTarget = getenv("HEALTHD_LIVENESS_TARGET", vpn.DefaultLivenessTarget)
+	c.probeTimeout = parseDuration(getenv("HEALTHD_LIVENESS_TIMEOUT", "4s"), 4*time.Second)
+	c.tunnelProxy = func(profile string) string {
+		if v := os.Getenv("HEALTHD_TUNNEL_PROXY_" + envKey(profile)); v != "" {
+			return v
+		}
+		return os.Getenv("HEALTHD_TUNNEL_PROXY") // "" ⇒ probe disabled (wg-only default)
+	}
 	return c
 }
 
@@ -244,6 +286,25 @@ func main() {
 	}
 }
 
+// buildLivenessProber returns the fresh through-tunnel liveness prober for a
+// profile, or nil when no proxy URL is configured (the default — wg-only). A bad
+// proxy URL disables the probe (nil) with a logged reason: the health signal then
+// relies on the wg path and never fails OPEN on a misconfiguration. The proxy URL
+// (which may carry credentials, §11.4.10) is NEVER logged — only the parse error is.
+func buildLivenessProber(c config, profile string) vpn.LivenessProber {
+	proxyURL := c.tunnelProxy(profile)
+	if proxyURL == "" {
+		return nil
+	}
+	p, err := vpn.NewTunnelProxyProber(proxyURL, c.probeTarget, c.probeTimeout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "healthd[%s]: liveness probe disabled (invalid proxy URL): %v\n", profile, err)
+		return nil
+	}
+	fmt.Fprintf(os.Stderr, "healthd[%s]: fresh through-tunnel liveness probe enabled (target=%s)\n", profile, c.probeTarget)
+	return p
+}
+
 // run opens Redis and launches one poll goroutine per profile, returning when ctx
 // is cancelled (graceful shutdown).
 func run(ctx context.Context, c config) error {
@@ -266,6 +327,7 @@ func run(ctx context.Context, c config) error {
 			ctrl:   vpn.NewControlClient(c.gluetunBase(profile)),
 			wg:     vpn.WGReader{},
 			ifName: c.wgIf(profile),
+			live:   buildLivenessProber(c, profile),
 		}
 		wg.Add(1)
 		go func(p string, smp sampler) {
